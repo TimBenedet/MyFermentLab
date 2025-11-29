@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: influxdb-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: influxdb-config
+  namespace: default
+data:
+  DOCKER_INFLUXDB_INIT_MODE: "setup"
+  DOCKER_INFLUXDB_INIT_USERNAME: "admin"
+  DOCKER_INFLUXDB_INIT_PASSWORD: "adminpassword"
+  DOCKER_INFLUXDB_INIT_ORG: "fermentation"
+  DOCKER_INFLUXDB_INIT_BUCKET: "sensors"
+  DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "my-super-secret-auth-token"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influxdb
+  template:
+    metadata:
+      labels:
+        app: influxdb
+    spec:
+      containers:
+      - name: influxdb
+        image: influxdb:2.7-alpine
+        ports:
+        - containerPort: 8086
+        envFrom:
+        - configMapRef:
+            name: influxdb-config
+        volumeMounts:
+        - name: influxdb-storage
+          mountPath: /var/lib/influxdb2
+      volumes:
+      - name: influxdb-storage
+        persistentVolumeClaim:
+          claimName: influxdb-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb
+  namespace: default
+spec:
+  selector:
+    app: influxdb
+  ports:
+  - port: 8086
+    targetPort: 8086
+  type: ClusterIP
