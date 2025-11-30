@@ -12,10 +12,12 @@ spec:
     metadata:
       labels:
         app: fermentation-monitor
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2025-11-30T09:45:00Z"
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/timbenedet/myfermentlab-frontend:main-27f4c94
+        image: ghcr.io/timbenedet/myfermentlab-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80

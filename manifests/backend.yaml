@@ -38,10 +38,12 @@ spec:
     metadata:
       labels:
         app: fermentation-backend
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2025-11-30T09:45:00Z"
     spec:
       containers:
       - name: backend
-        image: ghcr.io/timbenedet/myfermentlab-backend:main-94624bd
+        image: ghcr.io/timbenedet/myfermentlab-backend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3001
