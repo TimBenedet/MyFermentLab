@@ -38,31 +38,6 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
       <div className="monitoring-grid">
         <div className="control-panel">
           <div className="panel-section">
-            <h2>Mode de contrôle</h2>
-            <div className="control-mode-display">
-              <div className="mode-indicator" style={{
-                backgroundColor: project.controlMode === 'automatic' ? '#10B981' : '#F59E0B',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                textAlign: 'center',
-                fontWeight: 'bold'
-              }}>
-                {project.controlMode === 'automatic' ? '⚙️ Automatique' : '✋ Manuel'}
-              </div>
-              {onToggleControlMode && (
-                <button
-                  className="btn-secondary"
-                  onClick={onToggleControlMode}
-                  style={{ marginTop: '8px', width: '100%' }}
-                >
-                  Passer en mode {project.controlMode === 'automatic' ? 'manuel' : 'automatique'}
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="panel-section">
             <h2>Contrôle de la prise</h2>
             <div className="outlet-control">
               <div className="outlet-status">
@@ -141,6 +116,31 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
               >
                 +1°C
               </button>
+            </div>
+          </div>
+
+          <div className="panel-section">
+            <h2>Mode de contrôle</h2>
+            <div className="control-mode-display">
+              <div className="mode-indicator" style={{
+                backgroundColor: project.controlMode === 'automatic' ? '#10B981' : '#F59E0B',
+                color: 'white',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                textAlign: 'center',
+                fontWeight: 'bold'
+              }}>
+                {project.controlMode === 'automatic' ? '⚙️ Automatique' : '✋ Manuel'}
+              </div>
+              {onToggleControlMode && (
+                <button
+                  className="btn-secondary"
+                  onClick={onToggleControlMode}
+                  style={{ marginTop: '8px', width: '100%' }}
+                >
+                  Passer en mode {project.controlMode === 'automatic' ? 'manuel' : 'automatique'}
+                </button>
+              )}
             </div>
           </div>
         </div>
