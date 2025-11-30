@@ -121,7 +121,7 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
 
           <div className="panel-section panel-section-flex">
             <h2>Mode de contrôle</h2>
-            <div className="control-mode-display" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div className="control-mode-display">
               <div className="mode-indicator" style={{
                 backgroundColor: project.controlMode === 'automatic' ? '#10B981' : '#F59E0B',
                 color: 'white',
