@@ -119,16 +119,17 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
             </div>
           </div>
 
-          <div className="panel-section">
+          <div className="panel-section panel-section-flex">
             <h2>Mode de contrôle</h2>
-            <div className="control-mode-display">
+            <div className="control-mode-display" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div className="mode-indicator" style={{
                 backgroundColor: project.controlMode === 'automatic' ? '#10B981' : '#F59E0B',
                 color: 'white',
-                padding: '8px 16px',
+                padding: '12px 16px',
                 borderRadius: '8px',
                 textAlign: 'center',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '16px'
               }}>
                 {project.controlMode === 'automatic' ? '⚙️ Automatique' : '✋ Manuel'}
               </div>
@@ -136,7 +137,7 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
                 <button
                   className="btn-secondary"
                   onClick={onToggleControlMode}
-                  style={{ marginTop: '8px', width: '100%' }}
+                  style={{ marginTop: '12px', width: '100%', padding: '12px' }}
                 >
                   Passer en mode {project.controlMode === 'automatic' ? 'manuel' : 'automatique'}
                 </button>
