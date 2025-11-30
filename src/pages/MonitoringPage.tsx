@@ -119,7 +119,7 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
             </div>
           </div>
 
-          <div className="panel-section panel-section-flex">
+          <div className="panel-section">
             <h2>Mode de contrôle</h2>
             <div className="control-mode-display">
               <div className="mode-indicator" style={{

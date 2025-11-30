@@ -596,13 +596,6 @@
   flex-direction: column;
 }
 
-.control-mode-display {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
 .panel-section h2 {
   font-size: 0.875rem;
   color: #d4d5d8;
