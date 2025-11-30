@@ -117,18 +117,21 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
           <div className="panel-section">
             <h2>Mode de contrôle</h2>
             <div className="control-mode-compact">
-              <div className="mode-indicator-compact" style={{
-                backgroundColor: project.controlMode === 'automatic' ? '#10B981' : '#F59E0B'
-              }}>
-                {project.controlMode === 'automatic' ? '⚙️ Auto' : '✋ Manuel'}
-              </div>
               {onToggleControlMode && (
-                <button
-                  className="btn-secondary btn-control-toggle"
-                  onClick={onToggleControlMode}
-                >
-                  Changer
-                </button>
+                <>
+                  <button
+                    className={`btn-mode-toggle ${project.controlMode === 'automatic' ? 'active' : ''}`}
+                    onClick={onToggleControlMode}
+                  >
+                    ⚙️ Auto
+                  </button>
+                  <button
+                    className={`btn-mode-toggle ${project.controlMode === 'manual' ? 'active' : ''}`}
+                    onClick={onToggleControlMode}
+                  >
+                    ✋ Manuel
+                  </button>
+                </>
               )}
             </div>
           </div>
