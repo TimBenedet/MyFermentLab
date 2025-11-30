@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/timbenedet/myfermentlab-frontend:latest
+        image: ghcr.io/timbenedet/myfermentlab-frontend:main-27f4c94
         imagePullPolicy: Always
         ports:
         - containerPort: 80

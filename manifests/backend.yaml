@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: ghcr.io/timbenedet/myfermentlab-backend:latest
+        image: ghcr.io/timbenedet/myfermentlab-backend:main-94624bd
         imagePullPolicy: Always
         ports:
         - containerPort: 3001
