@@ -182,6 +182,7 @@
 
 .project-card-content {
   cursor: pointer;
+  padding-right: 80px;
 }
 
 .btn-delete-project {
