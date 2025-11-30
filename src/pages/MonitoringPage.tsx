@@ -58,11 +58,6 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
               >
                 {project.outletActive ? 'Désactiver' : 'Activer'}
               </button>
-              {project.controlMode === 'automatic' && (
-                <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '8px', textAlign: 'center' }}>
-                  Contrôle automatique activé
-                </p>
-              )}
             </div>
           </div>
 
@@ -121,28 +116,27 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
 
           <div className="panel-section">
             <h2>Mode de contrôle</h2>
-            <div className="control-mode-display">
-              <div className="mode-indicator" style={{
-                backgroundColor: project.controlMode === 'automatic' ? '#10B981' : '#F59E0B',
-                color: 'white',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                textAlign: 'center',
-                fontWeight: 'bold',
-                fontSize: '16px'
-              }}>
-                {project.controlMode === 'automatic' ? '⚙️ Automatique' : '✋ Manuel'}
-              </div>
-              {onToggleControlMode && (
-                <button
-                  className="btn-secondary"
-                  onClick={onToggleControlMode}
-                  style={{ marginTop: '12px', width: '100%', padding: '12px' }}
-                >
-                  Passer en mode {project.controlMode === 'automatic' ? 'manuel' : 'automatique'}
-                </button>
-              )}
+            <div className="mode-indicator" style={{
+              backgroundColor: project.controlMode === 'automatic' ? '#10B981' : '#F59E0B',
+              color: 'white',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              textAlign: 'center',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              marginBottom: '12px'
+            }}>
+              {project.controlMode === 'automatic' ? '⚙️ Automatique' : '✋ Manuel'}
             </div>
+            {onToggleControlMode && (
+              <button
+                className="btn-secondary"
+                onClick={onToggleControlMode}
+                style={{ width: '100%', padding: '12px' }}
+              >
+                Passer en mode {project.controlMode === 'automatic' ? 'manuel' : 'automatique'}
+              </button>
+            )}
           </div>
         </div>
 
