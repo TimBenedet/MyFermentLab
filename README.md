@@ -36,6 +36,8 @@ MyFermentLab est une application web moderne permettant de :
 - **Graphiques de température** : Évolution sur 1h, 6h, 24h, 7j, 30j ou période complète
 - **Suivi de densité** (bière) : Enregistrement manuel de la densité spécifique
 - **Calcul ABV** : Calcul automatique du taux d'alcool
+- **Archivage de projets** : Archivez les projets terminés pour libérer les capteurs et prises
+- **Validation des ressources** : Les capteurs et prises ne peuvent être utilisés que par un projet actif à la fois
 
 ### Multi-types de fermentation
 - 🍺 **Bière** : 15-25°C, avec suivi de densité
@@ -308,12 +310,14 @@ npm test
 ### Endpoints principaux
 
 #### Projets
-- `GET /api/projects` - Liste tous les projets
+- `GET /api/projects` - Liste tous les projets (actifs et archivés)
 - `GET /api/projects/:id` - Détails d'un projet avec historique
-- `POST /api/projects` - Créer un nouveau projet
+- `POST /api/projects` - Créer un nouveau projet (vérifie que les devices ne sont pas déjà utilisés)
 - `PUT /api/projects/:id/target-temperature` - Modifier température cible
 - `PUT /api/projects/:id/outlet` - Toggle prise
 - `PUT /api/projects/:id/control-mode` - Changer mode de contrôle
+- `PUT /api/projects/:id/archive` - Archiver un projet (libère les devices)
+- `PUT /api/projects/:id/unarchive` - Désarchiver un projet (vérifie que les devices sont disponibles)
 - `DELETE /api/projects/:id` - Supprimer un projet
 
 #### Densité

@@ -91,6 +91,29 @@ class ApiService {
     return response.json();
   }
 
+  async archiveProject(id: string): Promise<Project> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/archive`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to archive project');
+    }
+    return response.json();
+  }
+
+  async unarchiveProject(id: string): Promise<Project> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/unarchive`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to unarchive project');
+    }
+    return response.json();
+  }
+
   async deleteProject(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
       method: 'DELETE'

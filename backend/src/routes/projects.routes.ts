@@ -50,6 +50,15 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Vérifier que les devices ne sont pas déjà utilisés par un projet actif
+    if (databaseService.isDeviceInUse(sensorId)) {
+      return res.status(400).json({ error: 'Sensor is already in use by another active project' });
+    }
+
+    if (databaseService.isDeviceInUse(outletId)) {
+      return res.status(400).json({ error: 'Outlet is already in use by another active project' });
+    }
+
     const newProject = databaseService.createProject({
       id: Date.now().toString(),
       name,
@@ -58,6 +67,7 @@ router.post('/', async (req: Request, res: Response) => {
       outletId,
       targetTemperature,
       controlMode: controlMode || 'automatic',
+      archived: false,
       createdAt: Date.now()
     });
 
@@ -160,6 +170,55 @@ router.put('/:id/control-mode', async (req: Request, res: Response) => {
     res.json(updatedProject);
   } catch (error) {
     console.error('Error updating control mode:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/projects/:id/archive - Archiver un projet
+router.put('/:id/archive', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = databaseService.getProject(id);
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    databaseService.archiveProject(id);
+    const updatedProject = databaseService.getProject(id);
+
+    res.json(updatedProject);
+  } catch (error) {
+    console.error('Error archiving project:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/projects/:id/unarchive - Désarchiver un projet
+router.put('/:id/unarchive', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = databaseService.getProject(id);
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    // Vérifier que les devices ne sont pas déjà utilisés
+    if (databaseService.isDeviceInUse(project.sensorId, id)) {
+      return res.status(400).json({ error: 'Sensor is already in use by another active project' });
+    }
+
+    if (databaseService.isDeviceInUse(project.outletId, id)) {
+      return res.status(400).json({ error: 'Outlet is already in use by another active project' });
+    }
+
+    databaseService.unarchiveProject(id);
+    const updatedProject = databaseService.getProject(id);
+
+    res.json(updatedProject);
+  } catch (error) {
+    console.error('Error unarchiving project:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

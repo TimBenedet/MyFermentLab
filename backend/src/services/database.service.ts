@@ -11,7 +11,9 @@ export interface Project {
   currentTemperature: number;
   outletActive: boolean;
   controlMode: 'manual' | 'automatic';
+  archived: boolean;
   createdAt: number;
+  archivedAt?: number;
 }
 
 export interface Device {
@@ -59,10 +61,24 @@ class DatabaseService {
     try {
       const columns = this.db.prepare("PRAGMA table_info(projects)").all() as any[];
       const hasControlMode = columns.some(col => col.name === 'control_mode');
+      const hasArchived = columns.some(col => col.name === 'archived');
+      const hasArchivedAt = columns.some(col => col.name === 'archived_at');
 
       if (!hasControlMode) {
         console.log('Adding control_mode column to projects table...');
         this.db.exec("ALTER TABLE projects ADD COLUMN control_mode TEXT NOT NULL DEFAULT 'automatic'");
+        console.log('Migration completed successfully');
+      }
+
+      if (!hasArchived) {
+        console.log('Adding archived column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN archived INTEGER NOT NULL DEFAULT 0");
+        console.log('Migration completed successfully');
+      }
+
+      if (!hasArchivedAt) {
+        console.log('Adding archived_at column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN archived_at INTEGER");
         console.log('Migration completed successfully');
       }
     } catch (error) {
@@ -72,7 +88,7 @@ class DatabaseService {
 
   // Projects CRUD
   getAllProjects(): Project[] {
-    const stmt = this.db.prepare('SELECT * FROM projects ORDER BY created_at DESC');
+    const stmt = this.db.prepare('SELECT * FROM projects ORDER BY archived ASC, created_at DESC');
     const rows = stmt.all() as any[];
     return rows.map(row => ({
       id: row.id,
@@ -84,7 +100,9 @@ class DatabaseService {
       currentTemperature: row.current_temperature,
       outletActive: row.outlet_active === 1,
       controlMode: row.control_mode || 'automatic',
-      createdAt: row.created_at
+      archived: row.archived === 1,
+      createdAt: row.created_at,
+      archivedAt: row.archived_at || undefined
     }));
   }
 
@@ -103,7 +121,9 @@ class DatabaseService {
       currentTemperature: row.current_temperature,
       outletActive: row.outlet_active === 1,
       controlMode: row.control_mode || 'automatic',
-      createdAt: row.created_at
+      archived: row.archived === 1,
+      createdAt: row.created_at,
+      archivedAt: row.archived_at || undefined
     };
   }
 
@@ -145,6 +165,29 @@ class DatabaseService {
   updateProjectControlMode(id: string, controlMode: 'manual' | 'automatic') {
     const stmt = this.db.prepare('UPDATE projects SET control_mode = ? WHERE id = ?');
     stmt.run(controlMode, id);
+  }
+
+  archiveProject(id: string) {
+    const stmt = this.db.prepare('UPDATE projects SET archived = 1, archived_at = ? WHERE id = ?');
+    stmt.run(Date.now(), id);
+  }
+
+  unarchiveProject(id: string) {
+    const stmt = this.db.prepare('UPDATE projects SET archived = 0, archived_at = NULL WHERE id = ?');
+    stmt.run(id);
+  }
+
+  isDeviceInUse(deviceId: string, excludeProjectId?: string): boolean {
+    let stmt;
+    if (excludeProjectId) {
+      stmt = this.db.prepare('SELECT COUNT(*) as count FROM projects WHERE (sensor_id = ? OR outlet_id = ?) AND archived = 0 AND id != ?');
+      const result = stmt.get(deviceId, deviceId, excludeProjectId) as { count: number };
+      return result.count > 0;
+    } else {
+      stmt = this.db.prepare('SELECT COUNT(*) as count FROM projects WHERE (sensor_id = ? OR outlet_id = ?) AND archived = 0');
+      const result = stmt.get(deviceId, deviceId) as { count: number };
+      return result.count > 0;
+    }
   }
 
   deleteProject(id: string) {

@@ -28,10 +28,12 @@ export interface Project {
   currentTemperature: number;
   outletActive: boolean;
   controlMode: 'manual' | 'automatic'; // Mode de contrôle
+  archived: boolean;
   history: TemperatureReading[];
   densityHistory?: DensityReading[];
   showDensity?: boolean;
   createdAt: number;
+  archivedAt?: number;
 }
 
 export const FERMENTATION_TYPES = {

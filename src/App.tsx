@@ -159,6 +159,35 @@ function App() {
     }
   };
 
+  const handleArchiveProject = async (projectId: string) => {
+    try {
+      const updatedProject = await apiService.archiveProject(projectId);
+      setProjects(prev => prev.map(p =>
+        p.id === projectId ? updatedProject : p
+      ));
+      if (selectedProjectId === projectId) {
+        setSelectedProjectId(null);
+        setSelectedProject(null);
+        setCurrentPage('home');
+      }
+    } catch (err) {
+      console.error('Failed to archive project:', err);
+      setError('Impossible d\'archiver le projet');
+    }
+  };
+
+  const handleUnarchiveProject = async (projectId: string) => {
+    try {
+      const updatedProject = await apiService.unarchiveProject(projectId);
+      setProjects(prev => prev.map(p =>
+        p.id === projectId ? updatedProject : p
+      ));
+    } catch (err: any) {
+      console.error('Failed to unarchive project:', err);
+      setError(err.message || 'Impossible de désarchiver le projet');
+    }
+  };
+
   const handleDeleteProject = async (projectId: string) => {
     try {
       await apiService.deleteProject(projectId);
@@ -260,6 +289,8 @@ function App() {
             projects={projects}
             onCreateProject={() => setCurrentPage('create-project')}
             onSelectProject={handleSelectProject}
+            onArchiveProject={handleArchiveProject}
+            onUnarchiveProject={handleUnarchiveProject}
             onDeleteProject={handleDeleteProject}
             onManageDevices={() => setCurrentPage('devices')}
           />

@@ -933,6 +933,109 @@
   color: #d4d5d8;
 }
 
+/* Projects Filter */
+.projects-filter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: #181b1f;
+  padding: 4px;
+  border: 1px solid #2a2e33;
+  border-radius: 2px;
+  width: fit-content;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: #8e9196;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  background: #1f2328;
+  color: #d4d5d8;
+}
+
+.filter-btn.active {
+  background: #4a8ecc;
+  color: white;
+}
+
+/* Project Card Actions */
+.project-card {
+  position: relative;
+}
+
+.project-card-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.project-card:hover .project-card-actions {
+  opacity: 1;
+}
+
+.btn-icon-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  border: 1px solid #2a2e33;
+  background: #1f2328;
+  color: #d4d5d8;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.btn-icon-action:hover {
+  background: #262b31;
+  border-color: #3a3e43;
+}
+
+.btn-delete-project {
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  border: 1px solid #2a2e33;
+  background: #1f2328;
+  color: #EF4444;
+  font-size: 1.5rem;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.btn-delete-project:hover {
+  background: #EF4444;
+  color: white;
+  border-color: #EF4444;
+}
+
+.status-indicator.archived {
+  background: #6B7280;
+  color: white;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .monitoring-grid {
@@ -957,5 +1060,17 @@
 
   .chart-stats {
     grid-template-columns: 1fr;
+  }
+
+  .projects-filter {
+    width: 100%;
+  }
+
+  .filter-btn {
+    flex: 1;
+  }
+
+  .project-card-actions {
+    opacity: 1;
   }
 }
