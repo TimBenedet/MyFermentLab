@@ -44,7 +44,7 @@ MyFermentLab est une application web moderne permettant de :
 
 ## 🏗 Architecture
 
-\`\`\`
+```
 ┌─────────────┐      ┌──────────────┐      ┌─────────────┐
 │   Frontend  │─────▶│   Backend    │─────▶│  InfluxDB   │
 │   (React)   │      │  (Express)   │      │             │
@@ -62,7 +62,7 @@ MyFermentLab est une application web moderne permettant de :
 │  - Capteurs température (Zigbee)        │
 │  - Prises connectées (switch)           │
 └─────────────────────────────────────────┘
-\`\`\`
+```
 
 ### Stack technique
 
@@ -104,27 +104,27 @@ MyFermentLab est une application web moderne permettant de :
 ### Développement local
 
 1. **Cloner le repository**
-\`\`\`bash
+```bash
 git clone https://github.com/TimBenedet/MyFermentLab.git
 cd MyFermentLab
-\`\`\`
+```
 
 2. **Installer les dépendances frontend**
-\`\`\`bash
+```bash
 npm install
-\`\`\`
+```
 
 3. **Installer les dépendances backend**
-\`\`\`bash
+```bash
 cd backend
 npm install
 cd ..
-\`\`\`
+```
 
 4. **Configurer les variables d'environnement**
 
-Créer un fichier \`.env\` dans le dossier \`backend/\` :
-\`\`\`env
+Créer un fichier `.env` dans le dossier `backend/` :
+```env
 INFLUX_URL=http://localhost:8086
 INFLUX_TOKEN=your-influx-token
 INFLUX_ORG=fermentation
@@ -132,29 +132,29 @@ INFLUX_BUCKET=sensors
 HOME_ASSISTANT_URL=http://192.168.1.140:8124
 POLL_INTERVAL=30000
 DB_PATH=./data/fermentation.db
-\`\`\`
+```
 
 5. **Démarrer en mode développement**
 
 Terminal 1 - Frontend :
-\`\`\`bash
+```bash
 npm run dev
-\`\`\`
+```
 
 Terminal 2 - Backend :
-\`\`\`bash
+```bash
 cd backend
 npm run dev
-\`\`\`
+```
 
-L'application sera accessible sur \`http://localhost:5173\`
+L'application sera accessible sur `http://localhost:5173`
 
 ## ⚙️ Configuration
 
 ### InfluxDB
 
-1. Créer une organisation \`fermentation\`
-2. Créer un bucket \`sensors\`
+1. Créer une organisation `fermentation`
+2. Créer un bucket `sensors`
 3. Générer un token d'accès
 4. Configurer Home Assistant pour envoyer les données vers InfluxDB
 
@@ -162,7 +162,7 @@ L'application sera accessible sur \`http://localhost:5173\`
 
 Exemple de configuration pour les capteurs :
 
-\`\`\`yaml
+```yaml
 # configuration.yaml
 sensor:
   - platform: mqtt
@@ -178,7 +178,7 @@ switch:
     command_topic: "zigbee2mqtt/smart_plug/set"
     payload_on: '{"state": "ON"}'
     payload_off: '{"state": "OFF"}'
-\`\`\`
+```
 
 ## 📱 Utilisation
 
@@ -212,22 +212,22 @@ switch:
 
 ### Docker Compose (Développement)
 
-\`\`\`bash
+```bash
 docker-compose up -d
-\`\`\`
+```
 
 ### Kubernetes avec ArgoCD
 
 1. **Appliquer les manifests**
-\`\`\`bash
+```bash
 kubectl apply -f manifests/influxdb.yaml
 kubectl apply -f manifests/backend.yaml
 kubectl apply -f manifests/frontend.yaml
 kubectl apply -f manifests/ingress.yaml
-\`\`\`
+```
 
 2. **Configurer ArgoCD**
-\`\`\`yaml
+```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -246,28 +246,28 @@ spec:
     automated:
       prune: true
       selfHeal: true
-\`\`\`
+```
 
 3. **Accéder à l'application**
-\`\`\`
+```
 http://ferment.local (ou votre domaine configuré)
-\`\`\`
+```
 
 ### CI/CD avec GitHub Actions
 
 Les workflows sont automatiquement déclenchés lors des push :
-- \`build-frontend.yml\` : Build et push de l'image frontend
-- \`build-backend.yml\` : Build et push de l'image backend
+- `build-frontend.yml` : Build et push de l'image frontend
+- `build-backend.yml` : Build et push de l'image backend
 
 Les images sont publiées sur GitHub Container Registry :
-- \`ghcr.io/timbenedet/myfermentlab-frontend:latest\`
-- \`ghcr.io/timbenedet/myfermentlab-backend:latest\`
+- `ghcr.io/timbenedet/myfermentlab-frontend:latest`
+- `ghcr.io/timbenedet/myfermentlab-backend:latest`
 
 ## 🛠 Développement
 
 ### Structure du projet
 
-\`\`\`
+```
 MyFermentLab/
 ├── src/                      # Frontend React
 │   ├── components/          # Composants réutilisables
@@ -282,54 +282,54 @@ MyFermentLab/
 ├── manifests/              # Manifests Kubernetes
 ├── public/                 # Assets statiques
 └── Dockerfile             # Images Docker
-\`\`\`
+```
 
 ### Build pour production
 
 **Frontend**
-\`\`\`bash
+```bash
 npm run build
-\`\`\`
+```
 
 **Backend**
-\`\`\`bash
+```bash
 cd backend
 npm run build
-\`\`\`
+```
 
 ### Tests
 
-\`\`\`bash
+```bash
 npm test
-\`\`\`
+```
 
 ## 📊 API Backend
 
 ### Endpoints principaux
 
 #### Projets
-- \`GET /api/projects\` - Liste tous les projets
-- \`GET /api/projects/:id\` - Détails d'un projet avec historique
-- \`POST /api/projects\` - Créer un nouveau projet
-- \`PUT /api/projects/:id/target-temperature\` - Modifier température cible
-- \`PUT /api/projects/:id/outlet\` - Toggle prise
-- \`PUT /api/projects/:id/control-mode\` - Changer mode de contrôle
-- \`DELETE /api/projects/:id\` - Supprimer un projet
+- `GET /api/projects` - Liste tous les projets
+- `GET /api/projects/:id` - Détails d'un projet avec historique
+- `POST /api/projects` - Créer un nouveau projet
+- `PUT /api/projects/:id/target-temperature` - Modifier température cible
+- `PUT /api/projects/:id/outlet` - Toggle prise
+- `PUT /api/projects/:id/control-mode` - Changer mode de contrôle
+- `DELETE /api/projects/:id` - Supprimer un projet
 
 #### Densité
-- \`POST /api/projects/:id/density\` - Ajouter une mesure de densité
+- `POST /api/projects/:id/density` - Ajouter une mesure de densité
 
 #### Devices
-- \`GET /api/devices\` - Liste des capteurs et prises Home Assistant
+- `GET /api/devices` - Liste des capteurs et prises Home Assistant
 
 ## 🤝 Contribution
 
 Les contributions sont les bienvenues ! Pour contribuer :
 
 1. Fork le projet
-2. Créer une branche (\`git checkout -b feature/AmazingFeature\`)
-3. Commit les changements (\`git commit -m 'Add AmazingFeature'\`)
-4. Push vers la branche (\`git push origin feature/AmazingFeature\`)
+2. Créer une branche (`git checkout -b feature/AmazingFeature`)
+3. Commit les changements (`git commit -m 'Add AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
 5. Ouvrir une Pull Request
 
 ## 📝 License
