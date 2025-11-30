@@ -7,10 +7,11 @@ interface MonitoringPageProps {
   onUpdateTarget: (temp: number) => void;
   onToggleOutlet: () => void;
   onAddDensity: (density: number, timestamp: number) => void;
+  onToggleControlMode?: () => void;
   onBack: () => void;
 }
 
-export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onBack }: MonitoringPageProps) {
+export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onToggleControlMode, onBack }: MonitoringPageProps) {
   const config = FERMENTATION_TYPES[project.fermentationType];
   const diff = project.targetTemperature - project.currentTemperature;
 
@@ -37,6 +38,31 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
       <div className="monitoring-grid">
         <div className="control-panel">
           <div className="panel-section">
+            <h2>Mode de contrôle</h2>
+            <div className="control-mode-display">
+              <div className="mode-indicator" style={{
+                backgroundColor: project.controlMode === 'automatic' ? '#10B981' : '#F59E0B',
+                color: 'white',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                textAlign: 'center',
+                fontWeight: 'bold'
+              }}>
+                {project.controlMode === 'automatic' ? '⚙️ Automatique' : '✋ Manuel'}
+              </div>
+              {onToggleControlMode && (
+                <button
+                  className="btn-secondary"
+                  onClick={onToggleControlMode}
+                  style={{ marginTop: '8px', width: '100%' }}
+                >
+                  Passer en mode {project.controlMode === 'automatic' ? 'manuel' : 'automatique'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="panel-section">
             <h2>Contrôle de la prise</h2>
             <div className="outlet-control">
               <div className="outlet-status">
@@ -53,9 +79,15 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
               <button
                 className={`btn-outlet ${project.outletActive ? 'active' : 'inactive'}`}
                 onClick={onToggleOutlet}
+                disabled={project.controlMode === 'automatic'}
               >
                 {project.outletActive ? 'Désactiver' : 'Activer'}
               </button>
+              {project.controlMode === 'automatic' && (
+                <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '8px', textAlign: 'center' }}>
+                  Contrôle automatique activé
+                </p>
+              )}
             </div>
           </div>
 

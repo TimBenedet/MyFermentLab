@@ -61,8 +61,10 @@ class SensorPollerService {
             // Mettre à jour la température actuelle dans SQLite
             databaseService.updateProjectTemperature(project.id, temperature);
 
-            // Gérer le contrôle automatique de la prise
-            await this.manageOutlet(project.id, temperature, project.targetTemperature, project.outletId);
+            // Gérer le contrôle automatique de la prise (seulement si mode automatique)
+            if (project.controlMode === 'automatic') {
+              await this.manageOutlet(project.id, temperature, project.targetTemperature, project.outletId);
+            }
           }
         } catch (error) {
           console.error(`[SensorPoller] Error polling sensor for project ${project.name}:`, error);

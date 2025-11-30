@@ -9,6 +9,7 @@ interface CreateProjectPageProps {
     sensorId: string;
     outletId: string;
     targetTemperature: number;
+    controlMode: 'manual' | 'automatic';
   }) => void;
   onCancel: () => void;
 }
@@ -18,6 +19,7 @@ export function CreateProjectPage({ devices, onCreateProject, onCancel }: Create
   const [fermentationType, setFermentationType] = useState<FermentationType>('beer');
   const [sensorId, setSensorId] = useState('');
   const [outletId, setOutletId] = useState('');
+  const [controlMode, setControlMode] = useState<'manual' | 'automatic'>('automatic');
 
   const sensors = devices.filter(d => d.type === 'sensor');
   const outlets = devices.filter(d => d.type === 'outlet');
@@ -34,7 +36,8 @@ export function CreateProjectPage({ devices, onCreateProject, onCancel }: Create
         fermentationType,
         sensorId,
         outletId,
-        targetTemperature: defaultTemp
+        targetTemperature: defaultTemp,
+        controlMode
       });
     }
   };
@@ -139,6 +142,21 @@ export function CreateProjectPage({ devices, onCreateProject, onCancel }: Create
                 ))}
               </select>
             )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="control-mode" className="form-label">
+              ⚙️ Mode de contrôle
+            </label>
+            <select
+              id="control-mode"
+              className="form-select"
+              value={controlMode}
+              onChange={(e) => setControlMode(e.target.value as 'manual' | 'automatic')}
+            >
+              <option value="automatic">Automatique (régulation automatique)</option>
+              <option value="manual">Manuel (contrôle manuel de la prise)</option>
+            </select>
           </div>
         </div>
 

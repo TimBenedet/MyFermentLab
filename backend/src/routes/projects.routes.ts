@@ -44,7 +44,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/projects - Créer un nouveau projet
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { name, fermentationType, sensorId, outletId, targetTemperature } = req.body;
+    const { name, fermentationType, sensorId, outletId, targetTemperature, controlMode } = req.body;
 
     if (!name || !fermentationType || !sensorId || !outletId || !targetTemperature) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -57,6 +57,7 @@ router.post('/', async (req: Request, res: Response) => {
       sensorId,
       outletId,
       targetTemperature,
+      controlMode: controlMode || 'automatic',
       createdAt: Date.now()
     });
 
@@ -138,6 +139,27 @@ router.post('/:id/density', async (req: Request, res: Response) => {
     res.status(201).json({ success: true });
   } catch (error) {
     console.error('Error adding density:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/projects/:id/control-mode - Basculer le mode de contrôle
+router.put('/:id/control-mode', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = databaseService.getProject(id);
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const newMode = project.controlMode === 'automatic' ? 'manual' : 'automatic';
+    databaseService.updateProjectControlMode(id, newMode);
+    const updatedProject = databaseService.getProject(id);
+
+    res.json(updatedProject);
+  } catch (error) {
+    console.error('Error updating control mode:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

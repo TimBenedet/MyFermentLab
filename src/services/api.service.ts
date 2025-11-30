@@ -8,6 +8,7 @@ export interface CreateProjectRequest {
   sensorId: string;
   outletId: string;
   targetTemperature: number;
+  controlMode: 'manual' | 'automatic';
 }
 
 export interface ProjectWithHistory extends Project {
@@ -77,6 +78,17 @@ class ApiService {
     if (!response.ok) {
       throw new Error('Failed to add density');
     }
+  }
+
+  async toggleControlMode(id: string): Promise<Project> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/control-mode`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to toggle control mode');
+    }
+    return response.json();
   }
 
   async deleteProject(id: string): Promise<void> {

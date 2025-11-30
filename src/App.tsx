@@ -83,6 +83,7 @@ function App() {
     sensorId: string;
     outletId: string;
     targetTemperature: number;
+    controlMode: 'manual' | 'automatic';
   }) => {
     try {
       const newProject = await apiService.createProject(data);
@@ -140,6 +141,21 @@ function App() {
     } catch (err) {
       console.error('Failed to add density:', err);
       setError('Impossible d\'ajouter la mesure de densité');
+    }
+  };
+
+  const handleToggleControlMode = async () => {
+    if (!selectedProjectId) return;
+
+    try {
+      const updatedProject = await apiService.toggleControlMode(selectedProjectId);
+      setSelectedProject(prev => prev ? { ...prev, controlMode: updatedProject.controlMode } : null);
+      setProjects(prev => prev.map(p =>
+        p.id === selectedProjectId ? updatedProject : p
+      ));
+    } catch (err) {
+      console.error('Failed to toggle control mode:', err);
+      setError('Impossible de changer le mode de contrôle');
     }
   };
 
@@ -263,6 +279,7 @@ function App() {
             onUpdateTarget={handleUpdateTarget}
             onToggleOutlet={handleToggleOutlet}
             onAddDensity={handleAddDensity}
+            onToggleControlMode={handleToggleControlMode}
             onBack={() => setCurrentPage('home')}
           />
         )}

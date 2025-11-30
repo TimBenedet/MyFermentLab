@@ -27,6 +27,7 @@ export interface Project {
   targetTemperature: number;
   currentTemperature: number;
   outletActive: boolean;
+  controlMode: 'manual' | 'automatic'; // Mode de contrôle
   history: TemperatureReading[];
   densityHistory?: DensityReading[];
   showDensity?: boolean;

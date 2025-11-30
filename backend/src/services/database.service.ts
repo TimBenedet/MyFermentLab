@@ -10,6 +10,7 @@ export interface Project {
   targetTemperature: number;
   currentTemperature: number;
   outletActive: boolean;
+  controlMode: 'manual' | 'automatic';
   createdAt: number;
 }
 
@@ -41,6 +42,7 @@ class DatabaseService {
         target_temperature REAL NOT NULL,
         current_temperature REAL NOT NULL DEFAULT 20.0,
         outlet_active INTEGER NOT NULL DEFAULT 0,
+        control_mode TEXT NOT NULL DEFAULT 'automatic',
         created_at INTEGER NOT NULL
       );
 
@@ -67,6 +69,7 @@ class DatabaseService {
       targetTemperature: row.target_temperature,
       currentTemperature: row.current_temperature,
       outletActive: row.outlet_active === 1,
+      controlMode: row.control_mode || 'automatic',
       createdAt: row.created_at
     }));
   }
@@ -85,14 +88,15 @@ class DatabaseService {
       targetTemperature: row.target_temperature,
       currentTemperature: row.current_temperature,
       outletActive: row.outlet_active === 1,
+      controlMode: row.control_mode || 'automatic',
       createdAt: row.created_at
     };
   }
 
   createProject(project: Omit<Project, 'currentTemperature' | 'outletActive'>): Project {
     const stmt = this.db.prepare(`
-      INSERT INTO projects (id, name, fermentation_type, sensor_id, outlet_id, target_temperature, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO projects (id, name, fermentation_type, sensor_id, outlet_id, target_temperature, control_mode, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -102,6 +106,7 @@ class DatabaseService {
       project.sensorId,
       project.outletId,
       project.targetTemperature,
+      project.controlMode,
       project.createdAt
     );
 
@@ -121,6 +126,11 @@ class DatabaseService {
   updateProjectOutletStatus(id: string, active: boolean) {
     const stmt = this.db.prepare('UPDATE projects SET outlet_active = ? WHERE id = ?');
     stmt.run(active ? 1 : 0, id);
+  }
+
+  updateProjectControlMode(id: string, controlMode: 'manual' | 'automatic') {
+    const stmt = this.db.prepare('UPDATE projects SET control_mode = ? WHERE id = ?');
+    stmt.run(controlMode, id);
   }
 
   deleteProject(id: string) {
