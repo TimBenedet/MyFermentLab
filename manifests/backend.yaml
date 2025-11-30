@@ -39,7 +39,7 @@ spec:
       labels:
         app: fermentation-backend
       annotations:
-        kubectl.kubernetes.io/restartedAt: "2025-11-30T10:30:00Z"
+        kubectl.kubernetes.io/restartedAt: "2025-11-30T11:00:00Z"
     spec:
       containers:
       - name: backend

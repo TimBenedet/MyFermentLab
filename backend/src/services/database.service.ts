@@ -54,6 +54,20 @@ class DatabaseService {
         entity_id TEXT NOT NULL
       );
     `);
+
+    // Migration: Add control_mode column if it doesn't exist
+    try {
+      const columns = this.db.prepare("PRAGMA table_info(projects)").all() as any[];
+      const hasControlMode = columns.some(col => col.name === 'control_mode');
+
+      if (!hasControlMode) {
+        console.log('Adding control_mode column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN control_mode TEXT NOT NULL DEFAULT 'automatic'");
+        console.log('Migration completed successfully');
+      }
+    } catch (error) {
+      console.error('Migration error:', error);
+    }
   }
 
   // Projects CRUD
