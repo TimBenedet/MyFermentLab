@@ -24,6 +24,27 @@
   font-weight: 400;
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 20px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.role-badge {
+  color: #8e9196;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
 .app-main {
   width: 100%;
   flex: 1;
@@ -1148,8 +1169,28 @@
     padding: 12px;
   }
 
+  .app-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+
   .app-header h1 {
     font-size: 1.25rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .role-badge {
+    font-size: 12px;
   }
 
   .page-header, .home-header {
@@ -1270,7 +1311,8 @@
   }
 
   .app-header {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
   }
 
   .app-header h1 {
@@ -1278,7 +1320,25 @@
   }
 
   .app-subtitle {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+  }
+
+  .header-content {
+    gap: 10px;
+  }
+
+  .header-actions {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .role-badge {
+    font-size: 11px;
+  }
+
+  .logout-btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
   }
 
   .page-header, .home-header {

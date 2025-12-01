@@ -260,19 +260,24 @@ function App() {
     <div className="app">
       {currentPage === 'home' && (
         <header className="app-header">
-          <h1>Moniteur de Fermentation</h1>
-          <p className="app-subtitle">Contrôle et surveillance en temps réel</p>
-          <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ color: '#8e9196', fontSize: '14px' }}>
-              {role === 'admin' ? 'Mode Admin' : 'Mode Lecture'}
-            </span>
-            <button
-              className="btn-secondary"
-              onClick={logout}
-              style={{ padding: '6px 12px', fontSize: '14px' }}
-            >
-              Déconnexion
-            </button>
+          <div className="header-content">
+            <div>
+              <h1>Moniteur de Fermentation</h1>
+              <p className="app-subtitle">Contrôle et surveillance en temps réel</p>
+            </div>
+            <div className="header-actions">
+              <span className="role-badge">
+                {role === 'admin' ? 'Mode Admin' : 'Mode Lecture'}
+              </span>
+              {role === 'admin' && (
+                <button
+                  className="logout-btn"
+                  onClick={logout}
+                >
+                  Déconnexion
+                </button>
+              )}
+            </div>
           </div>
         </header>
       )}
