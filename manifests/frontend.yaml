@@ -13,7 +13,7 @@ spec:
       labels:
         app: fermentation-monitor
       annotations:
-        kubectl.kubernetes.io/restartedAt: "2025-12-01T10:00:00Z"
+        kubectl.kubernetes.io/restartedAt: "2025-12-01T11:30:00Z"
     spec:
       containers:
       - name: frontend
