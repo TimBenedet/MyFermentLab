@@ -204,12 +204,28 @@ class DatabaseService {
   // Devices CRUD
   getAllDevices(): Device[] {
     const stmt = this.db.prepare('SELECT * FROM devices ORDER BY name');
-    return stmt.all() as Device[];
+    const rows = stmt.all() as any[];
+    return rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      ip: row.ip,
+      entityId: row.entity_id
+    }));
   }
 
   getDevice(id: string): Device | null {
     const stmt = this.db.prepare('SELECT * FROM devices WHERE id = ?');
-    return stmt.get(id) as Device | null;
+    const row = stmt.get(id) as any;
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      ip: row.ip,
+      entityId: row.entity_id
+    };
   }
 
   createDevice(device: Device) {
