@@ -258,29 +258,35 @@ function App() {
 
   return (
     <div className="app">
-      {currentPage === 'home' && (
-        <header className="app-header">
-          <div className="header-content">
-            <div>
-              <h1>Moniteur de Fermentation</h1>
-              <p className="app-subtitle">Contrôle et surveillance en temps réel</p>
-            </div>
-            <div className="header-actions">
-              <span className="role-badge">
-                {role === 'admin' ? 'Mode Admin' : 'Mode Lecture'}
-              </span>
-              {role === 'admin' && (
-                <button
-                  className="logout-btn"
-                  onClick={logout}
-                >
-                  Déconnexion
-                </button>
-              )}
-            </div>
+      <header className="app-header">
+        <div className="header-content">
+          <div>
+            <h1>Moniteur de Fermentation</h1>
+            <p className="app-subtitle">Contrôle et surveillance en temps réel</p>
           </div>
-        </header>
-      )}
+          <div className="header-actions">
+            <span className="role-badge">
+              {role === 'admin' ? 'Mode Admin' : 'Mode Lecture'}
+            </span>
+            {currentPage !== 'home' && (
+              <button
+                className="btn-secondary"
+                onClick={() => setCurrentPage('home')}
+              >
+                ← Accueil
+              </button>
+            )}
+            {currentPage === 'home' && (
+              <button
+                className="logout-btn"
+                onClick={logout}
+              >
+                Déconnexion
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
 
       {error && currentPage !== 'home' && (
         <div style={{
