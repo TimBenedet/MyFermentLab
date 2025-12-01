@@ -222,6 +222,28 @@ class DatabaseService {
     return device;
   }
 
+  updateDevice(id: string, updates: Partial<Omit<Device, 'id'>>) {
+    const device = this.getDevice(id);
+    if (!device) return null;
+
+    const updatedDevice = { ...device, ...updates };
+    const stmt = this.db.prepare(`
+      UPDATE devices
+      SET name = ?, type = ?, ip = ?, entity_id = ?
+      WHERE id = ?
+    `);
+
+    stmt.run(
+      updatedDevice.name,
+      updatedDevice.type,
+      updatedDevice.ip || '',
+      updatedDevice.entityId || '',
+      id
+    );
+
+    return this.getDevice(id);
+  }
+
   deleteDevice(id: string) {
     const stmt = this.db.prepare('DELETE FROM devices WHERE id = ?');
     stmt.run(id);

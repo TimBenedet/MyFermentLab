@@ -61,6 +61,31 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
+// PUT /api/devices/:id - Mettre à jour un appareil
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, type, ip, entityId } = req.body;
+
+    const existingDevice = databaseService.getDevice(id);
+    if (!existingDevice) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+
+    const updates: Partial<Omit<Device, 'id'>> = {};
+    if (name !== undefined) updates.name = name;
+    if (type !== undefined) updates.type = type;
+    if (ip !== undefined) updates.ip = ip;
+    if (entityId !== undefined) updates.entityId = entityId;
+
+    const updatedDevice = databaseService.updateDevice(id, updates);
+    res.json(updatedDevice);
+  } catch (error) {
+    console.error('Error updating device:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // DELETE /api/devices/:id - Supprimer un appareil
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
