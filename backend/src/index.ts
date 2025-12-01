@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import projectsRouter from './routes/projects.routes.js';
 import devicesRouter from './routes/devices.routes.js';
+import authRouter from './routes/auth.routes.js';
 import { sensorPollerService } from './services/sensor-poller.service.js';
 
 const PORT = process.env.PORT || 3001;
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use('/api/auth', authRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/devices', devicesRouter);
 

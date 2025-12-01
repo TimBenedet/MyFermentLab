@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { databaseService, Device } from '../services/database.service.js';
+import { requireAuth, requireAdmin } from './auth.routes.js';
 
 const router = Router();
 
@@ -32,7 +33,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/devices - Créer un nouvel appareil
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     console.log('[POST /api/devices] Received request body:', JSON.stringify(req.body));
     const { name, type, ip, entityId } = req.body;
@@ -62,7 +63,7 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // PUT /api/devices/:id - Mettre à jour un appareil
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, type, ip, entityId } = req.body;
@@ -87,7 +88,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/devices/:id - Supprimer un appareil
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     console.log(`[DELETE /api/devices/${id}] Deleting device`);

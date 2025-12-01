@@ -24,6 +24,7 @@ data:
   HOME_ASSISTANT_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIyNWU0N2RkOWRmMzk0Zjc1YTcyMjliMjVlOTNjZTcyYiIsImlhdCI6MTc2NDU5NTIzNCwiZXhwIjoyMDc5OTU1MjM0fQ.ROlYsVmYOWxAYriPeOU0khl74W2jGwwaeNPRzNW0lQE"
   POLL_INTERVAL: "300000"
   DB_PATH: "/data/fermentation.db"
+  ADMIN_PASSWORD: "ferment2024"
 ---
 apiVersion: apps/v1
 kind: Deployment

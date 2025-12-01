@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FermentationType, FERMENTATION_TYPES, Device } from '../types';
 
 interface CreateProjectPageProps {
@@ -12,14 +12,22 @@ interface CreateProjectPageProps {
     controlMode: 'manual' | 'automatic';
   }) => void;
   onCancel: () => void;
+  role: 'admin' | 'viewer' | null;
 }
 
-export function CreateProjectPage({ devices, onCreateProject, onCancel }: CreateProjectPageProps) {
+export function CreateProjectPage({ devices, onCreateProject, onCancel, role }: CreateProjectPageProps) {
   const [name, setName] = useState('');
   const [fermentationType, setFermentationType] = useState<FermentationType>('beer');
   const [sensorId, setSensorId] = useState('');
   const [outletId, setOutletId] = useState('');
   const [controlMode, setControlMode] = useState<'manual' | 'automatic'>('automatic');
+
+  // Redirect to home if viewer tries to access this page
+  useEffect(() => {
+    if (role === 'viewer') {
+      onCancel();
+    }
+  }, [role, onCancel]);
 
   const sensors = devices.filter(d => d.type === 'sensor');
   const outlets = devices.filter(d => d.type === 'outlet');

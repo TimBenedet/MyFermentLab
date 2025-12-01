@@ -6,9 +6,10 @@ interface DevicesPageProps {
   onAddDevice: (device: Omit<Device, 'id'>) => void;
   onDeleteDevice: (deviceId: string) => void;
   onBack: () => void;
+  role: 'admin' | 'viewer' | null;
 }
 
-export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack }: DevicesPageProps) {
+export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack, role }: DevicesPageProps) {
   const [showForm, setShowForm] = useState(false);
   const [deviceType, setDeviceType] = useState<'sensor' | 'outlet'>('sensor');
   const [deviceName, setDeviceName] = useState('');
@@ -43,9 +44,11 @@ export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack }: De
           <button className="btn-text" onClick={onBack}>
             ← Retour
           </button>
-          <button className="btn-primary" onClick={() => setShowForm(true)}>
-            + Ajouter un appareil
-          </button>
+          {role === 'admin' && (
+            <button className="btn-primary" onClick={() => setShowForm(true)}>
+              + Ajouter un appareil
+            </button>
+          )}
         </div>
       </div>
 
@@ -130,12 +133,14 @@ export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack }: De
                       {device.entityId && <span>Entity: {device.entityId}</span>}
                     </div>
                   </div>
-                  <button
-                    className="btn-delete"
-                    onClick={() => onDeleteDevice(device.id)}
-                  >
-                    ×
-                  </button>
+                  {role === 'admin' && (
+                    <button
+                      className="btn-delete"
+                      onClick={() => onDeleteDevice(device.id)}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -158,12 +163,14 @@ export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack }: De
                       {device.entityId && <span>Entity: {device.entityId}</span>}
                     </div>
                   </div>
-                  <button
-                    className="btn-delete"
-                    onClick={() => onDeleteDevice(device.id)}
-                  >
-                    ×
-                  </button>
+                  {role === 'admin' && (
+                    <button
+                      className="btn-delete"
+                      onClick={() => onDeleteDevice(device.id)}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

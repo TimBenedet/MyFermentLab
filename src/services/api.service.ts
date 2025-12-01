@@ -2,6 +2,15 @@ import { Project, Device, FermentationType } from '../types';
 
 const API_BASE_URL = '/api';
 
+// Get auth headers - access localStorage directly since we can't use hooks in a class
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('authToken');
+  if (!token) return {};
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
 export interface CreateProjectRequest {
   name: string;
   fermentationType: FermentationType;
@@ -19,7 +28,9 @@ export interface ProjectWithHistory extends Project {
 class ApiService {
   // Projects
   async getProjects(): Promise<Project[]> {
-    const response = await fetch(`${API_BASE_URL}/projects`);
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch projects');
     }
@@ -27,7 +38,9 @@ class ApiService {
   }
 
   async getProject(id: string, start: string = '-30d'): Promise<ProjectWithHistory> {
-    const response = await fetch(`${API_BASE_URL}/projects/${id}?start=${start}`);
+    const response = await fetch(`${API_BASE_URL}/projects/${id}?start=${start}`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch project');
     }
@@ -37,7 +50,7 @@ class ApiService {
   async createProject(data: CreateProjectRequest): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(data)
     });
     if (!response.ok) {
@@ -49,7 +62,7 @@ class ApiService {
   async updateProjectTarget(id: string, targetTemperature: number): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/target`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({ targetTemperature })
     });
     if (!response.ok) {
@@ -61,7 +74,7 @@ class ApiService {
   async toggleOutlet(id: string): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/outlet/toggle`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
     });
     if (!response.ok) {
       throw new Error('Failed to toggle outlet');
@@ -72,7 +85,7 @@ class ApiService {
   async addDensity(id: string, density: number, timestamp?: number): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/density`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({ density, timestamp })
     });
     if (!response.ok) {
@@ -83,7 +96,7 @@ class ApiService {
   async toggleControlMode(id: string): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/control-mode`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
     });
     if (!response.ok) {
       throw new Error('Failed to toggle control mode');
@@ -94,7 +107,7 @@ class ApiService {
   async archiveProject(id: string): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/archive`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
     });
     if (!response.ok) {
       throw new Error('Failed to archive project');
@@ -105,7 +118,7 @@ class ApiService {
   async unarchiveProject(id: string): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/unarchive`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
     });
     if (!response.ok) {
       const error = await response.json();
@@ -116,7 +129,8 @@ class ApiService {
 
   async deleteProject(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
     if (!response.ok) {
       throw new Error('Failed to delete project');
@@ -125,7 +139,9 @@ class ApiService {
 
   // Devices
   async getDevices(): Promise<Device[]> {
-    const response = await fetch(`${API_BASE_URL}/devices`);
+    const response = await fetch(`${API_BASE_URL}/devices`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch devices');
     }
@@ -135,7 +151,7 @@ class ApiService {
   async createDevice(device: Omit<Device, 'id'>): Promise<Device> {
     const response = await fetch(`${API_BASE_URL}/devices`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(device)
     });
     if (!response.ok) {
@@ -146,7 +162,8 @@ class ApiService {
 
   async deleteDevice(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/devices/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
     if (!response.ok) {
       throw new Error('Failed to delete device');

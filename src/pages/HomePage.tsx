@@ -9,6 +9,7 @@ interface HomePageProps {
   onUnarchiveProject: (projectId: string) => void;
   onDeleteProject: (projectId: string) => void;
   onManageDevices: () => void;
+  role: 'admin' | 'viewer' | null;
 }
 
 export function HomePage({
@@ -18,7 +19,8 @@ export function HomePage({
   onArchiveProject,
   onUnarchiveProject,
   onDeleteProject,
-  onManageDevices
+  onManageDevices,
+  role
 }: HomePageProps) {
   const [showArchived, setShowArchived] = useState(false);
 
@@ -132,12 +134,16 @@ export function HomePage({
           </p>
         </div>
         <div className="home-actions">
-          <button className="btn-secondary" onClick={onManageDevices}>
-            Gérer les appareils
-          </button>
-          <button className="btn-primary" onClick={onCreateProject}>
-            + Nouveau projet
-          </button>
+          {role === 'admin' && (
+            <>
+              <button className="btn-secondary" onClick={onManageDevices}>
+                Gérer les appareils
+              </button>
+              <button className="btn-primary" onClick={onCreateProject}>
+                + Nouveau projet
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -166,7 +172,7 @@ export function HomePage({
               : 'Créez votre premier projet de fermentation pour commencer'
             }
           </p>
-          {!showArchived && (
+          {!showArchived && role === 'admin' && (
             <button className="btn-primary" onClick={onCreateProject}>
               Créer un projet
             </button>

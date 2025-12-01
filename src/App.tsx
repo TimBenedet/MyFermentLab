@@ -3,13 +3,16 @@ import { HomePage } from './pages/HomePage';
 import { CreateProjectPage } from './pages/CreateProjectPage';
 import { MonitoringPage } from './pages/MonitoringPage';
 import { DevicesPage } from './pages/DevicesPage';
+import { LoginPage } from './pages/LoginPage';
 import { Project, Device, FermentationType } from './types';
 import { apiService, ProjectWithHistory } from './services/api.service';
+import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
 type Page = 'home' | 'create-project' | 'monitoring' | 'devices';
 
 function App() {
+  const { isAuthenticated, role, logout } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
@@ -223,6 +226,11 @@ function App() {
     }
   };
 
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
   // Afficher une erreur si le backend n'est pas accessible
   if (loading && projects.length === 0) {
     return (
@@ -254,6 +262,18 @@ function App() {
         <header className="app-header">
           <h1>Moniteur de Fermentation</h1>
           <p className="app-subtitle">Contrôle et surveillance en temps réel</p>
+          <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ color: '#8e9196', fontSize: '14px' }}>
+              {role === 'admin' ? 'Mode Admin' : 'Mode Lecture'}
+            </span>
+            <button
+              className="btn-secondary"
+              onClick={logout}
+              style={{ padding: '6px 12px', fontSize: '14px' }}
+            >
+              Déconnexion
+            </button>
+          </div>
         </header>
       )}
 
@@ -293,6 +313,7 @@ function App() {
             onUnarchiveProject={handleUnarchiveProject}
             onDeleteProject={handleDeleteProject}
             onManageDevices={() => setCurrentPage('devices')}
+            role={role}
           />
         )}
 
@@ -301,6 +322,7 @@ function App() {
             devices={devices}
             onCreateProject={handleCreateProject}
             onCancel={() => setCurrentPage('home')}
+            role={role}
           />
         )}
 
@@ -312,6 +334,7 @@ function App() {
             onAddDensity={handleAddDensity}
             onToggleControlMode={handleToggleControlMode}
             onBack={() => setCurrentPage('home')}
+            role={role}
           />
         )}
 
@@ -321,6 +344,7 @@ function App() {
             onAddDevice={handleAddDevice}
             onDeleteDevice={handleDeleteDevice}
             onBack={() => setCurrentPage('home')}
+            role={role}
           />
         )}
       </main>

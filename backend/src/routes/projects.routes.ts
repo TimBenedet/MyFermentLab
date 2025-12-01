@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { databaseService } from '../services/database.service.js';
 import { influxService } from '../services/influx.service.js';
+import { requireAuth, requireAdmin } from './auth.routes.js';
 
 const router = Router();
 
@@ -42,7 +43,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/projects - Créer un nouveau projet
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { name, fermentationType, sensorId, outletId, targetTemperature, controlMode } = req.body;
 
@@ -79,7 +80,7 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // PUT /api/projects/:id/target - Modifier la température cible
-router.put('/:id/target', async (req: Request, res: Response) => {
+router.put('/:id/target', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { targetTemperature } = req.body;
@@ -99,7 +100,7 @@ router.put('/:id/target', async (req: Request, res: Response) => {
 });
 
 // POST /api/projects/:id/outlet/toggle - Basculer l'état de la prise
-router.post('/:id/outlet/toggle', async (req: Request, res: Response) => {
+router.post('/:id/outlet/toggle', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const project = databaseService.getProject(id);
@@ -133,7 +134,7 @@ router.post('/:id/outlet/toggle', async (req: Request, res: Response) => {
 });
 
 // POST /api/projects/:id/density - Ajouter une mesure de densité
-router.post('/:id/density', async (req: Request, res: Response) => {
+router.post('/:id/density', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { density, timestamp } = req.body;
@@ -154,7 +155,7 @@ router.post('/:id/density', async (req: Request, res: Response) => {
 });
 
 // PUT /api/projects/:id/control-mode - Basculer le mode de contrôle
-router.put('/:id/control-mode', async (req: Request, res: Response) => {
+router.put('/:id/control-mode', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const project = databaseService.getProject(id);
@@ -175,7 +176,7 @@ router.put('/:id/control-mode', async (req: Request, res: Response) => {
 });
 
 // PUT /api/projects/:id/archive - Archiver un projet
-router.put('/:id/archive', async (req: Request, res: Response) => {
+router.put('/:id/archive', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const project = databaseService.getProject(id);
@@ -195,7 +196,7 @@ router.put('/:id/archive', async (req: Request, res: Response) => {
 });
 
 // PUT /api/projects/:id/unarchive - Désarchiver un projet
-router.put('/:id/unarchive', async (req: Request, res: Response) => {
+router.put('/:id/unarchive', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const project = databaseService.getProject(id);
@@ -224,7 +225,7 @@ router.put('/:id/unarchive', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/projects/:id - Supprimer un projet
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     databaseService.deleteProject(id);

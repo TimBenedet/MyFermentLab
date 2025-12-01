@@ -6,11 +6,12 @@ interface DensityChartProps {
   data: DensityReading[];
   type: FermentationType;
   onAddDensity: (density: number, timestamp: number) => void;
+  role?: 'admin' | 'viewer' | null;
 }
 
 type TimePeriod = '1h' | '6h' | '24h' | '7d' | '30d' | 'all';
 
-export function DensityChart({ data, type, onAddDensity }: DensityChartProps) {
+export function DensityChart({ data, type, onAddDensity, role }: DensityChartProps) {
   const config = FERMENTATION_TYPES[type];
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('24h');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -133,9 +134,11 @@ export function DensityChart({ data, type, onAddDensity }: DensityChartProps) {
               Tout
             </button>
           </div>
-          <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-            + Ajouter une mesure
-          </button>
+          {role === 'admin' && (
+            <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+              + Ajouter une mesure
+            </button>
+          )}
         </div>
       </div>
       <div className="chart-wrapper">
