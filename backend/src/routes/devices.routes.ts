@@ -34,10 +34,12 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/devices - Créer un nouvel appareil
 router.post('/', async (req: Request, res: Response) => {
   try {
+    console.log('[POST /api/devices] Received request body:', JSON.stringify(req.body));
     const { name, type, ip, entityId } = req.body;
 
     if (!name || !type || !ip || !entityId) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      console.error('[POST /api/devices] Missing required fields:', { name, type, ip, entityId });
+      return res.status(400).json({ error: 'Missing required fields', received: { name, type, ip, entityId } });
     }
 
     const newDevice: Device = {
@@ -48,12 +50,14 @@ router.post('/', async (req: Request, res: Response) => {
       entityId
     };
 
+    console.log('[POST /api/devices] Creating device:', JSON.stringify(newDevice));
     databaseService.createDevice(newDevice);
+    console.log('[POST /api/devices] Device created successfully');
 
     res.status(201).json(newDevice);
   } catch (error) {
-    console.error('Error creating device:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('[POST /api/devices] Error creating device:', error);
+    res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) });
   }
 });
 
