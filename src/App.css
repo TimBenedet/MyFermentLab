@@ -1027,22 +1027,153 @@
   color: white;
 }
 
+/* Login Page Styles */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f26 100%);
+}
+
+.login-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-header h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #d4d5d8;
+}
+
+.login-header p {
+  font-size: 0.875rem;
+  color: #8e9196;
+}
+
+.login-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #181b1f;
+  border: 1px solid #2a2e33;
+  border-radius: 4px;
+  padding: 32px;
+}
+
+.login-option {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-option h2 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #d4d5d8;
+  margin: 0;
+}
+
+.login-option p {
+  font-size: 0.875rem;
+  color: #8e9196;
+  margin: 0;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  background: #1f2328;
+  border: 1px solid #2a2e33;
+  border-radius: 2px;
+  color: #d4d5d8;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: #262b31;
+  border-color: #3a3e43;
+}
+
 /* Responsive */
+@media (max-width: 1200px) {
+  .monitoring-grid {
+    grid-template-columns: 350px 1fr;
+  }
+
+  .control-panel {
+    height: auto;
+  }
+
+  .charts-section {
+    height: auto;
+  }
+}
+
 @media (max-width: 1024px) {
   .monitoring-grid {
     grid-template-columns: 1fr;
   }
 
+  .control-panel {
+    height: auto;
+  }
+
+  .charts-section {
+    height: auto;
+    min-height: 400px;
+  }
+
+  .chart-zone {
+    min-height: 350px;
+  }
+
   .projects-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 }
 
 @media (max-width: 768px) {
+  .app {
+    padding: 12px;
+  }
+
+  .app-header h1 {
+    font-size: 1.25rem;
+  }
+
   .page-header, .home-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .page-header-compact {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .page-header-compact h1 {
+    font-size: 1rem;
+  }
+
+  .page-header-compact .status-badge {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr;
   }
 
   .temperature-controls {
@@ -1050,7 +1181,20 @@
   }
 
   .chart-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+
+  .stat {
+    padding: 8px 4px;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+  }
+
+  .stat-value {
+    font-size: 0.8rem;
   }
 
   .projects-filter {
@@ -1059,9 +1203,217 @@
 
   .filter-btn {
     flex: 1;
+    padding: 8px 12px;
+    font-size: 0.8rem;
   }
 
-  .project-card-actions {
+  .btn-delete-project {
     opacity: 1;
+  }
+
+  .project-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .temp-value {
+    font-size: 1.75rem;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chart-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .time-period-buttons {
+    width: 100%;
+  }
+
+  .period-btn {
+    flex: 1;
+  }
+
+  .btn-reset-zoom {
+    width: 100%;
+  }
+
+  .modal-content {
+    padding: 20px;
+    width: 95%;
+  }
+
+  .form-section {
+    padding: 16px;
+  }
+
+  .device-details {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .control-mode-compact {
+    flex-direction: column;
+  }
+
+  .btn-mode-toggle {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .app {
+    padding: 8px;
+  }
+
+  .app-header {
+    margin-bottom: 16px;
+  }
+
+  .app-header h1 {
+    font-size: 1.1rem;
+  }
+
+  .app-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .page-header, .home-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+
+  .page-header-compact {
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+
+  .page-header-compact h1 {
+    font-size: 0.95rem;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+
+  .btn-text {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  .project-icon {
+    font-size: 1.5rem;
+  }
+
+  .project-info h3 {
+    font-size: 0.9rem;
+  }
+
+  .project-type {
+    font-size: 0.7rem;
+  }
+
+  .stat-item .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .panel-section {
+    padding: 12px;
+  }
+
+  .panel-section h2 {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+
+  .temp-display {
+    padding: 12px;
+  }
+
+  .temp-value {
+    font-size: 1.5rem;
+  }
+
+  .chart-container {
+    padding: 12px;
+  }
+
+  .chart-container h3 {
+    font-size: 0.8rem;
+  }
+
+  .chart-zone {
+    min-height: 300px;
+  }
+
+  .outlet-label {
+    font-size: 0.7rem;
+  }
+
+  .outlet-state {
+    font-size: 0.8rem;
+  }
+
+  .temp-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .login-options {
+    padding: 24px 20px;
+  }
+
+  .login-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .logout-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Touch-friendly improvements for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-outlet,
+  .btn-mode-toggle,
+  .period-btn,
+  .filter-btn,
+  .temp-btn {
+    min-height: 44px;
+  }
+
+  .btn-delete,
+  .btn-delete-project {
+    min-width: 44px;
+    min-height: 44px;
+    opacity: 1;
+  }
+
+  .temp-slider::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .temp-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .form-slider::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .form-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
   }
 }
