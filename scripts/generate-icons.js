@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const publicDir = join(__dirname, '..', 'public');
 
-const svgBuffer = readFileSync(join(publicDir, 'icon.svg'));
+const iconBuffer = readFileSync(join(publicDir, 'icon.png'));
 
 // Generate PNG icons for different sizes
 const sizes = [
@@ -18,8 +18,11 @@ const sizes = [
 
 async function generateIcons() {
   for (const { size, name } of sizes) {
-    await sharp(svgBuffer)
-      .resize(size, size)
+    await sharp(iconBuffer)
+      .resize(size, size, {
+        fit: 'contain',
+        background: { r: 255, g: 255, b: 255, alpha: 0 }
+      })
       .png()
       .toFile(join(publicDir, name));
     console.log(`✓ Generated ${name} (${size}x${size})`);
