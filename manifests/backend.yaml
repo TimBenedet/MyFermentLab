@@ -21,6 +21,7 @@ data:
   INFLUX_ORG: "fermentation"
   INFLUX_BUCKET: "sensors"
   HOME_ASSISTANT_URL: "http://192.168.1.140:8124"
+  HOME_ASSISTANT_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIyNWU0N2RkOWRmMzk0Zjc1YTcyMjliMjVlOTNjZTcyYiIsImlhdCI6MTc2NDU5NTIzNCwiZXhwIjoyMDc5OTU1MjM0fQ.ROlYsVmYOWxAYriPeOU0khl74W2jGwwaeNPRzNW0lQE"
   POLL_INTERVAL: "30000"
   DB_PATH: "/data/fermentation.db"
 ---
@@ -39,7 +40,7 @@ spec:
       labels:
         app: fermentation-backend
       annotations:
-        kubectl.kubernetes.io/restartedAt: "2025-12-01T12:00:00Z"
+        configmap/update: "2025-12-01T12:30:00Z"
     spec:
       containers:
       - name: backend
