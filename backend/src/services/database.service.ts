@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 export interface Project {
   id: string;
@@ -28,7 +29,12 @@ class DatabaseService {
   private db: Database.Database;
 
   constructor() {
-    const dbPath = process.env.DB_PATH || '/data/fermentation.db';
+    const dbPath = process.env.DB_PATH || './data/fermentation.db';
+    // Ensure the data directory exists
+    const dir = dirname(dbPath);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
     this.db = new Database(dbPath);
     this.initTables();
   }
