@@ -4,12 +4,13 @@ import { CreateProjectPage } from './pages/CreateProjectPage';
 import { MonitoringPage } from './pages/MonitoringPage';
 import { DevicesPage } from './pages/DevicesPage';
 import { LoginPage } from './pages/LoginPage';
+import { SummaryPage } from './pages/SummaryPage';
 import { Project, Device, FermentationType } from './types';
 import { apiService, ProjectWithHistory } from './services/api.service';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
-type Page = 'home' | 'create-project' | 'monitoring' | 'devices';
+type Page = 'home' | 'create-project' | 'monitoring' | 'devices' | 'summary';
 
 function App() {
   const { isAuthenticated, role, logout } = useAuth();
@@ -104,6 +105,11 @@ function App() {
     setCurrentPage('monitoring');
   };
 
+  const handleViewSummary = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    setCurrentPage('summary');
+  };
+
   const handleUpdateTarget = async (temp: number) => {
     if (!selectedProjectId) return;
 
@@ -159,6 +165,22 @@ function App() {
     } catch (err) {
       console.error('Failed to toggle control mode:', err);
       setError('Impossible de changer le mode de contrôle');
+    }
+  };
+
+  const handleCompleteProject = async () => {
+    if (!selectedProjectId) return;
+
+    try {
+      const updatedProject = await apiService.completeProject(selectedProjectId);
+      setProjects(prev => prev.map(p =>
+        p.id === selectedProjectId ? updatedProject : p
+      ));
+      // Rediriger vers la page de récapitulatif
+      setCurrentPage('summary');
+    } catch (err) {
+      console.error('Failed to complete project:', err);
+      setError('Impossible de terminer le projet');
     }
   };
 
@@ -320,6 +342,7 @@ function App() {
             projects={projects}
             onCreateProject={() => setCurrentPage('create-project')}
             onSelectProject={handleSelectProject}
+            onViewSummary={handleViewSummary}
             onArchiveProject={handleArchiveProject}
             onUnarchiveProject={handleUnarchiveProject}
             onDeleteProject={handleDeleteProject}
@@ -344,8 +367,19 @@ function App() {
             onToggleOutlet={handleToggleOutlet}
             onAddDensity={handleAddDensity}
             onToggleControlMode={handleToggleControlMode}
+            onCompleteProject={handleCompleteProject}
             onBack={() => setCurrentPage('home')}
             role={role}
+          />
+        )}
+
+        {currentPage === 'summary' && selectedProjectId && (
+          <SummaryPage
+            projectId={selectedProjectId}
+            onBack={() => {
+              setSelectedProjectId(null);
+              setCurrentPage('home');
+            }}
           />
         )}
 

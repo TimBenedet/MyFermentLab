@@ -5,6 +5,7 @@ interface HomePageProps {
   projects: Project[];
   onCreateProject: () => void;
   onSelectProject: (projectId: string) => void;
+  onViewSummary: (projectId: string) => void;
   onArchiveProject: (projectId: string) => void;
   onUnarchiveProject: (projectId: string) => void;
   onDeleteProject: (projectId: string) => void;
@@ -16,6 +17,7 @@ export function HomePage({
   projects,
   onCreateProject,
   onSelectProject,
+  onViewSummary,
   onArchiveProject,
   onUnarchiveProject,
   onDeleteProject,
@@ -106,16 +108,30 @@ export function HomePage({
               <span className="status-indicator archived">
                 Archivé le {new Date(project.archivedAt).toLocaleDateString()}
               </span>
-              <button
-                className="btn-archive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUnarchiveProject(project.id);
-                }}
-                title="Désarchiver le projet"
-              >
-                ↩
-              </button>
+              <div className="archived-actions">
+                <button
+                  className="btn-view-summary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewSummary(project.id);
+                  }}
+                  title="Voir le récapitulatif"
+                >
+                  📊 Récapitulatif
+                </button>
+                {role === 'admin' && (
+                  <button
+                    className="btn-archive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUnarchiveProject(project.id);
+                    }}
+                    title="Désarchiver le projet"
+                  >
+                    ↩
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

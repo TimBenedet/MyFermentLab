@@ -25,6 +25,35 @@ export interface ProjectWithHistory extends Project {
   densityHistory: Array<{ timestamp: number; density: number }>;
 }
 
+export interface ProjectStats {
+  duration: {
+    days: number;
+    hours: number;
+    minutes: number;
+    totalMs: number;
+  };
+  temperature: {
+    average: number;
+    min: number;
+    max: number;
+    stdDeviation: number;
+  };
+  density?: {
+    initial: number;
+    final: number;
+    abv: number;
+  };
+  heatingHours: number;
+  dataPoints: number;
+}
+
+export interface ProjectStatsResponse {
+  project: Project;
+  stats: ProjectStats;
+  temperatureHistory: Array<{ timestamp: number; temperature: number }>;
+  densityHistory: Array<{ timestamp: number; density: number }>;
+}
+
 class ApiService {
   // Projects
   async getProjects(): Promise<Project[]> {
@@ -104,6 +133,17 @@ class ApiService {
     return response.json();
   }
 
+  async completeProject(id: string): Promise<Project> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/complete`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to complete project');
+    }
+    return response.json();
+  }
+
   async archiveProject(id: string): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/archive`, {
       method: 'PUT',
@@ -111,6 +151,16 @@ class ApiService {
     });
     if (!response.ok) {
       throw new Error('Failed to archive project');
+    }
+    return response.json();
+  }
+
+  async getProjectStats(id: string): Promise<ProjectStatsResponse> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/stats`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch project stats');
     }
     return response.json();
   }

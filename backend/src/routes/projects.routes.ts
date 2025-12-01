@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { databaseService } from '../services/database.service.js';
 import { influxService } from '../services/influx.service.js';
+import { statsService } from '../services/stats.service.js';
 import { requireAuth, requireAdmin } from './auth.routes.js';
 
 const router = Router();
@@ -38,6 +39,45 @@ router.get('/:id', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching project:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/projects/:id/stats - Récupère les statistiques d'un projet archivé
+router.get('/:id/stats', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = databaseService.getProject(id);
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (!project.archived || !project.archivedAt) {
+      return res.status(400).json({ error: 'Project is not completed. Complete it first to see stats.' });
+    }
+
+    // Récupérer tout l'historique depuis la création
+    const temperatureHistory = await influxService.getTemperatureHistory(id, `-${Math.ceil((project.archivedAt - project.createdAt) / 86400000)}d`);
+    const densityHistory = await influxService.getDensityHistory(id, `-${Math.ceil((project.archivedAt - project.createdAt) / 86400000)}d`);
+
+    // Calculer les statistiques
+    const stats = await statsService.calculateProjectStats(
+      id,
+      project.createdAt,
+      project.archivedAt,
+      temperatureHistory,
+      densityHistory
+    );
+
+    res.json({
+      project,
+      stats,
+      temperatureHistory,
+      densityHistory
+    });
+  } catch (error) {
+    console.error('Error fetching project stats:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -171,6 +211,30 @@ router.put('/:id/control-mode', requireAuth, requireAdmin, async (req: Request, 
     res.json(updatedProject);
   } catch (error) {
     console.error('Error updating control mode:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/projects/:id/complete - Terminer un projet (alias pour archive)
+router.put('/:id/complete', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = databaseService.getProject(id);
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.archived) {
+      return res.status(400).json({ error: 'Project is already completed' });
+    }
+
+    databaseService.archiveProject(id);
+    const updatedProject = databaseService.getProject(id);
+
+    res.json(updatedProject);
+  } catch (error) {
+    console.error('Error completing project:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

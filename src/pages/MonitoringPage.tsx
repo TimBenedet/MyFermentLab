@@ -8,11 +8,12 @@ interface MonitoringPageProps {
   onToggleOutlet: () => void;
   onAddDensity: (density: number, timestamp: number) => void;
   onToggleControlMode?: () => void;
+  onCompleteProject?: () => void;
   onBack: () => void;
   role: 'admin' | 'viewer' | null;
 }
 
-export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onToggleControlMode, onBack, role }: MonitoringPageProps) {
+export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onToggleControlMode, onCompleteProject, onBack, role }: MonitoringPageProps) {
   const config = FERMENTATION_TYPES[project.fermentationType];
   const diff = project.targetTemperature - project.currentTemperature;
 
@@ -141,6 +142,22 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
               )}
             </div>
           </div>
+
+          {onCompleteProject && role === 'admin' && !project.archived && (
+            <div className="panel-section">
+              <h2>Projet</h2>
+              <button
+                className="btn-complete-project"
+                onClick={() => {
+                  if (window.confirm('Êtes-vous sûr de vouloir terminer ce projet ? Cette action archivera le projet et libérera les capteurs/prises.')) {
+                    onCompleteProject();
+                  }
+                }}
+              >
+                ✓ Terminer le projet
+              </button>
+            </div>
+          )}
         </div>
 
         <div className={`charts-section ${project.fermentationType === 'beer' ? 'with-density' : ''}`}>
