@@ -44,7 +44,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // GET /api/projects/:id/stats - Récupère les statistiques d'un projet archivé
-router.get('/:id/stats', async (req: Request, res: Response) => {
+router.get('/:id/stats', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const project = databaseService.getProject(id);
