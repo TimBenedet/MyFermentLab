@@ -45,8 +45,9 @@ class SensorPollerService {
 
       for (const project of projects) {
         const device = databaseService.getDevice(project.sensorId);
+        console.log(`[SensorPoller] Project: ${project.name}, sensorId: ${project.sensorId}, device: ${JSON.stringify(device)}`);
         if (!device || !device.entityId) {
-          console.warn(`[SensorPoller] No sensor found for project ${project.name}`);
+          console.warn(`[SensorPoller] No sensor found for project ${project.name} - device: ${device ? 'exists but no entityId' : 'not found'}`);
           continue;
         }
 

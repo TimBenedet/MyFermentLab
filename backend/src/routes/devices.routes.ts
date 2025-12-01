@@ -90,7 +90,9 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    console.log(`[DELETE /api/devices/${id}] Deleting device`);
     databaseService.deleteDevice(id);
+    console.log(`[DELETE /api/devices/${id}] Device deleted successfully`);
     res.status(204).send();
   } catch (error) {
     console.error('Error deleting device:', error);
