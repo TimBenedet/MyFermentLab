@@ -21,8 +21,8 @@ export interface Device {
   id: string;
   name: string;
   type: 'sensor' | 'outlet';
-  ip: string;
-  entityId: string;
+  ip?: string;
+  entityId?: string;
 }
 
 class DatabaseService {
@@ -218,7 +218,7 @@ class DatabaseService {
       VALUES (?, ?, ?, ?, ?)
     `);
 
-    stmt.run(device.id, device.name, device.type, device.ip, device.entityId);
+    stmt.run(device.id, device.name, device.type, device.ip || '', device.entityId || '');
     return device;
   }
 

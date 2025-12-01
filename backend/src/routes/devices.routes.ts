@@ -37,9 +37,9 @@ router.post('/', async (req: Request, res: Response) => {
     console.log('[POST /api/devices] Received request body:', JSON.stringify(req.body));
     const { name, type, ip, entityId } = req.body;
 
-    if (!name || !type || !ip || !entityId) {
-      console.error('[POST /api/devices] Missing required fields:', { name, type, ip, entityId });
-      return res.status(400).json({ error: 'Missing required fields', received: { name, type, ip, entityId } });
+    if (!name || !type) {
+      console.error('[POST /api/devices] Missing required fields:', { name, type });
+      return res.status(400).json({ error: 'Missing required fields: name and type', received: { name, type, ip, entityId } });
     }
 
     const newDevice: Device = {
