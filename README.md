@@ -409,33 +409,24 @@ influx auth create \
 
 ### Interface de Monitoring
 
-```
-┌─────────────────────────────────────────────────────┐
-│  🏠 Accueil          📊 Projets          👤 Admin   │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  🍺 IPA Cascade 2024                    [Actif]    │
-│  ┌────────────────────────────┐                    │
-│  │  🌡️ Température : 20.2°C   │  Cible: 20°C      │
-│  │  🔌 Tapis : ● ON           │  Mode: Auto       │
-│  │  📈 Densité : 1.015        │  ABV: 4.5%        │
-│  └────────────────────────────┘                    │
-│                                                     │
-│  📊 Graphique (dernières 24h)                      │
-│  ┌────────────────────────────────────────────┐   │
-│  │        🌡️                                   │   │
-│  │    22°├───╮                                │   │
-│  │    21°│   ╰──╮                             │   │
-│  │    20°│      ╰────────                     │   │
-│  │    19°│                                    │   │
-│  └────────────────────────────────────────────┘   │
-│  [1h] [6h] [24h] [7j] [30j] [Tout]                │
-│                                                     │
-│  💧 Mesures de Densité                             │
-│  01/12 - 1.050 → 01/05 - 1.015 → ABV: 4.5%       │
-│  [+ Ajouter une mesure]                            │
-└─────────────────────────────────────────────────────┘
-```
+#### Page d'accueil - Liste des projets
+![Interface d'accueil](docs/images/interface-accueil.png)
+*Vue d'ensemble de tous vos projets de fermentation avec statuts en temps réel*
+
+#### Monitoring en temps réel
+![Interface de monitoring 1](docs/images/interface-monitoring-1.png)
+*Graphiques de température avec contrôles de période et affichage des statistiques*
+
+![Interface de monitoring 2](docs/images/interface-monitoring-2.png)
+*Panneau de contrôle avec température actuelle, gestion du tapis chauffant et suivi de densité*
+
+#### Gestion des devices
+![Gestion des devices](docs/images/gestion-device.png)
+*Configuration et modification des capteurs et prises connectées*
+
+#### Ajout d'un nouveau projet
+![Ajout device](docs/images/ajout-device.png)
+*Formulaire de création avec sélection des devices Home Assistant et paramètres de fermentation*
 
 ### Ajouter des Mesures de Densité (Bière)
 
