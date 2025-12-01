@@ -16,7 +16,7 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
   const diff = project.targetTemperature - project.currentTemperature;
 
   const getStatus = () => {
-    if (Math.abs(diff) < 0.5) return { text: 'Stable', color: '#10B981' };
+    if (Math.abs(diff) < 0.2) return { text: 'Stable', color: '#10B981' };
     if (diff > 0) return { text: 'Chauffage nécessaire', color: '#EF4444' };
     return { text: 'Refroidissement', color: '#3B82F6' };
   };
