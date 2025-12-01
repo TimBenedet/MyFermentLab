@@ -33,6 +33,19 @@ export function HomePage({
 
     return (
       <div key={project.id} className="project-card">
+        <button
+          className="btn-delete-project"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (window.confirm(`Supprimer définitivement le projet "${project.name}" ?`)) {
+              onDeleteProject(project.id);
+            }
+          }}
+          title="Supprimer le projet"
+        >
+          ×
+        </button>
+
         <div
           className="project-card-content"
           onClick={() => !project.archived && onSelectProject(project.id)}
@@ -71,23 +84,8 @@ export function HomePage({
               <span className="status-diff" style={{ color: Math.abs(diff) < 0.5 ? '#10B981' : config.color }}>
                 {Math.abs(diff) < 0.5 ? 'Stable' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)}°C`}
               </span>
-            </div>
-          )}
-
-          {project.archived && project.archivedAt && (
-            <div className="project-status">
-              <span className="status-indicator archived">
-                Archivé le {new Date(project.archivedAt).toLocaleDateString()}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="project-card-actions">
-          {!project.archived ? (
-            <>
               <button
-                className="btn-icon-action"
+                className="btn-archive"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (window.confirm(`Archiver le projet "${project.name}" ?\n\nCela libérera les capteurs et prises associés.`)) {
@@ -98,23 +96,16 @@ export function HomePage({
               >
                 📦
               </button>
+            </div>
+          )}
+
+          {project.archived && project.archivedAt && (
+            <div className="project-status">
+              <span className="status-indicator archived">
+                Archivé le {new Date(project.archivedAt).toLocaleDateString()}
+              </span>
               <button
-                className="btn-delete-project"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm(`Supprimer définitivement le projet "${project.name}" ?`)) {
-                    onDeleteProject(project.id);
-                  }
-                }}
-                title="Supprimer le projet"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                className="btn-icon-action"
+                className="btn-archive"
                 onClick={(e) => {
                   e.stopPropagation();
                   onUnarchiveProject(project.id);
@@ -123,19 +114,7 @@ export function HomePage({
               >
                 ↩
               </button>
-              <button
-                className="btn-delete-project"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm(`Supprimer définitivement le projet "${project.name}" ?`)) {
-                    onDeleteProject(project.id);
-                  }
-                }}
-                title="Supprimer le projet"
-              >
-                ×
-              </button>
-            </>
+            </div>
           )}
         </div>
       </div>
