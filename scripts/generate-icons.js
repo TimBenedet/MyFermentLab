@@ -17,10 +17,27 @@ const sizes = [
 ];
 
 async function generateIcons() {
+  // First, trim the image to remove whitespace
+  const trimmedImage = await sharp(iconBuffer)
+    .trim()
+    .toBuffer();
+
+  // Then resize with padding for better appearance
   for (const { size, name } of sizes) {
-    await sharp(iconBuffer)
-      .resize(size, size, {
+    // Calculate padding (10% of size)
+    const padding = Math.floor(size * 0.1);
+    const contentSize = size - (padding * 2);
+
+    await sharp(trimmedImage)
+      .resize(contentSize, contentSize, {
         fit: 'contain',
+        background: { r: 255, g: 255, b: 255, alpha: 0 }
+      })
+      .extend({
+        top: padding,
+        bottom: padding,
+        left: padding,
+        right: padding,
         background: { r: 255, g: 255, b: 255, alpha: 0 }
       })
       .png()
