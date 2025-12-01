@@ -1056,22 +1056,21 @@
 }
 
 .btn-view-summary {
-  background: linear-gradient(135deg, #4AC694 0%, #10B981 100%);
-  border: none;
-  border-radius: 6px;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 600;
+  background: transparent;
+  border: 1px solid #10B981;
+  border-radius: 2px;
+  color: #10B981;
+  font-size: 0.75rem;
+  font-weight: 500;
   cursor: pointer;
-  padding: 6px 14px;
+  padding: 6px 12px;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(74, 198, 148, 0.25);
 }
 
 .btn-view-summary:hover {
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  box-shadow: 0 4px 10px rgba(74, 198, 148, 0.35);
-  transform: translateY(-1px);
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #059669;
+  color: #059669;
 }
 
 .btn-archive {
