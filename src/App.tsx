@@ -168,22 +168,6 @@ function App() {
     }
   };
 
-  const handleCompleteProject = async () => {
-    if (!selectedProjectId) return;
-
-    try {
-      const updatedProject = await apiService.completeProject(selectedProjectId);
-      setProjects(prev => prev.map(p =>
-        p.id === selectedProjectId ? updatedProject : p
-      ));
-      // Rediriger vers la page de récapitulatif
-      setCurrentPage('summary');
-    } catch (err) {
-      console.error('Failed to complete project:', err);
-      setError('Impossible de terminer le projet');
-    }
-  };
-
   const handleArchiveProject = async (projectId: string) => {
     try {
       const updatedProject = await apiService.archiveProject(projectId);
@@ -367,7 +351,6 @@ function App() {
             onToggleOutlet={handleToggleOutlet}
             onAddDensity={handleAddDensity}
             onToggleControlMode={handleToggleControlMode}
-            onCompleteProject={handleCompleteProject}
             onBack={() => setCurrentPage('home')}
             role={role}
           />
