@@ -1064,6 +1064,9 @@
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-block;
+  line-height: 1;
+  font-weight: 400;
 }
 
 .btn-view-summary:hover {

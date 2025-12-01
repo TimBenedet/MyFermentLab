@@ -428,6 +428,13 @@ influx auth create \
 ![Ajout device](docs/images/ajout-device.png)
 *Formulaire de création avec sélection des devices Home Assistant et paramètres de fermentation*
 
+#### Récapitulatif de projet terminé
+![Récapitulatif 1](docs/images/recap-1.png)
+*Statistiques complètes de température et informations du projet terminé*
+
+![Récapitulatif 2](docs/images/recap-2.png)
+*Évolution de la densité, calcul de l'ABV et historique des mesures pour les projets de bière*
+
 ### Ajouter des Mesures de Densité (Bière)
 
 1. Prélever un échantillon et mesurer avec un densimètre
