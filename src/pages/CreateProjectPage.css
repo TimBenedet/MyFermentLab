@@ -13,6 +13,7 @@
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 16px;
+  overflow: visible;
 }
 
 .form-section h2 {
@@ -123,7 +124,11 @@
 /* Accordion sections */
 .accordion-section {
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
+}
+
+.accordion-section:not(.expanded) .accordion-content {
+  display: none;
 }
 
 .accordion-section .accordion-header {
@@ -161,6 +166,7 @@
 
 .accordion-content {
   padding: 0 24px 24px;
+  overflow: visible;
 }
 
 /* Ingredient rows */
@@ -174,6 +180,8 @@
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   flex-wrap: wrap;
+  position: relative;
+  overflow: visible;
 }
 
 .ingredient-row .form-input,

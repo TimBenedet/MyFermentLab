@@ -3,6 +3,11 @@
   position: relative;
   flex: 2;
   min-width: 150px;
+  z-index: 10;
+}
+
+.autocomplete-wrapper:focus-within {
+  z-index: 1000;
 }
 
 /* Dropdown */
@@ -17,7 +22,7 @@
   margin-top: 4px;
   max-height: 350px;
   overflow-y: auto;
-  z-index: 100;
+  z-index: 9999;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
