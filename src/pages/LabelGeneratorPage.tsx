@@ -118,6 +118,16 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     right: { value: number; x: number; y: number; isEqual: boolean } | null;
   }>({ top: null, bottom: null, left: null, right: null });
 
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    brand: true,
+    product: false,
+    appearance: false
+  });
+
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   const labelRef = useRef<HTMLDivElement>(null);
   const elementRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const dragStateRef = useRef<{
@@ -597,231 +607,266 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
       <div className="label-generator-container">
         {/* Panneau de formulaire */}
         <div className="label-form-section">
-          <div className="section-title">Zone gauche - Marque</div>
-
-          {/* Nom de marque */}
-          <div className="label-form-group">
-            <label>Nom de marque</label>
-            <input
-              type="text"
-              value={labelData.brandName}
-              onChange={(e) => handleInputChange('brandName', e.target.value)}
-              placeholder="HOKKO"
-            />
-            <div className="element-controls">
-              <div className="control-row">
-                <div className="style-buttons">
-                  <button
-                    className={`style-btn ${styles.brand.bold ? 'active' : ''}`}
-                    onClick={() => handleStyleToggle('brand', 'bold')}
-                  >B</button>
-                  <button
-                    className={`style-btn italic ${styles.brand.italic ? 'active' : ''}`}
-                    onClick={() => handleStyleToggle('brand', 'italic')}
-                  >I</button>
-                </div>
-                <input
-                  type="color"
-                  value={styles.brand.color}
-                  onChange={(e) => handleColorChange('brand', e.target.value)}
-                  className="color-picker"
-                />
-                <div className="rotation-control">
+          {/* Section Marque */}
+          <div className="accordion-section">
+            <button
+              className={`accordion-header ${openSections.brand ? 'open' : ''}`}
+              onClick={() => toggleSection('brand')}
+            >
+              <span>Zone gauche - Marque</span>
+              <span className="accordion-icon">{openSections.brand ? '−' : '+'}</span>
+            </button>
+            {openSections.brand && (
+              <div className="accordion-content">
+                {/* Nom de marque */}
+                <div className="label-form-group">
+                  <label>Nom de marque</label>
                   <input
-                    type="range"
-                    min="-180"
-                    max="180"
-                    value={positions.brand.rotation}
-                    onChange={(e) => handleRotationChange('brand', parseInt(e.target.value))}
+                    type="text"
+                    value={labelData.brandName}
+                    onChange={(e) => handleInputChange('brandName', e.target.value)}
+                    placeholder="HOKKO"
                   />
-                  <span>{positions.brand.rotation}°</span>
+                  <div className="element-controls">
+                    <div className="control-row">
+                      <div className="style-buttons">
+                        <button
+                          className={`style-btn ${styles.brand.bold ? 'active' : ''}`}
+                          onClick={() => handleStyleToggle('brand', 'bold')}
+                        >B</button>
+                        <button
+                          className={`style-btn italic ${styles.brand.italic ? 'active' : ''}`}
+                          onClick={() => handleStyleToggle('brand', 'italic')}
+                        >I</button>
+                      </div>
+                      <input
+                        type="color"
+                        value={styles.brand.color}
+                        onChange={(e) => handleColorChange('brand', e.target.value)}
+                        className="color-picker"
+                      />
+                      <div className="rotation-control">
+                        <input
+                          type="range"
+                          min="-180"
+                          max="180"
+                          value={positions.brand.rotation}
+                          onChange={(e) => handleRotationChange('brand', parseInt(e.target.value))}
+                        />
+                        <span>{positions.brand.rotation}°</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sous-titre */}
+                <div className="label-form-group">
+                  <label>Sous-titre</label>
+                  <input
+                    type="text"
+                    value={labelData.brandSubtitle}
+                    onChange={(e) => handleInputChange('brandSubtitle', e.target.value)}
+                    placeholder="BREWERY"
+                  />
+                  <div className="element-controls">
+                    <div className="control-row">
+                      <div className="style-buttons">
+                        <button
+                          className={`style-btn ${styles.subtitle.bold ? 'active' : ''}`}
+                          onClick={() => handleStyleToggle('subtitle', 'bold')}
+                        >B</button>
+                        <button
+                          className={`style-btn italic ${styles.subtitle.italic ? 'active' : ''}`}
+                          onClick={() => handleStyleToggle('subtitle', 'italic')}
+                        >I</button>
+                      </div>
+                      <input
+                        type="color"
+                        value={styles.subtitle.color}
+                        onChange={(e) => handleColorChange('subtitle', e.target.value)}
+                        className="color-picker"
+                      />
+                      <div className="rotation-control">
+                        <input
+                          type="range"
+                          min="-180"
+                          max="180"
+                          value={positions.subtitle.rotation}
+                          onChange={(e) => handleRotationChange('subtitle', parseInt(e.target.value))}
+                        />
+                        <span>{positions.subtitle.rotation}°</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Sous-titre */}
-          <div className="label-form-group">
-            <label>Sous-titre</label>
-            <input
-              type="text"
-              value={labelData.brandSubtitle}
-              onChange={(e) => handleInputChange('brandSubtitle', e.target.value)}
-              placeholder="BREWERY"
-            />
-            <div className="element-controls">
-              <div className="control-row">
-                <div className="style-buttons">
-                  <button
-                    className={`style-btn ${styles.subtitle.bold ? 'active' : ''}`}
-                    onClick={() => handleStyleToggle('subtitle', 'bold')}
-                  >B</button>
-                  <button
-                    className={`style-btn italic ${styles.subtitle.italic ? 'active' : ''}`}
-                    onClick={() => handleStyleToggle('subtitle', 'italic')}
-                  >I</button>
-                </div>
-                <input
-                  type="color"
-                  value={styles.subtitle.color}
-                  onChange={(e) => handleColorChange('subtitle', e.target.value)}
-                  className="color-picker"
-                />
-                <div className="rotation-control">
+          {/* Section Produit */}
+          <div className="accordion-section">
+            <button
+              className={`accordion-header ${openSections.product ? 'open' : ''}`}
+              onClick={() => toggleSection('product')}
+            >
+              <span>Zone droite - Produit</span>
+              <span className="accordion-icon">{openSections.product ? '−' : '+'}</span>
+            </button>
+            {openSections.product && (
+              <div className="accordion-content">
+
+                {/* Nom du produit */}
+                <div className="label-form-group">
+                  <label>Nom du produit</label>
                   <input
-                    type="range"
-                    min="-180"
-                    max="180"
-                    value={positions.subtitle.rotation}
-                    onChange={(e) => handleRotationChange('subtitle', parseInt(e.target.value))}
+                    type="text"
+                    value={labelData.productName}
+                    onChange={(e) => handleInputChange('productName', e.target.value)}
+                    placeholder="Lumière dorée"
                   />
-                  <span>{positions.subtitle.rotation}°</span>
+                  <div className="element-controls">
+                    <div className="control-row">
+                      <div className="style-buttons">
+                        <button
+                          className={`style-btn ${styles.product.bold ? 'active' : ''}`}
+                          onClick={() => handleStyleToggle('product', 'bold')}
+                        >B</button>
+                        <button
+                          className={`style-btn italic ${styles.product.italic ? 'active' : ''}`}
+                          onClick={() => handleStyleToggle('product', 'italic')}
+                        >I</button>
+                      </div>
+                      <input
+                        type="color"
+                        value={styles.product.color}
+                        onChange={(e) => handleColorChange('product', e.target.value)}
+                        className="color-picker"
+                      />
+                      <div className="rotation-control">
+                        <input
+                          type="range"
+                          min="-180"
+                          max="180"
+                          value={positions.product.rotation}
+                          onChange={(e) => handleRotationChange('product', parseInt(e.target.value))}
+                        />
+                        <span>{positions.product.rotation}°</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Type / Série */}
+                <div className="label-form-group">
+                  <label>Type / Série</label>
+                  <input
+                    type="text"
+                    value={labelData.productSeries}
+                    onChange={(e) => handleInputChange('productSeries', e.target.value)}
+                    placeholder="BIÈRE - SÉRIE I"
+                  />
+                  <div className="element-controls">
+                    <div className="control-row">
+                      <div className="style-buttons">
+                        <button
+                          className={`style-btn ${styles.series.bold ? 'active' : ''}`}
+                          onClick={() => handleStyleToggle('series', 'bold')}
+                        >B</button>
+                        <button
+                          className={`style-btn italic ${styles.series.italic ? 'active' : ''}`}
+                          onClick={() => handleStyleToggle('series', 'italic')}
+                        >I</button>
+                      </div>
+                      <input
+                        type="color"
+                        value={styles.series.color}
+                        onChange={(e) => handleColorChange('series', e.target.value)}
+                        className="color-picker"
+                      />
+                      <div className="rotation-control">
+                        <input
+                          type="range"
+                          min="-180"
+                          max="180"
+                          value={positions.series.rotation}
+                          onChange={(e) => handleRotationChange('series', parseInt(e.target.value))}
+                        />
+                        <span>{positions.series.rotation}°</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ingrédients */}
+                <div className="label-form-group">
+                  <label>Ingrédients / Description</label>
+                  <textarea
+                    value={labelData.ingredients}
+                    onChange={(e) => handleInputChange('ingredients', e.target.value)}
+                    placeholder="Description du produit"
+                    rows={3}
+                  />
+                  <div className="element-controls">
+                    <div className="control-row">
+                      <div className="style-buttons">
+                        <button
+                          className={`style-btn ${styles.ingredients.bold ? 'active' : ''}`}
+                          onClick={() => handleStyleToggle('ingredients', 'bold')}
+                        >B</button>
+                        <button
+                          className={`style-btn italic ${styles.ingredients.italic ? 'active' : ''}`}
+                          onClick={() => handleStyleToggle('ingredients', 'italic')}
+                        >I</button>
+                      </div>
+                      <input
+                        type="color"
+                        value={styles.ingredients.color}
+                        onChange={(e) => handleColorChange('ingredients', e.target.value)}
+                        className="color-picker"
+                      />
+                      <div className="rotation-control">
+                        <input
+                          type="range"
+                          min="-180"
+                          max="180"
+                          value={positions.ingredients.rotation}
+                          onChange={(e) => handleRotationChange('ingredients', parseInt(e.target.value))}
+                        />
+                        <span>{positions.ingredients.rotation}°</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
-          <hr className="section-divider" />
-          <div className="section-title">Zone droite - Produit</div>
-
-          {/* Nom du produit */}
-          <div className="label-form-group">
-            <label>Nom du produit</label>
-            <input
-              type="text"
-              value={labelData.productName}
-              onChange={(e) => handleInputChange('productName', e.target.value)}
-              placeholder="Lumière dorée"
-            />
-            <div className="element-controls">
-              <div className="control-row">
-                <div className="style-buttons">
-                  <button
-                    className={`style-btn ${styles.product.bold ? 'active' : ''}`}
-                    onClick={() => handleStyleToggle('product', 'bold')}
-                  >B</button>
-                  <button
-                    className={`style-btn italic ${styles.product.italic ? 'active' : ''}`}
-                    onClick={() => handleStyleToggle('product', 'italic')}
-                  >I</button>
-                </div>
-                <input
-                  type="color"
-                  value={styles.product.color}
-                  onChange={(e) => handleColorChange('product', e.target.value)}
-                  className="color-picker"
-                />
-                <div className="rotation-control">
-                  <input
-                    type="range"
-                    min="-180"
-                    max="180"
-                    value={positions.product.rotation}
-                    onChange={(e) => handleRotationChange('product', parseInt(e.target.value))}
-                  />
-                  <span>{positions.product.rotation}°</span>
+          {/* Section Apparence */}
+          <div className="accordion-section">
+            <button
+              className={`accordion-header ${openSections.appearance ? 'open' : ''}`}
+              onClick={() => toggleSection('appearance')}
+            >
+              <span>Apparence</span>
+              <span className="accordion-icon">{openSections.appearance ? '−' : '+'}</span>
+            </button>
+            {openSections.appearance && (
+              <div className="accordion-content">
+                <div className="label-form-group">
+                  <label>Couleur de l'étiquette</label>
+                  <div className="color-grid">
+                    {labelColors.map((color, index) => (
+                      <div
+                        key={index}
+                        className={`color-option ${labelData.labelColor === color ? 'active' : ''}`}
+                        style={{ background: color }}
+                        onClick={() => handleInputChange('labelColor', color)}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Type / Série */}
-          <div className="label-form-group">
-            <label>Type / Série</label>
-            <input
-              type="text"
-              value={labelData.productSeries}
-              onChange={(e) => handleInputChange('productSeries', e.target.value)}
-              placeholder="BIÈRE - SÉRIE I"
-            />
-            <div className="element-controls">
-              <div className="control-row">
-                <div className="style-buttons">
-                  <button
-                    className={`style-btn ${styles.series.bold ? 'active' : ''}`}
-                    onClick={() => handleStyleToggle('series', 'bold')}
-                  >B</button>
-                  <button
-                    className={`style-btn italic ${styles.series.italic ? 'active' : ''}`}
-                    onClick={() => handleStyleToggle('series', 'italic')}
-                  >I</button>
-                </div>
-                <input
-                  type="color"
-                  value={styles.series.color}
-                  onChange={(e) => handleColorChange('series', e.target.value)}
-                  className="color-picker"
-                />
-                <div className="rotation-control">
-                  <input
-                    type="range"
-                    min="-180"
-                    max="180"
-                    value={positions.series.rotation}
-                    onChange={(e) => handleRotationChange('series', parseInt(e.target.value))}
-                  />
-                  <span>{positions.series.rotation}°</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Ingrédients */}
-          <div className="label-form-group">
-            <label>Ingrédients / Description</label>
-            <textarea
-              value={labelData.ingredients}
-              onChange={(e) => handleInputChange('ingredients', e.target.value)}
-              placeholder="Description du produit"
-              rows={3}
-            />
-            <div className="element-controls">
-              <div className="control-row">
-                <div className="style-buttons">
-                  <button
-                    className={`style-btn ${styles.ingredients.bold ? 'active' : ''}`}
-                    onClick={() => handleStyleToggle('ingredients', 'bold')}
-                  >B</button>
-                  <button
-                    className={`style-btn italic ${styles.ingredients.italic ? 'active' : ''}`}
-                    onClick={() => handleStyleToggle('ingredients', 'italic')}
-                  >I</button>
-                </div>
-                <input
-                  type="color"
-                  value={styles.ingredients.color}
-                  onChange={(e) => handleColorChange('ingredients', e.target.value)}
-                  className="color-picker"
-                />
-                <div className="rotation-control">
-                  <input
-                    type="range"
-                    min="-180"
-                    max="180"
-                    value={positions.ingredients.rotation}
-                    onChange={(e) => handleRotationChange('ingredients', parseInt(e.target.value))}
-                  />
-                  <span>{positions.ingredients.rotation}°</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <hr className="section-divider" />
-          <div className="section-title">Apparence</div>
-
-          <div className="label-form-group">
-            <label>Couleur de l'étiquette</label>
-            <div className="color-grid">
-              {labelColors.map((color, index) => (
-                <div
-                  key={index}
-                  className={`color-option ${labelData.labelColor === color ? 'active' : ''}`}
-                  style={{ background: color }}
-                  onClick={() => handleInputChange('labelColor', color)}
-                />
-              ))}
-            </div>
+            )}
           </div>
 
           <div className="label-actions">

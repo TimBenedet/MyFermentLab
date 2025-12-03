@@ -38,6 +38,54 @@
   margin: 25px 0;
 }
 
+/* Accordions */
+.accordion-section {
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: none;
+  cursor: pointer;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #bbb;
+  transition: all 0.2s ease;
+}
+
+.accordion-header:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e8e4df;
+}
+
+.accordion-header.open {
+  background: rgba(196, 165, 116, 0.1);
+  color: #c4a574;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.accordion-icon {
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: inherit;
+  transition: transform 0.2s ease;
+}
+
+.accordion-content {
+  padding: 20px 18px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
 .label-form-group {
   margin-bottom: 20px;
 }
