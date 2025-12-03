@@ -1,7 +1,6 @@
-import { Project, FERMENTATION_TYPES, BrewingLogEntry } from '../types';
+import { Project, FERMENTATION_TYPES } from '../types';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { DensityChart } from '../components/DensityChart';
-import { BrewingLog } from '../components/BrewingLog';
 import { TemperatureAlert } from '../components/TemperatureAlert';
 
 interface MonitoringPageProps {
@@ -10,13 +9,11 @@ interface MonitoringPageProps {
   onToggleOutlet: () => void;
   onAddDensity: (density: number, timestamp: number) => void;
   onToggleControlMode?: () => void;
-  onAddLogEntry?: (entry: Omit<BrewingLogEntry, 'id'>) => void;
-  onDeleteLogEntry?: (id: string) => void;
   onBack: () => void;
   role: 'admin' | 'viewer' | null;
 }
 
-export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onToggleControlMode, onAddLogEntry, onDeleteLogEntry, onBack, role }: MonitoringPageProps) {
+export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onToggleControlMode, onBack, role }: MonitoringPageProps) {
   const config = FERMENTATION_TYPES[project.fermentationType];
   const diff = project.targetTemperature - project.currentTemperature;
 
@@ -170,17 +167,6 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
           )}
         </div>
 
-        {/* Journal de brassage */}
-        {onAddLogEntry && onDeleteLogEntry && (
-          <div className="log-section">
-            <BrewingLog
-              entries={project.brewingLog || []}
-              onAddEntry={onAddLogEntry}
-              onDeleteEntry={onDeleteLogEntry}
-              readOnly={role === 'viewer'}
-            />
-          </div>
-        )}
       </div>
     </div>
   );
