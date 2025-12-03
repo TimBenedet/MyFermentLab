@@ -300,4 +300,31 @@ router.delete('/:id', requireAuth, requireAdmin, async (req: Request, res: Respo
   }
 });
 
+// PATCH /api/projects/:id - Mettre à jour partiellement un projet
+router.patch('/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { brewingSession, recipe } = req.body;
+
+    const project = databaseService.getProject(id);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (brewingSession !== undefined) {
+      databaseService.updateProjectBrewingSession(id, brewingSession);
+    }
+
+    if (recipe !== undefined) {
+      databaseService.updateProjectRecipe(id, recipe);
+    }
+
+    const updatedProject = databaseService.getProject(id);
+    res.json(updatedProject);
+  } catch (error) {
+    console.error('Error updating project:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

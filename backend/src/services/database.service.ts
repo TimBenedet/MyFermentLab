@@ -5,7 +5,7 @@ import { existsSync, mkdirSync } from 'fs';
 export interface Project {
   id: string;
   name: string;
-  fermentationType: 'beer' | 'wine' | 'cheese' | 'bread';
+  fermentationType: 'beer' | 'wine' | 'cheese' | 'bread' | 'koji' | 'kombucha';
   sensorId: string;
   outletId: string;
   targetTemperature: number;
@@ -15,6 +15,8 @@ export interface Project {
   archived: boolean;
   createdAt: number;
   archivedAt?: number;
+  brewingSession?: any;
+  recipe?: any;
 }
 
 export interface Device {
@@ -87,6 +89,20 @@ class DatabaseService {
         this.db.exec("ALTER TABLE projects ADD COLUMN archived_at INTEGER");
         console.log('Migration completed successfully');
       }
+
+      const hasBrewingSession = columns.some(col => col.name === 'brewing_session');
+      if (!hasBrewingSession) {
+        console.log('Adding brewing_session column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN brewing_session TEXT");
+        console.log('Migration completed successfully');
+      }
+
+      const hasRecipe = columns.some(col => col.name === 'recipe');
+      if (!hasRecipe) {
+        console.log('Adding recipe column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN recipe TEXT");
+        console.log('Migration completed successfully');
+      }
     } catch (error) {
       console.error('Migration error:', error);
     }
@@ -108,7 +124,9 @@ class DatabaseService {
       controlMode: row.control_mode || 'automatic',
       archived: row.archived === 1,
       createdAt: row.created_at,
-      archivedAt: row.archived_at || undefined
+      archivedAt: row.archived_at || undefined,
+      brewingSession: row.brewing_session ? JSON.parse(row.brewing_session) : undefined,
+      recipe: row.recipe ? JSON.parse(row.recipe) : undefined
     }));
   }
 
@@ -129,7 +147,9 @@ class DatabaseService {
       controlMode: row.control_mode || 'automatic',
       archived: row.archived === 1,
       createdAt: row.created_at,
-      archivedAt: row.archived_at || undefined
+      archivedAt: row.archived_at || undefined,
+      brewingSession: row.brewing_session ? JSON.parse(row.brewing_session) : undefined,
+      recipe: row.recipe ? JSON.parse(row.recipe) : undefined
     };
   }
 
@@ -171,6 +191,16 @@ class DatabaseService {
   updateProjectControlMode(id: string, controlMode: 'manual' | 'automatic') {
     const stmt = this.db.prepare('UPDATE projects SET control_mode = ? WHERE id = ?');
     stmt.run(controlMode, id);
+  }
+
+  updateProjectBrewingSession(id: string, brewingSession: any) {
+    const stmt = this.db.prepare('UPDATE projects SET brewing_session = ? WHERE id = ?');
+    stmt.run(brewingSession ? JSON.stringify(brewingSession) : null, id);
+  }
+
+  updateProjectRecipe(id: string, recipe: any) {
+    const stmt = this.db.prepare('UPDATE projects SET recipe = ? WHERE id = ?');
+    stmt.run(recipe ? JSON.stringify(recipe) : null, id);
   }
 
   archiveProject(id: string) {
