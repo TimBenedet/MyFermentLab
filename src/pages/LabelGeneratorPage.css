@@ -348,6 +348,103 @@
   max-width: 420px;
 }
 
+/* Guides d'alignement (snap lines) */
+.snap-guide {
+  position: absolute;
+  background: #e74c3c;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.snap-guide.visible {
+  opacity: 1;
+}
+
+.snap-guide.horizontal {
+  height: 1px;
+  left: 0;
+  right: 0;
+}
+
+.snap-guide.vertical {
+  width: 1px;
+  top: 0;
+  bottom: 0;
+}
+
+/* Couleurs différentes selon le type de guide */
+.snap-guide.center {
+  background: #3498db;  /* Bleu pour le centre */
+}
+
+.snap-guide.edge {
+  background: #e74c3c;  /* Rouge pour les bords */
+}
+
+.snap-guide.margin {
+  background: #2ecc71;  /* Vert pour les marges */
+}
+
+.snap-guide.third {
+  background: #9b59b6;  /* Violet pour les tiers */
+}
+
+.snap-guide.quarter {
+  background: #f39c12;  /* Orange pour les quarts */
+}
+
+.snap-guide.element {
+  background: #e74c3c;  /* Rouge pour alignement entre éléments */
+}
+
+.snap-guide.fifth {
+  background: #1abc9c;  /* Turquoise pour les 5èmes */
+}
+
+.snap-guide.tenth {
+  background: #ff5722;  /* Orange foncé pour les 10èmes */
+}
+
+.snap-guide.equal-distance {
+  background: #00e676;  /* Vert vif pour distance égale */
+  box-shadow: 0 0 8px rgba(0, 230, 118, 0.6);
+}
+
+/* Indicateur de distance */
+.distance-indicator {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  font-family: 'Josefin Sans', sans-serif;
+  pointer-events: none;
+  z-index: 200;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  transform: translate(-50%, -50%);
+}
+
+.distance-indicator.visible {
+  opacity: 1;
+}
+
+.distance-indicator.equal {
+  background: rgba(0, 230, 118, 0.9);
+  color: #000;
+  font-weight: 500;
+}
+
+/* Indicateur de snap actif */
+.draggable.snapped {
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.5);
+}
+
 /* Animation */
 @keyframes fadeInScale {
   from {

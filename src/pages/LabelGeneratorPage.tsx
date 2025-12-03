@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import './LabelGeneratorPage.css';
 
 interface LabelGeneratorPageProps {
@@ -20,6 +20,36 @@ interface ElementPosition {
   rotation: number;
 }
 
+interface SnapGuide {
+  type: 'horizontal' | 'vertical' | 'hCenter' | 'vCenter';
+  pos: number;
+  style?: string;
+}
+
+interface SnapResult {
+  x: number | null;
+  y: number | null;
+  guides: SnapGuide[];
+}
+
+interface ElementAnchors {
+  left: number;
+  centerX: number;
+  right: number;
+  top: number;
+  centerY: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
+// Configuration du snap
+const SNAP_THRESHOLD = 8;
+const EQUAL_SNAP_THRESHOLD = 12;
+const LABEL_WIDTH = 680;
+const LABEL_HEIGHT = 280;
+const MARGIN = 20;
+
 export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
   const [labelData, setLabelData] = useState<LabelData>({
     brandName: 'HOKKO',
@@ -31,12 +61,12 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
   });
 
   const [positions, setPositions] = useState<Record<string, ElementPosition>>({
-    brand: { x: 30, y: 30, rotation: 0 },
-    subtitle: { x: 65, y: 30, rotation: 0 },
-    line: { x: 100, y: 30, rotation: 0 },
-    product: { x: 150, y: 80, rotation: 0 },
-    series: { x: 150, y: 130, rotation: 0 },
-    ingredients: { x: 150, y: 180, rotation: 0 }
+    brand: { x: 35, y: 30, rotation: 0 },
+    subtitle: { x: 85, y: 55, rotation: 0 },
+    line: { x: 130, y: 30, rotation: 0 },
+    product: { x: 180, y: 55, rotation: 0 },
+    series: { x: 180, y: 120, rotation: 0 },
+    ingredients: { x: 180, y: 165, rotation: 0 }
   });
 
   const [styles, setStyles] = useState<Record<string, { bold: boolean; italic: boolean; color: string }>>({
@@ -49,11 +79,58 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
+  const [distances, setDistances] = useState<{top?: number; bottom?: number; left?: number; right?: number}>({});
+  const [isSnapped, setIsSnapped] = useState(false);
+
   const labelRef = useRef<HTMLDivElement>(null);
+  const elementRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const dragStartRef = useRef<{x: number; y: number; startX: number; startY: number} | null>(null);
 
   const labelColors = [
     '#c9a97a', '#d4b896', '#bfa068', '#d9c4a0', '#c2a06a',
     '#e5d5b8', '#d6c4a8', '#b89f7a', '#cdb896', '#a8946f'
+  ];
+
+  // Points d'ancrage de l'étiquette
+  const labelAnchorsX = [
+    { pos: 0, type: 'edge' },
+    { pos: MARGIN, type: 'margin' },
+    { pos: LABEL_WIDTH / 10, type: 'tenth' },
+    { pos: (LABEL_WIDTH * 2) / 10, type: 'fifth' },
+    { pos: (LABEL_WIDTH * 3) / 10, type: 'tenth' },
+    { pos: LABEL_WIDTH / 4, type: 'quarter' },
+    { pos: LABEL_WIDTH / 3, type: 'third' },
+    { pos: (LABEL_WIDTH * 4) / 10, type: 'fifth' },
+    { pos: LABEL_WIDTH / 2, type: 'center' },
+    { pos: (LABEL_WIDTH * 6) / 10, type: 'fifth' },
+    { pos: (LABEL_WIDTH * 2) / 3, type: 'third' },
+    { pos: (LABEL_WIDTH * 7) / 10, type: 'tenth' },
+    { pos: (LABEL_WIDTH * 3) / 4, type: 'quarter' },
+    { pos: (LABEL_WIDTH * 4) / 5, type: 'fifth' },
+    { pos: (LABEL_WIDTH * 9) / 10, type: 'tenth' },
+    { pos: LABEL_WIDTH - MARGIN, type: 'margin' },
+    { pos: LABEL_WIDTH, type: 'edge' }
+  ];
+
+  const labelAnchorsY = [
+    { pos: 0, type: 'edge' },
+    { pos: MARGIN, type: 'margin' },
+    { pos: LABEL_HEIGHT / 10, type: 'tenth' },
+    { pos: (LABEL_HEIGHT * 2) / 10, type: 'fifth' },
+    { pos: LABEL_HEIGHT / 4, type: 'quarter' },
+    { pos: (LABEL_HEIGHT * 3) / 10, type: 'tenth' },
+    { pos: LABEL_HEIGHT / 3, type: 'third' },
+    { pos: (LABEL_HEIGHT * 4) / 10, type: 'fifth' },
+    { pos: LABEL_HEIGHT / 2, type: 'center' },
+    { pos: (LABEL_HEIGHT * 6) / 10, type: 'fifth' },
+    { pos: (LABEL_HEIGHT * 2) / 3, type: 'third' },
+    { pos: (LABEL_HEIGHT * 7) / 10, type: 'tenth' },
+    { pos: (LABEL_HEIGHT * 3) / 4, type: 'quarter' },
+    { pos: (LABEL_HEIGHT * 4) / 5, type: 'fifth' },
+    { pos: (LABEL_HEIGHT * 9) / 10, type: 'tenth' },
+    { pos: LABEL_HEIGHT - MARGIN, type: 'margin' },
+    { pos: LABEL_HEIGHT, type: 'edge' }
   ];
 
   const handleInputChange = (field: keyof LabelData, value: string) => {
@@ -90,32 +167,284 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     }));
   };
 
+  // Obtenir les points d'ancrage d'un élément
+  const getElementAnchors = useCallback((elementKey: string): ElementAnchors | null => {
+    const element = elementRefs.current[elementKey];
+    if (!element) return null;
+
+    const pos = positions[elementKey];
+    const rect = element.getBoundingClientRect();
+
+    return {
+      left: pos.x,
+      centerX: pos.x + rect.width / 2,
+      right: pos.x + rect.width,
+      top: pos.y,
+      centerY: pos.y + rect.height / 2,
+      bottom: pos.y + rect.height,
+      width: rect.width,
+      height: rect.height
+    };
+  }, [positions]);
+
+  // Trouver les snaps possibles
+  const findSnaps = useCallback((currentKey: string, newLeft: number, newTop: number): SnapResult => {
+    const currentElement = elementRefs.current[currentKey];
+    if (!currentElement) return { x: null, y: null, guides: [] };
+
+    const currentRect = currentElement.getBoundingClientRect();
+    const currentWidth = currentRect.width;
+    const currentHeight = currentRect.height;
+
+    const snaps: SnapResult = {
+      x: null,
+      y: null,
+      guides: []
+    };
+
+    const currentAnchors = {
+      left: newLeft,
+      centerX: newLeft + currentWidth / 2,
+      right: newLeft + currentWidth,
+      top: newTop,
+      centerY: newTop + currentHeight / 2,
+      bottom: newTop + currentHeight
+    };
+
+    // Vérifier les snaps avec les ancres de l'étiquette (X)
+    labelAnchorsX.forEach(anchor => {
+      if (Math.abs(currentAnchors.left - anchor.pos) < SNAP_THRESHOLD) {
+        snaps.x = anchor.pos;
+        snaps.guides.push({ type: anchor.type === 'center' ? 'vCenter' : 'vertical', pos: anchor.pos, style: anchor.type });
+      }
+      if (Math.abs(currentAnchors.centerX - anchor.pos) < SNAP_THRESHOLD) {
+        snaps.x = anchor.pos - currentWidth / 2;
+        snaps.guides.push({ type: anchor.type === 'center' ? 'vCenter' : 'vertical', pos: anchor.pos, style: anchor.type });
+      }
+      if (Math.abs(currentAnchors.right - anchor.pos) < SNAP_THRESHOLD) {
+        snaps.x = anchor.pos - currentWidth;
+        snaps.guides.push({ type: anchor.type === 'center' ? 'vCenter' : 'vertical', pos: anchor.pos, style: anchor.type });
+      }
+    });
+
+    // Vérifier les snaps avec les ancres de l'étiquette (Y)
+    labelAnchorsY.forEach(anchor => {
+      if (Math.abs(currentAnchors.top - anchor.pos) < SNAP_THRESHOLD) {
+        snaps.y = anchor.pos;
+        snaps.guides.push({ type: anchor.type === 'center' ? 'hCenter' : 'horizontal', pos: anchor.pos, style: anchor.type });
+      }
+      if (Math.abs(currentAnchors.centerY - anchor.pos) < SNAP_THRESHOLD) {
+        snaps.y = anchor.pos - currentHeight / 2;
+        snaps.guides.push({ type: anchor.type === 'center' ? 'hCenter' : 'horizontal', pos: anchor.pos, style: anchor.type });
+      }
+      if (Math.abs(currentAnchors.bottom - anchor.pos) < SNAP_THRESHOLD) {
+        snaps.y = anchor.pos - currentHeight;
+        snaps.guides.push({ type: anchor.type === 'center' ? 'hCenter' : 'horizontal', pos: anchor.pos, style: anchor.type });
+      }
+    });
+
+    // Vérifier l'alignement avec les autres éléments
+    Object.keys(positions).forEach(otherKey => {
+      if (otherKey === currentKey) return;
+
+      const otherAnchors = getElementAnchors(otherKey);
+      if (!otherAnchors) return;
+
+      // Alignements horizontaux (même Y)
+      if (Math.abs(currentAnchors.top - otherAnchors.top) < SNAP_THRESHOLD) {
+        snaps.y = otherAnchors.top;
+        snaps.guides.push({ type: 'horizontal', pos: otherAnchors.top, style: 'element' });
+      }
+      if (Math.abs(currentAnchors.bottom - otherAnchors.bottom) < SNAP_THRESHOLD) {
+        snaps.y = otherAnchors.bottom - currentHeight;
+        snaps.guides.push({ type: 'horizontal', pos: otherAnchors.bottom, style: 'element' });
+      }
+      if (Math.abs(currentAnchors.centerY - otherAnchors.centerY) < SNAP_THRESHOLD) {
+        snaps.y = otherAnchors.centerY - currentHeight / 2;
+        snaps.guides.push({ type: 'horizontal', pos: otherAnchors.centerY, style: 'element' });
+      }
+      if (Math.abs(currentAnchors.top - otherAnchors.bottom) < SNAP_THRESHOLD) {
+        snaps.y = otherAnchors.bottom;
+        snaps.guides.push({ type: 'horizontal', pos: otherAnchors.bottom, style: 'element' });
+      }
+      if (Math.abs(currentAnchors.bottom - otherAnchors.top) < SNAP_THRESHOLD) {
+        snaps.y = otherAnchors.top - currentHeight;
+        snaps.guides.push({ type: 'horizontal', pos: otherAnchors.top, style: 'element' });
+      }
+
+      // Alignements verticaux (même X)
+      if (Math.abs(currentAnchors.left - otherAnchors.left) < SNAP_THRESHOLD) {
+        snaps.x = otherAnchors.left;
+        snaps.guides.push({ type: 'vertical', pos: otherAnchors.left, style: 'element' });
+      }
+      if (Math.abs(currentAnchors.right - otherAnchors.right) < SNAP_THRESHOLD) {
+        snaps.x = otherAnchors.right - currentWidth;
+        snaps.guides.push({ type: 'vertical', pos: otherAnchors.right, style: 'element' });
+      }
+      if (Math.abs(currentAnchors.centerX - otherAnchors.centerX) < SNAP_THRESHOLD) {
+        snaps.x = otherAnchors.centerX - currentWidth / 2;
+        snaps.guides.push({ type: 'vertical', pos: otherAnchors.centerX, style: 'element' });
+      }
+      if (Math.abs(currentAnchors.left - otherAnchors.right) < SNAP_THRESHOLD) {
+        snaps.x = otherAnchors.right;
+        snaps.guides.push({ type: 'vertical', pos: otherAnchors.right, style: 'element' });
+      }
+      if (Math.abs(currentAnchors.right - otherAnchors.left) < SNAP_THRESHOLD) {
+        snaps.x = otherAnchors.left - currentWidth;
+        snaps.guides.push({ type: 'vertical', pos: otherAnchors.left, style: 'element' });
+      }
+    });
+
+    // Snap à distance égale (vertical)
+    const otherElements = Object.keys(positions)
+      .filter(k => k !== currentKey)
+      .map(k => getElementAnchors(k))
+      .filter((a): a is ElementAnchors => a !== null);
+
+    const sortedByY = [...otherElements].sort((a, b) => a.top - b.top);
+    let elementAbove: ElementAnchors | null = null;
+    let elementBelow: ElementAnchors | null = null;
+
+    for (const el of sortedByY) {
+      if (el.bottom <= currentAnchors.top) elementAbove = el;
+    }
+    for (const el of sortedByY) {
+      if (el.top >= currentAnchors.bottom) {
+        elementBelow = el;
+        break;
+      }
+    }
+
+    const distAbove = elementAbove ? currentAnchors.top - elementAbove.bottom : currentAnchors.top;
+    const distBelow = elementBelow ? elementBelow.top - currentAnchors.bottom : LABEL_HEIGHT - currentAnchors.bottom;
+
+    if (snaps.y === null && Math.abs(distAbove - distBelow) < EQUAL_SNAP_THRESHOLD && Math.abs(distAbove - distBelow) > 0.5) {
+      const availableSpace = (elementBelow ? elementBelow.top : LABEL_HEIGHT) - (elementAbove ? elementAbove.bottom : 0);
+      const equalDist = (availableSpace - currentHeight) / 2;
+      const snapY = (elementAbove ? elementAbove.bottom : 0) + equalDist;
+
+      snaps.y = snapY;
+      snaps.guides.push({ type: 'horizontal', pos: snapY, style: 'equal-distance' });
+      snaps.guides.push({ type: 'horizontal', pos: snapY + currentHeight, style: 'equal-distance' });
+    }
+
+    // Snap à distance égale (horizontal)
+    const sortedByX = [...otherElements].sort((a, b) => a.left - b.left);
+    let elementLeft: ElementAnchors | null = null;
+    let elementRight: ElementAnchors | null = null;
+
+    for (const el of sortedByX) {
+      if (el.right <= currentAnchors.left) elementLeft = el;
+    }
+    for (const el of sortedByX) {
+      if (el.left >= currentAnchors.right) {
+        elementRight = el;
+        break;
+      }
+    }
+
+    const distLeft = elementLeft ? currentAnchors.left - elementLeft.right : currentAnchors.left;
+    const distRight = elementRight ? elementRight.left - currentAnchors.right : LABEL_WIDTH - currentAnchors.right;
+
+    if (snaps.x === null && Math.abs(distLeft - distRight) < EQUAL_SNAP_THRESHOLD && Math.abs(distLeft - distRight) > 0.5) {
+      const availableSpace = (elementRight ? elementRight.left : LABEL_WIDTH) - (elementLeft ? elementLeft.right : 0);
+      const equalDist = (availableSpace - currentWidth) / 2;
+      const snapX = (elementLeft ? elementLeft.right : 0) + equalDist;
+
+      snaps.x = snapX;
+      snaps.guides.push({ type: 'vertical', pos: snapX, style: 'equal-distance' });
+      snaps.guides.push({ type: 'vertical', pos: snapX + currentWidth, style: 'equal-distance' });
+    }
+
+    return snaps;
+  }, [positions, getElementAnchors, labelAnchorsX, labelAnchorsY]);
+
+  // Calculer les distances aux bords
+  const calculateDistances = useCallback((currentKey: string, newLeft: number, newTop: number) => {
+    const currentElement = elementRefs.current[currentKey];
+    if (!currentElement) return;
+
+    const rect = currentElement.getBoundingClientRect();
+    const currentWidth = rect.width;
+    const currentHeight = rect.height;
+
+    const distTop = newTop;
+    const distBottom = LABEL_HEIGHT - (newTop + currentHeight);
+    const distLeft = newLeft;
+    const distRight = LABEL_WIDTH - (newLeft + currentWidth);
+
+    setDistances({
+      top: Math.round(distTop),
+      bottom: Math.round(distBottom),
+      left: Math.round(distLeft),
+      right: Math.round(distRight)
+    });
+  }, []);
+
   const handleMouseDown = (element: string, e: React.MouseEvent) => {
     e.preventDefault();
     setSelectedElement(element);
     setIsDragging(true);
+
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      startX: positions[element].x,
+      startY: positions[element].y
+    };
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !selectedElement || !labelRef.current) return;
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || !selectedElement || !labelRef.current || !dragStartRef.current) return;
 
-    const rect = labelRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const deltaX = e.clientX - dragStartRef.current.x;
+    const deltaY = e.clientY - dragStartRef.current.y;
+
+    let newLeft = dragStartRef.current.startX + deltaX;
+    let newTop = dragStartRef.current.startY + deltaY;
+
+    // Trouver les snaps
+    const snaps = findSnaps(selectedElement, newLeft, newTop);
+
+    if (snaps.x !== null) newLeft = snaps.x;
+    if (snaps.y !== null) newTop = snaps.y;
+
+    // Contraindre aux limites
+    newLeft = Math.max(0, Math.min(LABEL_WIDTH - 50, newLeft));
+    newTop = Math.max(0, Math.min(LABEL_HEIGHT - 20, newTop));
+
+    setActiveGuides(snaps.guides);
+    setIsSnapped(snaps.guides.length > 0);
+    calculateDistances(selectedElement, newLeft, newTop);
 
     setPositions(prev => ({
       ...prev,
       [selectedElement]: {
         ...prev[selectedElement],
-        x: Math.max(0, Math.min(680, x)),
-        y: Math.max(0, Math.min(280, y))
+        x: newLeft,
+        y: newTop
       }
     }));
-  };
+  }, [isDragging, selectedElement, findSnaps, calculateDistances]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+    setActiveGuides([]);
+    setIsSnapped(false);
+    setDistances({});
+    dragStartRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const handlePrint = () => {
     window.print();
@@ -131,12 +460,19 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
       labelColor: '#c4a574'
     });
     setPositions({
-      brand: { x: 30, y: 30, rotation: 0 },
-      subtitle: { x: 65, y: 30, rotation: 0 },
-      line: { x: 100, y: 30, rotation: 0 },
-      product: { x: 150, y: 80, rotation: 0 },
-      series: { x: 150, y: 130, rotation: 0 },
-      ingredients: { x: 150, y: 180, rotation: 0 }
+      brand: { x: 35, y: 30, rotation: 0 },
+      subtitle: { x: 85, y: 55, rotation: 0 },
+      line: { x: 130, y: 30, rotation: 0 },
+      product: { x: 180, y: 55, rotation: 0 },
+      series: { x: 180, y: 120, rotation: 0 },
+      ingredients: { x: 180, y: 165, rotation: 0 }
+    });
+    setStyles({
+      brand: { bold: false, italic: false, color: '#2c2218' },
+      subtitle: { bold: false, italic: false, color: '#4a3d30' },
+      product: { bold: false, italic: true, color: '#2c2218' },
+      series: { bold: false, italic: false, color: '#5a4a3a' },
+      ingredients: { bold: false, italic: true, color: '#4a3d30' }
     });
   };
 
@@ -394,16 +730,39 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
             ref={labelRef}
             className="label-preview"
             style={{ background: labelData.labelColor }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
           >
             {/* Texture kraft */}
             <div className="kraft-texture" />
 
+            {/* Guides d'alignement */}
+            {activeGuides.map((guide, index) => (
+              <div
+                key={index}
+                className={`snap-guide ${guide.type.includes('horizontal') || guide.type === 'hCenter' ? 'horizontal' : 'vertical'} ${guide.style || ''} visible`}
+                style={
+                  guide.type.includes('horizontal') || guide.type === 'hCenter'
+                    ? { top: guide.pos }
+                    : { left: guide.pos }
+                }
+              />
+            ))}
+
+            {/* Indicateurs de distance */}
+            {isDragging && distances.top !== undefined && (
+              <div className="distance-indicator visible" style={{ left: '50%', top: distances.top / 2 }}>
+                {distances.top}px
+              </div>
+            )}
+            {isDragging && distances.left !== undefined && (
+              <div className="distance-indicator visible" style={{ left: distances.left / 2, top: '50%' }}>
+                {distances.left}px
+              </div>
+            )}
+
             {/* Nom de marque vertical */}
             <div
-              className={`draggable brand-vertical ${selectedElement === 'brand' ? 'selected' : ''}`}
+              ref={el => elementRefs.current['brand'] = el}
+              className={`draggable brand-vertical ${selectedElement === 'brand' ? 'selected' : ''} ${isSnapped && selectedElement === 'brand' ? 'snapped' : ''}`}
               style={{
                 left: positions.brand.x,
                 top: positions.brand.y,
@@ -419,7 +778,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Sous-titre vertical */}
             <div
-              className={`draggable brand-subtitle ${selectedElement === 'subtitle' ? 'selected' : ''}`}
+              ref={el => elementRefs.current['subtitle'] = el}
+              className={`draggable brand-subtitle ${selectedElement === 'subtitle' ? 'selected' : ''} ${isSnapped && selectedElement === 'subtitle' ? 'snapped' : ''}`}
               style={{
                 left: positions.subtitle.x,
                 top: positions.subtitle.y,
@@ -435,7 +795,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Ligne verticale */}
             <div
-              className={`draggable vertical-line ${selectedElement === 'line' ? 'selected' : ''}`}
+              ref={el => elementRefs.current['line'] = el}
+              className={`draggable vertical-line ${selectedElement === 'line' ? 'selected' : ''} ${isSnapped && selectedElement === 'line' ? 'snapped' : ''}`}
               style={{
                 left: positions.line.x,
                 top: positions.line.y,
@@ -446,7 +807,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Nom du produit */}
             <div
-              className={`draggable product-name ${selectedElement === 'product' ? 'selected' : ''}`}
+              ref={el => elementRefs.current['product'] = el}
+              className={`draggable product-name ${selectedElement === 'product' ? 'selected' : ''} ${isSnapped && selectedElement === 'product' ? 'snapped' : ''}`}
               style={{
                 left: positions.product.x,
                 top: positions.product.y,
@@ -462,7 +824,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Série */}
             <div
-              className={`draggable product-series ${selectedElement === 'series' ? 'selected' : ''}`}
+              ref={el => elementRefs.current['series'] = el}
+              className={`draggable product-series ${selectedElement === 'series' ? 'selected' : ''} ${isSnapped && selectedElement === 'series' ? 'snapped' : ''}`}
               style={{
                 left: positions.series.x,
                 top: positions.series.y,
@@ -478,7 +841,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Ingrédients */}
             <div
-              className={`draggable product-ingredients ${selectedElement === 'ingredients' ? 'selected' : ''}`}
+              ref={el => elementRefs.current['ingredients'] = el}
+              className={`draggable product-ingredients ${selectedElement === 'ingredients' ? 'selected' : ''} ${isSnapped && selectedElement === 'ingredients' ? 'snapped' : ''}`}
               style={{
                 left: positions.ingredients.x,
                 top: positions.ingredients.y,
