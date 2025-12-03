@@ -1,3 +1,7 @@
+/* ========================================
+   SummaryPage - Thème Kraft Minimal
+   ======================================== */
+
 .summary-page {
   max-width: 1200px;
   margin: 0 auto;
@@ -18,59 +22,74 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 28px;
+  font-size: 1.5rem;
+  font-weight: 300;
+  letter-spacing: 0.15em;
 }
 
 .project-icon {
-  font-size: 32px;
+  font-size: 2rem;
 }
 
 .completed-badge {
-  background: #4AC694;
-  color: #0f1419;
+  background: rgba(196, 165, 116, 0.25);
+  border: 1px solid #c4a574;
+  color: #c4a574;
   padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
 .btn-back {
   background: transparent;
-  border: 1px solid #2a2e35;
-  color: #e8e9ea;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e8e4df;
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
 }
 
 .btn-back:hover {
-  background: #1a1d23;
-  border-color: #3a3e45;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .summary-section {
-  background: #1a1d23;
-  border: 1px solid #2a2e35;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
   padding: 24px;
   margin-bottom: 24px;
+  backdrop-filter: blur(10px);
 }
 
 .summary-section h2 {
   margin: 0 0 20px 0;
-  font-size: 20px;
-  color: #e8e9ea;
+  font-size: 0.7rem;
+  color: #c4a574;
   display: flex;
   align-items: center;
   gap: 10px;
+  font-weight: 400;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
 }
 
 .summary-section h3 {
   margin: 20px 0 12px 0;
-  font-size: 16px;
-  color: #c7c9cc;
+  font-size: 0.75rem;
+  color: #bbb;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 300;
 }
 
 /* Grilles d'informations */
@@ -85,20 +104,22 @@
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  background: #0f1419;
-  border-radius: 8px;
-  border: 1px solid #2a2e35;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .info-label {
-  font-size: 13px;
-  color: #8e9196;
+  font-size: 0.7rem;
+  color: #999;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
 .info-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: #e8e9ea;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #e8e4df;
 }
 
 /* Statistiques */
@@ -114,30 +135,38 @@
   align-items: center;
   gap: 8px;
   padding: 20px;
-  background: linear-gradient(135deg, #1a1d23 0%, #0f1419 100%);
-  border: 1px solid #2a2e35;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(196, 165, 116, 0.2);
 }
 
 .stat-label {
-  font-size: 13px;
-  color: #8e9196;
+  font-size: 0.65rem;
+  color: #999;
   text-align: center;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
 .stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #4AC694;
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: #c4a574;
 }
 
 /* Graphiques */
-.chart-container {
+.summary-section .chart-container {
   margin-top: 20px;
   padding: 20px;
-  background: #0f1419;
-  border-radius: 8px;
-  border: 1px solid #2a2e35;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Densité */
@@ -156,37 +185,44 @@
   align-items: center;
   gap: 8px;
   padding: 20px 30px;
-  background: #0f1419;
-  border: 2px solid #2a2e35;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
   min-width: 140px;
+  transition: all 0.3s ease;
+}
+
+.density-card:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .density-card.abv-card {
-  border-color: #4AC694;
-  background: linear-gradient(135deg, #0f1419 0%, #1a3428 100%);
+  border-color: rgba(196, 165, 116, 0.5);
+  background: linear-gradient(135deg, rgba(196, 165, 116, 0.1) 0%, rgba(184, 152, 96, 0.15) 100%);
 }
 
 .density-card.abv-card .density-value {
-  color: #4AC694;
-  font-size: 32px;
+  color: #c4a574;
+  font-size: 2rem;
 }
 
 .density-label {
-  font-size: 13px;
-  color: #8e9196;
+  font-size: 0.65rem;
+  color: #999;
   text-align: center;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
 .density-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #e8e9ea;
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: #e8e4df;
 }
 
 .density-arrow {
-  font-size: 28px;
-  color: #4AC694;
+  font-size: 1.75rem;
+  color: #c4a574;
   font-weight: bold;
 }
 
@@ -202,35 +238,41 @@
 }
 
 .density-table thead {
-  background: #0f1419;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .density-table th {
   padding: 12px;
   text-align: left;
-  font-size: 13px;
-  color: #8e9196;
-  font-weight: 600;
-  border-bottom: 2px solid #2a2e35;
+  font-size: 0.65rem;
+  color: #999;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
 }
 
 .density-table td {
   padding: 12px;
-  font-size: 14px;
-  color: #e8e9ea;
-  border-bottom: 1px solid #2a2e35;
+  font-size: 0.85rem;
+  color: #e8e4df;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.density-table tbody tr {
+  transition: all 0.2s ease;
 }
 
 .density-table tbody tr:hover {
-  background: #0f1419;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .density-table tbody tr:first-child {
-  background: rgba(74, 198, 148, 0.1);
+  background: rgba(196, 165, 116, 0.1);
 }
 
 .density-table tbody tr:last-child {
-  background: rgba(74, 198, 148, 0.15);
+  background: rgba(196, 165, 116, 0.15);
 }
 
 /* Actions */
@@ -246,12 +288,13 @@
 .loading, .error {
   text-align: center;
   padding: 60px 20px;
-  color: #8e9196;
-  font-size: 16px;
+  color: #999;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
 }
 
 .error {
-  color: #ff6b6b;
+  color: #e74c3c;
 }
 
 /* Responsive */
@@ -262,7 +305,7 @@
   }
 
   .summary-header h1 {
-    font-size: 22px;
+    font-size: 1.2rem;
   }
 
   .info-grid {
@@ -281,7 +324,7 @@
     transform: rotate(90deg);
   }
 
-  .chart-container {
+  .summary-section .chart-container {
     padding: 10px;
   }
 }
@@ -300,14 +343,14 @@
   }
 
   .stat-value {
-    font-size: 20px;
+    font-size: 1.25rem;
   }
 
   .density-value {
-    font-size: 20px;
+    font-size: 1.25rem;
   }
 
   .density-card.abv-card .density-value {
-    font-size: 26px;
+    font-size: 1.5rem;
   }
 }

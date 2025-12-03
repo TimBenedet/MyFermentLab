@@ -5,12 +5,13 @@ import { MonitoringPage } from './pages/MonitoringPage';
 import { DevicesPage } from './pages/DevicesPage';
 import { LoginPage } from './pages/LoginPage';
 import { SummaryPage } from './pages/SummaryPage';
+import { LabelGeneratorPage } from './pages/LabelGeneratorPage';
 import { Project, Device, FermentationType } from './types';
 import { apiService, ProjectWithHistory } from './services/api.service';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
-type Page = 'home' | 'create-project' | 'monitoring' | 'devices' | 'summary';
+type Page = 'home' | 'create-project' | 'monitoring' | 'devices' | 'summary' | 'labels';
 
 function App() {
   const { isAuthenticated, role, logout } = useAuth();
@@ -331,6 +332,7 @@ function App() {
             onUnarchiveProject={handleUnarchiveProject}
             onDeleteProject={handleDeleteProject}
             onManageDevices={() => setCurrentPage('devices')}
+            onLabelGenerator={() => setCurrentPage('labels')}
             role={role}
           />
         )}
@@ -373,6 +375,12 @@ function App() {
             onDeleteDevice={handleDeleteDevice}
             onBack={() => setCurrentPage('home')}
             role={role}
+          />
+        )}
+
+        {currentPage === 'labels' && (
+          <LabelGeneratorPage
+            onBack={() => setCurrentPage('home')}
           />
         )}
       </main>

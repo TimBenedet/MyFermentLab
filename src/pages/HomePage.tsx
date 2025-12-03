@@ -10,6 +10,7 @@ interface HomePageProps {
   onUnarchiveProject: (projectId: string) => void;
   onDeleteProject: (projectId: string) => void;
   onManageDevices: () => void;
+  onLabelGenerator: () => void;
   role: 'admin' | 'viewer' | null;
 }
 
@@ -22,6 +23,7 @@ export function HomePage({
   onUnarchiveProject,
   onDeleteProject,
   onManageDevices,
+  onLabelGenerator,
   role
 }: HomePageProps) {
   const [showArchived, setShowArchived] = useState(false);
@@ -150,6 +152,9 @@ export function HomePage({
           </p>
         </div>
         <div className="home-actions">
+          <button className="btn-secondary" onClick={onLabelGenerator}>
+            Étiquettes
+          </button>
           {role === 'admin' && (
             <>
               <button className="btn-secondary" onClick={onManageDevices}>

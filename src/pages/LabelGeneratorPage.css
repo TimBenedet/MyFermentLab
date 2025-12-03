@@ -1,0 +1,425 @@
+/* ========================================
+   LabelGeneratorPage - Thème Kraft Minimal
+   ======================================== */
+
+.label-generator-page {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.label-generator-container {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 50px;
+  align-items: start;
+}
+
+/* Section formulaire */
+.label-form-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 30px;
+  backdrop-filter: blur(10px);
+}
+
+.section-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #c4a574;
+  margin-bottom: 15px;
+  font-weight: 400;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 25px 0;
+}
+
+.label-form-group {
+  margin-bottom: 20px;
+}
+
+.label-form-group label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #bbb;
+  margin-bottom: 8px;
+  font-weight: 300;
+}
+
+.label-form-group input[type="text"],
+.label-form-group textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 12px 15px;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 0.95rem;
+  color: #e8e4df;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.label-form-group textarea {
+  resize: vertical;
+  min-height: 70px;
+  font-family: 'Caveat', cursive;
+  font-size: 1.1rem;
+}
+
+.label-form-group input:focus,
+.label-form-group textarea:focus {
+  border-color: #c4a574;
+  background: rgba(196, 165, 116, 0.08);
+}
+
+/* Contrôles d'éléments */
+.element-controls {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.style-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.style-btn {
+  width: 26px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #666;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-weight: bold;
+}
+
+.style-btn.italic {
+  font-style: italic;
+  font-family: 'Times New Roman', serif;
+}
+
+.style-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8e4df;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.style-btn.active {
+  background: rgba(196, 165, 116, 0.25);
+  border-color: #c4a574;
+  color: #c4a574;
+}
+
+.color-picker {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  background: none;
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.rotation-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.rotation-control input[type="range"] {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.rotation-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #c4a574;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.rotation-control span {
+  font-size: 0.6rem;
+  color: #666;
+  min-width: 35px;
+  text-align: right;
+}
+
+/* Grille de couleurs */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.color-option {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.color-option.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(196, 165, 116, 0.3);
+}
+
+.color-option.active::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Actions */
+.label-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+/* Section preview */
+.label-preview-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.edit-hint {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #666;
+}
+
+/* Label preview */
+.label-preview {
+  width: 680px;
+  height: 280px;
+  border-radius: 2px;
+  position: relative;
+  overflow: visible;
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.5),
+    0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: fadeInScale 0.5s ease forwards;
+}
+
+.kraft-texture {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.08;
+  pointer-events: none;
+  border-radius: 2px;
+}
+
+/* Éléments déplaçables */
+.draggable {
+  position: absolute;
+  cursor: move;
+  transition: opacity 0.1s ease;
+  z-index: 1;
+}
+
+.draggable.selected {
+  outline: 2px dashed rgba(60, 45, 30, 0.5);
+  outline-offset: 6px;
+  z-index: 10;
+}
+
+.draggable:hover {
+  opacity: 0.85;
+}
+
+/* Texte vertical de la marque */
+.brand-vertical {
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 300;
+  font-size: 2.8rem;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  line-height: 1;
+}
+
+/* Sous-texte vertical */
+.brand-subtitle {
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 300;
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  line-height: 1;
+}
+
+/* Ligne verticale séparatrice */
+.vertical-line {
+  width: 2px;
+  height: 220px;
+  background: #3c2d1e;
+}
+
+/* Nom du produit */
+.product-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: 3.2rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Série / Type */
+.product-series {
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 300;
+  font-size: 0.75rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Ingrédients */
+.product-ingredients {
+  font-family: 'Caveat', cursive;
+  font-size: 1.35rem;
+  line-height: 1.4;
+  max-width: 420px;
+}
+
+/* Animation */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .label-generator-container {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .label-form-section {
+    position: relative;
+    top: 0;
+    max-height: none;
+  }
+
+  .label-preview {
+    transform: scale(0.75);
+    transform-origin: top center;
+  }
+}
+
+@media (max-width: 768px) {
+  .label-preview {
+    transform: scale(0.5);
+  }
+
+  .control-row {
+    flex-wrap: wrap;
+  }
+
+  .rotation-control {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .label-form-section,
+  .page-header,
+  .edit-hint,
+  .btn-secondary {
+    display: none !important;
+  }
+
+  .label-generator-container {
+    display: block !important;
+  }
+
+  .label-preview-section {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100vh;
+  }
+
+  .label-preview {
+    box-shadow: none !important;
+    border: 1px solid #ccc;
+  }
+
+  .draggable.selected {
+    outline: none !important;
+  }
+}
