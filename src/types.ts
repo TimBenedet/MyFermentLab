@@ -140,8 +140,14 @@ export interface BrewingRecipe {
 
 // Calculateurs de brassage
 export interface BrewingCalculations {
-  // Volume final après pertes (ébullition, trub, etc.)
+  // Volume final en fermenteur (batchSize)
   finalVolume: number;
+  // Volume après ébullition (avant pertes)
+  postBoilVolume: number;
+  // Volume avant ébullition
+  preBoilVolume: number;
+  // Volume d'eau total nécessaire
+  totalWaterNeeded: number;
   // Densité initiale estimée (OG)
   originalGravity: number;
   // Densité finale estimée (FG)

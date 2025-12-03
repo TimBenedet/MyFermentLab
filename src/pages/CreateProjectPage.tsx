@@ -410,6 +410,18 @@ export function CreateProjectPage({ devices, onCreateProject, onCancel, role }: 
                         <span className="calc-value">{calculations.finalVolume} L</span>
                       </div>
                       <div className="calc-item">
+                        <span className="calc-label">Vol. post-ébullition</span>
+                        <span className="calc-value">{calculations.postBoilVolume} L</span>
+                      </div>
+                      <div className="calc-item">
+                        <span className="calc-label">Vol. pré-ébullition</span>
+                        <span className="calc-value">{calculations.preBoilVolume} L</span>
+                      </div>
+                      <div className="calc-item highlight">
+                        <span className="calc-label">Eau totale nécessaire</span>
+                        <span className="calc-value">{calculations.totalWaterNeeded} L</span>
+                      </div>
+                      <div className="calc-item">
                         <span className="calc-label">Densité initiale</span>
                         <span className="calc-value">{calculations.originalGravity.toFixed(3)}</span>
                       </div>

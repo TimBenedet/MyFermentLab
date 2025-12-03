@@ -8,44 +8,57 @@ import {
 
 // Constantes pour les calculs
 const BOIL_OFF_RATE = 0.1; // 10% perte par heure d'ébullition
-const TRUB_LOSS = 2; // 2L de perte au trub
+const LOSS_RATE = 0.04; // 4% de pertes (trub, transferts, etc.)
 const GRAIN_ABSORPTION = 1.0; // 1L d'eau absorbé par kg de grain
 const DEFAULT_EFFICIENCY = 0.72; // 72% d'efficacité par défaut
 const DEFAULT_ATTENUATION = 0.75; // 75% d'atténuation par défaut
 
 /**
- * Calcule le volume total d'eau nécessaire
+ * Calcule le volume total d'eau saisi par l'utilisateur
  */
-export function calculateTotalWater(recipe: BrewingRecipe): number {
+export function calculateTotalWaterInput(recipe: BrewingRecipe): number {
   return recipe.waters.reduce((sum, w) => sum + w.quantity, 0);
 }
 
 /**
- * Calcule le volume pré-ébullition
- */
-export function calculatePreBoilVolume(recipe: BrewingRecipe): number {
-  const totalWater = calculateTotalWater(recipe);
-  const totalGrains = recipe.grains.reduce((sum, g) => sum + g.quantity, 0);
-  const grainAbsorption = totalGrains * GRAIN_ABSORPTION;
-  return totalWater - grainAbsorption;
-}
-
-/**
- * Calcule le volume après ébullition
- */
-export function calculatePostBoilVolume(recipe: BrewingRecipe): number {
-  const preBoilVolume = calculatePreBoilVolume(recipe);
-  const boilHours = recipe.boilStep.duration / 60;
-  const boilOff = preBoilVolume * BOIL_OFF_RATE * boilHours;
-  return preBoilVolume - boilOff;
-}
-
-/**
  * Calcule le volume final en fermenteur
+ * C'est le batchSize défini par l'utilisateur
  */
 export function calculateFinalVolume(recipe: BrewingRecipe): number {
+  return recipe.batchSize;
+}
+
+/**
+ * Calcule le volume post-ébullition nécessaire (avant pertes)
+ * Volume final / (1 - taux de perte)
+ * Ex: 15L final avec 4% perte = 15 / 0.96 = 15.625L
+ */
+export function calculatePostBoilVolume(recipe: BrewingRecipe): number {
+  const finalVolume = recipe.batchSize;
+  return finalVolume / (1 - LOSS_RATE);
+}
+
+/**
+ * Calcule le volume pré-ébullition nécessaire
+ * Volume post-ébullition / (1 - (taux évaporation × heures))
+ * Ex: 15.625L avec 1h d'ébullition à 10%/h = 15.625 / (1 - 0.1) = 17.36L
+ */
+export function calculatePreBoilVolume(recipe: BrewingRecipe): number {
   const postBoilVolume = calculatePostBoilVolume(recipe);
-  return Math.max(0, postBoilVolume - TRUB_LOSS);
+  const boilHours = recipe.boilStep.duration / 60;
+  return postBoilVolume / (1 - (BOIL_OFF_RATE * boilHours));
+}
+
+/**
+ * Calcule le volume d'eau total nécessaire
+ * Volume pré-ébullition + (1L × kg de malt)
+ * Ex: 17.36L + 4kg de malt = 21.36L
+ */
+export function calculateTotalWaterNeeded(recipe: BrewingRecipe): number {
+  const preBoilVolume = calculatePreBoilVolume(recipe);
+  const totalGrains = recipe.grains.reduce((sum, g) => sum + g.quantity, 0);
+  const grainAbsorption = totalGrains * GRAIN_ABSORPTION;
+  return preBoilVolume + grainAbsorption;
 }
 
 /**
@@ -146,6 +159,9 @@ export function calculateBrewingMetrics(
   efficiency: number = DEFAULT_EFFICIENCY
 ): BrewingCalculations {
   const finalVolume = calculateFinalVolume(recipe);
+  const postBoilVolume = calculatePostBoilVolume(recipe);
+  const preBoilVolume = calculatePreBoilVolume(recipe);
+  const totalWaterNeeded = calculateTotalWaterNeeded(recipe);
   const originalGravity = calculateOriginalGravity(recipe, efficiency);
   const finalGravity = calculateFinalGravity(recipe, efficiency);
   const abv = calculateABV(originalGravity, finalGravity);
@@ -154,6 +170,9 @@ export function calculateBrewingMetrics(
 
   return {
     finalVolume: Math.round(finalVolume * 10) / 10,
+    postBoilVolume: Math.round(postBoilVolume * 100) / 100,
+    preBoilVolume: Math.round(preBoilVolume * 100) / 100,
+    totalWaterNeeded: Math.round(totalWaterNeeded * 100) / 100,
     originalGravity: Math.round(originalGravity * 1000) / 1000,
     finalGravity: Math.round(finalGravity * 1000) / 1000,
     abv: Math.round(abv * 10) / 10,
