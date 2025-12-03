@@ -190,6 +190,33 @@ export interface BrewingCalculations {
   efficiency: number;
 }
 
+// État d'une étape de brassage en cours
+export interface BrewingStepProgress {
+  stepId: string;
+  startedAt?: number;
+  completedAt?: number;
+  notes?: string;
+}
+
+// Session de brassage
+export interface BrewingSession {
+  startedAt: number;
+  completedAt?: number;
+  currentStepIndex: number;
+  steps: BrewingSessionStep[];
+  stepsProgress: BrewingStepProgress[];
+}
+
+// Étape personnalisable pour la session de brassage
+export interface BrewingSessionStep {
+  id: string;
+  name: string;
+  description?: string;
+  duration: number; // en minutes
+  temperature?: number;
+  notes?: string;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -212,6 +239,9 @@ export interface Project {
 
   // Journal de brassage
   brewingLog?: BrewingLogEntry[];
+
+  // Session de brassage (jour de brassage)
+  brewingSession?: BrewingSession;
 }
 
 export const FERMENTATION_TYPES = {

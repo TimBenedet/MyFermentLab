@@ -1,4 +1,4 @@
-import { Project, Device, FermentationType, BrewingLogEntry } from '../types';
+import { Project, Device, FermentationType, BrewingLogEntry, BrewingSession } from '../types';
 
 const API_BASE_URL = '/api';
 
@@ -195,6 +195,18 @@ class ApiService {
     });
     if (!response.ok) {
       throw new Error('Failed to update brewing log');
+    }
+    return response.json();
+  }
+
+  async updateProject(id: string, data: { brewingSession?: BrewingSession }): Promise<Project> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update project');
     }
     return response.json();
   }

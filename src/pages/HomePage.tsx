@@ -9,6 +9,7 @@ interface HomePageProps {
   onArchiveProject: (projectId: string) => void;
   onUnarchiveProject: (projectId: string) => void;
   onDeleteProject: (projectId: string) => void;
+  onStartBrewing: (projectId: string) => void;
   onManageDevices: () => void;
   onLabelGenerator: () => void;
   onViewStats: () => void;
@@ -23,6 +24,7 @@ export function HomePage({
   onArchiveProject,
   onUnarchiveProject,
   onDeleteProject,
+  onStartBrewing,
   onManageDevices,
   onLabelGenerator,
   onViewStats,
@@ -86,12 +88,34 @@ export function HomePage({
 
           {!project.archived && (
             <div className="project-status">
-              <span className={`status-indicator ${project.outletActive ? 'active' : 'inactive'}`}>
-                {project.outletActive ? 'Chauffage actif' : 'Inactif'}
-              </span>
-              <span className="status-diff" style={{ color: Math.abs(diff) < 0.5 ? '#10B981' : config.color }}>
-                {Math.abs(diff) < 0.5 ? 'Stable' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)}°C`}
-              </span>
+              {/* Afficher le bouton Brasser si c'est une bière sans session de brassage */}
+              {project.fermentationType === 'beer' && !project.brewingSession && (
+                <button
+                  className="btn-start-brewing"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStartBrewing(project.id);
+                  }}
+                  title="Démarrer le brassage"
+                >
+                  🍺 Brasser
+                </button>
+              )}
+              {/* Afficher "En cours de brassage" si session active */}
+              {project.brewingSession && !project.brewingSession.completedAt && (
+                <span className="status-indicator brewing">En brassage</span>
+              )}
+              {/* Sinon afficher le statut normal */}
+              {(!project.brewingSession || project.brewingSession.completedAt) && (
+                <>
+                  <span className={`status-indicator ${project.outletActive ? 'active' : 'inactive'}`}>
+                    {project.outletActive ? 'Chauffage actif' : 'Inactif'}
+                  </span>
+                  <span className="status-diff" style={{ color: Math.abs(diff) < 0.5 ? '#10B981' : config.color }}>
+                    {Math.abs(diff) < 0.5 ? 'Stable' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)}°C`}
+                  </span>
+                </>
+              )}
               <button
                 className="btn-archive"
                 onClick={(e) => {

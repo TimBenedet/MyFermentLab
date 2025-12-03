@@ -2,17 +2,18 @@ import { useState, useEffect } from 'react';
 import { HomePage } from './pages/HomePage';
 import { CreateProjectPage } from './pages/CreateProjectPage';
 import { MonitoringPage } from './pages/MonitoringPage';
+import { BrewingSessionPage } from './pages/BrewingSessionPage';
 import { DevicesPage } from './pages/DevicesPage';
 import { LoginPage } from './pages/LoginPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { LabelGeneratorPage } from './pages/LabelGeneratorPage';
 import { StatsPage } from './pages/StatsPage';
-import { Project, Device, FermentationType } from './types';
+import { Project, Device, FermentationType, BrewingSession } from './types';
 import { apiService, ProjectWithHistory } from './services/api.service';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
-type Page = 'home' | 'create-project' | 'monitoring' | 'devices' | 'summary' | 'labels' | 'stats';
+type Page = 'home' | 'create-project' | 'monitoring' | 'brewing-session' | 'devices' | 'summary' | 'labels' | 'stats';
 
 function App() {
   const { isAuthenticated, role, logout } = useAuth();
@@ -90,12 +91,18 @@ function App() {
     outletId: string;
     targetTemperature: number;
     controlMode: 'manual' | 'automatic';
-  }) => {
+  }, startBrewing?: boolean) => {
     try {
       const newProject = await apiService.createProject(data);
       setProjects(prev => [...prev, newProject]);
       setSelectedProjectId(newProject.id);
-      setCurrentPage('monitoring');
+
+      // Si on démarre le brassage, aller sur la page de session de brassage
+      if (startBrewing && data.fermentationType === 'beer') {
+        setCurrentPage('brewing-session');
+      } else {
+        setCurrentPage('home');
+      }
     } catch (err) {
       console.error('Failed to create project:', err);
       setError('Impossible de créer le projet');
@@ -103,8 +110,25 @@ function App() {
   };
 
   const handleSelectProject = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
     setSelectedProjectId(projectId);
-    setCurrentPage('monitoring');
+
+    // Déterminer la page selon l'état du projet
+    if (project?.fermentationType === 'beer') {
+      // Si le brassage a une session mais n'est pas terminé
+      if (project.brewingSession && !project.brewingSession.completedAt) {
+        setCurrentPage('brewing-session');
+      } else {
+        setCurrentPage('monitoring');
+      }
+    } else {
+      setCurrentPage('monitoring');
+    }
+  };
+
+  const handleStartBrewing = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    setCurrentPage('brewing-session');
   };
 
   const handleViewSummary = (projectId: string) => {
@@ -167,6 +191,48 @@ function App() {
     } catch (err) {
       console.error('Failed to toggle control mode:', err);
       setError('Impossible de changer le mode de contrôle');
+    }
+  };
+
+  // Session de brassage
+  const handleUpdateBrewingSession = async (session: BrewingSession) => {
+    if (!selectedProjectId || !selectedProject) return;
+
+    try {
+      const updatedProject = { ...selectedProject, brewingSession: session };
+      await apiService.updateProject(selectedProjectId, { brewingSession: session });
+
+      setSelectedProject(updatedProject);
+      setProjects(prev => prev.map(p =>
+        p.id === selectedProjectId ? { ...p, brewingSession: session } : p
+      ));
+    } catch (err) {
+      console.error('Failed to update brewing session:', err);
+      setError('Impossible de mettre à jour la session de brassage');
+    }
+  };
+
+  const handleFinishBrewing = async () => {
+    if (!selectedProjectId || !selectedProject?.brewingSession) return;
+
+    try {
+      const completedSession = {
+        ...selectedProject.brewingSession,
+        completedAt: Date.now()
+      };
+
+      await apiService.updateProject(selectedProjectId, { brewingSession: completedSession });
+
+      setSelectedProject(prev => prev ? { ...prev, brewingSession: completedSession } : null);
+      setProjects(prev => prev.map(p =>
+        p.id === selectedProjectId ? { ...p, brewingSession: completedSession } : p
+      ));
+
+      // Aller sur la page de monitoring
+      setCurrentPage('monitoring');
+    } catch (err) {
+      console.error('Failed to finish brewing:', err);
+      setError('Impossible de terminer le brassage');
     }
   };
 
@@ -332,6 +398,7 @@ function App() {
             onArchiveProject={handleArchiveProject}
             onUnarchiveProject={handleUnarchiveProject}
             onDeleteProject={handleDeleteProject}
+            onStartBrewing={handleStartBrewing}
             onManageDevices={() => setCurrentPage('devices')}
             onLabelGenerator={() => setCurrentPage('labels')}
             onViewStats={() => setCurrentPage('stats')}
@@ -357,6 +424,15 @@ function App() {
             onToggleControlMode={handleToggleControlMode}
             onBack={() => setCurrentPage('home')}
             role={role}
+          />
+        )}
+
+        {currentPage === 'brewing-session' && selectedProject && (
+          <BrewingSessionPage
+            project={selectedProject}
+            onUpdateSession={handleUpdateBrewingSession}
+            onFinishBrewing={handleFinishBrewing}
+            onBack={() => setCurrentPage('home')}
           />
         )}
 

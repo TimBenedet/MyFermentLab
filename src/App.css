@@ -312,6 +312,34 @@
   color: #999999;
 }
 
+.status-indicator.brewing {
+  background: rgba(245, 167, 66, 0.2);
+  color: #F5A742;
+  animation: brewingPulse 2s ease-in-out infinite;
+}
+
+@keyframes brewingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.btn-start-brewing {
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #F5A742, #e89a30);
+  border: none;
+  border-radius: 4px;
+  color: #1a1f26;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-start-brewing:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(245, 167, 66, 0.4);
+}
+
 .status-diff {
   font-size: 0.875rem;
   font-weight: 500;

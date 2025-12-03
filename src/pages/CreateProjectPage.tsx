@@ -36,7 +36,7 @@ interface CreateProjectPageProps {
     targetTemperature: number;
     controlMode: 'manual' | 'automatic';
     recipe?: BrewingRecipe;
-  }) => void;
+  }, startBrewing?: boolean) => void;
   onCancel: () => void;
   role: 'admin' | 'viewer' | null;
 }
@@ -211,37 +211,47 @@ export function CreateProjectPage({ devices, onCreateProject, onCancel, role }: 
     }
   };
 
+  const createProjectData = () => {
+    // Déterminer la température cible
+    let targetTemp = Math.round((config.minTemp + config.maxTemp) / 2);
+
+    // Si c'est de la bière avec une recette, utiliser la température de fermentation
+    if (fermentationType === 'beer' && showRecipe && recipe.fermentationSteps.length > 0) {
+      targetTemp = recipe.fermentationSteps[0].temperature;
+    }
+
+    // Mettre à jour les valeurs calculées dans la recette
+    const finalRecipe = fermentationType === 'beer' && showRecipe ? {
+      ...recipe,
+      name: name.trim(),
+      originalGravity: calculations?.originalGravity,
+      finalGravity: calculations?.finalGravity,
+      estimatedABV: calculations?.abv,
+      estimatedIBU: calculations?.ibu,
+      estimatedColor: calculations?.colorEBC
+    } : undefined;
+
+    return {
+      name: name.trim(),
+      fermentationType,
+      sensorId,
+      outletId,
+      targetTemperature: targetTemp,
+      controlMode,
+      recipe: finalRecipe
+    };
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (canSubmit) {
-      // Déterminer la température cible
-      let targetTemp = Math.round((config.minTemp + config.maxTemp) / 2);
+      onCreateProject(createProjectData(), false);
+    }
+  };
 
-      // Si c'est de la bière avec une recette, utiliser la température de fermentation
-      if (fermentationType === 'beer' && showRecipe && recipe.fermentationSteps.length > 0) {
-        targetTemp = recipe.fermentationSteps[0].temperature;
-      }
-
-      // Mettre à jour les valeurs calculées dans la recette
-      const finalRecipe = fermentationType === 'beer' && showRecipe ? {
-        ...recipe,
-        name: name.trim(),
-        originalGravity: calculations?.originalGravity,
-        finalGravity: calculations?.finalGravity,
-        estimatedABV: calculations?.abv,
-        estimatedIBU: calculations?.ibu,
-        estimatedColor: calculations?.colorEBC
-      } : undefined;
-
-      onCreateProject({
-        name: name.trim(),
-        fermentationType,
-        sensorId,
-        outletId,
-        targetTemperature: targetTemp,
-        controlMode,
-        recipe: finalRecipe
-      });
+  const handleStartBrewing = () => {
+    if (canSubmit) {
+      onCreateProject(createProjectData(), true);
     }
   };
 
@@ -1036,8 +1046,18 @@ export function CreateProjectPage({ devices, onCreateProject, onCancel, role }: 
             Annuler
           </button>
           <button type="submit" className="btn-primary" disabled={!canSubmit}>
-            Créer le projet
+            Enregistrer
           </button>
+          {fermentationType === 'beer' && (
+            <button
+              type="button"
+              className="btn-brewing"
+              disabled={!canSubmit}
+              onClick={handleStartBrewing}
+            >
+              Brasser maintenant
+            </button>
+          )}
         </div>
       </form>
     </div>

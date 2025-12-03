@@ -315,6 +315,29 @@
   color: #888;
 }
 
+/* Bouton Brasser */
+.btn-brewing {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #F5A742, #e89a30);
+  border: none;
+  border-radius: 8px;
+  color: #1a1f26;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-brewing:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(245, 167, 66, 0.3);
+}
+
+.btn-brewing:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .create-project-page {

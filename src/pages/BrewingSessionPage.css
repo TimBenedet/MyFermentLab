@@ -1,0 +1,442 @@
+/* ========================================
+   Brewing Session Page
+   ======================================== */
+
+.brewing-session-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+.recipe-badge {
+  background: rgba(196, 165, 116, 0.2);
+  color: #c4a574;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Progress Bar */
+.brewing-progress-bar {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+.progress-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c4a574, #e8c994);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* Timeline */
+.brewing-timeline {
+  position: relative;
+  padding: 0 20px;
+}
+
+/* Timeline Step */
+.timeline-step {
+  position: relative;
+  margin-bottom: 0;
+}
+
+/* Connector dots */
+.timeline-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  margin-left: 22px;
+}
+
+.connector-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.3s ease;
+}
+
+.timeline-step.completed .timeline-connector .connector-dot,
+.timeline-step.completed + .timeline-step .timeline-connector.top .connector-dot {
+  background: #c4a574;
+}
+
+.timeline-step.in-progress .timeline-connector.bottom .connector-dot {
+  background: rgba(196, 165, 116, 0.4);
+}
+
+/* Step Content */
+.step-content {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.step-marker {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  color: #888;
+}
+
+.timeline-step.current .step-marker {
+  background: rgba(196, 165, 116, 0.2);
+  border-color: #c4a574;
+  color: #c4a574;
+}
+
+.timeline-step.in-progress .step-marker {
+  background: #c4a574;
+  border-color: #c4a574;
+  color: #1a1f26;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.timeline-step.completed .step-marker {
+  background: #10B981;
+  border-color: #10B981;
+  color: white;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 165, 116, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(196, 165, 116, 0); }
+}
+
+/* Step Info */
+.step-info {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: all 0.3s ease;
+}
+
+.timeline-step.current .step-info,
+.timeline-step.in-progress .step-info {
+  border-color: rgba(196, 165, 116, 0.3);
+  background: rgba(196, 165, 116, 0.05);
+}
+
+.timeline-step.completed .step-info {
+  opacity: 0.7;
+}
+
+.step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.step-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e8e4df;
+  margin: 0;
+}
+
+.step-duration {
+  font-size: 0.85rem;
+  color: #c4a574;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.step-duration:hover {
+  background: rgba(196, 165, 116, 0.1);
+}
+
+.duration-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.duration-input {
+  width: 60px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(196, 165, 116, 0.3);
+  border-radius: 4px;
+  color: #e8e4df;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.step-description {
+  font-size: 0.85rem;
+  color: #888;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+/* Timer */
+.step-timer {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.timer-display {
+  font-size: 2rem;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Monaco', monospace;
+  color: #c4a574;
+}
+
+.timer-target {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Actions */
+.step-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.btn-start {
+  padding: 8px 20px;
+  background: rgba(196, 165, 116, 0.2);
+  border: 1px solid #c4a574;
+  border-radius: 6px;
+  color: #c4a574;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-start:hover {
+  background: #c4a574;
+  color: #1a1f26;
+}
+
+.btn-complete {
+  padding: 8px 20px;
+  background: #10B981;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-complete:hover {
+  background: #059669;
+}
+
+.completed-badge {
+  font-size: 0.8rem;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.btn-icon.remove {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 50%;
+  color: #EF4444;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+}
+
+.btn-icon.remove:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-icon.save {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #10B981;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* Add Step */
+.btn-add-step {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  margin-top: 16px;
+  background: transparent;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #666;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-step:hover {
+  border-color: rgba(196, 165, 116, 0.3);
+  color: #c4a574;
+}
+
+.add-step-form {
+  margin-top: 16px;
+}
+
+.add-step-form .step-content.add-form .step-marker {
+  background: rgba(196, 165, 116, 0.2);
+  border-color: rgba(196, 165, 116, 0.5);
+  color: #c4a574;
+}
+
+.add-step-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.add-step-row .form-input.small {
+  width: 70px;
+}
+
+.add-step-row span {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* Complete Section */
+.brewing-complete-section {
+  margin-top: 40px;
+  text-align: center;
+  padding: 40px;
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 16px;
+}
+
+.complete-message {
+  margin-bottom: 24px;
+}
+
+.complete-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.complete-message h2 {
+  font-size: 1.5rem;
+  color: #10B981;
+  margin: 0 0 8px 0;
+}
+
+.complete-message p {
+  color: #888;
+  margin: 0;
+}
+
+.btn-finish-brewing {
+  padding: 14px 40px;
+  background: linear-gradient(135deg, #10B981, #059669);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-finish-brewing:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .brewing-session-page {
+    padding: 0 10px 40px;
+  }
+
+  .step-content {
+    gap: 12px;
+  }
+
+  .step-marker {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+  }
+
+  .timeline-connector {
+    margin-left: 17px;
+  }
+
+  .step-info {
+    padding: 14px 16px;
+  }
+
+  .step-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .timer-display {
+    font-size: 1.5rem;
+  }
+}
