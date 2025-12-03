@@ -111,6 +111,12 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
   const [isSnapped, setIsSnapped] = useState(false);
+  const [distanceInfo, setDistanceInfo] = useState<{
+    top: { value: number; x: number; y: number; isEqual: boolean } | null;
+    bottom: { value: number; x: number; y: number; isEqual: boolean } | null;
+    left: { value: number; x: number; y: number; isEqual: boolean } | null;
+    right: { value: number; x: number; y: number; isEqual: boolean } | null;
+  }>({ top: null, bottom: null, left: null, right: null });
 
   const labelRef = useRef<HTMLDivElement>(null);
   const elementRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -382,6 +388,102 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     return snaps;
   }, [positions, getElementAnchors]);
 
+  // Calculer et afficher les distances
+  const calculateDistances = useCallback((currentKey: string, newLeft: number, newTop: number) => {
+    const currentElement = elementRefs.current[currentKey];
+    if (!currentElement) {
+      setDistanceInfo({ top: null, bottom: null, left: null, right: null });
+      return;
+    }
+
+    const currentRect = currentElement.getBoundingClientRect();
+    const currentWidth = currentRect.width;
+    const currentHeight = currentRect.height;
+
+    const currentTop = newTop;
+    const currentBottom = newTop + currentHeight;
+    const currentLeftEdge = newLeft;
+    const currentRightEdge = newLeft + currentWidth;
+    const currentCenterX = newLeft + currentWidth / 2;
+    const currentCenterY = newTop + currentHeight / 2;
+
+    // Collecter les autres éléments
+    const otherElements = Object.keys(positions)
+      .filter(k => k !== currentKey)
+      .map(k => getElementAnchors(k))
+      .filter((a): a is NonNullable<typeof a> => a !== null);
+
+    // Trier par position verticale
+    const sortedByY = [...otherElements].sort((a, b) => a.top - b.top);
+    let elementAbove = null;
+    let elementBelow = null;
+
+    for (const el of sortedByY) {
+      if (el.bottom <= currentTop) elementAbove = el;
+    }
+    for (const el of sortedByY) {
+      if (el.top >= currentBottom) {
+        elementBelow = el;
+        break;
+      }
+    }
+
+    // Distances verticales
+    const distToAbove = elementAbove ? currentTop - elementAbove.bottom : currentTop;
+    const distToBelow = elementBelow ? elementBelow.top - currentBottom : LABEL_HEIGHT - currentBottom;
+
+    // Trier par position horizontale
+    const sortedByX = [...otherElements].sort((a, b) => a.left - b.left);
+    let elementLeftOf = null;
+    let elementRightOf = null;
+
+    for (const el of sortedByX) {
+      if (el.right <= currentLeftEdge) elementLeftOf = el;
+    }
+    for (const el of sortedByX) {
+      if (el.left >= currentRightEdge) {
+        elementRightOf = el;
+        break;
+      }
+    }
+
+    // Distances horizontales
+    const distToLeft = elementLeftOf ? currentLeftEdge - elementLeftOf.right : currentLeftEdge;
+    const distToRight = elementRightOf ? elementRightOf.left - currentRightEdge : LABEL_WIDTH - currentRightEdge;
+
+    // Vérifier si distances égales
+    const EQUAL_TOLERANCE = 5;
+    const verticalEqual = Math.abs(distToAbove - distToBelow) < EQUAL_TOLERANCE;
+    const horizontalEqual = Math.abs(distToLeft - distToRight) < EQUAL_TOLERANCE;
+
+    setDistanceInfo({
+      top: distToAbove > 5 ? {
+        value: Math.round(distToAbove),
+        x: currentCenterX,
+        y: currentTop - distToAbove / 2,
+        isEqual: verticalEqual
+      } : null,
+      bottom: distToBelow > 5 ? {
+        value: Math.round(distToBelow),
+        x: currentCenterX,
+        y: currentBottom + distToBelow / 2,
+        isEqual: verticalEqual
+      } : null,
+      left: distToLeft > 5 ? {
+        value: Math.round(distToLeft),
+        x: currentLeftEdge - distToLeft / 2,
+        y: currentCenterY,
+        isEqual: horizontalEqual
+      } : null,
+      right: distToRight > 5 ? {
+        value: Math.round(distToRight),
+        x: currentRightEdge + distToRight / 2,
+        y: currentCenterY,
+        isEqual: horizontalEqual
+      } : null
+    });
+  }, [positions, getElementAnchors]);
+
   const handleMouseDown = (element: string, e: React.MouseEvent) => {
     e.preventDefault();
     setSelectedElement(element);
@@ -417,6 +519,9 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     setActiveGuides(snaps.guides);
     setIsSnapped(snaps.guides.length > 0);
 
+    // Calculer les distances
+    calculateDistances(selectedElement, newLeft, newTop);
+
     setPositions(prev => ({
       ...prev,
       [selectedElement]: {
@@ -425,12 +530,13 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
         y: newTop
       }
     }));
-  }, [isDragging, selectedElement, findSnaps]);
+  }, [isDragging, selectedElement, findSnaps, calculateDistances]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
     setActiveGuides([]);
     setIsSnapped(false);
+    setDistanceInfo({ top: null, bottom: null, left: null, right: null });
     dragStateRef.current = null;
   }, []);
 
@@ -748,6 +854,40 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                 }
               />
             ))}
+
+            {/* Indicateurs de distance */}
+            {isDragging && distanceInfo.top && (
+              <div
+                className={`distance-indicator visible ${distanceInfo.top.isEqual ? 'equal' : ''}`}
+                style={{ left: `${distanceInfo.top.x}px`, top: `${distanceInfo.top.y}px` }}
+              >
+                {distanceInfo.top.value}px
+              </div>
+            )}
+            {isDragging && distanceInfo.bottom && (
+              <div
+                className={`distance-indicator visible ${distanceInfo.bottom.isEqual ? 'equal' : ''}`}
+                style={{ left: `${distanceInfo.bottom.x}px`, top: `${distanceInfo.bottom.y}px` }}
+              >
+                {distanceInfo.bottom.value}px
+              </div>
+            )}
+            {isDragging && distanceInfo.left && (
+              <div
+                className={`distance-indicator visible ${distanceInfo.left.isEqual ? 'equal' : ''}`}
+                style={{ left: `${distanceInfo.left.x}px`, top: `${distanceInfo.left.y}px` }}
+              >
+                {distanceInfo.left.value}px
+              </div>
+            )}
+            {isDragging && distanceInfo.right && (
+              <div
+                className={`distance-indicator visible ${distanceInfo.right.isEqual ? 'equal' : ''}`}
+                style={{ left: `${distanceInfo.right.x}px`, top: `${distanceInfo.right.y}px` }}
+              >
+                {distanceInfo.right.value}px
+              </div>
+            )}
 
             {/* Nom de marque vertical */}
             <div
