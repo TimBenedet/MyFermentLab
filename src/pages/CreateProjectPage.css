@@ -1,0 +1,350 @@
+/* CreateProjectPage - Styles pour le formulaire de création de projet */
+
+.create-project-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+/* Form sections */
+.form-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.form-section h2 {
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #c4a574;
+  margin: 0 0 20px 0;
+}
+
+/* Form row for side-by-side fields */
+.form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.form-row .form-group {
+  flex: 1;
+  min-width: 150px;
+}
+
+.form-row .form-group.flex-2 {
+  flex: 2;
+}
+
+/* Recipe toggle section */
+.recipe-toggle-section {
+  padding: 16px 24px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #e8e4df;
+}
+
+.toggle-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #c4a574;
+}
+
+/* Calculations summary */
+.calculations-summary {
+  background: linear-gradient(135deg, rgba(196, 165, 116, 0.1) 0%, rgba(196, 165, 116, 0.05) 100%);
+  border: 1px solid rgba(196, 165, 116, 0.3);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+
+.calculations-summary h3 {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c4a574;
+  margin: 0 0 16px 0;
+}
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+.calc-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calc-item.highlight {
+  background: rgba(196, 165, 116, 0.15);
+  padding: 12px;
+  border-radius: 8px;
+  margin: -8px;
+}
+
+.calc-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.calc-value {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #e8e4df;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Accordion sections */
+.accordion-section {
+  padding: 0;
+  overflow: hidden;
+}
+
+.accordion-section .accordion-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #888;
+  transition: all 0.2s ease;
+}
+
+.accordion-section .accordion-header:hover {
+  color: #e8e4df;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.accordion-section .accordion-header.open {
+  color: #c4a574;
+  background: rgba(196, 165, 116, 0.05);
+}
+
+.accordion-icon {
+  font-size: 1.2rem;
+  font-weight: 300;
+}
+
+.accordion-content {
+  padding: 0 24px 24px;
+}
+
+/* Ingredient rows */
+.ingredient-row,
+.step-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.ingredient-row .form-input,
+.step-row .form-input {
+  margin-bottom: 0;
+}
+
+.ingredient-row .form-input.small,
+.step-row .form-input.small,
+.ingredient-row .form-select.small,
+.step-row .form-select.small {
+  width: 70px;
+  flex: none;
+}
+
+.ingredient-row .form-input.flex-2,
+.step-row .form-input.flex-2 {
+  flex: 2;
+  min-width: 150px;
+}
+
+.ingredient-row .form-select.small {
+  width: 110px;
+}
+
+.hop-row .form-input,
+.yeast-row .form-input {
+  min-width: 100px;
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(196, 165, 116, 0.2);
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c4a574;
+  flex-shrink: 0;
+}
+
+.unit {
+  font-size: 0.75rem;
+  color: #666;
+  min-width: 30px;
+}
+
+/* Buttons */
+.btn-add {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  background: rgba(196, 165, 116, 0.1);
+  border: 1px dashed rgba(196, 165, 116, 0.3);
+  border-radius: 8px;
+  color: #c4a574;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add:hover {
+  background: rgba(196, 165, 116, 0.2);
+  border-color: rgba(196, 165, 116, 0.5);
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+}
+
+.btn-icon.remove {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+}
+
+.btn-icon.remove:hover {
+  background: rgba(231, 76, 60, 0.2);
+}
+
+/* Textarea */
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: #e8e4df;
+  resize: vertical;
+  min-height: 60px;
+  transition: all 0.2s ease;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #c4a574;
+  background: rgba(196, 165, 116, 0.05);
+}
+
+.form-textarea::placeholder {
+  color: #666;
+}
+
+/* Input with unit inline */
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-with-unit .form-input {
+  flex: 1;
+}
+
+.input-with-unit .unit {
+  color: #888;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .create-project-page {
+    padding: 0 16px 40px;
+  }
+
+  .form-section {
+    padding: 16px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .form-row .form-group {
+    min-width: 100%;
+  }
+
+  .calc-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ingredient-row,
+  .step-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .ingredient-row .form-input.small,
+  .step-row .form-input.small,
+  .ingredient-row .form-select.small {
+    width: 100%;
+  }
+
+  .ingredient-row .btn-icon,
+  .step-row .btn-icon {
+    align-self: flex-end;
+  }
+}
