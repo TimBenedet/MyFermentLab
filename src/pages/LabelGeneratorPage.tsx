@@ -23,7 +23,7 @@ interface ElementPosition {
 interface SnapGuide {
   type: 'horizontal' | 'vertical' | 'hCenter' | 'vCenter';
   pos: number;
-  style?: string;
+  style: string;
 }
 
 interface SnapResult {
@@ -32,23 +32,53 @@ interface SnapResult {
   guides: SnapGuide[];
 }
 
-interface ElementAnchors {
-  left: number;
-  centerX: number;
-  right: number;
-  top: number;
-  centerY: number;
-  bottom: number;
-  width: number;
-  height: number;
-}
-
 // Configuration du snap
 const SNAP_THRESHOLD = 8;
 const EQUAL_SNAP_THRESHOLD = 12;
 const LABEL_WIDTH = 680;
 const LABEL_HEIGHT = 280;
 const MARGIN = 20;
+
+// Points d'ancrage de l'étiquette
+const labelAnchorsX = [
+  { pos: 0, type: 'edge' },
+  { pos: MARGIN, type: 'margin' },
+  { pos: LABEL_WIDTH / 10, type: 'tenth' },
+  { pos: (LABEL_WIDTH * 2) / 10, type: 'fifth' },
+  { pos: (LABEL_WIDTH * 3) / 10, type: 'tenth' },
+  { pos: LABEL_WIDTH / 4, type: 'quarter' },
+  { pos: LABEL_WIDTH / 3, type: 'third' },
+  { pos: (LABEL_WIDTH * 4) / 10, type: 'fifth' },
+  { pos: LABEL_WIDTH / 2, type: 'center' },
+  { pos: (LABEL_WIDTH * 6) / 10, type: 'fifth' },
+  { pos: (LABEL_WIDTH * 2) / 3, type: 'third' },
+  { pos: (LABEL_WIDTH * 7) / 10, type: 'tenth' },
+  { pos: (LABEL_WIDTH * 3) / 4, type: 'quarter' },
+  { pos: (LABEL_WIDTH * 4) / 5, type: 'fifth' },
+  { pos: (LABEL_WIDTH * 9) / 10, type: 'tenth' },
+  { pos: LABEL_WIDTH - MARGIN, type: 'margin' },
+  { pos: LABEL_WIDTH, type: 'edge' }
+];
+
+const labelAnchorsY = [
+  { pos: 0, type: 'edge' },
+  { pos: MARGIN, type: 'margin' },
+  { pos: LABEL_HEIGHT / 10, type: 'tenth' },
+  { pos: (LABEL_HEIGHT * 2) / 10, type: 'fifth' },
+  { pos: LABEL_HEIGHT / 4, type: 'quarter' },
+  { pos: (LABEL_HEIGHT * 3) / 10, type: 'tenth' },
+  { pos: LABEL_HEIGHT / 3, type: 'third' },
+  { pos: (LABEL_HEIGHT * 4) / 10, type: 'fifth' },
+  { pos: LABEL_HEIGHT / 2, type: 'center' },
+  { pos: (LABEL_HEIGHT * 6) / 10, type: 'fifth' },
+  { pos: (LABEL_HEIGHT * 2) / 3, type: 'third' },
+  { pos: (LABEL_HEIGHT * 7) / 10, type: 'tenth' },
+  { pos: (LABEL_HEIGHT * 3) / 4, type: 'quarter' },
+  { pos: (LABEL_HEIGHT * 4) / 5, type: 'fifth' },
+  { pos: (LABEL_HEIGHT * 9) / 10, type: 'tenth' },
+  { pos: LABEL_HEIGHT - MARGIN, type: 'margin' },
+  { pos: LABEL_HEIGHT, type: 'edge' }
+];
 
 export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
   const [labelData, setLabelData] = useState<LabelData>({
@@ -80,57 +110,20 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
-  const [distances, setDistances] = useState<{top?: number; bottom?: number; left?: number; right?: number}>({});
   const [isSnapped, setIsSnapped] = useState(false);
 
   const labelRef = useRef<HTMLDivElement>(null);
   const elementRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const dragStartRef = useRef<{x: number; y: number; startX: number; startY: number} | null>(null);
+  const dragStateRef = useRef<{
+    startX: number;
+    startY: number;
+    startLeft: number;
+    startTop: number;
+  } | null>(null);
 
   const labelColors = [
     '#c9a97a', '#d4b896', '#bfa068', '#d9c4a0', '#c2a06a',
     '#e5d5b8', '#d6c4a8', '#b89f7a', '#cdb896', '#a8946f'
-  ];
-
-  // Points d'ancrage de l'étiquette
-  const labelAnchorsX = [
-    { pos: 0, type: 'edge' },
-    { pos: MARGIN, type: 'margin' },
-    { pos: LABEL_WIDTH / 10, type: 'tenth' },
-    { pos: (LABEL_WIDTH * 2) / 10, type: 'fifth' },
-    { pos: (LABEL_WIDTH * 3) / 10, type: 'tenth' },
-    { pos: LABEL_WIDTH / 4, type: 'quarter' },
-    { pos: LABEL_WIDTH / 3, type: 'third' },
-    { pos: (LABEL_WIDTH * 4) / 10, type: 'fifth' },
-    { pos: LABEL_WIDTH / 2, type: 'center' },
-    { pos: (LABEL_WIDTH * 6) / 10, type: 'fifth' },
-    { pos: (LABEL_WIDTH * 2) / 3, type: 'third' },
-    { pos: (LABEL_WIDTH * 7) / 10, type: 'tenth' },
-    { pos: (LABEL_WIDTH * 3) / 4, type: 'quarter' },
-    { pos: (LABEL_WIDTH * 4) / 5, type: 'fifth' },
-    { pos: (LABEL_WIDTH * 9) / 10, type: 'tenth' },
-    { pos: LABEL_WIDTH - MARGIN, type: 'margin' },
-    { pos: LABEL_WIDTH, type: 'edge' }
-  ];
-
-  const labelAnchorsY = [
-    { pos: 0, type: 'edge' },
-    { pos: MARGIN, type: 'margin' },
-    { pos: LABEL_HEIGHT / 10, type: 'tenth' },
-    { pos: (LABEL_HEIGHT * 2) / 10, type: 'fifth' },
-    { pos: LABEL_HEIGHT / 4, type: 'quarter' },
-    { pos: (LABEL_HEIGHT * 3) / 10, type: 'tenth' },
-    { pos: LABEL_HEIGHT / 3, type: 'third' },
-    { pos: (LABEL_HEIGHT * 4) / 10, type: 'fifth' },
-    { pos: LABEL_HEIGHT / 2, type: 'center' },
-    { pos: (LABEL_HEIGHT * 6) / 10, type: 'fifth' },
-    { pos: (LABEL_HEIGHT * 2) / 3, type: 'third' },
-    { pos: (LABEL_HEIGHT * 7) / 10, type: 'tenth' },
-    { pos: (LABEL_HEIGHT * 3) / 4, type: 'quarter' },
-    { pos: (LABEL_HEIGHT * 4) / 5, type: 'fifth' },
-    { pos: (LABEL_HEIGHT * 9) / 10, type: 'tenth' },
-    { pos: LABEL_HEIGHT - MARGIN, type: 'margin' },
-    { pos: LABEL_HEIGHT, type: 'edge' }
   ];
 
   const handleInputChange = (field: keyof LabelData, value: string) => {
@@ -168,7 +161,7 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
   };
 
   // Obtenir les points d'ancrage d'un élément
-  const getElementAnchors = useCallback((elementKey: string): ElementAnchors | null => {
+  const getElementAnchors = useCallback((elementKey: string) => {
     const element = elementRefs.current[elementKey];
     if (!element) return null;
 
@@ -212,36 +205,66 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     };
 
     // Vérifier les snaps avec les ancres de l'étiquette (X)
-    labelAnchorsX.forEach(anchor => {
+    for (const anchor of labelAnchorsX) {
+      // Left de l'élément sur l'ancre
       if (Math.abs(currentAnchors.left - anchor.pos) < SNAP_THRESHOLD) {
         snaps.x = anchor.pos;
-        snaps.guides.push({ type: anchor.type === 'center' ? 'vCenter' : 'vertical', pos: anchor.pos, style: anchor.type });
+        snaps.guides.push({
+          type: anchor.type === 'center' ? 'vCenter' : 'vertical',
+          pos: anchor.pos,
+          style: anchor.type
+        });
       }
-      if (Math.abs(currentAnchors.centerX - anchor.pos) < SNAP_THRESHOLD) {
+      // Center de l'élément sur l'ancre
+      else if (Math.abs(currentAnchors.centerX - anchor.pos) < SNAP_THRESHOLD) {
         snaps.x = anchor.pos - currentWidth / 2;
-        snaps.guides.push({ type: anchor.type === 'center' ? 'vCenter' : 'vertical', pos: anchor.pos, style: anchor.type });
+        snaps.guides.push({
+          type: anchor.type === 'center' ? 'vCenter' : 'vertical',
+          pos: anchor.pos,
+          style: anchor.type
+        });
       }
-      if (Math.abs(currentAnchors.right - anchor.pos) < SNAP_THRESHOLD) {
+      // Right de l'élément sur l'ancre
+      else if (Math.abs(currentAnchors.right - anchor.pos) < SNAP_THRESHOLD) {
         snaps.x = anchor.pos - currentWidth;
-        snaps.guides.push({ type: anchor.type === 'center' ? 'vCenter' : 'vertical', pos: anchor.pos, style: anchor.type });
+        snaps.guides.push({
+          type: anchor.type === 'center' ? 'vCenter' : 'vertical',
+          pos: anchor.pos,
+          style: anchor.type
+        });
       }
-    });
+    }
 
     // Vérifier les snaps avec les ancres de l'étiquette (Y)
-    labelAnchorsY.forEach(anchor => {
+    for (const anchor of labelAnchorsY) {
+      // Top de l'élément sur l'ancre
       if (Math.abs(currentAnchors.top - anchor.pos) < SNAP_THRESHOLD) {
         snaps.y = anchor.pos;
-        snaps.guides.push({ type: anchor.type === 'center' ? 'hCenter' : 'horizontal', pos: anchor.pos, style: anchor.type });
+        snaps.guides.push({
+          type: anchor.type === 'center' ? 'hCenter' : 'horizontal',
+          pos: anchor.pos,
+          style: anchor.type
+        });
       }
-      if (Math.abs(currentAnchors.centerY - anchor.pos) < SNAP_THRESHOLD) {
+      // Center de l'élément sur l'ancre
+      else if (Math.abs(currentAnchors.centerY - anchor.pos) < SNAP_THRESHOLD) {
         snaps.y = anchor.pos - currentHeight / 2;
-        snaps.guides.push({ type: anchor.type === 'center' ? 'hCenter' : 'horizontal', pos: anchor.pos, style: anchor.type });
+        snaps.guides.push({
+          type: anchor.type === 'center' ? 'hCenter' : 'horizontal',
+          pos: anchor.pos,
+          style: anchor.type
+        });
       }
-      if (Math.abs(currentAnchors.bottom - anchor.pos) < SNAP_THRESHOLD) {
+      // Bottom de l'élément sur l'ancre
+      else if (Math.abs(currentAnchors.bottom - anchor.pos) < SNAP_THRESHOLD) {
         snaps.y = anchor.pos - currentHeight;
-        snaps.guides.push({ type: anchor.type === 'center' ? 'hCenter' : 'horizontal', pos: anchor.pos, style: anchor.type });
+        snaps.guides.push({
+          type: anchor.type === 'center' ? 'hCenter' : 'horizontal',
+          pos: anchor.pos,
+          style: anchor.type
+        });
       }
-    });
+    }
 
     // Vérifier l'alignement avec les autres éléments
     Object.keys(positions).forEach(otherKey => {
@@ -299,11 +322,11 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     const otherElements = Object.keys(positions)
       .filter(k => k !== currentKey)
       .map(k => getElementAnchors(k))
-      .filter((a): a is ElementAnchors => a !== null);
+      .filter((a): a is NonNullable<typeof a> => a !== null);
 
     const sortedByY = [...otherElements].sort((a, b) => a.top - b.top);
-    let elementAbove: ElementAnchors | null = null;
-    let elementBelow: ElementAnchors | null = null;
+    let elementAbove = null;
+    let elementBelow = null;
 
     for (const el of sortedByY) {
       if (el.bottom <= currentAnchors.top) elementAbove = el;
@@ -330,8 +353,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
     // Snap à distance égale (horizontal)
     const sortedByX = [...otherElements].sort((a, b) => a.left - b.left);
-    let elementLeft: ElementAnchors | null = null;
-    let elementRight: ElementAnchors | null = null;
+    let elementLeft = null;
+    let elementRight = null;
 
     for (const el of sortedByX) {
       if (el.right <= currentAnchors.left) elementLeft = el;
@@ -357,51 +380,29 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     }
 
     return snaps;
-  }, [positions, getElementAnchors, labelAnchorsX, labelAnchorsY]);
-
-  // Calculer les distances aux bords
-  const calculateDistances = useCallback((currentKey: string, newLeft: number, newTop: number) => {
-    const currentElement = elementRefs.current[currentKey];
-    if (!currentElement) return;
-
-    const rect = currentElement.getBoundingClientRect();
-    const currentWidth = rect.width;
-    const currentHeight = rect.height;
-
-    const distTop = newTop;
-    const distBottom = LABEL_HEIGHT - (newTop + currentHeight);
-    const distLeft = newLeft;
-    const distRight = LABEL_WIDTH - (newLeft + currentWidth);
-
-    setDistances({
-      top: Math.round(distTop),
-      bottom: Math.round(distBottom),
-      left: Math.round(distLeft),
-      right: Math.round(distRight)
-    });
-  }, []);
+  }, [positions, getElementAnchors]);
 
   const handleMouseDown = (element: string, e: React.MouseEvent) => {
     e.preventDefault();
     setSelectedElement(element);
     setIsDragging(true);
 
-    dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      startX: positions[element].x,
-      startY: positions[element].y
+    dragStateRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startLeft: positions[element].x,
+      startTop: positions[element].y
     };
   };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging || !selectedElement || !labelRef.current || !dragStartRef.current) return;
+    if (!isDragging || !selectedElement || !dragStateRef.current) return;
 
-    const deltaX = e.clientX - dragStartRef.current.x;
-    const deltaY = e.clientY - dragStartRef.current.y;
+    const deltaX = e.clientX - dragStateRef.current.startX;
+    const deltaY = e.clientY - dragStateRef.current.startY;
 
-    let newLeft = dragStartRef.current.startX + deltaX;
-    let newTop = dragStartRef.current.startY + deltaY;
+    let newLeft = dragStateRef.current.startLeft + deltaX;
+    let newTop = dragStateRef.current.startTop + deltaY;
 
     // Trouver les snaps
     const snaps = findSnaps(selectedElement, newLeft, newTop);
@@ -410,12 +411,11 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     if (snaps.y !== null) newTop = snaps.y;
 
     // Contraindre aux limites
-    newLeft = Math.max(0, Math.min(LABEL_WIDTH - 50, newLeft));
+    newLeft = Math.max(0, Math.min(LABEL_WIDTH - 20, newLeft));
     newTop = Math.max(0, Math.min(LABEL_HEIGHT - 20, newTop));
 
     setActiveGuides(snaps.guides);
     setIsSnapped(snaps.guides.length > 0);
-    calculateDistances(selectedElement, newLeft, newTop);
 
     setPositions(prev => ({
       ...prev,
@@ -425,14 +425,13 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
         y: newTop
       }
     }));
-  }, [isDragging, selectedElement, findSnaps, calculateDistances]);
+  }, [isDragging, selectedElement, findSnaps]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
     setActiveGuides([]);
     setIsSnapped(false);
-    setDistances({});
-    dragStartRef.current = null;
+    dragStateRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -475,6 +474,9 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
       ingredients: { bold: false, italic: true, color: '#4a3d30' }
     });
   };
+
+  // Fonction pour déterminer si un guide est horizontal
+  const isHorizontalGuide = (type: string) => type === 'horizontal' || type === 'hCenter';
 
   return (
     <div className="label-generator-page">
@@ -738,34 +740,22 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
             {activeGuides.map((guide, index) => (
               <div
                 key={index}
-                className={`snap-guide ${guide.type.includes('horizontal') || guide.type === 'hCenter' ? 'horizontal' : 'vertical'} ${guide.style || ''} visible`}
+                className={`snap-guide ${isHorizontalGuide(guide.type) ? 'horizontal' : 'vertical'} ${guide.style} visible`}
                 style={
-                  guide.type.includes('horizontal') || guide.type === 'hCenter'
-                    ? { top: guide.pos }
-                    : { left: guide.pos }
+                  isHorizontalGuide(guide.type)
+                    ? { top: `${guide.pos}px` }
+                    : { left: `${guide.pos}px` }
                 }
               />
             ))}
 
-            {/* Indicateurs de distance */}
-            {isDragging && distances.top !== undefined && (
-              <div className="distance-indicator visible" style={{ left: '50%', top: distances.top / 2 }}>
-                {distances.top}px
-              </div>
-            )}
-            {isDragging && distances.left !== undefined && (
-              <div className="distance-indicator visible" style={{ left: distances.left / 2, top: '50%' }}>
-                {distances.left}px
-              </div>
-            )}
-
             {/* Nom de marque vertical */}
             <div
-              ref={el => elementRefs.current['brand'] = el}
+              ref={el => { elementRefs.current['brand'] = el; }}
               className={`draggable brand-vertical ${selectedElement === 'brand' ? 'selected' : ''} ${isSnapped && selectedElement === 'brand' ? 'snapped' : ''}`}
               style={{
-                left: positions.brand.x,
-                top: positions.brand.y,
+                left: `${positions.brand.x}px`,
+                top: `${positions.brand.y}px`,
                 transform: `rotate(${positions.brand.rotation}deg)`,
                 color: styles.brand.color,
                 fontWeight: styles.brand.bold ? 'bold' : 300,
@@ -778,11 +768,11 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Sous-titre vertical */}
             <div
-              ref={el => elementRefs.current['subtitle'] = el}
+              ref={el => { elementRefs.current['subtitle'] = el; }}
               className={`draggable brand-subtitle ${selectedElement === 'subtitle' ? 'selected' : ''} ${isSnapped && selectedElement === 'subtitle' ? 'snapped' : ''}`}
               style={{
-                left: positions.subtitle.x,
-                top: positions.subtitle.y,
+                left: `${positions.subtitle.x}px`,
+                top: `${positions.subtitle.y}px`,
                 transform: `rotate(${positions.subtitle.rotation}deg)`,
                 color: styles.subtitle.color,
                 fontWeight: styles.subtitle.bold ? 'bold' : 300,
@@ -795,11 +785,11 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Ligne verticale */}
             <div
-              ref={el => elementRefs.current['line'] = el}
+              ref={el => { elementRefs.current['line'] = el; }}
               className={`draggable vertical-line ${selectedElement === 'line' ? 'selected' : ''} ${isSnapped && selectedElement === 'line' ? 'snapped' : ''}`}
               style={{
-                left: positions.line.x,
-                top: positions.line.y,
+                left: `${positions.line.x}px`,
+                top: `${positions.line.y}px`,
                 transform: `rotate(${positions.line.rotation}deg)`
               }}
               onMouseDown={(e) => handleMouseDown('line', e)}
@@ -807,11 +797,11 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Nom du produit */}
             <div
-              ref={el => elementRefs.current['product'] = el}
+              ref={el => { elementRefs.current['product'] = el; }}
               className={`draggable product-name ${selectedElement === 'product' ? 'selected' : ''} ${isSnapped && selectedElement === 'product' ? 'snapped' : ''}`}
               style={{
-                left: positions.product.x,
-                top: positions.product.y,
+                left: `${positions.product.x}px`,
+                top: `${positions.product.y}px`,
                 transform: `rotate(${positions.product.rotation}deg)`,
                 color: styles.product.color,
                 fontWeight: styles.product.bold ? 'bold' : 300,
@@ -824,11 +814,11 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Série */}
             <div
-              ref={el => elementRefs.current['series'] = el}
+              ref={el => { elementRefs.current['series'] = el; }}
               className={`draggable product-series ${selectedElement === 'series' ? 'selected' : ''} ${isSnapped && selectedElement === 'series' ? 'snapped' : ''}`}
               style={{
-                left: positions.series.x,
-                top: positions.series.y,
+                left: `${positions.series.x}px`,
+                top: `${positions.series.y}px`,
                 transform: `rotate(${positions.series.rotation}deg)`,
                 color: styles.series.color,
                 fontWeight: styles.series.bold ? 'bold' : 400,
@@ -841,11 +831,11 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Ingrédients */}
             <div
-              ref={el => elementRefs.current['ingredients'] = el}
+              ref={el => { elementRefs.current['ingredients'] = el; }}
               className={`draggable product-ingredients ${selectedElement === 'ingredients' ? 'selected' : ''} ${isSnapped && selectedElement === 'ingredients' ? 'snapped' : ''}`}
               style={{
-                left: positions.ingredients.x,
-                top: positions.ingredients.y,
+                left: `${positions.ingredients.x}px`,
+                top: `${positions.ingredients.y}px`,
                 transform: `rotate(${positions.ingredients.rotation}deg)`,
                 color: styles.ingredients.color,
                 fontWeight: styles.ingredients.bold ? 'bold' : 400,
