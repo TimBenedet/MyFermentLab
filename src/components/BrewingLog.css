@@ -1,0 +1,311 @@
+/* ========================================
+   Brewing Log Component
+   ======================================== */
+
+.brewing-log {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.brewing-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brewing-log-header h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #c4a574;
+}
+
+.btn-add-entry {
+  padding: 6px 12px;
+  background: rgba(196, 165, 116, 0.15);
+  border: 1px solid rgba(196, 165, 116, 0.3);
+  border-radius: 6px;
+  color: #c4a574;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-entry:hover {
+  background: rgba(196, 165, 116, 0.25);
+  border-color: rgba(196, 165, 116, 0.5);
+}
+
+/* Form */
+.log-entry-form {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.log-entry-form .form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.log-entry-form .form-row.measurements {
+  margin-bottom: 16px;
+}
+
+.log-entry-form .form-row.measurements .form-group {
+  flex: 1;
+  min-width: 100px;
+}
+
+.log-entry-form .form-group {
+  margin-bottom: 16px;
+}
+
+.log-entry-form .form-group label {
+  display: block;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.log-entry-form .form-input,
+.log-entry-form .form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #e8e4df;
+  transition: all 0.2s ease;
+}
+
+.log-entry-form .form-input:focus,
+.log-entry-form .form-textarea:focus {
+  outline: none;
+  border-color: #c4a574;
+  background: rgba(196, 165, 116, 0.05);
+}
+
+.log-entry-form .form-textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.log-entry-form .form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+/* Category selector */
+.category-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.category-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #888;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.category-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e8e4df;
+}
+
+.category-btn.active {
+  background: rgba(196, 165, 116, 0.15);
+  border-color: rgba(196, 165, 116, 0.4);
+  color: #c4a574;
+}
+
+.category-icon {
+  font-size: 1rem;
+}
+
+.category-label {
+  font-size: 0.75rem;
+}
+
+/* Log entries */
+.log-entries {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.log-entries::-webkit-scrollbar {
+  width: 6px;
+}
+
+.log-entries::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.log-entries::-webkit-scrollbar-thumb {
+  background: rgba(196, 165, 116, 0.3);
+  border-radius: 3px;
+}
+
+.empty-log {
+  padding: 40px 20px;
+  text-align: center;
+  color: #666;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-log p {
+  margin: 0;
+}
+
+.empty-log .hint {
+  font-size: 0.8rem;
+  margin-top: 8px;
+  color: #555;
+}
+
+/* Single entry */
+.log-entry {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease;
+}
+
+.log-entry:last-child {
+  border-bottom: none;
+}
+
+.log-entry:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.entry-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.entry-category {
+  font-size: 1.3rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.entry-title {
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #e8e4df;
+}
+
+.entry-date {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.btn-delete-entry {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.log-entry:hover .btn-delete-entry {
+  opacity: 1;
+}
+
+.btn-delete-entry:hover {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+}
+
+/* Measurements */
+.entry-measurements {
+  display: flex;
+  gap: 16px;
+  margin: 10px 0 0 36px;
+  flex-wrap: wrap;
+}
+
+.measurement {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #999;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+.measurement-icon {
+  font-size: 0.9rem;
+}
+
+/* Notes */
+.entry-notes {
+  margin: 10px 0 0 36px;
+  font-size: 0.85rem;
+  color: #888;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .category-btn .category-label {
+    display: none;
+  }
+
+  .category-btn {
+    padding: 10px;
+  }
+
+  .entry-measurements {
+    margin-left: 0;
+    margin-top: 12px;
+  }
+
+  .entry-notes {
+    margin-left: 0;
+  }
+}

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import './LabelGeneratorPage.css';
 
 interface LabelGeneratorPageProps {
@@ -12,6 +13,8 @@ interface LabelData {
   productSeries: string;
   ingredients: string;
   labelColor: string;
+  qrCodeUrl: string;
+  showQrCode: boolean;
 }
 
 interface ElementPosition {
@@ -87,7 +90,9 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     productName: 'Lumière dorée',
     productSeries: 'BIÈRE - SÉRIE I',
     ingredients: 'malt pilsner, houblon Saaz, miel de tilleul, levure belge',
-    labelColor: '#c4a574'
+    labelColor: '#c4a574',
+    qrCodeUrl: '',
+    showQrCode: false
   });
 
   const [positions, setPositions] = useState<Record<string, ElementPosition>>({
@@ -96,7 +101,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     line: { x: 130, y: 30, rotation: 0 },
     product: { x: 180, y: 55, rotation: 0 },
     series: { x: 180, y: 120, rotation: 0 },
-    ingredients: { x: 180, y: 165, rotation: 0 }
+    ingredients: { x: 180, y: 165, rotation: 0 },
+    qrcode: { x: 610, y: 210, rotation: 0 }
   });
 
   const [styles, setStyles] = useState<Record<string, { bold: boolean; italic: boolean; color: string }>>({
@@ -572,7 +578,9 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
       productName: 'Lumière dorée',
       productSeries: 'BIÈRE - SÉRIE I',
       ingredients: 'malt pilsner, houblon Saaz, miel de tilleul, levure belge',
-      labelColor: '#c4a574'
+      labelColor: '#c4a574',
+      qrCodeUrl: '',
+      showQrCode: false
     });
     setPositions({
       brand: { x: 35, y: 30, rotation: 0 },
@@ -580,7 +588,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
       line: { x: 130, y: 30, rotation: 0 },
       product: { x: 180, y: 55, rotation: 0 },
       series: { x: 180, y: 120, rotation: 0 },
-      ingredients: { x: 180, y: 165, rotation: 0 }
+      ingredients: { x: 180, y: 165, rotation: 0 },
+      qrcode: { x: 500, y: 250, rotation: 0 }
     });
     setStyles({
       brand: { bold: false, italic: false, color: '#2c2218' },
@@ -869,6 +878,43 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
             )}
           </div>
 
+          {/* Section QR Code */}
+          <div className="accordion-section">
+            <button
+              className={`accordion-header ${openSections.qrcode ? 'open' : ''}`}
+              onClick={() => toggleSection('qrcode')}
+            >
+              <span>QR Code</span>
+              <span className="accordion-icon">{openSections.qrcode ? '−' : '+'}</span>
+            </button>
+            {openSections.qrcode && (
+              <div className="accordion-content">
+                <div className="label-form-group">
+                  <label className="toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={labelData.showQrCode}
+                      onChange={(e) => handleInputChange('showQrCode', e.target.checked as any)}
+                    />
+                    <span>Afficher un QR Code</span>
+                  </label>
+                </div>
+                {labelData.showQrCode && (
+                  <div className="label-form-group">
+                    <label>URL du lien</label>
+                    <input
+                      type="text"
+                      value={labelData.qrCodeUrl}
+                      onChange={(e) => handleInputChange('qrCodeUrl', e.target.value)}
+                      placeholder="https://myfermentlab.app/batch/123"
+                    />
+                    <p className="input-hint">Lien vers la fiche du brassin ou votre site web</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="label-actions">
             <button className="btn-primary" onClick={handlePrint}>Imprimer</button>
             <button className="btn-secondary" onClick={handleReset}>Reset</button>
@@ -1042,6 +1088,28 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
             >
               {labelData.ingredients}
             </div>
+
+            {/* QR Code */}
+            {labelData.showQrCode && labelData.qrCodeUrl && (
+              <div
+                ref={el => { elementRefs.current['qrcode'] = el; }}
+                className={`draggable qr-code-element ${selectedElement === 'qrcode' ? 'selected' : ''} ${isSnapped && selectedElement === 'qrcode' ? 'snapped' : ''}`}
+                style={{
+                  left: `${positions.qrcode.x}px`,
+                  top: `${positions.qrcode.y}px`,
+                  transform: `rotate(${positions.qrcode.rotation}deg)`
+                }}
+                onMouseDown={(e) => handleMouseDown('qrcode', e)}
+              >
+                <QRCodeSVG
+                  value={labelData.qrCodeUrl}
+                  size={50}
+                  bgColor="transparent"
+                  fgColor="#2c2218"
+                  level="M"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

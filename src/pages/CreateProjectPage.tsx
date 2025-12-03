@@ -23,6 +23,7 @@ import {
   generateId,
   getColorForEBC
 } from '../utils/brewingCalculations';
+import { IngredientAutocomplete } from '../components/IngredientAutocomplete';
 import './CreateProjectPage.css';
 
 interface CreateProjectPageProps {
@@ -597,12 +598,16 @@ export function CreateProjectPage({ devices, onCreateProject, onCancel, role }: 
                     <div className="accordion-content">
                       {recipe.grains.map((grain) => (
                         <div key={grain.id} className="ingredient-row">
-                          <input
-                            type="text"
-                            className="form-input flex-2"
-                            placeholder="Nom du malt"
+                          <IngredientAutocomplete
+                            type="malt"
                             value={grain.name}
-                            onChange={(e) => updateGrain(grain.id, { name: e.target.value })}
+                            onChange={(name) => updateGrain(grain.id, { name })}
+                            onSelect={(data) => updateGrain(grain.id, {
+                              name: data.name,
+                              color: data.color,
+                              potential: data.potential
+                            })}
+                            placeholder="Nom du malt"
                           />
                           <input
                             type="number"
@@ -653,12 +658,15 @@ export function CreateProjectPage({ devices, onCreateProject, onCancel, role }: 
                     <div className="accordion-content">
                       {recipe.hops.map((hop) => (
                         <div key={hop.id} className="ingredient-row hop-row">
-                          <input
-                            type="text"
-                            className="form-input"
-                            placeholder="Nom du houblon"
+                          <IngredientAutocomplete
+                            type="hop"
                             value={hop.name}
-                            onChange={(e) => updateHop(hop.id, { name: e.target.value })}
+                            onChange={(name) => updateHop(hop.id, { name })}
+                            onSelect={(data) => updateHop(hop.id, {
+                              name: data.name,
+                              alphaAcid: data.alphaAcid || hop.alphaAcid
+                            })}
+                            placeholder="Nom du houblon"
                           />
                           <input
                             type="number"
@@ -729,12 +737,18 @@ export function CreateProjectPage({ devices, onCreateProject, onCancel, role }: 
                     <div className="accordion-content">
                       {recipe.yeasts.map((yeast) => (
                         <div key={yeast.id} className="ingredient-row yeast-row">
-                          <input
-                            type="text"
-                            className="form-input flex-2"
-                            placeholder="Nom de la levure"
+                          <IngredientAutocomplete
+                            type="yeast"
                             value={yeast.name}
-                            onChange={(e) => updateYeast(yeast.id, { name: e.target.value })}
+                            onChange={(name) => updateYeast(yeast.id, { name })}
+                            onSelect={(data) => updateYeast(yeast.id, {
+                              name: data.name,
+                              attenuation: data.attenuation || yeast.attenuation,
+                              tempMin: data.tempMin,
+                              tempMax: data.tempMax,
+                              form: data.form || yeast.form
+                            })}
+                            placeholder="Nom de la levure"
                           />
                           <select
                             className="form-select small"

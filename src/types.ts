@@ -10,6 +10,34 @@ export interface DensityReading {
   density: number; // Densité en g/L
 }
 
+// ========================================
+// Types pour le journal de brassage
+// ========================================
+
+export type BrewingLogCategory =
+  | 'brewing'      // Jour de brassage
+  | 'fermentation' // Fermentation
+  | 'measurement'  // Mesure (densité, pH, etc.)
+  | 'addition'     // Ajout d'ingrédient (dry-hop, sucre, etc.)
+  | 'transfer'     // Transfert
+  | 'packaging'    // Mise en bouteille/fût
+  | 'tasting'      // Dégustation
+  | 'other';       // Autre
+
+export interface BrewingLogEntry {
+  id: string;
+  timestamp: number;
+  category: BrewingLogCategory;
+  title: string;
+  notes?: string;
+  // Mesures optionnelles
+  temperature?: number;
+  density?: number;
+  ph?: number;
+  // Photo (URL ou base64)
+  photo?: string;
+}
+
 export interface Device {
   id: string;
   name: string;
@@ -179,8 +207,11 @@ export interface Project {
   createdAt: number;
   archivedAt?: number;
 
-  // Nouveau: Lien avec la recette
+  // Lien avec la recette
   recipe?: BrewingRecipe;
+
+  // Journal de brassage
+  brewingLog?: BrewingLogEntry[];
 }
 
 export const FERMENTATION_TYPES = {

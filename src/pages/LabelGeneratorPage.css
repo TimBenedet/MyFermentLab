@@ -410,6 +410,20 @@
   max-width: 420px;
 }
 
+/* QR Code */
+.qr-code-element {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+}
+
+.qr-code-element svg {
+  display: block;
+}
+
 /* Guides d'alignement (snap lines) */
 .snap-guide {
   position: absolute;

@@ -579,6 +579,11 @@
   align-items: start;
 }
 
+.log-section {
+  grid-column: 1 / -1;
+  margin-top: 16px;
+}
+
 .charts-section {
   display: flex;
   flex-direction: column;

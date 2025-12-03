@@ -6,12 +6,13 @@ import { DevicesPage } from './pages/DevicesPage';
 import { LoginPage } from './pages/LoginPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { LabelGeneratorPage } from './pages/LabelGeneratorPage';
-import { Project, Device, FermentationType } from './types';
+import { StatsPage } from './pages/StatsPage';
+import { Project, Device, FermentationType, BrewingLogEntry } from './types';
 import { apiService, ProjectWithHistory } from './services/api.service';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
-type Page = 'home' | 'create-project' | 'monitoring' | 'devices' | 'summary' | 'labels';
+type Page = 'home' | 'create-project' | 'monitoring' | 'devices' | 'summary' | 'labels' | 'stats';
 
 function App() {
   const { isAuthenticated, role, logout } = useAuth();
@@ -166,6 +167,47 @@ function App() {
     } catch (err) {
       console.error('Failed to toggle control mode:', err);
       setError('Impossible de changer le mode de contrôle');
+    }
+  };
+
+  const handleAddLogEntry = async (entry: Omit<BrewingLogEntry, 'id'>) => {
+    if (!selectedProjectId || !selectedProject) return;
+
+    try {
+      const newEntry: BrewingLogEntry = {
+        ...entry,
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+
+      const updatedLog = [...(selectedProject.brewingLog || []), newEntry];
+
+      await apiService.updateProjectLog(selectedProjectId, updatedLog);
+
+      setSelectedProject(prev => prev ? { ...prev, brewingLog: updatedLog } : null);
+      setProjects(prev => prev.map(p =>
+        p.id === selectedProjectId ? { ...p, brewingLog: updatedLog } : p
+      ));
+    } catch (err) {
+      console.error('Failed to add log entry:', err);
+      setError('Impossible d\'ajouter l\'entrée au journal');
+    }
+  };
+
+  const handleDeleteLogEntry = async (entryId: string) => {
+    if (!selectedProjectId || !selectedProject) return;
+
+    try {
+      const updatedLog = (selectedProject.brewingLog || []).filter(e => e.id !== entryId);
+
+      await apiService.updateProjectLog(selectedProjectId, updatedLog);
+
+      setSelectedProject(prev => prev ? { ...prev, brewingLog: updatedLog } : null);
+      setProjects(prev => prev.map(p =>
+        p.id === selectedProjectId ? { ...p, brewingLog: updatedLog } : p
+      ));
+    } catch (err) {
+      console.error('Failed to delete log entry:', err);
+      setError('Impossible de supprimer l\'entrée du journal');
     }
   };
 
@@ -333,6 +375,7 @@ function App() {
             onDeleteProject={handleDeleteProject}
             onManageDevices={() => setCurrentPage('devices')}
             onLabelGenerator={() => setCurrentPage('labels')}
+            onViewStats={() => setCurrentPage('stats')}
             role={role}
           />
         )}
@@ -353,6 +396,8 @@ function App() {
             onToggleOutlet={handleToggleOutlet}
             onAddDensity={handleAddDensity}
             onToggleControlMode={handleToggleControlMode}
+            onAddLogEntry={handleAddLogEntry}
+            onDeleteLogEntry={handleDeleteLogEntry}
             onBack={() => setCurrentPage('home')}
             role={role}
           />
@@ -380,6 +425,13 @@ function App() {
 
         {currentPage === 'labels' && (
           <LabelGeneratorPage
+            onBack={() => setCurrentPage('home')}
+          />
+        )}
+
+        {currentPage === 'stats' && (
+          <StatsPage
+            projects={projects}
             onBack={() => setCurrentPage('home')}
           />
         )}

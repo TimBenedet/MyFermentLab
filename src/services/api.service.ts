@@ -1,4 +1,4 @@
-import { Project, Device, FermentationType } from '../types';
+import { Project, Device, FermentationType, BrewingLogEntry } from '../types';
 
 const API_BASE_URL = '/api';
 
@@ -185,6 +185,18 @@ class ApiService {
     if (!response.ok) {
       throw new Error('Failed to delete project');
     }
+  }
+
+  async updateProjectLog(id: string, brewingLog: BrewingLogEntry[]): Promise<Project> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/log`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ brewingLog })
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update brewing log');
+    }
+    return response.json();
   }
 
   // Devices
