@@ -290,6 +290,12 @@
   opacity: 0.85;
 }
 
+/* Wrapper pour compenser le letter-spacing final */
+.brand-vertical-wrapper {
+  display: inline-flex;
+  overflow: hidden;
+}
+
 /* Texte vertical de la marque */
 .brand-vertical {
   font-family: 'Josefin Sans', sans-serif;
@@ -300,6 +306,13 @@
   writing-mode: vertical-lr;
   text-orientation: mixed;
   line-height: 1;
+  margin-bottom: -0.5em; /* Compense le letter-spacing après la dernière lettre */
+}
+
+/* Wrapper pour le sous-titre */
+.brand-subtitle-wrapper {
+  display: inline-flex;
+  overflow: hidden;
 }
 
 /* Sous-texte vertical */
@@ -312,6 +325,7 @@
   writing-mode: vertical-lr;
   text-orientation: mixed;
   line-height: 1;
+  margin-bottom: -0.35em; /* Compense le letter-spacing après la dernière lettre */
 }
 
 /* Ligne verticale séparatrice */

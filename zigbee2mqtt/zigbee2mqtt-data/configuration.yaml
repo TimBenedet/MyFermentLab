@@ -1,0 +1,33 @@
+# Configuration Zigbee2MQTT
+homeassistant: true
+permit_join: true  # À mettre à false après avoir appairé tous les appareils
+
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mosquitto:1883
+  user: ""  # Optionnel : ajouter un utilisateur MQTT
+  password: ""  # Optionnel : ajouter un mot de passe MQTT
+
+serial:
+  port: /dev/ttyACM0
+  adapter: ezsp  # Pour le chip EFR32MG21 du SONOFF dongle
+
+frontend:
+  port: 8080
+  host: 0.0.0.0
+
+advanced:
+  log_level: info
+  network_key: GENERATE  # Générera une clé automatiquement au premier démarrage
+  pan_id: GENERATE
+  channel: 11
+  # Activer les logs avancés pour le debugging
+  log_output:
+    - console
+
+# Activer l'intégration Home Assistant
+homeassistant_discovery_topic: 'homeassistant'
+homeassistant_status_topic: 'homeassistant/status'
+
+# Configuration des appareils (sera rempli automatiquement lors de l'appairage)
+devices: {}

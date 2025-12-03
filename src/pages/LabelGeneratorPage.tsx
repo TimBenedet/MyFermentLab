@@ -752,35 +752,47 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
             {/* Nom de marque vertical */}
             <div
               ref={el => { elementRefs.current['brand'] = el; }}
-              className={`draggable brand-vertical ${selectedElement === 'brand' ? 'selected' : ''} ${isSnapped && selectedElement === 'brand' ? 'snapped' : ''}`}
+              className={`draggable brand-vertical-wrapper ${selectedElement === 'brand' ? 'selected' : ''} ${isSnapped && selectedElement === 'brand' ? 'snapped' : ''}`}
               style={{
                 left: `${positions.brand.x}px`,
                 top: `${positions.brand.y}px`,
-                transform: `rotate(${positions.brand.rotation}deg)`,
-                color: styles.brand.color,
-                fontWeight: styles.brand.bold ? 'bold' : 300,
-                fontStyle: styles.brand.italic ? 'italic' : 'normal'
+                transform: `rotate(${positions.brand.rotation}deg)`
               }}
               onMouseDown={(e) => handleMouseDown('brand', e)}
             >
-              {labelData.brandName}
+              <span
+                className="brand-vertical"
+                style={{
+                  color: styles.brand.color,
+                  fontWeight: styles.brand.bold ? 'bold' : 300,
+                  fontStyle: styles.brand.italic ? 'italic' : 'normal'
+                }}
+              >
+                {labelData.brandName}
+              </span>
             </div>
 
             {/* Sous-titre vertical */}
             <div
               ref={el => { elementRefs.current['subtitle'] = el; }}
-              className={`draggable brand-subtitle ${selectedElement === 'subtitle' ? 'selected' : ''} ${isSnapped && selectedElement === 'subtitle' ? 'snapped' : ''}`}
+              className={`draggable brand-subtitle-wrapper ${selectedElement === 'subtitle' ? 'selected' : ''} ${isSnapped && selectedElement === 'subtitle' ? 'snapped' : ''}`}
               style={{
                 left: `${positions.subtitle.x}px`,
                 top: `${positions.subtitle.y}px`,
-                transform: `rotate(${positions.subtitle.rotation}deg)`,
-                color: styles.subtitle.color,
-                fontWeight: styles.subtitle.bold ? 'bold' : 300,
-                fontStyle: styles.subtitle.italic ? 'italic' : 'normal'
+                transform: `rotate(${positions.subtitle.rotation}deg)`
               }}
               onMouseDown={(e) => handleMouseDown('subtitle', e)}
             >
-              {labelData.brandSubtitle}
+              <span
+                className="brand-subtitle"
+                style={{
+                  color: styles.subtitle.color,
+                  fontWeight: styles.subtitle.bold ? 'bold' : 300,
+                  fontStyle: styles.subtitle.italic ? 'italic' : 'normal'
+                }}
+              >
+                {labelData.brandSubtitle}
+              </span>
             </div>
 
             {/* Ligne verticale */}
