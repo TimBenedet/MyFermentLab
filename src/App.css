@@ -604,42 +604,33 @@
   display: grid;
   grid-template-columns: 400px 1fr;
   gap: 16px;
-  align-items: start;
-  align-content: start;
+  align-items: stretch;
 }
 
 .charts-section {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 16px;
-  margin-top: 0;
-  padding-top: 0;
 }
 
-.charts-section.with-density .chart-zone:first-child {
-  height: 360px;
+.charts-section.with-density {
+  grid-template-rows: 1fr 1fr;
 }
 
-.charts-section.with-density .chart-zone:last-child {
-  height: 360px;
-}
-
-.charts-section:not(.with-density) .chart-zone {
-  height: 736px;
+.charts-section:not(.with-density) {
+  grid-template-rows: 1fr;
 }
 
 .chart-zone {
-  position: relative;
   display: flex;
   flex-direction: column;
-  margin-top: 0;
+  min-height: 360px;
+  flex: 1;
 }
 
 .control-panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-top: 0;
 }
 
 .panel-section {
