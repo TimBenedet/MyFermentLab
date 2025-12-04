@@ -604,7 +604,6 @@
   display: grid;
   grid-template-columns: 400px 1fr;
   gap: 16px;
-  align-items: start;
 }
 
 .charts-section {
@@ -613,13 +612,16 @@
   gap: 16px;
 }
 
-.charts-section.with-density .chart-zone {
-  height: 350px;
-  flex: none;
+.charts-section.with-density .chart-zone:first-child {
+  height: 360px;
+}
+
+.charts-section.with-density .chart-zone:last-child {
+  height: 360px;
 }
 
 .charts-section:not(.with-density) .chart-zone {
-  min-height: 600px;
+  height: 736px;
 }
 
 .chart-zone {
