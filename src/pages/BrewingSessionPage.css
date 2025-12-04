@@ -407,9 +407,28 @@
 }
 
 /* Responsive */
+@media (max-width: 768px) {
+  .brewing-session-page {
+    padding: 0 12px 40px;
+  }
+
+  .brewing-progress-bar {
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+
+  .progress-info {
+    font-size: 0.8rem;
+  }
+
+  .brewing-timeline {
+    padding: 0 8px;
+  }
+}
+
 @media (max-width: 600px) {
   .brewing-session-page {
-    padding: 0 10px 40px;
+    padding: 0 8px 40px;
   }
 
   .step-content {
@@ -438,5 +457,87 @@
 
   .timer-display {
     font-size: 1.5rem;
+  }
+
+  .btn-finish-brewing {
+    padding: 14px 24px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .brewing-session-page {
+    padding: 0 4px 32px;
+  }
+
+  .recipe-badge {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+  }
+
+  .brewing-progress-bar {
+    padding: 12px 14px;
+    border-radius: 8px;
+  }
+
+  .progress-info {
+    font-size: 0.75rem;
+  }
+
+  .brewing-timeline {
+    padding: 0 4px;
+  }
+
+  .step-content {
+    gap: 10px;
+  }
+
+  .step-marker {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .timeline-connector {
+    margin-left: 15px;
+    padding: 8px 0;
+  }
+
+  .step-info {
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .step-name {
+    font-size: 0.95rem;
+  }
+
+  .step-duration {
+    font-size: 0.8rem;
+  }
+
+  .step-description {
+    font-size: 0.8rem;
+  }
+
+  .timer-display {
+    font-size: 1.25rem;
+  }
+
+  .timer-total {
+    font-size: 0.75rem;
+  }
+
+  .btn-timer,
+  .btn-complete-step {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+
+  .btn-finish-brewing {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    width: 100%;
   }
 }

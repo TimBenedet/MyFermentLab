@@ -567,6 +567,53 @@
   }
 }
 
+@media (max-width: 480px) {
+  .label-generator-page {
+    padding: 12px;
+  }
+
+  .label-generator-container {
+    gap: 24px;
+  }
+
+  .label-preview {
+    transform: scale(0.4);
+  }
+
+  .form-section {
+    padding: 14px;
+  }
+
+  .form-section h3 {
+    font-size: 0.85rem;
+  }
+
+  .form-label {
+    font-size: 0.75rem;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+
+  .control-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .rotation-control {
+    margin-top: 0;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+  }
+}
+
 /* Print styles */
 @media print {
   * {

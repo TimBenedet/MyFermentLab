@@ -126,3 +126,63 @@
 .suggestions-dropdown::-webkit-scrollbar-thumb:hover {
   background: rgba(196, 165, 116, 0.5);
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .suggestions-dropdown {
+    max-height: 300px;
+  }
+
+  .suggestion-item {
+    padding: 14px 12px;
+  }
+
+  .suggestion-name {
+    font-size: 0.9rem;
+  }
+
+  .suggestion-desc {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .suggestions-dropdown {
+    max-height: 250px;
+  }
+
+  .suggestion-item {
+    padding: 12px 10px;
+  }
+
+  .suggestion-main {
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+
+  .suggestion-name {
+    font-size: 0.85rem;
+  }
+
+  .suggestion-badge {
+    font-size: 0.6rem;
+    padding: 2px 5px;
+  }
+
+  .suggestion-details {
+    gap: 8px;
+  }
+
+  .suggestion-stat {
+    font-size: 0.7rem;
+  }
+
+  .suggestion-tags {
+    display: none;
+  }
+
+  .color-dot {
+    width: 8px;
+    height: 8px;
+  }
+}
