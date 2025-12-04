@@ -1278,6 +1278,28 @@
     gap: 12px;
   }
 
+  .home-header h1 {
+    font-size: 1.1rem;
+  }
+
+  .home-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .home-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .home-actions .btn-secondary,
+  .home-actions .btn-primary {
+    flex: 1;
+    min-width: calc(50% - 4px);
+    text-align: center;
+    justify-content: center;
+  }
+
   .page-header-compact {
     flex-wrap: wrap;
     gap: 8px;
@@ -1294,6 +1316,38 @@
 
   .projects-grid {
     grid-template-columns: 1fr;
+  }
+
+  .project-card {
+    padding: 14px;
+  }
+
+  .project-status {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .status-indicator {
+    font-size: 0.7rem;
+  }
+
+  .btn-start-brewing {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+  }
+
+  .btn-archive {
+    padding: 6px 8px;
+  }
+
+  .archived-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .btn-view-summary {
+    font-size: 0.75rem;
+    padding: 6px 10px;
   }
 
   .temperature-controls {
@@ -1421,8 +1475,27 @@
   }
 
   .page-header, .home-header {
-    margin-bottom: 16px;
-    padding-bottom: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  .home-header h1 {
+    font-size: 1rem;
+  }
+
+  .home-subtitle {
+    font-size: 0.7rem;
+  }
+
+  .home-actions {
+    gap: 6px;
+  }
+
+  .home-actions .btn-secondary,
+  .home-actions .btn-primary {
+    padding: 10px 8px;
+    font-size: 0.7rem;
+    min-width: calc(50% - 3px);
   }
 
   .page-header-compact {
@@ -1435,13 +1508,31 @@
   }
 
   .btn-primary, .btn-secondary {
-    padding: 8px 16px;
+    padding: 10px 14px;
     font-size: 0.8rem;
   }
 
   .btn-text {
     padding: 6px 10px;
     font-size: 0.8rem;
+  }
+
+  .projects-filter {
+    gap: 4px;
+  }
+
+  .filter-btn {
+    padding: 10px 8px;
+    font-size: 0.75rem;
+  }
+
+  .project-card {
+    padding: 12px;
+  }
+
+  .project-header {
+    gap: 10px;
+    margin-bottom: 12px;
   }
 
   .project-icon {
@@ -1456,8 +1547,68 @@
     font-size: 0.7rem;
   }
 
+  .project-stats {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .stat-item {
+    padding: 10px 8px;
+  }
+
+  .stat-item .stat-label {
+    font-size: 0.65rem;
+    margin-bottom: 4px;
+  }
+
   .stat-item .stat-value {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
+  }
+
+  .project-status {
+    padding-top: 10px;
+    gap: 6px;
+  }
+
+  .status-indicator {
+    font-size: 0.65rem;
+    padding: 4px 8px;
+  }
+
+  .status-diff {
+    font-size: 0.7rem;
+  }
+
+  .btn-start-brewing {
+    font-size: 0.7rem;
+    padding: 6px 8px;
+  }
+
+  .btn-archive {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .btn-view-summary {
+    font-size: 0.7rem;
+    padding: 6px 8px;
+  }
+
+  .empty-state {
+    padding: 40px 20px;
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+  }
+
+  .empty-state h2 {
+    font-size: 1rem;
+  }
+
+  .empty-state p {
+    font-size: 0.85rem;
   }
 
   .panel-section {
