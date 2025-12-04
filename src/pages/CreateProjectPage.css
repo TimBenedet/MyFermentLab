@@ -127,10 +127,6 @@
   overflow: visible;
 }
 
-.accordion-section:not(.expanded) .accordion-content {
-  display: none;
-}
-
 .accordion-section .accordion-header {
   width: 100%;
   display: flex;
