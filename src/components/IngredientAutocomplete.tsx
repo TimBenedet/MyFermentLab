@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   MaltData,
   HopData,
@@ -46,8 +47,23 @@ export function IngredientAutocomplete({
   const [isOpen, setIsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<(MaltData | HopData | YeastData)[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Calculer la position du dropdown
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999
+      });
+    }
+  }, [isOpen]);
 
   // Recherche des suggestions
   useEffect(() => {
@@ -273,10 +289,11 @@ export function IngredientAutocomplete({
         className="form-input"
         autoComplete="off"
       />
-      {isOpen && suggestions.length > 0 && (
-        <div className="suggestions-dropdown">
+      {isOpen && suggestions.length > 0 && createPortal(
+        <div className="suggestions-dropdown" style={dropdownStyle}>
           {suggestions.map((item, index) => renderSuggestion(item, index))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
