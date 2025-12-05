@@ -697,7 +697,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                             onChange={(e) => updateHop(hop.id, { alphaAcid: Number(e.target.value) })}
                             min="0"
                             max="25"
-                            step="0.1"
+                            step="0.01"
                           />
                           <span className="unit">%AA</span>
                           <select
