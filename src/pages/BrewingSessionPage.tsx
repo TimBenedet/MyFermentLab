@@ -76,17 +76,45 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
     const recipe = project.recipe;
     if (!recipe) return additions;
 
+    // Grains pour l'empâtage
+    if (recipe.grains.length > 0) {
+      recipe.grains.forEach((grain, index) => {
+        additions.push({
+          id: `grain-${grain.id}`,
+          name: grain.name,
+          quantity: grain.quantity,
+          unit: 'kg',
+          timing: index === 0 ? 'Ajout grains' : '',
+          timeValue: 1000 - index, // Les grains en premier
+          stepId: 'empatage',
+          type: 'grain',
+          icon: '🌾'
+        });
+      });
+    }
+
     // Houblons d'ébullition (boil)
     recipe.hops
       .filter(hop => hop.use === 'boil')
       .forEach(hop => {
+        // Convertir le temps restant en timing lisible
+        const remainingMin = hop.time;
+        let timing: string;
+        if (remainingMin >= recipe.boilStep.duration) {
+          timing = 'Début ébullition';
+        } else if (remainingMin === 0) {
+          timing = 'Fin ébullition';
+        } else {
+          timing = `${remainingMin} min`;
+        }
+
         additions.push({
           id: `hop-boil-${hop.id}`,
           name: hop.name,
           quantity: hop.quantity,
           unit: 'g',
-          timing: hop.time === recipe.boilStep.duration ? 'Début' : `À ${hop.time} min`,
-          timeValue: hop.time,
+          timing,
+          timeValue: remainingMin,
           stepId: 'ebullition',
           type: 'hop',
           icon: '🌿'

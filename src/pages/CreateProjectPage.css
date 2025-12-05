@@ -504,10 +504,26 @@
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .other-ingredient-row .form-input.flex-2 {
-  flex: 2;
+  flex: 1 1 200px;
+  min-width: 150px;
+}
+
+.other-ingredient-row .form-input.small {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.other-ingredient-row .form-select.small {
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.other-ingredient-row .btn-icon.remove {
+  flex-shrink: 0;
 }
 
 .other-ingredient-timing {
@@ -516,6 +532,7 @@
   gap: 10px;
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap;
 }
 
 .other-ingredient-timing .form-select {
@@ -537,4 +554,31 @@
   font-size: 0.75rem;
   color: #888;
   white-space: nowrap;
+}
+
+/* Responsive pour autres ingrédients */
+@media (max-width: 600px) {
+  .other-ingredient-row {
+    gap: 8px;
+  }
+
+  .other-ingredient-row .form-input.flex-2 {
+    flex: 1 1 100%;
+    min-width: 100%;
+    order: -1;
+  }
+
+  .other-ingredient-timing {
+    gap: 8px;
+  }
+
+  .other-ingredient-timing .form-select {
+    flex: 1 1 calc(50% - 4px);
+    min-width: calc(50% - 4px);
+  }
+
+  .addition-minutes-input {
+    flex: 1 1 100%;
+    margin-top: 8px;
+  }
 }
