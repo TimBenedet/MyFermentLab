@@ -324,7 +324,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                     };
                     setRecipe(testRecipe);
                     setName('Test Pale Ale');
-                    setTargetTemperature(18);
+                    // La température cible sera calculée automatiquement depuis fermentationSteps[0].temperature
                   } else {
                     updateRecipe({ style: selectedStyle });
                   }
