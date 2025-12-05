@@ -17,6 +17,24 @@
   font-weight: 500;
 }
 
+/* Warning - no recipe */
+.no-recipe-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  color: #f87171;
+  font-size: 0.85rem;
+}
+
+.no-recipe-warning .warning-icon {
+  font-size: 1.1rem;
+}
+
 /* Progress Bar */
 .brewing-progress-bar {
   background: rgba(255, 255, 255, 0.03);

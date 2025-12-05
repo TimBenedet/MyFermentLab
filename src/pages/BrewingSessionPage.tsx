@@ -74,10 +74,6 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
   const ingredientAdditions = useMemo(() => {
     const additions: IngredientAddition[] = [];
     const recipe = project.recipe;
-    console.log('DEBUG recipe:', recipe);
-    console.log('DEBUG grains:', recipe?.grains);
-    console.log('DEBUG hops:', recipe?.hops);
-    console.log('DEBUG yeasts:', recipe?.yeasts);
     if (!recipe) return additions;
 
     // Helper pour obtenir un ingrédient par son ID et type
@@ -599,6 +595,14 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
         <h1>Brassage: {project.name}</h1>
         <span className="recipe-badge">{project.recipe?.style || 'Bière'}</span>
       </div>
+
+      {/* Avertissement si pas de recette */}
+      {!project.recipe && (
+        <div className="no-recipe-warning">
+          <span className="warning-icon">⚠️</span>
+          <span>Aucune recette liée à ce projet. Les ingrédients ne seront pas affichés dans les étapes.</span>
+        </div>
+      )}
 
       {/* Barre de progression */}
       <div className="brewing-progress-bar">
