@@ -18,3 +18,34 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* ========================================
+   Styles d'impression globaux
+   ======================================== */
+@media print {
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html {
+    background: white !important;
+    background-color: white !important;
+  }
+
+  body {
+    background: white !important;
+    background-color: white !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #root {
+    background: white !important;
+    background-color: white !important;
+  }
+}

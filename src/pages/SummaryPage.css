@@ -616,246 +616,406 @@
    ======================================== */
 
 @media print {
-  /* Reset des couleurs pour impression */
-  * {
+  /* Force tous les éléments à utiliser des couleurs imprimables */
+  *,
+  *::before,
+  *::after {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
-  body {
+  /* Reset global */
+  html, body {
     background: white !important;
-    color: #1a1a1a !important;
+    background-color: white !important;
+    color: #000 !important;
+    font-size: 12pt !important;
+    line-height: 1.4 !important;
   }
 
+  /* Page container */
   .summary-page {
     background: white !important;
-    color: #1a1a1a !important;
-    padding: 0 !important;
+    background-color: white !important;
+    color: #000 !important;
+    padding: 20px !important;
     max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Tous les textes en noir par défaut */
+  .summary-page * {
+    color: #000 !important;
   }
 
   /* Masquer les éléments non imprimables */
   .no-print,
   .summary-actions,
-  .btn-back {
+  .btn-back,
+  .btn-secondary,
+  .btn-primary {
     display: none !important;
   }
 
   /* Header */
   .summary-header {
-    border-bottom: 2px solid #1a1a1a;
-    padding-bottom: 16px;
-    margin-bottom: 24px;
+    border-bottom: 2px solid #000 !important;
+    padding-bottom: 16px !important;
+    margin-bottom: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
   }
 
   .summary-header h1 {
-    color: #1a1a1a !important;
-    font-size: 24px !important;
+    color: #000 !important;
+    font-size: 20pt !important;
+    margin: 0 !important;
+    flex: 1 !important;
+  }
+
+  .project-icon {
+    font-size: 24pt !important;
   }
 
   .completed-badge {
-    background: #e0e0e0 !important;
-    color: #1a1a1a !important;
+    background: #ddd !important;
+    background-color: #ddd !important;
+    color: #000 !important;
+    padding: 4px 12px !important;
+    border-radius: 4px !important;
+    font-size: 10pt !important;
   }
 
   /* Sections */
   .summary-section {
     background: white !important;
-    border: 1px solid #ccc !important;
-    page-break-inside: avoid;
-    margin-bottom: 16px;
+    background-color: white !important;
+    border: 1px solid #999 !important;
+    border-radius: 0 !important;
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+    page-break-inside: avoid !important;
   }
 
   .summary-section h2 {
-    color: #1a1a1a !important;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 8px;
+    color: #000 !important;
+    font-size: 14pt !important;
+    border-bottom: 1px solid #999 !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 12px !important;
+    margin-top: 0 !important;
   }
 
   .summary-section h3 {
-    color: #333 !important;
+    color: #000 !important;
+    font-size: 11pt !important;
+    margin-bottom: 8px !important;
   }
 
   /* Info grid */
   .info-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
   }
 
   .info-item {
     background: #f5f5f5 !important;
-    border: 1px solid #ddd !important;
+    background-color: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+    padding: 8px !important;
   }
 
   .info-label {
-    color: #666 !important;
+    color: #555 !important;
+    font-size: 9pt !important;
+    display: block !important;
   }
 
   .info-value {
-    color: #1a1a1a !important;
+    color: #000 !important;
+    font-size: 11pt !important;
+    font-weight: bold !important;
+    display: block !important;
   }
 
-  /* Stats */
+  /* Stats grid */
   .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 8px !important;
   }
 
   .stat-card {
     background: #f5f5f5 !important;
-    border: 1px solid #ddd !important;
+    background-color: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+    padding: 8px !important;
+    text-align: center !important;
   }
 
   .stat-label {
-    color: #666 !important;
+    color: #555 !important;
+    font-size: 9pt !important;
   }
 
   .stat-value {
-    color: #1a1a1a !important;
+    color: #000 !important;
+    font-size: 12pt !important;
+    font-weight: bold !important;
   }
 
   /* Recette */
   .recipe-section {
-    border-color: #c4a574 !important;
+    border-left: 4px solid #8b6914 !important;
   }
 
   .recipe-style {
-    color: #1a1a1a !important;
+    color: #000 !important;
+    font-size: 11pt !important;
+    margin-bottom: 12px !important;
+  }
+
+  .recipe-targets {
+    display: flex !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 16px !important;
   }
 
   .recipe-target-item {
     background: #f5f5f5 !important;
-    border: 1px solid #ddd !important;
+    background-color: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+    padding: 8px 12px !important;
+    text-align: center !important;
   }
 
   .recipe-target-item .target-label {
-    color: #666 !important;
+    color: #555 !important;
+    font-size: 8pt !important;
+    display: block !important;
   }
 
   .recipe-target-item .target-value {
     color: #8b6914 !important;
+    font-size: 12pt !important;
+    font-weight: bold !important;
+    display: block !important;
+  }
+
+  .recipe-ingredient-group {
+    margin-bottom: 12px !important;
+    page-break-inside: avoid !important;
   }
 
   .recipe-ingredient-group h3 {
-    color: #1a1a1a !important;
-    border-bottom-color: #ccc !important;
+    border-bottom: 1px solid #ccc !important;
+    padding-bottom: 4px !important;
+  }
+
+  .ingredient-list {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   .ingredient-list li {
-    border-bottom-color: #eee !important;
+    padding: 4px 0 !important;
+    border-bottom: 1px solid #eee !important;
+    font-size: 10pt !important;
+    display: flex !important;
+    gap: 8px !important;
   }
 
   .ingredient-qty {
     color: #8b6914 !important;
+    font-weight: bold !important;
+    min-width: 60px !important;
   }
 
   .ingredient-name {
-    color: #1a1a1a !important;
+    color: #000 !important;
+    flex: 1 !important;
   }
 
   .ingredient-detail {
-    color: #666 !important;
+    color: #555 !important;
+    font-size: 9pt !important;
   }
 
   .recipe-notes {
-    background: #f5f5f5 !important;
-    color: #666 !important;
+    background: #f9f9f9 !important;
+    background-color: #f9f9f9 !important;
+    padding: 8px !important;
+    border: 1px solid #ddd !important;
+    color: #333 !important;
+    font-size: 10pt !important;
   }
 
-  /* Graphiques - les cacher ou réduire */
+  /* Graphiques - masquer car ils ne s'impriment pas bien */
   .chart-container {
-    page-break-inside: avoid;
-    max-height: 250px;
+    display: none !important;
   }
 
   /* Densité */
+  .density-summary {
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 16px !important;
+  }
+
   .density-card {
     background: #f5f5f5 !important;
-    border: 1px solid #ddd !important;
+    background-color: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+    padding: 8px 16px !important;
+    text-align: center !important;
   }
 
   .density-label {
-    color: #666 !important;
+    color: #555 !important;
+    font-size: 9pt !important;
+    display: block !important;
   }
 
   .density-value {
-    color: #1a1a1a !important;
+    color: #000 !important;
+    font-size: 14pt !important;
+    font-weight: bold !important;
+    display: block !important;
   }
 
   .density-card.abv-card {
     background: #f0e6d2 !important;
+    background-color: #f0e6d2 !important;
+  }
+
+  .density-card.abv-card .density-value {
+    color: #8b6914 !important;
   }
 
   .density-arrow {
-    color: #666 !important;
+    color: #555 !important;
+    font-size: 14pt !important;
   }
 
   /* Tables */
   .density-table,
   .brewing-steps-table {
-    border: 1px solid #ccc !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 9pt !important;
+    margin-top: 8px !important;
   }
 
   .density-table thead,
   .brewing-steps-table thead {
     background: #e0e0e0 !important;
+    background-color: #e0e0e0 !important;
   }
 
   .density-table th,
   .brewing-steps-table th {
-    color: #1a1a1a !important;
-    border-bottom-color: #999 !important;
+    color: #000 !important;
+    border: 1px solid #999 !important;
+    padding: 6px !important;
+    text-align: left !important;
+    font-weight: bold !important;
   }
 
   .density-table td,
   .brewing-steps-table td {
-    color: #1a1a1a !important;
-    border-bottom-color: #ddd !important;
+    color: #000 !important;
+    border: 1px solid #ccc !important;
+    padding: 6px !important;
   }
 
   .brewing-steps-table tbody tr.completed {
     background: #e8f5e9 !important;
+    background-color: #e8f5e9 !important;
   }
 
   /* Journal de brassage */
   .brewing-journal-section {
-    border-color: #c4a574 !important;
+    border-left: 4px solid #8b6914 !important;
+  }
+
+  .brewing-info {
+    display: flex !important;
+    gap: 16px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .brewing-steps-summary,
+  .brewing-events-summary {
+    margin-bottom: 16px !important;
+  }
+
+  .brewing-events-summary .events-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
   }
 
   .brewing-events-summary .event-item {
-    background: #f5f5f5 !important;
-    border: 1px solid #ddd !important;
-    border-left-width: 3px !important;
+    background: #f9f9f9 !important;
+    background-color: #f9f9f9 !important;
+    border: 1px solid #ccc !important;
+    border-left: 3px solid #8b6914 !important;
+    padding: 8px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .brewing-events-summary .event-icon {
+    font-size: 12pt !important;
   }
 
   .brewing-events-summary .event-title {
-    color: #1a1a1a !important;
+    color: #000 !important;
+    font-weight: bold !important;
+    font-size: 10pt !important;
   }
 
   .brewing-events-summary .event-time {
-    color: #666 !important;
+    color: #555 !important;
+    font-size: 9pt !important;
   }
 
-  .brewing-events-summary .event-step,
+  .brewing-events-summary .event-step {
+    color: #555 !important;
+    font-size: 9pt !important;
+  }
+
   .brewing-events-summary .event-description {
-    color: #666 !important;
+    color: #333 !important;
+    font-size: 10pt !important;
+  }
+
+  .brewing-events-summary .event-measurements {
+    margin-top: 4px !important;
   }
 
   .brewing-events-summary .event-measurements span {
     background: #e0e0e0 !important;
-    color: #1a1a1a !important;
+    background-color: #e0e0e0 !important;
+    color: #000 !important;
+    padding: 2px 6px !important;
+    border-radius: 2px !important;
+    font-size: 9pt !important;
+    margin-right: 8px !important;
   }
 
   /* Gestion des sauts de page */
   h2 {
-    page-break-after: avoid;
+    page-break-after: avoid !important;
   }
 
-  .recipe-ingredient-group {
-    page-break-inside: avoid;
-  }
-
-  .event-item {
-    page-break-inside: avoid;
+  section {
+    page-break-inside: avoid !important;
   }
 }
