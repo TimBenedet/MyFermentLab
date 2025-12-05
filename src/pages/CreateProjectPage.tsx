@@ -16,7 +16,8 @@ import {
   AdditionTiming,
   AdditionStep,
   ADDITION_TIMING_LABELS,
-  ADDITION_STEP_LABELS
+  ADDITION_STEP_LABELS,
+  StepIngredientAddition
 } from '../types';
 import {
   calculateBrewingMetrics,
@@ -862,39 +863,37 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                             </button>
                           </div>
                           <div className="other-ingredient-timing">
+                            <div className="timing-minutes-wrapper">
+                              <input
+                                type="number"
+                                className="form-input timing-minutes"
+                                placeholder="min"
+                                value={other.additionMinutes || ''}
+                                onChange={(e) => updateOther(other.id, { additionMinutes: Number(e.target.value) || undefined })}
+                                min="0"
+                              />
+                              <span className="unit">min</span>
+                            </div>
                             <select
-                              className="form-select"
+                              className="form-select timing-select"
                               value={other.additionTiming || ''}
                               onChange={(e) => updateOther(other.id, { additionTiming: e.target.value as AdditionTiming || undefined })}
                             >
-                              <option value="">Quand ?</option>
+                              <option value="">Quand</option>
                               {(Object.keys(ADDITION_TIMING_LABELS) as AdditionTiming[]).map(timing => (
                                 <option key={timing} value={timing}>{ADDITION_TIMING_LABELS[timing]}</option>
                               ))}
                             </select>
                             <select
-                              className="form-select"
+                              className="form-select timing-select"
                               value={other.additionStep || ''}
                               onChange={(e) => updateOther(other.id, { additionStep: e.target.value as AdditionStep || undefined })}
                             >
-                              <option value="">Quelle étape ?</option>
+                              <option value="">Étape</option>
                               {(Object.keys(ADDITION_STEP_LABELS) as AdditionStep[]).map(step => (
                                 <option key={step} value={step}>{ADDITION_STEP_LABELS[step]}</option>
                               ))}
                             </select>
-                            {other.additionTiming === 'during' && (
-                              <div className="addition-minutes-input">
-                                <input
-                                  type="number"
-                                  className="form-input small"
-                                  placeholder="min"
-                                  value={other.additionMinutes || ''}
-                                  onChange={(e) => updateOther(other.id, { additionMinutes: Number(e.target.value) || undefined })}
-                                  min="0"
-                                />
-                                <span className="unit">min après début</span>
-                              </div>
-                            )}
                           </div>
                         </div>
                       ))}
@@ -918,41 +917,127 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                   {openSections.mash && (
                     <div className="accordion-content">
                       {recipe.mashSteps.map((step, index) => (
-                        <div key={step.id} className="step-row">
-                          <span className="step-number">{index + 1}</span>
-                          <input
-                            type="text"
-                            className="form-input"
-                            placeholder="Nom de l'étape"
-                            value={step.name}
-                            onChange={(e) => updateMashStep(step.id, { name: e.target.value })}
-                          />
-                          <input
-                            type="number"
-                            className="form-input small"
-                            placeholder="°C"
-                            value={step.temperature || ''}
-                            onChange={(e) => updateMashStep(step.id, { temperature: Number(e.target.value) })}
-                            min="0"
-                            max="100"
-                          />
-                          <span className="unit">°C</span>
-                          <input
-                            type="number"
-                            className="form-input small"
-                            placeholder="min"
-                            value={step.duration || ''}
-                            onChange={(e) => updateMashStep(step.id, { duration: Number(e.target.value) })}
-                            min="0"
-                          />
-                          <span className="unit">min</span>
-                          <button
-                            type="button"
-                            className="btn-icon remove"
-                            onClick={() => removeMashStep(step.id)}
-                          >
-                            ×
-                          </button>
+                        <div key={step.id} className="mash-step-card">
+                          <div className="step-row">
+                            <span className="step-number">{index + 1}</span>
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Nom de l'étape"
+                              value={step.name}
+                              onChange={(e) => updateMashStep(step.id, { name: e.target.value })}
+                            />
+                            <input
+                              type="number"
+                              className="form-input small"
+                              placeholder="°C"
+                              value={step.temperature || ''}
+                              onChange={(e) => updateMashStep(step.id, { temperature: Number(e.target.value) })}
+                              min="0"
+                              max="100"
+                            />
+                            <span className="unit">°C</span>
+                            <input
+                              type="number"
+                              className="form-input small"
+                              placeholder="min"
+                              value={step.duration || ''}
+                              onChange={(e) => updateMashStep(step.id, { duration: Number(e.target.value) })}
+                              min="0"
+                            />
+                            <span className="unit">min</span>
+                            <button
+                              type="button"
+                              className="btn-icon remove"
+                              onClick={() => removeMashStep(step.id)}
+                            >
+                              ×
+                            </button>
+                          </div>
+
+                          {/* Ajouts d'ingrédients pour cette étape */}
+                          <div className="step-ingredient-additions">
+                            <div className="step-additions-header">
+                              <span className="additions-label">Ajouts d'ingrédients :</span>
+                            </div>
+                            {(step.ingredientAdditions || []).map((addition, addIdx) => {
+                              const ingredient =
+                                addition.ingredientType === 'grain'
+                                  ? recipe.grains.find(g => g.id === addition.ingredientId)
+                                  : recipe.others.find(o => o.id === addition.ingredientId);
+                              return (
+                                <div key={addIdx} className="step-addition-row">
+                                  <input
+                                    type="number"
+                                    className="form-input timing-minutes"
+                                    value={addition.minutes}
+                                    onChange={(e) => {
+                                      const newAdditions = [...(step.ingredientAdditions || [])];
+                                      newAdditions[addIdx] = { ...newAdditions[addIdx], minutes: Number(e.target.value) };
+                                      updateMashStep(step.id, { ingredientAdditions: newAdditions });
+                                    }}
+                                    min="0"
+                                    max={step.duration}
+                                  />
+                                  <span className="unit">min</span>
+                                  <span className="addition-ingredient-name">
+                                    {addition.ingredientType === 'grain' ? '🌾' : '📦'} {ingredient?.name || 'Inconnu'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className="btn-icon remove small"
+                                    onClick={() => {
+                                      const newAdditions = (step.ingredientAdditions || []).filter((_, i) => i !== addIdx);
+                                      updateMashStep(step.id, { ingredientAdditions: newAdditions });
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              );
+                            })}
+                            <div className="add-ingredient-to-step">
+                              <select
+                                className="form-select add-ingredient-select"
+                                value=""
+                                onChange={(e) => {
+                                  const [type, id] = e.target.value.split(':');
+                                  if (type && id) {
+                                    const newAddition: StepIngredientAddition = {
+                                      ingredientId: id,
+                                      ingredientType: type as 'grain' | 'other',
+                                      minutes: 0
+                                    };
+                                    updateMashStep(step.id, {
+                                      ingredientAdditions: [...(step.ingredientAdditions || []), newAddition]
+                                    });
+                                  }
+                                }}
+                              >
+                                <option value="">+ Ajouter un ingrédient</option>
+                                {recipe.grains.length > 0 && (
+                                  <optgroup label="Malts & Céréales">
+                                    {recipe.grains.map(g => (
+                                      <option key={g.id} value={`grain:${g.id}`}>
+                                        🌾 {g.name} ({g.quantity} kg)
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                                {recipe.others.filter(o => o.additionStep === 'mash' || !o.additionStep).length > 0 && (
+                                  <optgroup label="Autres ingrédients">
+                                    {recipe.others
+                                      .filter(o => o.additionStep === 'mash' || !o.additionStep)
+                                      .map(o => (
+                                        <option key={o.id} value={`other:${o.id}`}>
+                                          📦 {o.name} ({o.quantity} {o.unit})
+                                        </option>
+                                      ))}
+                                  </optgroup>
+                                )}
+                              </select>
+                            </div>
+                          </div>
                         </div>
                       ))}
                       <button type="button" className="btn-add" onClick={addMashStep}>
@@ -990,6 +1075,96 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                           </div>
                         </div>
                       </div>
+
+                      {/* Ajouts d'ingrédients pendant l'ébullition */}
+                      <div className="step-ingredient-additions boil-additions">
+                        <div className="step-additions-header">
+                          <span className="additions-label">Ajouts d'ingrédients :</span>
+                        </div>
+                        {(recipe.boilStep.ingredientAdditions || []).map((addition, addIdx) => {
+                          const ingredient =
+                            addition.ingredientType === 'hop'
+                              ? recipe.hops.find(h => h.id === addition.ingredientId)
+                              : recipe.others.find(o => o.id === addition.ingredientId);
+                          return (
+                            <div key={addIdx} className="step-addition-row">
+                              <input
+                                type="number"
+                                className="form-input timing-minutes"
+                                value={addition.minutes}
+                                onChange={(e) => {
+                                  const newAdditions = [...(recipe.boilStep.ingredientAdditions || [])];
+                                  newAdditions[addIdx] = { ...newAdditions[addIdx], minutes: Number(e.target.value) };
+                                  updateRecipe({ boilStep: { ...recipe.boilStep, ingredientAdditions: newAdditions } });
+                                }}
+                                min="0"
+                                max={recipe.boilStep.duration}
+                              />
+                              <span className="unit">min</span>
+                              <span className="addition-ingredient-name">
+                                {addition.ingredientType === 'hop' ? '🌿' : '📦'} {ingredient?.name || 'Inconnu'}
+                              </span>
+                              <button
+                                type="button"
+                                className="btn-icon remove small"
+                                onClick={() => {
+                                  const newAdditions = (recipe.boilStep.ingredientAdditions || []).filter((_, i) => i !== addIdx);
+                                  updateRecipe({ boilStep: { ...recipe.boilStep, ingredientAdditions: newAdditions } });
+                                }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+                        <div className="add-ingredient-to-step">
+                          <select
+                            className="form-select add-ingredient-select"
+                            value=""
+                            onChange={(e) => {
+                              const [type, id] = e.target.value.split(':');
+                              if (type && id) {
+                                const newAddition: StepIngredientAddition = {
+                                  ingredientId: id,
+                                  ingredientType: type as 'hop' | 'other',
+                                  minutes: 0
+                                };
+                                updateRecipe({
+                                  boilStep: {
+                                    ...recipe.boilStep,
+                                    ingredientAdditions: [...(recipe.boilStep.ingredientAdditions || []), newAddition]
+                                  }
+                                });
+                              }
+                            }}
+                          >
+                            <option value="">+ Ajouter un ingrédient</option>
+                            {recipe.hops.filter(h => h.use === 'boil' || h.use === 'first-wort').length > 0 && (
+                              <optgroup label="Houblons">
+                                {recipe.hops
+                                  .filter(h => h.use === 'boil' || h.use === 'first-wort')
+                                  .map(h => (
+                                    <option key={h.id} value={`hop:${h.id}`}>
+                                      🌿 {h.name} ({h.quantity}g, {h.time}min)
+                                    </option>
+                                  ))}
+                              </optgroup>
+                            )}
+                            {recipe.others.filter(o => o.additionStep === 'boil' || !o.additionStep).length > 0 && (
+                              <optgroup label="Autres ingrédients">
+                                {recipe.others
+                                  .filter(o => o.additionStep === 'boil' || !o.additionStep)
+                                  .map(o => (
+                                    <option key={o.id} value={`other:${o.id}`}>
+                                      📦 {o.name} ({o.quantity} {o.unit})
+                                    </option>
+                                  ))}
+                              </optgroup>
+                            )}
+                          </select>
+                        </div>
+                      </div>
+
                       <div className="form-group">
                         <label className="form-label">Notes</label>
                         <textarea

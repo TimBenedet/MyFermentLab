@@ -529,31 +529,35 @@
 .other-ingredient-timing {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   flex-wrap: wrap;
 }
 
-.other-ingredient-timing .form-select {
-  flex: 1;
-  min-width: 120px;
-}
-
-.addition-minutes-input {
+.timing-minutes-wrapper {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
-.addition-minutes-input .form-input {
-  width: 70px;
+.timing-minutes-wrapper .form-input.timing-minutes {
+  width: 55px;
+  padding: 8px 10px;
+  text-align: center;
 }
 
-.addition-minutes-input .unit {
-  font-size: 0.75rem;
+.timing-minutes-wrapper .unit {
+  font-size: 0.7rem;
   color: #888;
-  white-space: nowrap;
+}
+
+.other-ingredient-timing .form-select.timing-select {
+  width: auto;
+  min-width: 90px;
+  max-width: 110px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
 }
 
 /* Responsive pour autres ingrédients */
@@ -569,16 +573,133 @@
   }
 
   .other-ingredient-timing {
-    gap: 8px;
+    gap: 6px;
   }
 
-  .other-ingredient-timing .form-select {
-    flex: 1 1 calc(50% - 4px);
-    min-width: calc(50% - 4px);
+  .timing-minutes-wrapper {
+    flex-shrink: 0;
   }
 
-  .addition-minutes-input {
-    flex: 1 1 100%;
-    margin-top: 8px;
+  .other-ingredient-timing .form-select.timing-select {
+    min-width: 80px;
+    max-width: 100px;
+    font-size: 0.75rem;
+    padding: 8px 6px;
+  }
+}
+
+/* ========================================
+   Ajouts d'ingrédients par étape
+   ======================================== */
+
+.mash-step-card {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mash-step-card .step-row {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.step-ingredient-additions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.step-additions-header {
+  margin-bottom: 8px;
+}
+
+.additions-label {
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.step-addition-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(196, 165, 116, 0.08);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.step-addition-row .form-input.timing-minutes {
+  width: 55px;
+  padding: 6px 8px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.step-addition-row .unit {
+  font-size: 0.7rem;
+  color: #888;
+  min-width: auto;
+}
+
+.addition-ingredient-name {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #e8e4df;
+}
+
+.step-addition-row .btn-icon.remove.small {
+  width: 22px;
+  height: 22px;
+  font-size: 0.9rem;
+}
+
+.add-ingredient-to-step {
+  margin-top: 8px;
+}
+
+.add-ingredient-to-step .add-ingredient-select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  background: rgba(196, 165, 116, 0.1);
+  border: 1px dashed rgba(196, 165, 116, 0.3);
+  color: #c4a574;
+}
+
+.add-ingredient-to-step .add-ingredient-select:hover {
+  background: rgba(196, 165, 116, 0.15);
+  border-color: rgba(196, 165, 116, 0.5);
+}
+
+.boil-additions {
+  margin-top: 16px;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+
+/* Responsive pour les ajouts d'ingrédients */
+@media (max-width: 600px) {
+  .mash-step-card {
+    padding: 12px;
+  }
+
+  .step-addition-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .addition-ingredient-name {
+    flex: 1 1 60%;
+    order: 1;
+  }
+
+  .step-addition-row .btn-icon.remove.small {
+    order: 2;
   }
 }

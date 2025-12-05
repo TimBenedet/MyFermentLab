@@ -131,17 +131,26 @@ export const ADDITION_STEP_LABELS: Record<AdditionStep, string> = {
 
 export type RecipeIngredient = GrainIngredient | HopIngredient | YeastIngredient | WaterAddition | OtherIngredient;
 
+// Ajout d'ingrédient assigné à une étape
+export interface StepIngredientAddition {
+  ingredientId: string;
+  ingredientType: 'grain' | 'hop' | 'other';
+  minutes: number; // Minutes après le début de l'étape
+}
+
 export interface MashStep {
   id: string;
   name: string; // "Empâtage", "Saccharification", etc.
   temperature: number;
   duration: number; // en minutes
   notes?: string;
+  ingredientAdditions?: StepIngredientAddition[]; // Ingrédients à ajouter pendant cette étape
 }
 
 export interface BoilStep {
   duration: number; // en minutes
   notes?: string;
+  ingredientAdditions?: StepIngredientAddition[]; // Ingrédients à ajouter pendant l'ébullition
 }
 
 export interface FermentationStep {
@@ -248,6 +257,7 @@ export interface BrewingSession {
   steps: BrewingSessionStep[];
   stepsProgress: BrewingStepProgress[];
   events?: BrewingEvent[]; // Événements enregistrés pendant le brassage
+  completedAdditions?: string[]; // IDs des ajouts d'ingrédients validés
 }
 
 // Étape personnalisable pour la session de brassage

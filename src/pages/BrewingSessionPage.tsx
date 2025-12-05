@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Project, BrewingSession, BrewingSessionStep, BrewingEvent, BrewingEventType, ADDITION_STEP_LABELS } from '../types';
+import { Project, BrewingSession, BrewingSessionStep, BrewingEvent, BrewingEventType, ADDITION_STEP_LABELS, StepIngredientAddition } from '../types';
 import { generateId } from '../utils/brewingCalculations';
 import './BrewingSessionPage.css';
 
@@ -76,50 +76,92 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
     const recipe = project.recipe;
     if (!recipe) return additions;
 
-    // Grains pour l'empâtage
-    if (recipe.grains.length > 0) {
-      recipe.grains.forEach((grain, index) => {
-        additions.push({
-          id: `grain-${grain.id}`,
-          name: grain.name,
-          quantity: grain.quantity,
-          unit: 'kg',
-          timing: index === 0 ? 'Ajout grains' : '',
-          timeValue: 1000 - index, // Les grains en premier
-          stepId: 'empatage',
-          type: 'grain',
-          icon: '🌾'
+    // Helper pour obtenir un ingrédient par son ID et type
+    const getIngredientInfo = (add: StepIngredientAddition) => {
+      if (add.ingredientType === 'grain') {
+        const grain = recipe.grains.find(g => g.id === add.ingredientId);
+        if (grain) return { name: grain.name, quantity: grain.quantity, unit: 'kg', icon: '🌾' };
+      } else if (add.ingredientType === 'hop') {
+        const hop = recipe.hops.find(h => h.id === add.ingredientId);
+        if (hop) return { name: hop.name, quantity: hop.quantity, unit: 'g', icon: '🌿' };
+      } else if (add.ingredientType === 'other') {
+        const other = recipe.others.find(o => o.id === add.ingredientId);
+        if (other) return { name: other.name, quantity: other.quantity, unit: other.unit, icon: '📦' };
+      }
+      return null;
+    };
+
+    // Ajouts d'ingrédients assignés aux étapes d'empâtage
+    recipe.mashSteps.forEach(step => {
+      if (step.ingredientAdditions && step.ingredientAdditions.length > 0) {
+        step.ingredientAdditions.forEach((add, idx) => {
+          const info = getIngredientInfo(add);
+          if (info) {
+            additions.push({
+              id: `mash-add-${step.id}-${idx}`,
+              name: info.name,
+              quantity: info.quantity,
+              unit: info.unit,
+              timing: add.minutes === 0 ? 'Début' : `${add.minutes} min`,
+              timeValue: 1000 - add.minutes, // Plus le temps est petit, plus tôt dans l'étape
+              stepId: 'empatage',
+              type: add.ingredientType as 'grain' | 'hop' | 'other',
+              icon: info.icon
+            });
+          }
         });
+      }
+    });
+
+    // Ajouts d'ingrédients assignés à l'ébullition
+    if (recipe.boilStep.ingredientAdditions && recipe.boilStep.ingredientAdditions.length > 0) {
+      recipe.boilStep.ingredientAdditions.forEach((add, idx) => {
+        const info = getIngredientInfo(add);
+        if (info) {
+          additions.push({
+            id: `boil-add-${idx}`,
+            name: info.name,
+            quantity: info.quantity,
+            unit: info.unit,
+            timing: add.minutes === 0 ? 'Début' : `${add.minutes} min`,
+            timeValue: recipe.boilStep.duration - add.minutes, // Tri par temps restant
+            stepId: 'ebullition',
+            type: add.ingredientType as 'grain' | 'hop' | 'other',
+            icon: info.icon
+          });
+        }
       });
     }
 
-    // Houblons d'ébullition (boil)
-    recipe.hops
-      .filter(hop => hop.use === 'boil')
-      .forEach(hop => {
-        // Convertir le temps restant en timing lisible
-        const remainingMin = hop.time;
-        let timing: string;
-        if (remainingMin >= recipe.boilStep.duration) {
-          timing = 'Début ébullition';
-        } else if (remainingMin === 0) {
-          timing = 'Fin ébullition';
-        } else {
-          timing = `${remainingMin} min`;
-        }
+    // Houblons d'ébullition (boil) - fallback si pas d'additions assignées
+    const hasBoilAdditions = recipe.boilStep.ingredientAdditions && recipe.boilStep.ingredientAdditions.length > 0;
+    if (!hasBoilAdditions) {
+      recipe.hops
+        .filter(hop => hop.use === 'boil')
+        .forEach(hop => {
+          const remainingMin = hop.time;
+          let timing: string;
+          if (remainingMin >= recipe.boilStep.duration) {
+            timing = 'Début ébullition';
+          } else if (remainingMin === 0) {
+            timing = 'Fin ébullition';
+          } else {
+            timing = `${remainingMin} min`;
+          }
 
-        additions.push({
-          id: `hop-boil-${hop.id}`,
-          name: hop.name,
-          quantity: hop.quantity,
-          unit: 'g',
-          timing,
-          timeValue: remainingMin,
-          stepId: 'ebullition',
-          type: 'hop',
-          icon: '🌿'
+          additions.push({
+            id: `hop-boil-${hop.id}`,
+            name: hop.name,
+            quantity: hop.quantity,
+            unit: 'g',
+            timing,
+            timeValue: remainingMin,
+            stepId: 'ebullition',
+            type: 'hop',
+            icon: '🌿'
+          });
         });
-      });
+    }
 
     // Houblons first wort (au moment de la filtration/avant ébullition)
     recipe.hops
@@ -131,7 +173,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           quantity: hop.quantity,
           unit: 'g',
           timing: 'First Wort',
-          timeValue: 999, // Avant l'ébullition
+          timeValue: 999,
           stepId: 'filtration',
           type: 'hop',
           icon: '🌿'
@@ -155,75 +197,87 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
         });
       });
 
-    // Autres ingrédients selon leur moment d'ajout (nouveau système structuré)
-    recipe.others.forEach(other => {
-      let stepId = 'ebullition';
-      let timing = '';
-      let timeValue = 0;
+    // Autres ingrédients selon leur moment d'ajout (ancien système pour rétrocompatibilité)
+    // Ne pas les ajouter s'ils ont été assignés via le nouveau système
+    const assignedOtherIds = new Set<string>();
 
-      // Utiliser le nouveau système structuré si disponible
-      if (other.additionStep) {
-        switch (other.additionStep) {
-          case 'mash':
-            stepId = 'empatage';
-            break;
-          case 'boil':
-            stepId = 'ebullition';
-            break;
-          case 'fermentation':
-            stepId = 'ensemencement';
-            break;
-          case 'packaging':
-            stepId = 'transfert';
-            break;
-        }
-
-        const stepLabel = ADDITION_STEP_LABELS[other.additionStep];
-
-        if (other.additionTiming === 'during' && other.additionMinutes !== undefined) {
-          timing = `${other.additionMinutes} min`;
-          timeValue = other.additionStep === 'boil'
-            ? recipe.boilStep.duration - other.additionMinutes // Pour l'ébullition, on compte depuis le début
-            : other.additionMinutes;
-        } else if (other.additionTiming === 'start') {
-          timing = `Début ${stepLabel.toLowerCase()}`;
-          timeValue = 999; // Au début = valeur haute pour trier en premier
-        } else if (other.additionTiming === 'end') {
-          timing = `Fin ${stepLabel.toLowerCase()}`;
-          timeValue = 0; // À la fin = valeur basse pour trier en dernier
-        } else {
-          timing = stepLabel;
-        }
-      } else {
-        // Fallback vers l'ancien système pour la rétrocompatibilité
-        timing = other.additionTime || 'Ébullition';
-        const additionLower = (other.additionTime || '').toLowerCase();
-        if (additionLower.includes('empâtage') || additionLower.includes('empatage')) {
-          stepId = 'empatage';
-        } else if (additionLower.includes('whirlpool')) {
-          stepId = 'whirlpool';
-        } else if (additionLower.includes('fermentation')) {
-          stepId = 'ensemencement';
-        }
-        // Essayer d'extraire les minutes si présentes
-        const minuteMatch = (other.additionTime || '').match(/(\d+)\s*min/i);
-        if (minuteMatch) {
-          timeValue = parseInt(minuteMatch[1], 10);
-        }
-      }
-
-      additions.push({
-        id: `other-${other.id}`,
-        name: other.name,
-        quantity: other.quantity,
-        unit: other.unit,
-        timing,
-        timeValue,
-        stepId,
-        type: 'other',
-        icon: '📦'
+    // Collecter les IDs déjà assignés
+    recipe.mashSteps.forEach(step => {
+      (step.ingredientAdditions || []).forEach(add => {
+        if (add.ingredientType === 'other') assignedOtherIds.add(add.ingredientId);
       });
     });
+    (recipe.boilStep.ingredientAdditions || []).forEach(add => {
+      if (add.ingredientType === 'other') assignedOtherIds.add(add.ingredientId);
+    });
+
+    recipe.others
+      .filter(other => !assignedOtherIds.has(other.id))
+      .forEach(other => {
+        let stepId = 'ebullition';
+        let timing = '';
+        let timeValue = 0;
+
+        if (other.additionStep) {
+          switch (other.additionStep) {
+            case 'mash':
+              stepId = 'empatage';
+              break;
+            case 'boil':
+              stepId = 'ebullition';
+              break;
+            case 'fermentation':
+              stepId = 'ensemencement';
+              break;
+            case 'packaging':
+              stepId = 'transfert';
+              break;
+          }
+
+          const stepLabel = ADDITION_STEP_LABELS[other.additionStep];
+
+          if (other.additionTiming === 'during' && other.additionMinutes !== undefined) {
+            timing = `${other.additionMinutes} min`;
+            timeValue = other.additionStep === 'boil'
+              ? recipe.boilStep.duration - other.additionMinutes
+              : other.additionMinutes;
+          } else if (other.additionTiming === 'start') {
+            timing = `Début ${stepLabel.toLowerCase()}`;
+            timeValue = 999;
+          } else if (other.additionTiming === 'end') {
+            timing = `Fin ${stepLabel.toLowerCase()}`;
+            timeValue = 0;
+          } else {
+            timing = stepLabel;
+          }
+        } else {
+          timing = other.additionTime || 'Ébullition';
+          const additionLower = (other.additionTime || '').toLowerCase();
+          if (additionLower.includes('empâtage') || additionLower.includes('empatage')) {
+            stepId = 'empatage';
+          } else if (additionLower.includes('whirlpool')) {
+            stepId = 'whirlpool';
+          } else if (additionLower.includes('fermentation')) {
+            stepId = 'ensemencement';
+          }
+          const minuteMatch = (other.additionTime || '').match(/(\d+)\s*min/i);
+          if (minuteMatch) {
+            timeValue = parseInt(minuteMatch[1], 10);
+          }
+        }
+
+        additions.push({
+          id: `other-${other.id}`,
+          name: other.name,
+          quantity: other.quantity,
+          unit: other.unit,
+          timing,
+          timeValue,
+          stepId,
+          type: 'other',
+          icon: '📦'
+        });
+      });
 
     return additions;
   }, [project.recipe]);
@@ -324,6 +378,21 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
     newSteps[index] = { ...newSteps[index], duration };
     saveSession({ ...session, steps: newSteps });
     setEditingStep(null);
+  };
+
+  // Basculer l'état de complétion d'un ajout d'ingrédient
+  const toggleAdditionCompleted = (additionId: string) => {
+    const currentCompleted = session.completedAdditions || [];
+    const isCompleted = currentCompleted.includes(additionId);
+
+    const newCompleted = isCompleted
+      ? currentCompleted.filter(id => id !== additionId)
+      : [...currentCompleted, additionId];
+
+    saveSession({
+      ...session,
+      completedAdditions: newCompleted
+    });
   };
 
   const formatTime = (seconds: number) => {
@@ -543,14 +612,24 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
                   {stepAdditions.length > 0 && (
                     <div className="ingredient-additions">
                       <div className="additions-label">Ajouts pendant cette étape :</div>
-                      {stepAdditions.map(addition => (
-                        <div key={addition.id} className="addition-item">
-                          <span className="addition-icon">{addition.icon}</span>
-                          <span className="addition-timing">{addition.timing}</span>
-                          <span className="addition-name">{addition.name}</span>
-                          <span className="addition-quantity">{addition.quantity} {addition.unit}</span>
-                        </div>
-                      ))}
+                      {stepAdditions.map(addition => {
+                        const isCompleted = (session.completedAdditions || []).includes(addition.id);
+                        return (
+                          <div
+                            key={addition.id}
+                            className={`addition-item ${isCompleted ? 'completed' : ''}`}
+                            onClick={() => toggleAdditionCompleted(addition.id)}
+                          >
+                            <span className={`addition-checkbox ${isCompleted ? 'checked' : ''}`}>
+                              {isCompleted ? '✓' : ''}
+                            </span>
+                            <span className="addition-icon">{addition.icon}</span>
+                            <span className="addition-timing">{addition.timing}</span>
+                            <span className="addition-name">{addition.name}</span>
+                            <span className="addition-quantity">{addition.quantity} {addition.unit}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
