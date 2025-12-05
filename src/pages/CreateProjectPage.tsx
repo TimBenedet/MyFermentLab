@@ -256,11 +256,6 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
     }
   };
 
-  const handleStartBrewing = () => {
-    if (canSubmit) {
-      onCreateProject(createProjectData(), true);
-    }
-  };
 
   return (
     <div className="create-project-page">
@@ -1259,16 +1254,6 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
           <button type="submit" className="btn-primary" disabled={!canSubmit}>
             Enregistrer
           </button>
-          {fermentationType === 'beer' && (
-            <button
-              type="button"
-              className="btn-brewing"
-              disabled={!canSubmit}
-              onClick={handleStartBrewing}
-            >
-              Brasser maintenant
-            </button>
-          )}
         </div>
       </form>
     </div>
