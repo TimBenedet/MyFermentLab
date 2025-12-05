@@ -465,4 +465,76 @@
   .accordion-content {
     padding: 0 12px 12px;
   }
+
+  .other-ingredient-card {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .other-ingredient-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .other-ingredient-timing {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .addition-minutes-input {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+/* ========================================
+   Autres Ingrédients - Nouveau Design
+   ======================================== */
+
+.other-ingredient-card {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.other-ingredient-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.other-ingredient-row .form-input.flex-2 {
+  flex: 2;
+}
+
+.other-ingredient-timing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.other-ingredient-timing .form-select {
+  flex: 1;
+  min-width: 120px;
+}
+
+.addition-minutes-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.addition-minutes-input .form-input {
+  width: 70px;
+}
+
+.addition-minutes-input .unit {
+  font-size: 0.75rem;
+  color: #888;
+  white-space: nowrap;
 }

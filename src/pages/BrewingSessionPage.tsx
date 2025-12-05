@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Project, BrewingSession, BrewingSessionStep, BrewingEvent, BrewingEventType } from '../types';
+import { Project, BrewingSession, BrewingSessionStep, BrewingEvent, BrewingEventType, ADDITION_STEP_LABELS } from '../types';
 import { generateId } from '../utils/brewingCalculations';
 import './BrewingSessionPage.css';
 
@@ -127,19 +127,61 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
         });
       });
 
-    // Autres ingrédients selon leur moment d'ajout
+    // Autres ingrédients selon leur moment d'ajout (nouveau système structuré)
     recipe.others.forEach(other => {
       let stepId = 'ebullition';
-      let timing = other.additionTime || 'Ébullition';
+      let timing = '';
       let timeValue = 0;
 
-      const additionLower = (other.additionTime || '').toLowerCase();
-      if (additionLower.includes('empâtage') || additionLower.includes('empatage')) {
-        stepId = 'empatage';
-      } else if (additionLower.includes('whirlpool')) {
-        stepId = 'whirlpool';
-      } else if (additionLower.includes('fermentation')) {
-        stepId = 'ensemencement';
+      // Utiliser le nouveau système structuré si disponible
+      if (other.additionStep) {
+        switch (other.additionStep) {
+          case 'mash':
+            stepId = 'empatage';
+            break;
+          case 'boil':
+            stepId = 'ebullition';
+            break;
+          case 'fermentation':
+            stepId = 'ensemencement';
+            break;
+          case 'packaging':
+            stepId = 'transfert';
+            break;
+        }
+
+        const stepLabel = ADDITION_STEP_LABELS[other.additionStep];
+
+        if (other.additionTiming === 'during' && other.additionMinutes !== undefined) {
+          timing = `${other.additionMinutes} min`;
+          timeValue = other.additionStep === 'boil'
+            ? recipe.boilStep.duration - other.additionMinutes // Pour l'ébullition, on compte depuis le début
+            : other.additionMinutes;
+        } else if (other.additionTiming === 'start') {
+          timing = `Début ${stepLabel.toLowerCase()}`;
+          timeValue = 999; // Au début = valeur haute pour trier en premier
+        } else if (other.additionTiming === 'end') {
+          timing = `Fin ${stepLabel.toLowerCase()}`;
+          timeValue = 0; // À la fin = valeur basse pour trier en dernier
+        } else {
+          timing = stepLabel;
+        }
+      } else {
+        // Fallback vers l'ancien système pour la rétrocompatibilité
+        timing = other.additionTime || 'Ébullition';
+        const additionLower = (other.additionTime || '').toLowerCase();
+        if (additionLower.includes('empâtage') || additionLower.includes('empatage')) {
+          stepId = 'empatage';
+        } else if (additionLower.includes('whirlpool')) {
+          stepId = 'whirlpool';
+        } else if (additionLower.includes('fermentation')) {
+          stepId = 'ensemencement';
+        }
+        // Essayer d'extraire les minutes si présentes
+        const minuteMatch = (other.additionTime || '').match(/(\d+)\s*min/i);
+        if (minuteMatch) {
+          timeValue = parseInt(minuteMatch[1], 10);
+        }
       }
 
       additions.push({

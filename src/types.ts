@@ -96,15 +96,38 @@ export interface WaterAddition {
   notes?: string;
 }
 
+// Timing pour les ajouts d'ingrédients
+export type AdditionTiming = 'start' | 'during' | 'end';
+export type AdditionStep = 'mash' | 'boil' | 'fermentation' | 'packaging';
+
 export interface OtherIngredient {
   id: string;
   type: 'sugar' | 'other';
   name: string;
   quantity: number;
   unit: string; // 'g', 'ml', 'kg', 'L', 'pcs'
-  additionTime?: string; // "Ébullition", "Fermentation primaire", etc.
+  // Nouveau système structuré
+  additionTiming?: AdditionTiming; // 'start', 'during', 'end'
+  additionStep?: AdditionStep; // 'mash', 'boil', 'fermentation', 'packaging'
+  additionMinutes?: number; // Minutes après le début (pour 'during')
+  // Ancien champ gardé pour compatibilité
+  additionTime?: string;
   notes?: string;
 }
+
+// Labels pour les menus déroulants
+export const ADDITION_TIMING_LABELS: Record<AdditionTiming, string> = {
+  start: 'Au début',
+  during: 'Pendant',
+  end: 'À la fin'
+};
+
+export const ADDITION_STEP_LABELS: Record<AdditionStep, string> = {
+  mash: 'Empâtage',
+  boil: 'Ébullition',
+  fermentation: 'Fermentation',
+  packaging: 'Mise en bouteille'
+};
 
 export type RecipeIngredient = GrainIngredient | HopIngredient | YeastIngredient | WaterAddition | OtherIngredient;
 

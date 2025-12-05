@@ -12,7 +12,11 @@ import {
   WaterAddition,
   OtherIngredient,
   MashStep,
-  FermentationStep
+  FermentationStep,
+  AdditionTiming,
+  AdditionStep,
+  ADDITION_TIMING_LABELS,
+  ADDITION_STEP_LABELS
 } from '../types';
 import {
   calculateBrewingMetrics,
@@ -820,48 +824,78 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                   {openSections.others && (
                     <div className="accordion-content">
                       {recipe.others.map((other) => (
-                        <div key={other.id} className="ingredient-row">
-                          <input
-                            type="text"
-                            className="form-input flex-2"
-                            placeholder="Nom de l'ingrédient"
-                            value={other.name}
-                            onChange={(e) => updateOther(other.id, { name: e.target.value })}
-                          />
-                          <input
-                            type="number"
-                            className="form-input small"
-                            placeholder="Qté"
-                            value={other.quantity || ''}
-                            onChange={(e) => updateOther(other.id, { quantity: Number(e.target.value) })}
-                            min="0"
-                            step="0.1"
-                          />
-                          <select
-                            className="form-select small"
-                            value={other.unit}
-                            onChange={(e) => updateOther(other.id, { unit: e.target.value })}
-                          >
-                            <option value="g">g</option>
-                            <option value="kg">kg</option>
-                            <option value="ml">ml</option>
-                            <option value="L">L</option>
-                            <option value="pcs">pcs</option>
-                          </select>
-                          <input
-                            type="text"
-                            className="form-input"
-                            placeholder="Moment d'ajout"
-                            value={other.additionTime || ''}
-                            onChange={(e) => updateOther(other.id, { additionTime: e.target.value })}
-                          />
-                          <button
-                            type="button"
-                            className="btn-icon remove"
-                            onClick={() => removeOther(other.id)}
-                          >
-                            ×
-                          </button>
+                        <div key={other.id} className="other-ingredient-card">
+                          <div className="other-ingredient-row">
+                            <input
+                              type="text"
+                              className="form-input flex-2"
+                              placeholder="Nom de l'ingrédient"
+                              value={other.name}
+                              onChange={(e) => updateOther(other.id, { name: e.target.value })}
+                            />
+                            <input
+                              type="number"
+                              className="form-input small"
+                              placeholder="Qté"
+                              value={other.quantity || ''}
+                              onChange={(e) => updateOther(other.id, { quantity: Number(e.target.value) })}
+                              min="0"
+                              step="0.1"
+                            />
+                            <select
+                              className="form-select small"
+                              value={other.unit}
+                              onChange={(e) => updateOther(other.id, { unit: e.target.value })}
+                            >
+                              <option value="g">g</option>
+                              <option value="kg">kg</option>
+                              <option value="ml">ml</option>
+                              <option value="L">L</option>
+                              <option value="pcs">pcs</option>
+                            </select>
+                            <button
+                              type="button"
+                              className="btn-icon remove"
+                              onClick={() => removeOther(other.id)}
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <div className="other-ingredient-timing">
+                            <select
+                              className="form-select"
+                              value={other.additionTiming || ''}
+                              onChange={(e) => updateOther(other.id, { additionTiming: e.target.value as AdditionTiming || undefined })}
+                            >
+                              <option value="">Quand ?</option>
+                              {(Object.keys(ADDITION_TIMING_LABELS) as AdditionTiming[]).map(timing => (
+                                <option key={timing} value={timing}>{ADDITION_TIMING_LABELS[timing]}</option>
+                              ))}
+                            </select>
+                            <select
+                              className="form-select"
+                              value={other.additionStep || ''}
+                              onChange={(e) => updateOther(other.id, { additionStep: e.target.value as AdditionStep || undefined })}
+                            >
+                              <option value="">Quelle étape ?</option>
+                              {(Object.keys(ADDITION_STEP_LABELS) as AdditionStep[]).map(step => (
+                                <option key={step} value={step}>{ADDITION_STEP_LABELS[step]}</option>
+                              ))}
+                            </select>
+                            {other.additionTiming === 'during' && (
+                              <div className="addition-minutes-input">
+                                <input
+                                  type="number"
+                                  className="form-input small"
+                                  placeholder="min"
+                                  value={other.additionMinutes || ''}
+                                  onChange={(e) => updateOther(other.id, { additionMinutes: Number(e.target.value) || undefined })}
+                                  min="0"
+                                />
+                                <span className="unit">min après début</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))}
                       <button type="button" className="btn-add" onClick={addOther}>
