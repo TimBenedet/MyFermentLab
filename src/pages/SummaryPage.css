@@ -623,21 +623,58 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+    visibility: visible !important;
   }
 
-  /* Reset global */
-  html, body {
-    background: white !important;
-    background-color: white !important;
+  /* Reset global - TRÈS IMPORTANT */
+  html {
+    background: #fff !important;
+    background-color: #fff !important;
+  }
+
+  body {
+    background: #fff !important;
+    background-color: #fff !important;
     color: #000 !important;
     font-size: 12pt !important;
     line-height: 1.4 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Masquer header et footer de l'app */
+  .app-header,
+  .app-footer {
+    display: none !important;
+  }
+
+  /* App wrapper doit être visible mais transparent */
+  .app {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .app-main {
+    background: transparent !important;
+  }
+
+  /* Forcer l'affichage de la page summary */
+  #root {
+    background: #fff !important;
+    background-color: #fff !important;
   }
 
   /* Page container */
   .summary-page {
-    background: white !important;
-    background-color: white !important;
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: #fff !important;
+    background-color: #fff !important;
     color: #000 !important;
     padding: 20px !important;
     max-width: 100% !important;
@@ -645,6 +682,7 @@
   }
 
   /* Tous les textes en noir par défaut */
+  .summary-page,
   .summary-page * {
     color: #000 !important;
   }
