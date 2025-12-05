@@ -85,7 +85,7 @@ router.get('/:id/stats', requireAuth, async (req: Request, res: Response) => {
 // POST /api/projects - Créer un nouveau projet
 router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { name, fermentationType, sensorId, outletId, targetTemperature, controlMode } = req.body;
+    const { name, fermentationType, sensorId, outletId, targetTemperature, controlMode, recipe } = req.body;
 
     if (!name || !fermentationType || !sensorId || !outletId || !targetTemperature) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -100,8 +100,9 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
       return res.status(400).json({ error: 'Outlet is already in use by another active project' });
     }
 
+    const projectId = Date.now().toString();
     const newProject = databaseService.createProject({
-      id: Date.now().toString(),
+      id: projectId,
       name,
       fermentationType,
       sensorId,
@@ -112,7 +113,14 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
       createdAt: Date.now()
     });
 
-    res.status(201).json(newProject);
+    // Sauvegarder la recette si fournie
+    if (recipe) {
+      databaseService.updateProjectRecipe(projectId, recipe);
+    }
+
+    // Récupérer le projet avec la recette
+    const projectWithRecipe = databaseService.getProject(projectId);
+    res.status(201).json(projectWithRecipe);
   } catch (error) {
     console.error('Error creating project:', error);
     res.status(500).json({ error: 'Internal server error' });

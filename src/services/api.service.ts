@@ -18,6 +18,7 @@ export interface CreateProjectRequest {
   outletId: string;
   targetTemperature: number;
   controlMode: 'manual' | 'automatic';
+  recipe?: any;
 }
 
 export interface ProjectWithHistory extends Project {
@@ -83,7 +84,8 @@ class ApiService {
       body: JSON.stringify(data)
     });
     if (!response.ok) {
-      throw new Error('Failed to create project');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to create project');
     }
     return response.json();
   }
