@@ -1,6 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Project, BrewingSession, BrewingSessionStep } from '../types';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Project, BrewingSession, BrewingSessionStep, HopIngredient, OtherIngredient } from '../types';
 import './BrewingSessionPage.css';
+
+// Type pour les ajouts d'ingrédients à afficher dans la timeline
+interface IngredientAddition {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  timing: string; // "À 60 min", "À 15 min", "Début", etc.
+  timeValue: number; // Valeur numérique pour le tri
+  stepId: string; // ID de l'étape parente
+  type: 'hop' | 'other' | 'grain';
+  icon: string;
+}
 
 interface BrewingSessionPageProps {
   project: Project;
@@ -41,6 +54,101 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
   const [showAddStep, setShowAddStep] = useState(false);
   const [activeTimer, setActiveTimer] = useState<number | null>(null);
   const [timerElapsed, setTimerElapsed] = useState(0);
+
+  // Extraire les ajouts d'ingrédients de la recette
+  const ingredientAdditions = useMemo(() => {
+    const additions: IngredientAddition[] = [];
+    const recipe = project.recipe;
+    if (!recipe) return additions;
+
+    // Houblons d'ébullition (boil)
+    recipe.hops
+      .filter(hop => hop.use === 'boil')
+      .forEach(hop => {
+        additions.push({
+          id: `hop-boil-${hop.id}`,
+          name: hop.name,
+          quantity: hop.quantity,
+          unit: 'g',
+          timing: hop.time === recipe.boilStep.duration ? 'Début' : `À ${hop.time} min`,
+          timeValue: hop.time,
+          stepId: 'ebullition',
+          type: 'hop',
+          icon: '🌿'
+        });
+      });
+
+    // Houblons first wort (au moment de la filtration/avant ébullition)
+    recipe.hops
+      .filter(hop => hop.use === 'first-wort')
+      .forEach(hop => {
+        additions.push({
+          id: `hop-fw-${hop.id}`,
+          name: hop.name,
+          quantity: hop.quantity,
+          unit: 'g',
+          timing: 'First Wort',
+          timeValue: 999, // Avant l'ébullition
+          stepId: 'filtration',
+          type: 'hop',
+          icon: '🌿'
+        });
+      });
+
+    // Houblons whirlpool
+    recipe.hops
+      .filter(hop => hop.use === 'whirlpool')
+      .forEach(hop => {
+        additions.push({
+          id: `hop-wp-${hop.id}`,
+          name: hop.name,
+          quantity: hop.quantity,
+          unit: 'g',
+          timing: 'Whirlpool',
+          timeValue: 0,
+          stepId: 'whirlpool',
+          type: 'hop',
+          icon: '🌿'
+        });
+      });
+
+    // Autres ingrédients selon leur moment d'ajout
+    recipe.others.forEach(other => {
+      let stepId = 'ebullition';
+      let timing = other.additionTime || 'Ébullition';
+      let timeValue = 0;
+
+      const additionLower = (other.additionTime || '').toLowerCase();
+      if (additionLower.includes('empâtage') || additionLower.includes('empatage')) {
+        stepId = 'empatage';
+      } else if (additionLower.includes('whirlpool')) {
+        stepId = 'whirlpool';
+      } else if (additionLower.includes('fermentation')) {
+        stepId = 'ensemencement';
+      }
+
+      additions.push({
+        id: `other-${other.id}`,
+        name: other.name,
+        quantity: other.quantity,
+        unit: other.unit,
+        timing,
+        timeValue,
+        stepId,
+        type: 'other',
+        icon: '📦'
+      });
+    });
+
+    return additions;
+  }, [project.recipe]);
+
+  // Obtenir les ajouts pour une étape donnée
+  const getAdditionsForStep = (stepId: string): IngredientAddition[] => {
+    return ingredientAdditions
+      .filter(a => a.stepId === stepId)
+      .sort((a, b) => b.timeValue - a.timeValue); // Du plus long au plus court
+  };
 
   // Timer effect
   useEffect(() => {
@@ -201,6 +309,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           const status = getStepStatus(index);
           const isActive = activeTimer === index;
           const progress = session.stepsProgress[index];
+          const stepAdditions = getAdditionsForStep(step.id);
 
           return (
             <div key={step.id} className={`timeline-step ${status}`}>
@@ -258,6 +367,21 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
 
                   {step.description && (
                     <p className="step-description">{step.description}</p>
+                  )}
+
+                  {/* Mini-étapes d'ajout d'ingrédients */}
+                  {stepAdditions.length > 0 && (
+                    <div className="ingredient-additions">
+                      <div className="additions-label">Ajouts pendant cette étape :</div>
+                      {stepAdditions.map(addition => (
+                        <div key={addition.id} className="addition-item">
+                          <span className="addition-icon">{addition.icon}</span>
+                          <span className="addition-timing">{addition.timing}</span>
+                          <span className="addition-name">{addition.name}</span>
+                          <span className="addition-quantity">{addition.quantity} {addition.unit}</span>
+                        </div>
+                      ))}
+                    </div>
                   )}
 
                   {/* Timer actif */}

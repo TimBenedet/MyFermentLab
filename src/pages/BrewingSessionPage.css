@@ -406,6 +406,70 @@
   box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
 }
 
+/* Ingredient Additions (mini-steps) */
+.ingredient-additions {
+  margin: 12px 0;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border-left: 3px solid rgba(196, 165, 116, 0.5);
+}
+
+.additions-label {
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.addition-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.addition-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.addition-item:first-of-type {
+  padding-top: 0;
+}
+
+.addition-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.addition-timing {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c4a574;
+  background: rgba(196, 165, 116, 0.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: center;
+}
+
+.addition-name {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #e8e4df;
+}
+
+.addition-quantity {
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .brewing-session-page {
@@ -539,5 +603,37 @@
     padding: 12px 20px;
     font-size: 0.9rem;
     width: 100%;
+  }
+
+  /* Ingredient additions responsive */
+  .ingredient-additions {
+    padding: 10px;
+    margin: 10px 0;
+  }
+
+  .additions-label {
+    font-size: 0.7rem;
+  }
+
+  .addition-item {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .addition-timing {
+    font-size: 0.7rem;
+    min-width: auto;
+    padding: 2px 6px;
+  }
+
+  .addition-name {
+    font-size: 0.8rem;
+    flex-basis: 100%;
+    order: 3;
+    margin-left: 24px;
+  }
+
+  .addition-quantity {
+    font-size: 0.75rem;
   }
 }
