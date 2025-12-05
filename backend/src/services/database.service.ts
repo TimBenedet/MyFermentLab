@@ -155,9 +155,11 @@ class DatabaseService {
 
   createProject(project: Omit<Project, 'currentTemperature' | 'outletActive'>): Project {
     const stmt = this.db.prepare(`
-      INSERT INTO projects (id, name, fermentation_type, sensor_id, outlet_id, target_temperature, control_mode, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO projects (id, name, fermentation_type, sensor_id, outlet_id, target_temperature, control_mode, created_at, recipe)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
+
+    const recipeJson = project.recipe ? JSON.stringify(project.recipe) : null;
 
     stmt.run(
       project.id,
@@ -167,7 +169,8 @@ class DatabaseService {
       project.outletId,
       project.targetTemperature,
       project.controlMode,
-      project.createdAt
+      project.createdAt,
+      recipeJson
     );
 
     return this.getProject(project.id)!;

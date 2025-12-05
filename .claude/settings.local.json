@@ -43,7 +43,8 @@
       "Bash(export KUBECONFIG=/etc/rancher/k3s/k3s.yaml:*)",
       "Bash(ls:*)",
       "Bash(sshpass:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(timeout 15 ssh:*)"
     ],
     "deny": [],
     "ask": []
