@@ -74,6 +74,10 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
   const ingredientAdditions = useMemo(() => {
     const additions: IngredientAddition[] = [];
     const recipe = project.recipe;
+    console.log('DEBUG recipe:', recipe);
+    console.log('DEBUG grains:', recipe?.grains);
+    console.log('DEBUG hops:', recipe?.hops);
+    console.log('DEBUG yeasts:', recipe?.yeasts);
     if (!recipe) return additions;
 
     // Helper pour obtenir un ingrédient par son ID et type
