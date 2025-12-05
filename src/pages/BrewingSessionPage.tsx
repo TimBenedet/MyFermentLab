@@ -97,19 +97,31 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
     );
 
     // Ajouts d'ingrédients assignés aux étapes d'empâtage
+    // add.minutes = temps RESTANT avant la fin (convention brassicole)
     if (hasMashAdditions) {
       recipe.mashSteps.forEach(step => {
         if (step.ingredientAdditions && step.ingredientAdditions.length > 0) {
           step.ingredientAdditions.forEach((add, idx) => {
             const info = getIngredientInfo(add);
             if (info) {
+              const stepDuration = step.duration || 60;
+              // add.minutes = temps restant, donc temps écoulé = durée - temps restant
+              const elapsedMin = stepDuration - add.minutes;
+              let timing: string;
+              if (add.minutes >= stepDuration) {
+                timing = 'Dès le début';
+              } else if (add.minutes === 0) {
+                timing = 'À la fin';
+              } else {
+                timing = `${add.minutes} min avant fin`;
+              }
               additions.push({
                 id: `mash-add-${step.id}-${idx}`,
                 name: info.name,
                 quantity: info.quantity,
                 unit: info.unit,
-                timing: add.minutes === 0 ? 'À 0 min' : `À ${add.minutes} min`,
-                timeValue: add.minutes, // Tri par temps écoulé (croissant)
+                timing,
+                timeValue: elapsedMin, // Tri par temps écoulé (croissant)
                 stepId: 'empatage',
                 type: add.ingredientType as 'grain' | 'hop' | 'other',
                 icon: info.icon
@@ -126,7 +138,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           name: grain.name,
           quantity: grain.quantity,
           unit: 'kg',
-          timing: 'À 0 min',
+          timing: 'Dès le début',
           timeValue: 0,
           stepId: 'empatage',
           type: 'grain',
@@ -136,18 +148,30 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
     }
 
     // Ajouts d'ingrédients assignés à l'ébullition
-    // Note: add.minutes = temps écoulé depuis le début de l'ébullition
+    // add.minutes = temps RESTANT avant la fin (convention brassicole)
+    // Ex: 60min = dès le début, 15min = 15min avant la fin
     if (recipe.boilStep.ingredientAdditions && recipe.boilStep.ingredientAdditions.length > 0) {
+      const boilDuration = recipe.boilStep.duration;
       recipe.boilStep.ingredientAdditions.forEach((add, idx) => {
         const info = getIngredientInfo(add);
         if (info) {
+          // add.minutes = temps restant, donc temps écoulé = durée - temps restant
+          const elapsedMin = boilDuration - add.minutes;
+          let timing: string;
+          if (add.minutes >= boilDuration) {
+            timing = 'Dès le début';
+          } else if (add.minutes === 0) {
+            timing = 'À la fin';
+          } else {
+            timing = `${add.minutes} min avant fin`;
+          }
           additions.push({
             id: `boil-add-${idx}`,
             name: info.name,
             quantity: info.quantity,
             unit: info.unit,
-            timing: add.minutes === 0 ? 'À 0 min' : `À ${add.minutes} min`,
-            timeValue: add.minutes, // Tri par temps écoulé (croissant)
+            timing,
+            timeValue: elapsedMin, // Tri par temps écoulé (croissant)
             stepId: 'ebullition',
             type: add.ingredientType as 'grain' | 'hop' | 'other',
             icon: info.icon
@@ -158,21 +182,21 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
 
     // Houblons d'ébullition (boil) - fallback si pas d'additions assignées
     // hop.time = temps restant avant la fin (convention brassicole)
-    // On convertit en temps écoulé: elapsedMin = boilDuration - hop.time
+    // Ex: 60min = dès le début, 15min = 15min avant la fin
     const hasBoilAdditions = recipe.boilStep.ingredientAdditions && recipe.boilStep.ingredientAdditions.length > 0;
     if (!hasBoilAdditions) {
       recipe.hops
         .filter(hop => hop.use === 'boil')
         .forEach(hop => {
           const boilDuration = recipe.boilStep.duration;
-          const elapsedMin = boilDuration - hop.time; // Conversion en temps écoulé
+          const elapsedMin = boilDuration - hop.time; // Conversion en temps écoulé pour le tri
           let timing: string;
-          if (elapsedMin <= 0) {
-            timing = 'À 0 min';
-          } else if (elapsedMin >= boilDuration) {
-            timing = `À ${boilDuration} min`;
+          if (hop.time >= boilDuration) {
+            timing = 'Dès le début';
+          } else if (hop.time === 0) {
+            timing = 'À la fin';
           } else {
-            timing = `À ${elapsedMin} min`;
+            timing = `${hop.time} min avant fin`;
           }
 
           additions.push({
@@ -198,7 +222,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           name: hop.name,
           quantity: hop.quantity,
           unit: 'g',
-          timing: 'À 0 min',
+          timing: 'Dès le début',
           timeValue: 0,
           stepId: 'filtration',
           type: 'hop',
@@ -215,7 +239,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           name: hop.name,
           quantity: hop.quantity,
           unit: 'g',
-          timing: 'À 0 min',
+          timing: 'Dès le début',
           timeValue: 0,
           stepId: 'whirlpool',
           type: 'hop',
@@ -262,17 +286,18 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
 
           const stepLabel = ADDITION_STEP_LABELS[other.additionStep];
 
+          // additionMinutes = temps RESTANT avant la fin (convention brassicole)
           if (other.additionTiming === 'during' && other.additionMinutes !== undefined) {
-            timing = `À ${other.additionMinutes} min`;
-            timeValue = other.additionMinutes;
+            timing = `${other.additionMinutes} min avant fin`;
+            timeValue = 9999 - other.additionMinutes; // Plus le temps restant est grand, plus c'est tôt
           } else if (other.additionTiming === 'start') {
-            timing = 'À 0 min';
+            timing = 'Dès le début';
             timeValue = 0;
           } else if (other.additionTiming === 'end') {
-            timing = `Fin ${stepLabel.toLowerCase()}`;
-            timeValue = 9999; // À la fin = après tout le reste
+            timing = 'À la fin';
+            timeValue = 9999;
           } else {
-            timing = 'À 0 min';
+            timing = 'Dès le début';
             timeValue = 0;
           }
         } else {
@@ -311,7 +336,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
         name: yeast.name,
         quantity: yeast.quantity,
         unit: yeast.form === 'dry' ? 'g' : 'paquet(s)',
-        timing: 'À 0 min',
+        timing: 'Dès le début',
         timeValue: 0,
         stepId: 'ensemencement',
         type: 'other',
