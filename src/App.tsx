@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { HomePage } from './pages/HomePage';
 import { CreateProjectPage } from './pages/CreateProjectPage';
 import { MonitoringPage } from './pages/MonitoringPage';
@@ -300,6 +300,17 @@ function App() {
     }
   };
 
+  // Calculer les IDs des devices déjà utilisés par des projets actifs
+  const usedDeviceIds = useMemo(() => {
+    const activeProjects = projects.filter(p => !p.archived);
+    const ids: string[] = [];
+    activeProjects.forEach(p => {
+      if (p.sensorId) ids.push(p.sensorId);
+      if (p.outletId) ids.push(p.outletId);
+    });
+    return ids;
+  }, [projects]);
+
   // Show login page if not authenticated
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -409,6 +420,7 @@ function App() {
         {currentPage === 'create-project' && (
           <CreateProjectPage
             devices={devices}
+            usedDeviceIds={usedDeviceIds}
             onCreateProject={handleCreateProject}
             onCancel={() => setCurrentPage('home')}
             role={role}

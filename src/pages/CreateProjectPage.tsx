@@ -28,6 +28,7 @@ import './CreateProjectPage.css';
 
 interface CreateProjectPageProps {
   devices: Device[];
+  usedDeviceIds: string[];
   onCreateProject: (data: {
     name: string;
     fermentationType: FermentationType;
@@ -41,7 +42,7 @@ interface CreateProjectPageProps {
   role: 'admin' | 'viewer' | null;
 }
 
-export function CreateProjectPage({ devices, onCreateProject, onCancel, role }: CreateProjectPageProps) {
+export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onCancel, role }: CreateProjectPageProps) {
   const [name, setName] = useState('');
   const [fermentationType, setFermentationType] = useState<FermentationType>('beer');
   const [sensorId, setSensorId] = useState('');
@@ -74,8 +75,9 @@ export function CreateProjectPage({ devices, onCreateProject, onCancel, role }: 
     }
   }, [role, onCancel]);
 
-  const sensors = devices.filter(d => d.type === 'sensor');
-  const outlets = devices.filter(d => d.type === 'outlet');
+  // Filtrer les devices non utilisés par d'autres projets actifs
+  const sensors = devices.filter(d => d.type === 'sensor' && !usedDeviceIds.includes(d.id));
+  const outlets = devices.filter(d => d.type === 'outlet' && !usedDeviceIds.includes(d.id));
   const config = FERMENTATION_TYPES[fermentationType];
 
   // Calculs de brassage
