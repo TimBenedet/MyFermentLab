@@ -710,25 +710,45 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
                     <p className="step-description">{step.description}</p>
                   )}
 
-                  {/* Mini-étapes d'ajout d'ingrédients */}
+                  {/* Sous-étapes d'ajout d'ingrédients */}
                   {stepAdditions.length > 0 && (
-                    <div className="ingredient-additions">
-                      <div className="additions-label">Ajouts pendant cette étape :</div>
-                      {stepAdditions.map(addition => {
+                    <div className="ingredient-substeps">
+                      {stepAdditions.map((addition, addIndex) => {
                         const isCompleted = (session.completedAdditions || []).includes(addition.id);
+                        // Calcul si l'ajout est débloqué basé sur le timer
+                        // timeValue = temps écoulé depuis le début (en min)
+                        // timerElapsed = secondes écoulées
+                        const timerMinutes = Math.floor(timerElapsed / 60);
+                        const isUnlocked = !isActive || timerMinutes >= addition.timeValue;
+                        const isCurrentStep = status === 'in-progress';
+                        const shouldBeGrayed = isCurrentStep && !isUnlocked && !isCompleted;
+
                         return (
-                          <div
-                            key={addition.id}
-                            className={`addition-item ${isCompleted ? 'completed' : ''}`}
-                            onClick={() => toggleAdditionCompleted(addition.id)}
-                          >
-                            <span className={`addition-checkbox ${isCompleted ? 'checked' : ''}`}>
-                              {isCompleted ? '✓' : ''}
-                            </span>
-                            <span className="addition-icon">{addition.icon}</span>
-                            <span className="addition-timing">{addition.timing}</span>
-                            <span className="addition-name">{addition.name}</span>
-                            <span className="addition-quantity">{addition.quantity} {addition.unit}</span>
+                          <div key={addition.id} className="substep-container">
+                            {/* Connecteur vers le haut (sauf pour le premier) */}
+                            {addIndex > 0 && (
+                              <div className={`substep-connector ${isUnlocked || isCompleted ? 'active' : ''}`}>
+                                <span className="substep-dot" />
+                                <span className="substep-dot" />
+                                <span className="substep-dot" />
+                              </div>
+                            )}
+
+                            <div
+                              className={`substep-item ${isCompleted ? 'completed' : ''} ${shouldBeGrayed ? 'locked' : ''}`}
+                              onClick={() => (isUnlocked || !isCurrentStep) && toggleAdditionCompleted(addition.id)}
+                            >
+                              <div className={`substep-marker ${isCompleted ? 'done' : isUnlocked ? 'ready' : 'waiting'}`}>
+                                {isCompleted ? '✓' : addition.icon}
+                              </div>
+                              <div className="substep-content">
+                                <div className="substep-timing">{addition.timing}</div>
+                                <div className="substep-details">
+                                  <span className="substep-name">{addition.name}</span>
+                                  <span className="substep-quantity">{addition.quantity} {addition.unit}</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
