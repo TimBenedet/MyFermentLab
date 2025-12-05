@@ -262,6 +262,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  margin-right: 30px; /* Espace pour le bouton de suppression */
 }
 
 .btn-brewing-journal:hover {

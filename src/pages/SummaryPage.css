@@ -239,7 +239,10 @@
   gap: 12px;
   justify-content: center;
   margin-top: 30px;
-  padding: 20px 0;
+  padding: 20px;
+  background: #1f1f1f;
+  border-radius: 8px;
+  border: 1px solid #333333;
 }
 
 /* Loading et erreur */
