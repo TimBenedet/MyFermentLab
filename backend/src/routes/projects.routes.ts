@@ -43,7 +43,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/projects/:id/stats - Récupère les statistiques d'un projet archivé
+// GET /api/projects/:id/stats - Récupère les statistiques d'un projet (archivé ou actif avec session de brassage)
 router.get('/:id/stats', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -53,19 +53,25 @@ router.get('/:id/stats', requireAuth, async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    if (!project.archived || !project.archivedAt) {
-      return res.status(400).json({ error: 'Project is not completed. Complete it first to see stats.' });
+    // Autoriser si archivé OU si le projet a une session de brassage
+    const hasBrewingSession = project.brewingSession != null;
+    if (!project.archived && !hasBrewingSession) {
+      return res.status(400).json({ error: 'Project is not completed and has no brewing session.' });
     }
 
+    // Déterminer la plage de dates
+    const endDate = project.archivedAt || Date.now();
+    const daysSinceCreation = Math.ceil((endDate - project.createdAt) / 86400000);
+
     // Récupérer tout l'historique depuis la création
-    const temperatureHistory = await influxService.getTemperatureHistory(id, `-${Math.ceil((project.archivedAt - project.createdAt) / 86400000)}d`);
-    const densityHistory = await influxService.getDensityHistory(id, `-${Math.ceil((project.archivedAt - project.createdAt) / 86400000)}d`);
+    const temperatureHistory = await influxService.getTemperatureHistory(id, `-${daysSinceCreation}d`);
+    const densityHistory = await influxService.getDensityHistory(id, `-${daysSinceCreation}d`);
 
     // Calculer les statistiques
     const stats = await statsService.calculateProjectStats(
       id,
       project.createdAt,
-      project.archivedAt,
+      endDate,
       temperatureHistory,
       densityHistory
     );
