@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Project, BrewingSession, BrewingSessionStep, BrewingEvent, BrewingEventType, ADDITION_STEP_LABELS, StepIngredientAddition } from '../types';
+import { Project, BrewingSession, BrewingSessionStep, BrewingEvent, BrewingEventType, StepIngredientAddition } from '../types';
 import { generateId } from '../utils/brewingCalculations';
 import './BrewingSessionPage.css';
 
@@ -283,8 +283,6 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
               stepId = 'transfert';
               break;
           }
-
-          const stepLabel = ADDITION_STEP_LABELS[other.additionStep];
 
           // additionMinutes = temps RESTANT avant la fin (convention brassicole)
           if (other.additionTiming === 'during' && other.additionMinutes !== undefined) {
