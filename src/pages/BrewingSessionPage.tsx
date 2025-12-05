@@ -108,8 +108,8 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
                 name: info.name,
                 quantity: info.quantity,
                 unit: info.unit,
-                timing: add.minutes === 0 ? 'Début' : `${add.minutes} min`,
-                timeValue: 1000 - add.minutes,
+                timing: add.minutes === 0 ? 'À 0 min' : `À ${add.minutes} min`,
+                timeValue: add.minutes, // Tri par temps écoulé (croissant)
                 stepId: 'empatage',
                 type: add.ingredientType as 'grain' | 'hop' | 'other',
                 icon: info.icon
@@ -126,8 +126,8 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           name: grain.name,
           quantity: grain.quantity,
           unit: 'kg',
-          timing: 'Début empâtage',
-          timeValue: 999,
+          timing: 'À 0 min',
+          timeValue: 0,
           stepId: 'empatage',
           type: 'grain',
           icon: '🌾'
@@ -136,6 +136,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
     }
 
     // Ajouts d'ingrédients assignés à l'ébullition
+    // Note: add.minutes = temps écoulé depuis le début de l'ébullition
     if (recipe.boilStep.ingredientAdditions && recipe.boilStep.ingredientAdditions.length > 0) {
       recipe.boilStep.ingredientAdditions.forEach((add, idx) => {
         const info = getIngredientInfo(add);
@@ -145,8 +146,8 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
             name: info.name,
             quantity: info.quantity,
             unit: info.unit,
-            timing: add.minutes === 0 ? 'Début' : `${add.minutes} min`,
-            timeValue: recipe.boilStep.duration - add.minutes, // Tri par temps restant
+            timing: add.minutes === 0 ? 'À 0 min' : `À ${add.minutes} min`,
+            timeValue: add.minutes, // Tri par temps écoulé (croissant)
             stepId: 'ebullition',
             type: add.ingredientType as 'grain' | 'hop' | 'other',
             icon: info.icon
@@ -156,19 +157,22 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
     }
 
     // Houblons d'ébullition (boil) - fallback si pas d'additions assignées
+    // hop.time = temps restant avant la fin (convention brassicole)
+    // On convertit en temps écoulé: elapsedMin = boilDuration - hop.time
     const hasBoilAdditions = recipe.boilStep.ingredientAdditions && recipe.boilStep.ingredientAdditions.length > 0;
     if (!hasBoilAdditions) {
       recipe.hops
         .filter(hop => hop.use === 'boil')
         .forEach(hop => {
-          const remainingMin = hop.time;
+          const boilDuration = recipe.boilStep.duration;
+          const elapsedMin = boilDuration - hop.time; // Conversion en temps écoulé
           let timing: string;
-          if (remainingMin >= recipe.boilStep.duration) {
-            timing = 'Début ébullition';
-          } else if (remainingMin === 0) {
-            timing = 'Fin ébullition';
+          if (elapsedMin <= 0) {
+            timing = 'À 0 min';
+          } else if (elapsedMin >= boilDuration) {
+            timing = `À ${boilDuration} min`;
           } else {
-            timing = `${remainingMin} min`;
+            timing = `À ${elapsedMin} min`;
           }
 
           additions.push({
@@ -177,7 +181,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
             quantity: hop.quantity,
             unit: 'g',
             timing,
-            timeValue: remainingMin,
+            timeValue: elapsedMin, // Tri par temps écoulé (croissant)
             stepId: 'ebullition',
             type: 'hop',
             icon: '🌿'
@@ -194,8 +198,8 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           name: hop.name,
           quantity: hop.quantity,
           unit: 'g',
-          timing: 'First Wort',
-          timeValue: 999,
+          timing: 'À 0 min',
+          timeValue: 0,
           stepId: 'filtration',
           type: 'hop',
           icon: '🌿'
@@ -211,7 +215,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           name: hop.name,
           quantity: hop.quantity,
           unit: 'g',
-          timing: 'Whirlpool',
+          timing: 'À 0 min',
           timeValue: 0,
           stepId: 'whirlpool',
           type: 'hop',
@@ -259,18 +263,17 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           const stepLabel = ADDITION_STEP_LABELS[other.additionStep];
 
           if (other.additionTiming === 'during' && other.additionMinutes !== undefined) {
-            timing = `${other.additionMinutes} min`;
-            timeValue = other.additionStep === 'boil'
-              ? recipe.boilStep.duration - other.additionMinutes
-              : other.additionMinutes;
+            timing = `À ${other.additionMinutes} min`;
+            timeValue = other.additionMinutes;
           } else if (other.additionTiming === 'start') {
-            timing = `Début ${stepLabel.toLowerCase()}`;
-            timeValue = 999;
+            timing = 'À 0 min';
+            timeValue = 0;
           } else if (other.additionTiming === 'end') {
             timing = `Fin ${stepLabel.toLowerCase()}`;
-            timeValue = 0;
+            timeValue = 9999; // À la fin = après tout le reste
           } else {
-            timing = stepLabel;
+            timing = 'À 0 min';
+            timeValue = 0;
           }
         } else {
           timing = other.additionTime || 'Ébullition';
@@ -308,7 +311,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
         name: yeast.name,
         quantity: yeast.quantity,
         unit: yeast.form === 'dry' ? 'g' : 'paquet(s)',
-        timing: 'Ensemencement',
+        timing: 'À 0 min',
         timeValue: 0,
         stepId: 'ensemencement',
         type: 'other',
@@ -354,7 +357,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
 
         return false;
       })
-      .sort((a, b) => b.timeValue - a.timeValue); // Du plus long au plus court
+      .sort((a, b) => a.timeValue - b.timeValue); // Tri croissant par temps écoulé (0 min en premier)
   };
 
   // Timer effect
