@@ -198,6 +198,25 @@ export interface BrewingStepProgress {
   notes?: string;
 }
 
+// Événement pendant le brassage (note, mesure, ajout, etc.)
+export type BrewingEventType = 'note' | 'measurement' | 'addition' | 'issue' | 'photo';
+
+export interface BrewingEvent {
+  id: string;
+  timestamp: number;
+  stepId?: string; // Étape associée (optionnel)
+  type: BrewingEventType;
+  title: string;
+  description?: string;
+  // Mesures optionnelles
+  temperature?: number;
+  density?: number;
+  ph?: number;
+  volume?: number;
+  // Photo (base64 ou URL)
+  photo?: string;
+}
+
 // Session de brassage
 export interface BrewingSession {
   startedAt: number;
@@ -205,6 +224,7 @@ export interface BrewingSession {
   currentStepIndex: number;
   steps: BrewingSessionStep[];
   stepsProgress: BrewingStepProgress[];
+  events?: BrewingEvent[]; // Événements enregistrés pendant le brassage
 }
 
 // Étape personnalisable pour la session de brassage

@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Project, BrewingSession, BrewingSessionStep } from '../types';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Project, BrewingSession, BrewingSessionStep, BrewingEvent, BrewingEventType } from '../types';
+import { generateId } from '../utils/brewingCalculations';
 import './BrewingSessionPage.css';
 
 // Type pour les ajouts d'ingrédients à afficher dans la timeline
@@ -54,6 +55,20 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
   const [showAddStep, setShowAddStep] = useState(false);
   const [activeTimer, setActiveTimer] = useState<number | null>(null);
   const [timerElapsed, setTimerElapsed] = useState(0);
+
+  // États pour les événements
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [eventType, setEventType] = useState<BrewingEventType>('note');
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventDescription, setEventDescription] = useState('');
+  const [eventTemperature, setEventTemperature] = useState<number | ''>('');
+  const [eventDensity, setEventDensity] = useState<number | ''>('');
+  const [eventPh, setEventPh] = useState<number | ''>('');
+  const [eventVolume, setEventVolume] = useState<number | ''>('');
+
+  // État pour le rapport
+  const [showReport, setShowReport] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   // Extraire les ajouts d'ingrédients de la recette
   const ingredientAdditions = useMemo(() => {
@@ -277,6 +292,91 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
     }, 0);
   };
 
+  // Ajouter un événement
+  const addEvent = () => {
+    if (!eventTitle.trim()) return;
+
+    const currentStep = session.steps[session.currentStepIndex];
+    const newEvent: BrewingEvent = {
+      id: generateId(),
+      timestamp: Date.now(),
+      stepId: currentStep?.id,
+      type: eventType,
+      title: eventTitle.trim(),
+      description: eventDescription.trim() || undefined,
+      temperature: eventTemperature !== '' ? eventTemperature : undefined,
+      density: eventDensity !== '' ? eventDensity : undefined,
+      ph: eventPh !== '' ? eventPh : undefined,
+      volume: eventVolume !== '' ? eventVolume : undefined,
+    };
+
+    const newSession = {
+      ...session,
+      events: [...(session.events || []), newEvent]
+    };
+
+    saveSession(newSession);
+
+    // Réinitialiser le formulaire
+    setEventTitle('');
+    setEventDescription('');
+    setEventTemperature('');
+    setEventDensity('');
+    setEventPh('');
+    setEventVolume('');
+    setShowAddEvent(false);
+  };
+
+  // Supprimer un événement
+  const removeEvent = (eventId: string) => {
+    const newSession = {
+      ...session,
+      events: (session.events || []).filter(e => e.id !== eventId)
+    };
+    saveSession(newSession);
+  };
+
+  // Formater la date
+  const formatDateTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Obtenir l'icône pour un type d'événement
+  const getEventIcon = (type: BrewingEventType) => {
+    switch (type) {
+      case 'note': return '📝';
+      case 'measurement': return '📊';
+      case 'addition': return '➕';
+      case 'issue': return '⚠️';
+      case 'photo': return '📷';
+      default: return '📌';
+    }
+  };
+
+  // Obtenir le label pour un type d'événement
+  const getEventLabel = (type: BrewingEventType) => {
+    switch (type) {
+      case 'note': return 'Note';
+      case 'measurement': return 'Mesure';
+      case 'addition': return 'Ajout';
+      case 'issue': return 'Problème';
+      case 'photo': return 'Photo';
+      default: return 'Événement';
+    }
+  };
+
+  // Imprimer le rapport
+  const printReport = () => {
+    window.print();
+  };
+
   const allStepsCompleted = session.stepsProgress.every(p => p.completedAt);
 
   return (
@@ -479,6 +579,158 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
         )}
       </div>
 
+      {/* Section des événements */}
+      <div className="events-section">
+        <div className="events-header">
+          <h2>Journal de brassage</h2>
+          <button className="btn-add-event" onClick={() => setShowAddEvent(true)}>
+            + Ajouter une note
+          </button>
+        </div>
+
+        {/* Formulaire d'ajout d'événement */}
+        {showAddEvent && (
+          <div className="add-event-form">
+            <div className="event-type-selector">
+              {(['note', 'measurement', 'addition', 'issue'] as BrewingEventType[]).map(type => (
+                <button
+                  key={type}
+                  className={`event-type-btn ${eventType === type ? 'active' : ''}`}
+                  onClick={() => setEventType(type)}
+                >
+                  {getEventIcon(type)} {getEventLabel(type)}
+                </button>
+              ))}
+            </div>
+
+            <input
+              type="text"
+              placeholder="Titre de l'événement"
+              value={eventTitle}
+              onChange={(e) => setEventTitle(e.target.value)}
+              className="form-input"
+              autoFocus
+            />
+
+            <textarea
+              placeholder="Description (optionnel)"
+              value={eventDescription}
+              onChange={(e) => setEventDescription(e.target.value)}
+              className="form-textarea"
+              rows={2}
+            />
+
+            {/* Champs de mesure */}
+            {eventType === 'measurement' && (
+              <div className="measurement-fields">
+                <div className="measurement-field">
+                  <label>Température</label>
+                  <div className="input-with-unit">
+                    <input
+                      type="number"
+                      value={eventTemperature}
+                      onChange={(e) => setEventTemperature(e.target.value ? Number(e.target.value) : '')}
+                      className="form-input small"
+                      step="0.1"
+                    />
+                    <span>°C</span>
+                  </div>
+                </div>
+                <div className="measurement-field">
+                  <label>Densité</label>
+                  <div className="input-with-unit">
+                    <input
+                      type="number"
+                      value={eventDensity}
+                      onChange={(e) => setEventDensity(e.target.value ? Number(e.target.value) : '')}
+                      className="form-input small"
+                      step="0.001"
+                      placeholder="1.050"
+                    />
+                  </div>
+                </div>
+                <div className="measurement-field">
+                  <label>pH</label>
+                  <div className="input-with-unit">
+                    <input
+                      type="number"
+                      value={eventPh}
+                      onChange={(e) => setEventPh(e.target.value ? Number(e.target.value) : '')}
+                      className="form-input small"
+                      step="0.1"
+                      min="0"
+                      max="14"
+                    />
+                  </div>
+                </div>
+                <div className="measurement-field">
+                  <label>Volume</label>
+                  <div className="input-with-unit">
+                    <input
+                      type="number"
+                      value={eventVolume}
+                      onChange={(e) => setEventVolume(e.target.value ? Number(e.target.value) : '')}
+                      className="form-input small"
+                      step="0.5"
+                    />
+                    <span>L</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="add-event-actions">
+              <button className="btn-primary" onClick={addEvent} disabled={!eventTitle.trim()}>
+                Enregistrer
+              </button>
+              <button className="btn-secondary" onClick={() => setShowAddEvent(false)}>
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Liste des événements */}
+        {(session.events || []).length > 0 && (
+          <div className="events-list">
+            {(session.events || [])
+              .sort((a, b) => b.timestamp - a.timestamp)
+              .map(event => {
+                const stepName = session.steps.find(s => s.id === event.stepId)?.name;
+                return (
+                  <div key={event.id} className={`event-item event-${event.type}`}>
+                    <div className="event-icon">{getEventIcon(event.type)}</div>
+                    <div className="event-content">
+                      <div className="event-header">
+                        <span className="event-title">{event.title}</span>
+                        <span className="event-time">{formatDateTime(event.timestamp)}</span>
+                      </div>
+                      {stepName && <span className="event-step">Pendant : {stepName}</span>}
+                      {event.description && <p className="event-description">{event.description}</p>}
+                      {(event.temperature !== undefined || event.density !== undefined || event.ph !== undefined || event.volume !== undefined) && (
+                        <div className="event-measurements">
+                          {event.temperature !== undefined && <span>🌡️ {event.temperature}°C</span>}
+                          {event.density !== undefined && <span>📏 {event.density}</span>}
+                          {event.ph !== undefined && <span>🧪 pH {event.ph}</span>}
+                          {event.volume !== undefined && <span>🫗 {event.volume}L</span>}
+                        </div>
+                      )}
+                    </div>
+                    <button className="btn-icon remove" onClick={() => removeEvent(event.id)}>×</button>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </div>
+
+      {/* Bouton pour voir le rapport */}
+      <div className="report-actions">
+        <button className="btn-report" onClick={() => setShowReport(true)}>
+          📄 Voir le rapport de brassage
+        </button>
+      </div>
+
       {/* Bouton de fin de brassage */}
       {allStepsCompleted && (
         <div className="brewing-complete-section">
@@ -490,6 +742,175 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           <button className="btn-finish-brewing" onClick={onFinishBrewing}>
             Lancer le monitoring
           </button>
+        </div>
+      )}
+
+      {/* Modal du rapport de brassage */}
+      {showReport && (
+        <div className="report-modal-overlay" onClick={() => setShowReport(false)}>
+          <div className="report-modal" onClick={e => e.stopPropagation()}>
+            <div className="report-modal-header">
+              <h2>Rapport de brassage</h2>
+              <div className="report-modal-actions">
+                <button className="btn-print" onClick={printReport}>
+                  🖨️ Imprimer
+                </button>
+                <button className="btn-close" onClick={() => setShowReport(false)}>×</button>
+              </div>
+            </div>
+
+            <div className="report-content" ref={reportRef}>
+              {/* En-tête du rapport */}
+              <div className="report-header print-only">
+                <h1>Rapport de Brassage</h1>
+                <div className="report-meta">
+                  <div className="report-meta-item">
+                    <strong>Projet :</strong> {project.name}
+                  </div>
+                  <div className="report-meta-item">
+                    <strong>Style :</strong> {project.recipe?.style || 'Non spécifié'}
+                  </div>
+                  <div className="report-meta-item">
+                    <strong>Date de brassage :</strong> {formatDateTime(session.startedAt)}
+                  </div>
+                  {session.completedAt && (
+                    <div className="report-meta-item">
+                      <strong>Fin :</strong> {formatDateTime(session.completedAt)}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Recette */}
+              {project.recipe && (
+                <div className="report-section">
+                  <h3>Recette</h3>
+                  <div className="report-recipe-grid">
+                    <div className="report-recipe-item">
+                      <span className="label">Volume visé</span>
+                      <span className="value">{project.recipe.batchSize} L</span>
+                    </div>
+                    {project.recipe.originalGravity && (
+                      <div className="report-recipe-item">
+                        <span className="label">Densité initiale</span>
+                        <span className="value">{project.recipe.originalGravity.toFixed(3)}</span>
+                      </div>
+                    )}
+                    {project.recipe.estimatedABV && (
+                      <div className="report-recipe-item">
+                        <span className="label">ABV estimé</span>
+                        <span className="value">{project.recipe.estimatedABV.toFixed(1)}%</span>
+                      </div>
+                    )}
+                    {project.recipe.estimatedIBU && (
+                      <div className="report-recipe-item">
+                        <span className="label">IBU</span>
+                        <span className="value">{project.recipe.estimatedIBU}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ingrédients */}
+                  <h4>Malts</h4>
+                  <ul className="report-ingredients-list">
+                    {project.recipe.grains.map(g => (
+                      <li key={g.id}>{g.quantity} kg - {g.name} {g.color ? `(${g.color} EBC)` : ''}</li>
+                    ))}
+                  </ul>
+
+                  <h4>Houblons</h4>
+                  <ul className="report-ingredients-list">
+                    {project.recipe.hops.map(h => (
+                      <li key={h.id}>{h.quantity}g - {h.name} ({h.alphaAcid}% AA) - {h.use} {h.time}{h.use === 'dry-hop' ? 'j' : 'min'}</li>
+                    ))}
+                  </ul>
+
+                  <h4>Levures</h4>
+                  <ul className="report-ingredients-list">
+                    {project.recipe.yeasts.map(y => (
+                      <li key={y.id}>{y.quantity}{y.form === 'dry' ? 'g' : ' pkt'} - {y.name}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Étapes du brassage */}
+              <div className="report-section">
+                <h3>Étapes du brassage</h3>
+                <table className="report-steps-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Étape</th>
+                      <th>Durée prévue</th>
+                      <th>Début</th>
+                      <th>Fin</th>
+                      <th>Durée réelle</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {session.steps.map((step, index) => {
+                      const progress = session.stepsProgress[index];
+                      const realDuration = progress?.startedAt && progress?.completedAt
+                        ? Math.round((progress.completedAt - progress.startedAt) / 60000)
+                        : null;
+                      return (
+                        <tr key={step.id}>
+                          <td>{index + 1}</td>
+                          <td>{step.name}</td>
+                          <td>{formatDuration(step.duration)}</td>
+                          <td>{progress?.startedAt ? formatDateTime(progress.startedAt) : '-'}</td>
+                          <td>{progress?.completedAt ? formatDateTime(progress.completedAt) : '-'}</td>
+                          <td>{realDuration !== null ? formatDuration(realDuration) : '-'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Événements */}
+              {(session.events || []).length > 0 && (
+                <div className="report-section">
+                  <h3>Journal des événements</h3>
+                  <div className="report-events">
+                    {(session.events || [])
+                      .sort((a, b) => a.timestamp - b.timestamp)
+                      .map(event => (
+                        <div key={event.id} className="report-event">
+                          <div className="report-event-time">{formatDateTime(event.timestamp)}</div>
+                          <div className="report-event-content">
+                            <strong>{getEventIcon(event.type)} {event.title}</strong>
+                            {event.description && <p>{event.description}</p>}
+                            {(event.temperature !== undefined || event.density !== undefined || event.ph !== undefined || event.volume !== undefined) && (
+                              <div className="report-event-measures">
+                                {event.temperature !== undefined && <span>Temp: {event.temperature}°C</span>}
+                                {event.density !== undefined && <span>Densité: {event.density}</span>}
+                                {event.ph !== undefined && <span>pH: {event.ph}</span>}
+                                {event.volume !== undefined && <span>Volume: {event.volume}L</span>}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {project.recipe?.notes && (
+                <div className="report-section">
+                  <h3>Notes de la recette</h3>
+                  <p className="report-notes">{project.recipe.notes}</p>
+                </div>
+              )}
+
+              {/* Pied de page */}
+              <div className="report-footer print-only">
+                <p>Généré par MyFermentLab - {new Date().toLocaleDateString('fr-FR')}</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
