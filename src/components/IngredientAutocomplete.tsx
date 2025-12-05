@@ -50,18 +50,32 @@ export function IngredientAutocomplete({
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Calculer la position du dropdown
+  // Calculer la position du dropdown (et mettre à jour lors du scroll/resize)
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      const rect = inputRef.current.getBoundingClientRect();
-      setDropdownStyle({
-        position: 'fixed',
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-        zIndex: 9999
-      });
+    const updatePosition = () => {
+      if (isOpen && inputRef.current) {
+        const rect = inputRef.current.getBoundingClientRect();
+        setDropdownStyle({
+          position: 'fixed',
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+          zIndex: 9999
+        });
+      }
+    };
+
+    updatePosition();
+
+    if (isOpen) {
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
     }
   }, [isOpen]);
 
@@ -91,10 +105,14 @@ export function IngredientAutocomplete({
     setSelectedIndex(-1);
   }, [value, type]);
 
-  // Fermer quand on clique ailleurs
+  // Fermer quand on clique ailleurs (exclure le dropdown portal)
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const isInWrapper = wrapperRef.current?.contains(target);
+      const isInDropdown = dropdownRef.current?.contains(target);
+
+      if (!isInWrapper && !isInDropdown) {
         setIsOpen(false);
       }
     }
@@ -290,7 +308,7 @@ export function IngredientAutocomplete({
         autoComplete="off"
       />
       {isOpen && suggestions.length > 0 && createPortal(
-        <div className="suggestions-dropdown" style={dropdownStyle}>
+        <div ref={dropdownRef} className="suggestions-dropdown" style={dropdownStyle}>
           {suggestions.map((item, index) => renderSuggestion(item, index))}
         </div>,
         document.body
