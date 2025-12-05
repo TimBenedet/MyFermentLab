@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { apiService, ProjectStatsResponse } from '../services/api.service';
-import { FERMENTATION_TYPES } from '../types';
+import { FERMENTATION_TYPES, BrewingEventType } from '../types';
 import './SummaryPage.css';
 
 interface SummaryPageProps {
@@ -86,6 +86,29 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
       minute: '2-digit'
     });
   };
+
+  const formatBrewingDuration = (minutes: number) => {
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return mins > 0 ? `${hours}h${mins}` : `${hours}h`;
+    }
+    return `${minutes} min`;
+  };
+
+  // Helpers pour le journal de brassage
+  const getEventIcon = (type: BrewingEventType) => {
+    switch (type) {
+      case 'note': return '📝';
+      case 'measurement': return '📊';
+      case 'addition': return '➕';
+      case 'issue': return '⚠️';
+      case 'photo': return '📷';
+      default: return '📌';
+    }
+  };
+
+  const brewingSession = project.brewingSession;
 
   return (
     <div className="summary-page">
@@ -310,6 +333,97 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
             </div>
           </section>
         </>
+      )}
+
+      {/* Journal de brassage */}
+      {brewingSession && (
+        <section className="summary-section brewing-journal-section">
+          <h2>🍺 Journal de brassage</h2>
+
+          {/* Informations générales du brassage */}
+          <div className="brewing-info">
+            <div className="info-item">
+              <span className="info-label">Début du brassage</span>
+              <span className="info-value">{formatDate(brewingSession.startedAt)}</span>
+            </div>
+            {brewingSession.completedAt && (
+              <div className="info-item">
+                <span className="info-label">Fin du brassage</span>
+                <span className="info-value">{formatDate(brewingSession.completedAt)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Étapes du brassage */}
+          <div className="brewing-steps-summary">
+            <h3>Étapes réalisées</h3>
+            <table className="brewing-steps-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Étape</th>
+                  <th>Durée prévue</th>
+                  <th>Début</th>
+                  <th>Fin</th>
+                  <th>Durée réelle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {brewingSession.steps.map((step, index) => {
+                  const progress = brewingSession.stepsProgress[index];
+                  const realDuration = progress?.startedAt && progress?.completedAt
+                    ? Math.round((progress.completedAt - progress.startedAt) / 60000)
+                    : null;
+                  return (
+                    <tr key={step.id} className={progress?.completedAt ? 'completed' : ''}>
+                      <td>{index + 1}</td>
+                      <td>{step.name}</td>
+                      <td>{formatBrewingDuration(step.duration)}</td>
+                      <td>{progress?.startedAt ? formatDate(progress.startedAt) : '-'}</td>
+                      <td>{progress?.completedAt ? formatDate(progress.completedAt) : '-'}</td>
+                      <td>{realDuration !== null ? formatBrewingDuration(realDuration) : '-'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Événements du brassage */}
+          {brewingSession.events && brewingSession.events.length > 0 && (
+            <div className="brewing-events-summary">
+              <h3>Événements enregistrés</h3>
+              <div className="events-list">
+                {brewingSession.events
+                  .sort((a, b) => a.timestamp - b.timestamp)
+                  .map(event => {
+                    const stepName = brewingSession.steps.find(s => s.id === event.stepId)?.name;
+                    return (
+                      <div key={event.id} className={`event-item event-${event.type}`}>
+                        <div className="event-icon">{getEventIcon(event.type)}</div>
+                        <div className="event-content">
+                          <div className="event-header">
+                            <span className="event-title">{event.title}</span>
+                            <span className="event-time">{formatDate(event.timestamp)}</span>
+                          </div>
+                          {stepName && <span className="event-step">Pendant : {stepName}</span>}
+                          {event.description && <p className="event-description">{event.description}</p>}
+                          {(event.temperature !== undefined || event.density !== undefined || event.ph !== undefined || event.volume !== undefined) && (
+                            <div className="event-measurements">
+                              {event.temperature !== undefined && <span>🌡️ {event.temperature}°C</span>}
+                              {event.density !== undefined && <span>📏 {event.density}</span>}
+                              {event.ph !== undefined && <span>🧪 pH {event.ph}</span>}
+                              {event.volume !== undefined && <span>🫗 {event.volume}L</span>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+        </section>
       )}
 
       {/* Actions */}
