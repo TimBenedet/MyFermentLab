@@ -115,11 +115,16 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
 
     // Sauvegarder la recette si fournie
     if (recipe) {
+      console.log('Saving recipe for project:', projectId);
+      console.log('Recipe has grains:', recipe.grains?.length || 0);
       databaseService.updateProjectRecipe(projectId, recipe);
+    } else {
+      console.log('No recipe provided for project:', projectId);
     }
 
     // Récupérer le projet avec la recette
     const projectWithRecipe = databaseService.getProject(projectId);
+    console.log('Project retrieved, has recipe:', !!projectWithRecipe?.recipe);
     res.status(201).json(projectWithRecipe);
   } catch (error) {
     console.error('Error creating project:', error);

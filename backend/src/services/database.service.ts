@@ -199,8 +199,12 @@ class DatabaseService {
   }
 
   updateProjectRecipe(id: string, recipe: any) {
+    console.log('updateProjectRecipe called for id:', id);
+    const recipeJson = recipe ? JSON.stringify(recipe) : null;
+    console.log('Recipe JSON length:', recipeJson?.length || 0);
     const stmt = this.db.prepare('UPDATE projects SET recipe = ? WHERE id = ?');
-    stmt.run(recipe ? JSON.stringify(recipe) : null, id);
+    const result = stmt.run(recipeJson, id);
+    console.log('Update result - changes:', result.changes);
   }
 
   archiveProject(id: string) {
