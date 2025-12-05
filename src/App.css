@@ -238,12 +238,35 @@
 
 .project-header {
   display: flex;
+  align-items: flex-start;
   gap: 12px;
   margin-bottom: 16px;
 }
 
+.project-info {
+  flex: 1;
+}
+
 .project-icon {
   font-size: 2rem;
+}
+
+.btn-brewing-journal {
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-brewing-journal:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
 .project-info h3 {

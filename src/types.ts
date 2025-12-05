@@ -307,6 +307,7 @@ export const FERMENTATION_TYPES = {
 
 // Styles de bière courants
 export const BEER_STYLES = [
+  '🧪 Test bière (recette auto)',
   'Pale Ale', 'IPA', 'Double IPA', 'Session IPA',
   'Stout', 'Porter', 'Imperial Stout',
   'Wheat Beer', 'Witbier', 'Hefeweizen',
@@ -317,6 +318,156 @@ export const BEER_STYLES = [
   'Barleywine', 'Scottish Ale',
   'Autre'
 ] as const;
+
+// Recette de test pour validation rapide
+export const TEST_BEER_RECIPE: Omit<BrewingRecipe, 'id' | 'createdAt'> = {
+  name: 'Test Pale Ale',
+  style: '🧪 Test bière (recette auto)',
+  description: 'Recette de test pour validation rapide du système',
+  batchSize: 20,
+  boilVolume: 25,
+  fermenterVolume: 30,
+  grains: [
+    {
+      id: 'test-grain-1',
+      type: 'grain',
+      name: 'Malt Pale',
+      quantity: 4.5,
+      color: 6,
+      potential: 37
+    },
+    {
+      id: 'test-grain-2',
+      type: 'grain',
+      name: 'Malt Munich',
+      quantity: 0.5,
+      color: 15,
+      potential: 35
+    }
+  ],
+  hops: [
+    {
+      id: 'test-hop-1',
+      type: 'hop',
+      name: 'Cascade',
+      quantity: 30,
+      alphaAcid: 5.75,
+      use: 'boil',
+      time: 60
+    },
+    {
+      id: 'test-hop-2',
+      type: 'hop',
+      name: 'Centennial',
+      quantity: 20,
+      alphaAcid: 10,
+      use: 'boil',
+      time: 15
+    },
+    {
+      id: 'test-hop-3',
+      type: 'hop',
+      name: 'Citra',
+      quantity: 40,
+      alphaAcid: 12,
+      use: 'dry-hop',
+      time: 5
+    }
+  ],
+  yeasts: [
+    {
+      id: 'test-yeast-1',
+      type: 'yeast',
+      name: 'US-05',
+      quantity: 11,
+      form: 'dry',
+      attenuation: 81,
+      tempMin: 15,
+      tempMax: 24
+    }
+  ],
+  waters: [
+    {
+      id: 'test-water-1',
+      type: 'water',
+      name: 'Empâtage',
+      quantity: 15,
+      temperature: 68
+    },
+    {
+      id: 'test-water-2',
+      type: 'water',
+      name: 'Rinçage',
+      quantity: 12,
+      temperature: 78
+    }
+  ],
+  others: [
+    {
+      id: 'test-other-1',
+      type: 'other',
+      name: 'Whirlfloc',
+      quantity: 1,
+      unit: 'pcs',
+      additionStep: 'boil',
+      additionTiming: 'during',
+      additionMinutes: 50
+    }
+  ],
+  mashSteps: [
+    {
+      id: 'test-mash-1',
+      name: 'Empâtage',
+      temperature: 67,
+      duration: 60,
+      ingredientAdditions: [
+        { ingredientId: 'test-grain-1', ingredientType: 'grain', minutes: 0 },
+        { ingredientId: 'test-grain-2', ingredientType: 'grain', minutes: 0 }
+      ]
+    },
+    {
+      id: 'test-mash-2',
+      name: 'Mash-out',
+      temperature: 78,
+      duration: 10
+    }
+  ],
+  boilStep: {
+    duration: 60,
+    ingredientAdditions: [
+      { ingredientId: 'test-hop-1', ingredientType: 'hop', minutes: 0 },
+      { ingredientId: 'test-hop-2', ingredientType: 'hop', minutes: 45 },
+      { ingredientId: 'test-other-1', ingredientType: 'other', minutes: 50 }
+    ],
+    notes: 'Refroidir rapidement après ébullition'
+  },
+  fermentationSteps: [
+    {
+      id: 'test-ferm-1',
+      name: 'Fermentation primaire',
+      temperature: 18,
+      duration: 7
+    },
+    {
+      id: 'test-ferm-2',
+      name: 'Dry-hop',
+      temperature: 18,
+      duration: 5
+    },
+    {
+      id: 'test-ferm-3',
+      name: 'Cold crash',
+      temperature: 2,
+      duration: 3
+    }
+  ],
+  originalGravity: 1.052,
+  finalGravity: 1.010,
+  estimatedABV: 5.5,
+  estimatedIBU: 45,
+  estimatedColor: 12,
+  notes: 'Recette de test - Pale Ale américaine classique'
+};
 
 // Cuves prédéfinies
 export const FERMENTERS = [

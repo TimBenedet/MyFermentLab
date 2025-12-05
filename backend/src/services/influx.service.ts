@@ -138,6 +138,57 @@ export class InfluxService {
   async close() {
     await this.writeApi.close();
   }
+
+  // Génère des données simulées pour les projets de test
+  async generateTestData(projectId: string, targetTemp: number = 18) {
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+
+    // Générer des données de température toutes les 30 minutes sur 7 jours
+    const tempPoints: Point[] = [];
+    for (let t = sevenDaysAgo; t <= now; t += 30 * 60 * 1000) {
+      // Température qui oscille autour de la cible avec du bruit
+      const noise = (Math.random() - 0.5) * 2; // ±1°C de bruit
+      const oscillation = Math.sin((t - sevenDaysAgo) / (12 * 60 * 60 * 1000) * Math.PI) * 0.5; // oscillation journalière
+      const temp = targetTemp + noise + oscillation;
+
+      const point = new Point('temperature')
+        .tag('project_id', projectId)
+        .floatField('value', Math.round(temp * 10) / 10)
+        .timestamp(t * 1000000); // Convert ms to ns
+
+      tempPoints.push(point);
+    }
+
+    // Générer des données de densité (fermentation sur 7 jours)
+    // OG: 1.052 -> FG: 1.010 (décroissance exponentielle)
+    const og = 1.052;
+    const fg = 1.010;
+    const densityPoints: Point[] = [];
+    const densityMeasurements = [0, 1, 2, 3, 5, 7]; // Jours de mesure
+
+    for (const day of densityMeasurements) {
+      const t = sevenDaysAgo + day * 24 * 60 * 60 * 1000;
+      // Décroissance exponentielle
+      const progress = 1 - Math.exp(-day * 0.5);
+      const density = og - (og - fg) * progress;
+
+      const point = new Point('density')
+        .tag('project_id', projectId)
+        .floatField('value', Math.round(density * 1000) / 1000)
+        .timestamp(t * 1000000);
+
+      densityPoints.push(point);
+    }
+
+    // Écrire tous les points
+    for (const point of [...tempPoints, ...densityPoints]) {
+      this.writeApi.writePoint(point);
+    }
+    await this.writeApi.flush();
+
+    console.log(`Generated test data for project ${projectId}: ${tempPoints.length} temperature points, ${densityPoints.length} density points`);
+  }
 }
 
 export const influxService = new InfluxService();

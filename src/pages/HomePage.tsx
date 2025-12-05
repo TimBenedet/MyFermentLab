@@ -6,6 +6,7 @@ interface HomePageProps {
   onCreateProject: () => void;
   onSelectProject: (projectId: string) => void;
   onViewSummary: (projectId: string) => void;
+  onViewBrewingJournal: (projectId: string) => void;
   onArchiveProject: (projectId: string) => void;
   onUnarchiveProject: (projectId: string) => void;
   onDeleteProject: (projectId: string) => void;
@@ -21,6 +22,7 @@ export function HomePage({
   onCreateProject,
   onSelectProject,
   onViewSummary,
+  onViewBrewingJournal,
   onArchiveProject,
   onUnarchiveProject,
   onDeleteProject,
@@ -69,6 +71,19 @@ export function HomePage({
               <h3>{project.name}</h3>
               <span className="project-type">{config.name}</span>
             </div>
+            {/* Bouton Journal de brassage si session existe */}
+            {project.brewingSession && (
+              <button
+                className="btn-brewing-journal"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewBrewingJournal(project.id);
+                }}
+                title="Voir le journal de brassage"
+              >
+                Journal de brassage
+              </button>
+            )}
           </div>
 
           <div className="project-stats">

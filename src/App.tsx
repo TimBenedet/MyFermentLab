@@ -414,6 +414,7 @@ function App() {
             onCreateProject={() => setCurrentPage('create-project')}
             onSelectProject={handleSelectProject}
             onViewSummary={handleViewSummary}
+            onViewBrewingJournal={handleViewSummary}
             onArchiveProject={handleArchiveProject}
             onUnarchiveProject={handleUnarchiveProject}
             onDeleteProject={handleDeleteProject}

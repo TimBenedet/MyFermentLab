@@ -122,6 +122,20 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
     });
 
     console.log('Project created, has recipe:', !!newProject?.recipe);
+
+    // Si c'est un projet de test, générer des données simulées
+    const isTestProject = recipe?.style?.includes('Test bière') || name?.includes('Test');
+    if (isTestProject) {
+      console.log('Test project detected - generating simulated data...');
+      try {
+        await influxService.generateTestData(projectId, targetTemperature);
+        console.log('Simulated data generated successfully');
+      } catch (err) {
+        console.error('Failed to generate test data:', err);
+        // On continue même si la génération échoue
+      }
+    }
+
     res.status(201).json(newProject);
   } catch (error) {
     console.error('Error creating project:', error);

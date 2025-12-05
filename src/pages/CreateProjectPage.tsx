@@ -17,7 +17,8 @@ import {
   AdditionStep,
   ADDITION_TIMING_LABELS,
   ADDITION_STEP_LABELS,
-  StepIngredientAddition
+  StepIngredientAddition,
+  TEST_BEER_RECIPE
 } from '../types';
 import {
   calculateBrewingMetrics,
@@ -312,7 +313,22 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
               <select
                 className="form-select"
                 value={recipe.style || ''}
-                onChange={(e) => updateRecipe({ style: e.target.value })}
+                onChange={(e) => {
+                  const selectedStyle = e.target.value;
+                  // Si c'est le style de test, charger la recette complète
+                  if (selectedStyle === '🧪 Test bière (recette auto)') {
+                    const testRecipe: BrewingRecipe = {
+                      ...TEST_BEER_RECIPE,
+                      id: generateId(),
+                      createdAt: Date.now()
+                    };
+                    setRecipe(testRecipe);
+                    setName('Test Pale Ale');
+                    setTargetTemperature(18);
+                  } else {
+                    updateRecipe({ style: selectedStyle });
+                  }
+                }}
               >
                 <option value="">Sélectionner un style</option>
                 {BEER_STYLES.map(style => (
