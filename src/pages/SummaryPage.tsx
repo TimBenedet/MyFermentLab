@@ -556,13 +556,13 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
       )}
 
       {/* Actions */}
-      <section className="summary-actions">
+      <section className="summary-actions no-print">
         <button className="btn-secondary" onClick={onBack}>
           ← Retour aux projets
         </button>
-        {/* TODO: Ajouter export PDF/CSV */}
-        {/* <button className="btn-primary">📥 Exporter PDF</button>
-        <button className="btn-primary">📊 Exporter CSV</button> */}
+        <button className="btn-primary" onClick={() => window.print()}>
+          🖨️ Imprimer / PDF
+        </button>
       </section>
     </div>
   );

@@ -606,3 +606,253 @@
     gap: 4px;
   }
 }
+
+
+/* ========================================
+   Styles d'impression / Export PDF
+   ======================================== */
+
+@media print {
+  /* Reset des couleurs pour impression */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+    color: #1a1a1a !important;
+  }
+
+  .summary-page {
+    background: white !important;
+    color: #1a1a1a !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Masquer les éléments non imprimables */
+  .no-print,
+  .summary-actions,
+  .btn-back {
+    display: none !important;
+  }
+
+  /* Header */
+  .summary-header {
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+
+  .summary-header h1 {
+    color: #1a1a1a !important;
+    font-size: 24px !important;
+  }
+
+  .completed-badge {
+    background: #e0e0e0 !important;
+    color: #1a1a1a !important;
+  }
+
+  /* Sections */
+  .summary-section {
+    background: white !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+    margin-bottom: 16px;
+  }
+
+  .summary-section h2 {
+    color: #1a1a1a !important;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 8px;
+  }
+
+  .summary-section h3 {
+    color: #333 !important;
+  }
+
+  /* Info grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .info-item {
+    background: #f5f5f5 !important;
+    border: 1px solid #ddd !important;
+  }
+
+  .info-label {
+    color: #666 !important;
+  }
+
+  .info-value {
+    color: #1a1a1a !important;
+  }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .stat-card {
+    background: #f5f5f5 !important;
+    border: 1px solid #ddd !important;
+  }
+
+  .stat-label {
+    color: #666 !important;
+  }
+
+  .stat-value {
+    color: #1a1a1a !important;
+  }
+
+  /* Recette */
+  .recipe-section {
+    border-color: #c4a574 !important;
+  }
+
+  .recipe-style {
+    color: #1a1a1a !important;
+  }
+
+  .recipe-target-item {
+    background: #f5f5f5 !important;
+    border: 1px solid #ddd !important;
+  }
+
+  .recipe-target-item .target-label {
+    color: #666 !important;
+  }
+
+  .recipe-target-item .target-value {
+    color: #8b6914 !important;
+  }
+
+  .recipe-ingredient-group h3 {
+    color: #1a1a1a !important;
+    border-bottom-color: #ccc !important;
+  }
+
+  .ingredient-list li {
+    border-bottom-color: #eee !important;
+  }
+
+  .ingredient-qty {
+    color: #8b6914 !important;
+  }
+
+  .ingredient-name {
+    color: #1a1a1a !important;
+  }
+
+  .ingredient-detail {
+    color: #666 !important;
+  }
+
+  .recipe-notes {
+    background: #f5f5f5 !important;
+    color: #666 !important;
+  }
+
+  /* Graphiques - les cacher ou réduire */
+  .chart-container {
+    page-break-inside: avoid;
+    max-height: 250px;
+  }
+
+  /* Densité */
+  .density-card {
+    background: #f5f5f5 !important;
+    border: 1px solid #ddd !important;
+  }
+
+  .density-label {
+    color: #666 !important;
+  }
+
+  .density-value {
+    color: #1a1a1a !important;
+  }
+
+  .density-card.abv-card {
+    background: #f0e6d2 !important;
+  }
+
+  .density-arrow {
+    color: #666 !important;
+  }
+
+  /* Tables */
+  .density-table,
+  .brewing-steps-table {
+    border: 1px solid #ccc !important;
+  }
+
+  .density-table thead,
+  .brewing-steps-table thead {
+    background: #e0e0e0 !important;
+  }
+
+  .density-table th,
+  .brewing-steps-table th {
+    color: #1a1a1a !important;
+    border-bottom-color: #999 !important;
+  }
+
+  .density-table td,
+  .brewing-steps-table td {
+    color: #1a1a1a !important;
+    border-bottom-color: #ddd !important;
+  }
+
+  .brewing-steps-table tbody tr.completed {
+    background: #e8f5e9 !important;
+  }
+
+  /* Journal de brassage */
+  .brewing-journal-section {
+    border-color: #c4a574 !important;
+  }
+
+  .brewing-events-summary .event-item {
+    background: #f5f5f5 !important;
+    border: 1px solid #ddd !important;
+    border-left-width: 3px !important;
+  }
+
+  .brewing-events-summary .event-title {
+    color: #1a1a1a !important;
+  }
+
+  .brewing-events-summary .event-time {
+    color: #666 !important;
+  }
+
+  .brewing-events-summary .event-step,
+  .brewing-events-summary .event-description {
+    color: #666 !important;
+  }
+
+  .brewing-events-summary .event-measurements span {
+    background: #e0e0e0 !important;
+    color: #1a1a1a !important;
+  }
+
+  /* Gestion des sauts de page */
+  h2 {
+    page-break-after: avoid;
+  }
+
+  .recipe-ingredient-group {
+    page-break-inside: avoid;
+  }
+
+  .event-item {
+    page-break-inside: avoid;
+  }
+}
