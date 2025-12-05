@@ -8,7 +8,7 @@ import { LoginPage } from './pages/LoginPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { LabelGeneratorPage } from './pages/LabelGeneratorPage';
 import { StatsPage } from './pages/StatsPage';
-import { Project, Device, FermentationType, BrewingSession } from './types';
+import { Project, Device, FermentationType, BrewingSession, BrewingRecipe } from './types';
 import { apiService, ProjectWithHistory } from './services/api.service';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
@@ -91,6 +91,7 @@ function App() {
     outletId: string;
     targetTemperature: number;
     controlMode: 'manual' | 'automatic';
+    recipe?: BrewingRecipe;
   }, startBrewing?: boolean) => {
     try {
       const newProject = await apiService.createProject(data);
