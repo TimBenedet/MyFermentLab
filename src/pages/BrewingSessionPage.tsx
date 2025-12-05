@@ -91,27 +91,49 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
       return null;
     };
 
+    // Vérifier si des ingrédients ont été assignés aux étapes d'empâtage
+    const hasMashAdditions = recipe.mashSteps.some(step =>
+      step.ingredientAdditions && step.ingredientAdditions.length > 0
+    );
+
     // Ajouts d'ingrédients assignés aux étapes d'empâtage
-    recipe.mashSteps.forEach(step => {
-      if (step.ingredientAdditions && step.ingredientAdditions.length > 0) {
-        step.ingredientAdditions.forEach((add, idx) => {
-          const info = getIngredientInfo(add);
-          if (info) {
-            additions.push({
-              id: `mash-add-${step.id}-${idx}`,
-              name: info.name,
-              quantity: info.quantity,
-              unit: info.unit,
-              timing: add.minutes === 0 ? 'Début' : `${add.minutes} min`,
-              timeValue: 1000 - add.minutes, // Plus le temps est petit, plus tôt dans l'étape
-              stepId: 'empatage',
-              type: add.ingredientType as 'grain' | 'hop' | 'other',
-              icon: info.icon
-            });
-          }
+    if (hasMashAdditions) {
+      recipe.mashSteps.forEach(step => {
+        if (step.ingredientAdditions && step.ingredientAdditions.length > 0) {
+          step.ingredientAdditions.forEach((add, idx) => {
+            const info = getIngredientInfo(add);
+            if (info) {
+              additions.push({
+                id: `mash-add-${step.id}-${idx}`,
+                name: info.name,
+                quantity: info.quantity,
+                unit: info.unit,
+                timing: add.minutes === 0 ? 'Début' : `${add.minutes} min`,
+                timeValue: 1000 - add.minutes,
+                stepId: 'empatage',
+                type: add.ingredientType as 'grain' | 'hop' | 'other',
+                icon: info.icon
+              });
+            }
+          });
+        }
+      });
+    } else {
+      // Fallback: afficher tous les grains à l'empâtage si aucune assignation explicite
+      recipe.grains.forEach(grain => {
+        additions.push({
+          id: `grain-${grain.id}`,
+          name: grain.name,
+          quantity: grain.quantity,
+          unit: 'kg',
+          timing: 'Début empâtage',
+          timeValue: 999,
+          stepId: 'empatage',
+          type: 'grain',
+          icon: '🌾'
         });
-      }
-    });
+      });
+    }
 
     // Ajouts d'ingrédients assignés à l'ébullition
     if (recipe.boilStep.ingredientAdditions && recipe.boilStep.ingredientAdditions.length > 0) {
@@ -278,6 +300,21 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           icon: '📦'
         });
       });
+
+    // Levures à l'ensemencement
+    recipe.yeasts.forEach(yeast => {
+      additions.push({
+        id: `yeast-${yeast.id}`,
+        name: yeast.name,
+        quantity: yeast.quantity,
+        unit: yeast.form === 'dry' ? 'g' : 'paquet(s)',
+        timing: 'Ensemencement',
+        timeValue: 0,
+        stepId: 'ensemencement',
+        type: 'other',
+        icon: '🧫'
+      });
+    });
 
     return additions;
   }, [project.recipe]);
