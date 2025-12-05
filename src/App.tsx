@@ -94,7 +94,14 @@ function App() {
     recipe?: BrewingRecipe;
   }, startBrewing?: boolean) => {
     try {
+      console.log('Creating project with data:', JSON.stringify(data, null, 2));
+      console.log('Recipe included:', !!data.recipe);
+      if (data.recipe) {
+        console.log('Recipe grains:', data.recipe.grains?.length || 0);
+        console.log('Recipe hops:', data.recipe.hops?.length || 0);
+      }
       const newProject = await apiService.createProject(data);
+      console.log('Project created, recipe in response:', !!newProject.recipe);
       setProjects(prev => [...prev, newProject]);
       setSelectedProjectId(newProject.id);
 
