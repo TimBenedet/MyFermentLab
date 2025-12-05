@@ -319,10 +319,41 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
     return additions;
   }, [project.recipe]);
 
-  // Obtenir les ajouts pour une étape donnée
-  const getAdditionsForStep = (stepId: string): IngredientAddition[] => {
+  // Obtenir les ajouts pour une étape donnée (par ID ou par nom)
+  const getAdditionsForStep = (stepId: string, stepName?: string): IngredientAddition[] => {
+    // Normaliser le nom de l'étape pour le matching
+    const normalizedName = (stepName || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
     return ingredientAdditions
-      .filter(a => a.stepId === stepId)
+      .filter(a => {
+        // Match exact par ID
+        if (a.stepId === stepId) return true;
+
+        // Match par nom normalisé si pas de match par ID
+        if (normalizedName.includes('empatage') || normalizedName.includes('mash')) {
+          return a.stepId === 'empatage';
+        }
+        if (normalizedName.includes('ebullition') || normalizedName.includes('boil')) {
+          return a.stepId === 'ebullition';
+        }
+        if (normalizedName.includes('filtration') || normalizedName.includes('rincage')) {
+          return a.stepId === 'filtration';
+        }
+        if (normalizedName.includes('whirlpool')) {
+          return a.stepId === 'whirlpool';
+        }
+        if (normalizedName.includes('refroidissement') || normalizedName.includes('cool')) {
+          return a.stepId === 'refroidissement';
+        }
+        if (normalizedName.includes('transfert')) {
+          return a.stepId === 'transfert';
+        }
+        if (normalizedName.includes('ensemencement') || normalizedName.includes('levure') || normalizedName.includes('yeast')) {
+          return a.stepId === 'ensemencement';
+        }
+
+        return false;
+      })
       .sort((a, b) => b.timeValue - a.timeValue); // Du plus long au plus court
   };
 
@@ -585,7 +616,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           const status = getStepStatus(index);
           const isActive = activeTimer === index;
           const progress = session.stepsProgress[index];
-          const stepAdditions = getAdditionsForStep(step.id);
+          const stepAdditions = getAdditionsForStep(step.id, step.name);
 
           return (
             <div key={step.id} className={`timeline-step ${status}`}>
