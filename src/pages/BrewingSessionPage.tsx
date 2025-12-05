@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Project, BrewingSession, BrewingSessionStep, HopIngredient, OtherIngredient } from '../types';
+import { Project, BrewingSession, BrewingSessionStep } from '../types';
 import './BrewingSessionPage.css';
 
 // Type pour les ajouts d'ingrédients à afficher dans la timeline
