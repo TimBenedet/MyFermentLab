@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { apiService, ProjectStatsResponse } from '../services/api.service';
-import { FERMENTATION_TYPES, BrewingEventType } from '../types';
+import { FERMENTATION_TYPES, BrewingEventType, BrewingRecipe } from '../types';
 import './SummaryPage.css';
 
 interface SummaryPageProps {
@@ -109,6 +109,18 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
   };
 
   const brewingSession = project.brewingSession;
+  const recipe = project.recipe as BrewingRecipe | undefined;
+
+  // Helper pour afficher l'utilisation du houblon
+  const getHopUseLabel = (use: string) => {
+    switch (use) {
+      case 'boil': return 'ébullition';
+      case 'dry-hop': return 'dry-hop';
+      case 'whirlpool': return 'whirlpool';
+      case 'first-wort': return 'first wort';
+      default: return use;
+    }
+  };
 
   return (
     <div className="summary-page">
@@ -118,7 +130,7 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
           <span className="project-icon">{fermentType.icon}</span>
           Récapitulatif - {project.name}
         </h1>
-        <span className="completed-badge">Terminé</span>
+        <span className="completed-badge">{project.archived ? 'Terminé' : 'En cours'}</span>
       </div>
 
       {/* Informations générales */}
@@ -133,10 +145,12 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
             <span className="info-label">Début</span>
             <span className="info-value">{formatDate(project.createdAt)}</span>
           </div>
-          <div className="info-item">
-            <span className="info-label">Fin</span>
-            <span className="info-value">{formatDate(project.archivedAt!)}</span>
-          </div>
+          {project.archivedAt && (
+            <div className="info-item">
+              <span className="info-label">Fin</span>
+              <span className="info-value">{formatDate(project.archivedAt)}</span>
+            </div>
+          )}
           <div className="info-item">
             <span className="info-label">Durée</span>
             <span className="info-value">{formatDuration()}</span>
@@ -153,6 +167,121 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
           </div>
         </div>
       </section>
+
+      {/* Recette (si disponible) */}
+      {recipe && (
+        <section className="summary-section recipe-section">
+          <h2>📋 Recette</h2>
+
+          {recipe.style && (
+            <div className="recipe-style">
+              <strong>Style :</strong> {recipe.style}
+            </div>
+          )}
+
+          <div className="recipe-targets">
+            <div className="recipe-target-item">
+              <span className="target-label">Volume</span>
+              <span className="target-value">{recipe.batchSize}L</span>
+            </div>
+            {recipe.originalGravity && (
+              <div className="recipe-target-item">
+                <span className="target-label">OG visée</span>
+                <span className="target-value">{recipe.originalGravity.toFixed(3)}</span>
+              </div>
+            )}
+            {recipe.finalGravity && (
+              <div className="recipe-target-item">
+                <span className="target-label">FG visée</span>
+                <span className="target-value">{recipe.finalGravity.toFixed(3)}</span>
+              </div>
+            )}
+            {recipe.estimatedABV && (
+              <div className="recipe-target-item">
+                <span className="target-label">ABV estimé</span>
+                <span className="target-value">{recipe.estimatedABV}%</span>
+              </div>
+            )}
+            {recipe.estimatedIBU && (
+              <div className="recipe-target-item">
+                <span className="target-label">IBU</span>
+                <span className="target-value">{recipe.estimatedIBU}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Malts */}
+          {recipe.grains && recipe.grains.length > 0 && (
+            <div className="recipe-ingredient-group">
+              <h3>🌾 Malts</h3>
+              <ul className="ingredient-list">
+                {recipe.grains.map(grain => (
+                  <li key={grain.id}>
+                    <span className="ingredient-qty">{grain.quantity} kg</span>
+                    <span className="ingredient-name">{grain.name}</span>
+                    {grain.color && <span className="ingredient-detail">({grain.color} EBC)</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Houblons */}
+          {recipe.hops && recipe.hops.length > 0 && (
+            <div className="recipe-ingredient-group">
+              <h3>🌿 Houblons</h3>
+              <ul className="ingredient-list">
+                {recipe.hops.map(hop => (
+                  <li key={hop.id}>
+                    <span className="ingredient-qty">{hop.quantity}g</span>
+                    <span className="ingredient-name">{hop.name}</span>
+                    <span className="ingredient-detail">
+                      ({hop.alphaAcid}% AA) - {getHopUseLabel(hop.use)} {hop.use === 'dry-hop' ? `${hop.time}j` : `${hop.time}min`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Levures */}
+          {recipe.yeasts && recipe.yeasts.length > 0 && (
+            <div className="recipe-ingredient-group">
+              <h3>🧫 Levures</h3>
+              <ul className="ingredient-list">
+                {recipe.yeasts.map(yeast => (
+                  <li key={yeast.id}>
+                    <span className="ingredient-qty">{yeast.quantity}g</span>
+                    <span className="ingredient-name">{yeast.name}</span>
+                    {yeast.attenuation && <span className="ingredient-detail">({yeast.attenuation}% atténuation)</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Autres ingrédients */}
+          {recipe.others && recipe.others.length > 0 && (
+            <div className="recipe-ingredient-group">
+              <h3>📦 Autres</h3>
+              <ul className="ingredient-list">
+                {recipe.others.map(other => (
+                  <li key={other.id}>
+                    <span className="ingredient-qty">{other.quantity} {other.unit}</span>
+                    <span className="ingredient-name">{other.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {recipe.notes && (
+            <div className="recipe-notes">
+              <strong>Notes :</strong> {recipe.notes}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Statistiques de température */}
       <section className="summary-section">

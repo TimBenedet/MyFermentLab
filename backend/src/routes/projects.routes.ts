@@ -59,9 +59,9 @@ router.get('/:id/stats', requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Project is not completed and has no brewing session.' });
     }
 
-    // Déterminer la plage de dates
+    // Déterminer la plage de dates (minimum 7 jours pour inclure les données simulées)
     const endDate = project.archivedAt || Date.now();
-    const daysSinceCreation = Math.ceil((endDate - project.createdAt) / 86400000);
+    const daysSinceCreation = Math.max(7, Math.ceil((endDate - project.createdAt) / 86400000));
 
     // Récupérer tout l'historique depuis la création
     const temperatureHistory = await influxService.getTemperatureHistory(id, `-${daysSinceCreation}d`);
