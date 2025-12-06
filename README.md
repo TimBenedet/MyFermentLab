@@ -52,6 +52,27 @@
 - **Notes et observations** pour chaque projet
 - **Multi-projets** avec gestion des ressources (capteurs, prises)
 
+### 🍺 Gestion des Recettes de Brassage
+
+- **Création de recettes complètes** : malts, houblons, levures, autres ingrédients
+- **Étapes de brassage guidées** : empâtage, ébullition, fermentation
+- **Calculs automatiques** : OG/FG estimées, ABV, IBU
+- **Style de bière** : plus de 30 styles disponibles
+- **Recette test** : style "🧪 Test bière" avec recette pré-remplie pour tester
+
+### 📋 Journal de Brassage Interactif
+
+- **Suivi étape par étape** avec chronomètre intégré
+- **Ajouts d'ingrédients chronométrés** pendant l'ébullition
+- **Événements personnalisés** : notes, mesures, ajouts, problèmes
+- **Accès au journal** depuis la carte projet (même en cours de fermentation)
+
+### 🖨️ Export PDF / Impression
+
+- **Rapport de brassage complet** exportable en PDF
+- **Inclut** : informations générales, recette, statistiques, densité, journal
+- **Impression propre** avec mise en page optimisée
+
 ### 🔐 Gestion des Utilisateurs
 
 - **Mode Admin** : Contrôle complet (création, modification, suppression)
@@ -540,6 +561,13 @@ MyFermentLab/
 │   ├── 📄 build-frontend.yml
 │   └── 📄 build-backend.yml
 │
+├── 📁 .claude/commands/         # Claude Code Skills
+│   ├── 📄 deploy.md            # Déploiement complet automatisé
+│   ├── 📄 fix-ui.md            # Correction d'interface
+│   ├── 📄 add-feature.md       # Ajout de fonctionnalité
+│   ├── 📄 debug-api.md         # Débogage API
+│   └── 📄 check-build.md       # Vérification build Docker
+│
 ├── 🐳 Dockerfile               # Multi-stage Docker build
 ├── 🐳 docker-compose.yml       # Stack complète
 ├── 📄 package.json             # Dépendances frontend
@@ -573,6 +601,20 @@ kubectl apply -f manifests/    # Déployer tout
 kubectl logs -f deployment/backend  # Logs backend
 kubectl port-forward svc/frontend 8080:80  # Accès local
 ```
+
+### 🤖 Claude Code Skills
+
+Ce projet utilise des **Claude Code Skills** pour automatiser les tâches de développement courantes :
+
+| Commande | Description |
+|----------|-------------|
+| `/deploy` | Build, commit, push, attendre GitHub Actions, sync ArgoCD, restart pods |
+| `/fix-ui` | Corriger un problème d'interface à partir d'une capture d'écran |
+| `/add-feature` | Ajouter une nouvelle fonctionnalité (frontend/backend) |
+| `/debug-api` | Diagnostiquer et corriger les erreurs API |
+| `/check-build` | Vérifier le statut du build Docker sur GitHub Actions |
+
+Les skills sont définis dans `.claude/commands/`.
 
 ### Guidelines de Contribution
 
@@ -636,19 +678,22 @@ kubectl port-forward svc/frontend 8080:80  # Accès local
 
 ## 📊 Roadmap
 
-### Version 1.1 (Q1 2025)
+### ✅ Version 1.1 (Décembre 2024) - Complété
+- [x] Gestion complète des recettes de brassage
+- [x] Journal de brassage interactif avec chronomètre
+- [x] Export PDF des rapports de brassage
+- [x] Style "Test bière" avec recette auto-remplie
+- [x] Accès au journal depuis la carte projet
+- [x] Simulation de données pour tests
+
+### 🚧 Version 1.2 (Q1 2025)
 - [ ] Notifications push pour alertes température
-- [ ] Export CSV/PDF des données
 - [ ] Graphiques de densité avec courbe de prédiction
 - [ ] Support multi-langues (EN, FR)
+- [ ] Intégration Brewfather API (import recettes)
+- [ ] Bibliothèque de recettes partagées
 
-### Version 1.2 (Q2 2025)
-- [ ] Mode sombre
-- [ ] Recettes de fermentation (bibliothèque)
-- [ ] Calcul automatique des ingrédients
-- [ ] Intégration Brewfather API
-
-### Version 2.0 (Q3 2025)
+### Version 2.0 (Q2 2025)
 - [ ] Application mobile native (React Native)
 - [ ] Support caméra pour notes visuelles
 - [ ] IA pour prédiction de fin de fermentation
