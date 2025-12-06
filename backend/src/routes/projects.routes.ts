@@ -180,17 +180,50 @@ router.post('/:id/outlet/toggle', requireAuth, requireAdmin, async (req: Request
     }
 
     const device = databaseService.getDevice(project.outletId);
-    if (!device || !device.ip) {
+    if (!device) {
       return res.status(400).json({ error: 'No outlet device configured' });
     }
 
     const newState = !project.outletActive;
 
-    // Appeler l'API Shelly
-    const response = await fetch(`http://${device.ip}/rpc/Switch.Set?id=0&on=${newState}`);
+    // Utiliser Home Assistant API si entityId est disponible, sinon fallback sur IP directe
+    if (device.entityId) {
+      const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8124';
+      const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
 
-    if (!response.ok) {
-      throw new Error(`Shelly API returned ${response.status}`);
+      const service = newState ? 'turn_on' : 'turn_off';
+      const url = `${HOME_ASSISTANT_URL}/api/services/switch/${service}`;
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+      if (HOME_ASSISTANT_TOKEN) {
+        headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ entity_id: device.entityId })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Home Assistant API returned ${response.status}: ${errorText}`);
+      }
+
+      console.log(`[Outlet] Controlled ${device.entityId} via Home Assistant: ${newState ? 'ON' : 'OFF'}`);
+    } else if (device.ip) {
+      // Fallback: Appeler l'API Shelly directement
+      const response = await fetch(`http://${device.ip}/rpc/Switch.Set?id=0&on=${newState}`);
+
+      if (!response.ok) {
+        throw new Error(`Shelly API returned ${response.status}`);
+      }
+
+      console.log(`[Outlet] Controlled ${device.ip} via direct Shelly API: ${newState ? 'ON' : 'OFF'}`);
+    } else {
+      return res.status(400).json({ error: 'No entityId or IP configured for outlet' });
     }
 
     databaseService.updateProjectOutletStatus(id, newState);

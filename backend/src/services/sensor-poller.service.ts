@@ -121,9 +121,9 @@ class SensorPollerService {
       console.log(`[SensorPoller] Project ${project.name}: Setting outlet to ${shouldActivate ? 'ON' : 'OFF'}`);
 
       const device = databaseService.getDevice(outletId);
-      if (device && device.ip) {
+      if (device) {
         try {
-          await this.controlShellyOutlet(device.ip, shouldActivate);
+          await this.controlOutlet(device, shouldActivate);
           databaseService.updateProjectOutletStatus(projectId, shouldActivate);
         } catch (error) {
           console.error(`[SensorPoller] Failed to control outlet for ${project.name}:`, error);
@@ -132,9 +132,34 @@ class SensorPollerService {
     }
   }
 
-  private async controlShellyOutlet(ip: string, state: boolean): Promise<void> {
-    try {
-      const url = `http://${ip}/rpc/Switch.Set?id=0&on=${state}`;
+  private async controlOutlet(device: { ip?: string; entityId?: string }, state: boolean): Promise<void> {
+    // Utiliser Home Assistant API si entityId est disponible
+    if (device.entityId) {
+      const service = state ? 'turn_on' : 'turn_off';
+      const url = `${HOME_ASSISTANT_URL}/api/services/switch/${service}`;
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+      if (HOME_ASSISTANT_TOKEN) {
+        headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ entity_id: device.entityId })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Home Assistant API returned ${response.status}: ${errorText}`);
+      }
+
+      console.log(`[SensorPoller] Outlet ${device.entityId} set to ${state} via Home Assistant`);
+    } else if (device.ip) {
+      // Fallback: Appeler l'API Shelly directement
+      const url = `http://${device.ip}/rpc/Switch.Set?id=0&on=${state}`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -142,10 +167,9 @@ class SensorPollerService {
       }
 
       const result = await response.json();
-      console.log(`[SensorPoller] Shelly outlet ${ip} set to ${state}:`, result);
-    } catch (error) {
-      console.error(`[SensorPoller] Error controlling Shelly outlet ${ip}:`, error);
-      throw error;
+      console.log(`[SensorPoller] Shelly outlet ${device.ip} set to ${state}:`, result);
+    } else {
+      throw new Error('No entityId or IP configured for outlet');
     }
   }
 }
