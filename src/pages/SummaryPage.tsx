@@ -156,10 +156,10 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
     .grid-item { background: #f5f5f5; padding: 10px; border-radius: 4px; }
     .grid-item .label { font-size: 9pt; color: #666; display: block; }
     .grid-item .value { font-size: 11pt; font-weight: bold; }
-    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-    .stat-card { text-align: center; padding: 10px; background: #f5f5f5; border-radius: 4px; }
-    .stat-card .label { font-size: 9pt; color: #666; }
-    .stat-card .value { font-size: 14pt; font-weight: bold; color: #8b6914; }
+    .stats-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; }
+    .stat-card { text-align: center; padding: 10px 15px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; flex: 1; min-width: 100px; }
+    .stat-card .label { font-size: 9pt; color: #666; display: block; margin-bottom: 4px; }
+    .stat-card .value { font-size: 14pt; font-weight: bold; color: #8b6914; display: block; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt; }
     th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
     th { background: #e0e0e0; font-weight: bold; }
