@@ -9,11 +9,12 @@ interface MonitoringPageProps {
   onToggleOutlet: () => void;
   onAddDensity: (density: number, timestamp: number) => void;
   onToggleControlMode?: () => void;
+  onRefreshTemperature?: () => void;
   onBack: () => void;
   role: 'admin' | 'viewer' | null;
 }
 
-export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onToggleControlMode, onBack, role }: MonitoringPageProps) {
+export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onToggleControlMode, onRefreshTemperature, onBack, role }: MonitoringPageProps) {
   const config = FERMENTATION_TYPES[project.fermentationType];
   const diff = project.targetTemperature - project.currentTemperature;
 
@@ -67,7 +68,18 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
           </div>
 
           <div className="panel-section">
-            <h2>Températures</h2>
+            <div className="section-header-with-action">
+              <h2>Températures</h2>
+              {onRefreshTemperature && (
+                <button
+                  className="btn-refresh"
+                  onClick={onRefreshTemperature}
+                  title="Rafraîchir la température"
+                >
+                  ↻
+                </button>
+              )}
+            </div>
             <div className="temperature-controls">
               <div className="temp-display">
                 <div className="temp-label">Actuelle</div>

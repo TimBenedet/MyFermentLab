@@ -443,6 +443,7 @@ function App() {
             onToggleOutlet={handleToggleOutlet}
             onAddDensity={handleAddDensity}
             onToggleControlMode={handleToggleControlMode}
+            onRefreshTemperature={() => selectedProjectId && loadProject(selectedProjectId)}
             onBack={() => setCurrentPage('home')}
             role={role}
           />
