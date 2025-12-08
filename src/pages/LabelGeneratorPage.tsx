@@ -105,13 +105,15 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     qrcode: { x: 610, y: 210, rotation: 0 }
   });
 
-  const [styles, setStyles] = useState<Record<string, { bold: boolean; italic: boolean; color: string }>>({
-    brand: { bold: false, italic: false, color: '#2c2218' },
-    subtitle: { bold: false, italic: false, color: '#4a3d30' },
-    product: { bold: false, italic: true, color: '#2c2218' },
-    series: { bold: false, italic: false, color: '#5a4a3a' },
-    ingredients: { bold: false, italic: true, color: '#4a3d30' }
+  const [styles, setStyles] = useState<Record<string, { bold: boolean; italic: boolean; color: string; fontSize: number }>>({
+    brand: { bold: false, italic: false, color: '#2c2218', fontSize: 44 },
+    subtitle: { bold: false, italic: false, color: '#4a3d30', fontSize: 10 },
+    product: { bold: false, italic: true, color: '#2c2218', fontSize: 51 },
+    series: { bold: false, italic: false, color: '#5a4a3a', fontSize: 12 },
+    ingredients: { bold: false, italic: true, color: '#4a3d30', fontSize: 22 }
   });
+
+  const [fontSizePopover, setFontSizePopover] = useState<string | null>(null);
 
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -170,6 +172,20 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
         color
       }
     }));
+  };
+
+  const handleFontSizeChange = (element: string, fontSize: number) => {
+    setStyles(prev => ({
+      ...prev,
+      [element]: {
+        ...prev[element],
+        fontSize: Math.max(8, Math.min(120, fontSize))
+      }
+    }));
+  };
+
+  const toggleFontSizePopover = (element: string) => {
+    setFontSizePopover(prev => prev === element ? null : element);
   };
 
   const handleRotationChange = (element: string, rotation: number) => {
@@ -592,12 +608,13 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
       qrcode: { x: 500, y: 250, rotation: 0 }
     });
     setStyles({
-      brand: { bold: false, italic: false, color: '#2c2218' },
-      subtitle: { bold: false, italic: false, color: '#4a3d30' },
-      product: { bold: false, italic: true, color: '#2c2218' },
-      series: { bold: false, italic: false, color: '#5a4a3a' },
-      ingredients: { bold: false, italic: true, color: '#4a3d30' }
+      brand: { bold: false, italic: false, color: '#2c2218', fontSize: 44 },
+      subtitle: { bold: false, italic: false, color: '#4a3d30', fontSize: 10 },
+      product: { bold: false, italic: true, color: '#2c2218', fontSize: 51 },
+      series: { bold: false, italic: false, color: '#5a4a3a', fontSize: 12 },
+      ingredients: { bold: false, italic: true, color: '#4a3d30', fontSize: 22 }
     });
+    setFontSizePopover(null);
   };
 
   // Fonction pour déterminer si un guide est horizontal
@@ -647,6 +664,24 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                           className={`style-btn italic ${styles.brand.italic ? 'active' : ''}`}
                           onClick={() => handleStyleToggle('brand', 'italic')}
                         >I</button>
+                        <div className="font-size-control">
+                          <button
+                            className={`style-btn px-btn ${fontSizePopover === 'brand' ? 'active' : ''}`}
+                            onClick={() => toggleFontSizePopover('brand')}
+                          >px</button>
+                          {fontSizePopover === 'brand' && (
+                            <div className="font-size-popover">
+                              <input
+                                type="number"
+                                value={styles.brand.fontSize}
+                                onChange={(e) => handleFontSizeChange('brand', parseInt(e.target.value) || 8)}
+                                min={8}
+                                max={120}
+                              />
+                              <span>px</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <input
                         type="color"
@@ -688,6 +723,24 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                           className={`style-btn italic ${styles.subtitle.italic ? 'active' : ''}`}
                           onClick={() => handleStyleToggle('subtitle', 'italic')}
                         >I</button>
+                        <div className="font-size-control">
+                          <button
+                            className={`style-btn px-btn ${fontSizePopover === 'subtitle' ? 'active' : ''}`}
+                            onClick={() => toggleFontSizePopover('subtitle')}
+                          >px</button>
+                          {fontSizePopover === 'subtitle' && (
+                            <div className="font-size-popover">
+                              <input
+                                type="number"
+                                value={styles.subtitle.fontSize}
+                                onChange={(e) => handleFontSizeChange('subtitle', parseInt(e.target.value) || 8)}
+                                min={8}
+                                max={120}
+                              />
+                              <span>px</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <input
                         type="color"
@@ -744,6 +797,24 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                           className={`style-btn italic ${styles.product.italic ? 'active' : ''}`}
                           onClick={() => handleStyleToggle('product', 'italic')}
                         >I</button>
+                        <div className="font-size-control">
+                          <button
+                            className={`style-btn px-btn ${fontSizePopover === 'product' ? 'active' : ''}`}
+                            onClick={() => toggleFontSizePopover('product')}
+                          >px</button>
+                          {fontSizePopover === 'product' && (
+                            <div className="font-size-popover">
+                              <input
+                                type="number"
+                                value={styles.product.fontSize}
+                                onChange={(e) => handleFontSizeChange('product', parseInt(e.target.value) || 8)}
+                                min={8}
+                                max={120}
+                              />
+                              <span>px</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <input
                         type="color"
@@ -785,6 +856,24 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                           className={`style-btn italic ${styles.series.italic ? 'active' : ''}`}
                           onClick={() => handleStyleToggle('series', 'italic')}
                         >I</button>
+                        <div className="font-size-control">
+                          <button
+                            className={`style-btn px-btn ${fontSizePopover === 'series' ? 'active' : ''}`}
+                            onClick={() => toggleFontSizePopover('series')}
+                          >px</button>
+                          {fontSizePopover === 'series' && (
+                            <div className="font-size-popover">
+                              <input
+                                type="number"
+                                value={styles.series.fontSize}
+                                onChange={(e) => handleFontSizeChange('series', parseInt(e.target.value) || 8)}
+                                min={8}
+                                max={120}
+                              />
+                              <span>px</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <input
                         type="color"
@@ -826,6 +915,24 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                           className={`style-btn italic ${styles.ingredients.italic ? 'active' : ''}`}
                           onClick={() => handleStyleToggle('ingredients', 'italic')}
                         >I</button>
+                        <div className="font-size-control">
+                          <button
+                            className={`style-btn px-btn ${fontSizePopover === 'ingredients' ? 'active' : ''}`}
+                            onClick={() => toggleFontSizePopover('ingredients')}
+                          >px</button>
+                          {fontSizePopover === 'ingredients' && (
+                            <div className="font-size-popover">
+                              <input
+                                type="number"
+                                value={styles.ingredients.fontSize}
+                                onChange={(e) => handleFontSizeChange('ingredients', parseInt(e.target.value) || 8)}
+                                min={8}
+                                max={120}
+                              />
+                              <span>px</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <input
                         type="color"
@@ -996,7 +1103,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                 style={{
                   color: styles.brand.color,
                   fontWeight: styles.brand.bold ? 'bold' : 300,
-                  fontStyle: styles.brand.italic ? 'italic' : 'normal'
+                  fontStyle: styles.brand.italic ? 'italic' : 'normal',
+                  fontSize: `${styles.brand.fontSize}px`
                 }}
               >
                 {labelData.brandName}
@@ -1019,7 +1127,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                 style={{
                   color: styles.subtitle.color,
                   fontWeight: styles.subtitle.bold ? 'bold' : 300,
-                  fontStyle: styles.subtitle.italic ? 'italic' : 'normal'
+                  fontStyle: styles.subtitle.italic ? 'italic' : 'normal',
+                  fontSize: `${styles.subtitle.fontSize}px`
                 }}
               >
                 {labelData.brandSubtitle}
@@ -1048,7 +1157,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                 transform: `rotate(${positions.product.rotation}deg)`,
                 color: styles.product.color,
                 fontWeight: styles.product.bold ? 'bold' : 300,
-                fontStyle: styles.product.italic ? 'italic' : 'normal'
+                fontStyle: styles.product.italic ? 'italic' : 'normal',
+                fontSize: `${styles.product.fontSize}px`
               }}
               onMouseDown={(e) => handleMouseDown('product', e)}
             >
@@ -1065,7 +1175,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                 transform: `rotate(${positions.series.rotation}deg)`,
                 color: styles.series.color,
                 fontWeight: styles.series.bold ? 'bold' : 400,
-                fontStyle: styles.series.italic ? 'italic' : 'normal'
+                fontStyle: styles.series.italic ? 'italic' : 'normal',
+                fontSize: `${styles.series.fontSize}px`
               }}
               onMouseDown={(e) => handleMouseDown('series', e)}
             >
@@ -1082,7 +1193,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                 transform: `rotate(${positions.ingredients.rotation}deg)`,
                 color: styles.ingredients.color,
                 fontWeight: styles.ingredients.bold ? 'bold' : 400,
-                fontStyle: styles.ingredients.italic ? 'italic' : 'normal'
+                fontStyle: styles.ingredients.italic ? 'italic' : 'normal',
+                fontSize: `${styles.ingredients.fontSize}px`
               }}
               onMouseDown={(e) => handleMouseDown('ingredients', e)}
             >
