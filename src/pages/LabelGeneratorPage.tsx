@@ -52,16 +52,26 @@ const MARGIN = 20;
 const SMALL_MARGIN = 10;
 
 // Points d'ancrage de l'étiquette - grille complète
+// Zone logo ~140px, donc centre à 70px
+const LOGO_ZONE_WIDTH = 140;
 const labelAnchorsX = [
   { pos: 0, type: 'edge' },
   { pos: SMALL_MARGIN, type: 'margin-sm' },
   { pos: MARGIN, type: 'margin' },
+  { pos: 30, type: 'grid' },
   { pos: 40, type: 'grid' },
+  { pos: 50, type: 'grid' },
   { pos: 60, type: 'grid' },
+  { pos: LOGO_ZONE_WIDTH / 2, type: 'center' }, // 70px - centre zone logo
   { pos: 80, type: 'grid' },
+  { pos: 90, type: 'grid' },
   { pos: 100, type: 'grid' },
+  { pos: 110, type: 'grid' },
   { pos: 120, type: 'grid' },
-  { pos: 140, type: 'grid' },
+  { pos: 130, type: 'grid' },
+  { pos: LOGO_ZONE_WIDTH, type: 'grid' }, // 140px - fin zone logo
+  { pos: 150, type: 'grid' },
+  { pos: 160, type: 'grid' },
   { pos: 170, type: 'grid' },
   { pos: LABEL_WIDTH / 4, type: 'quarter' },
   { pos: LABEL_WIDTH / 3, type: 'third' },
