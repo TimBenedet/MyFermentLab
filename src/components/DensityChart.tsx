@@ -1,6 +1,177 @@
 import { useState, useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { DensityReading, FermentationType, FERMENTATION_TYPES } from '../types';
+
+// ========================================
+// Prédiction de fin de fermentation
+// Modèle: SG(t) = FG + (OG - FG) × e^(-k×t)
+// ========================================
+
+interface FermentationPrediction {
+  estimatedFG: number;           // Densité finale estimée
+  estimatedEndDate: Date;        // Date de fin estimée
+  daysRemaining: number;         // Jours restants
+  attenuation: number;           // % d'atténuation estimé
+  confidence: 'low' | 'medium' | 'high';  // Confiance de la prédiction
+  isComplete: boolean;           // Fermentation terminée ?
+  r2: number;                    // Coefficient de détermination (qualité du fit)
+}
+
+function predictFermentationEnd(data: DensityReading[]): FermentationPrediction | null {
+  // Besoin d'au moins 3 points pour une régression fiable
+  if (data.length < 3) return null;
+
+  const sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp);
+  const OG = sortedData[0].density;
+  const currentSG = sortedData[sortedData.length - 1].density;
+
+  // Si la densité est déjà très basse ou stable, fermentation probablement terminée
+  const lastReadings = sortedData.slice(-3);
+  const isStable = lastReadings.length >= 3 &&
+    Math.abs(lastReadings[lastReadings.length - 1].density - lastReadings[0].density) < 0.002;
+
+  // Vérifier si la fermentation a déjà commencé (chute de densité)
+  if (OG - currentSG < 0.005) {
+    return null; // Pas assez de données de fermentation active
+  }
+
+  // Convertir les timestamps en jours depuis le début
+  const t0 = sortedData[0].timestamp;
+  const dataPoints = sortedData.map(d => ({
+    t: (d.timestamp - t0) / (24 * 60 * 60 * 1000), // jours
+    sg: d.density
+  }));
+
+  // Estimation initiale de FG (utiliser la valeur la plus basse observée - 0.002)
+  // Une bière typique atteint 75-80% d'atténuation
+  const minObserved = Math.min(...sortedData.map(d => d.density));
+  const typicalFG = OG - (OG - 1.000) * 0.78; // 78% atténuation typique
+  let estimatedFG = Math.max(minObserved - 0.003, typicalFG, 1.000);
+
+  // Régression non-linéaire simplifiée via linéarisation
+  // ln(SG - FG) = ln(OG - FG) - k*t
+  // On itère pour affiner FG
+
+  let bestK = 0;
+  let bestFG = estimatedFG;
+  let bestR2 = -Infinity;
+
+  // Chercher le meilleur FG entre minObserved et une valeur raisonnable
+  for (let fg = minObserved; fg >= Math.max(1.000, minObserved - 0.015); fg -= 0.001) {
+    // Filtrer les points où SG > FG pour pouvoir calculer le log
+    const validPoints = dataPoints.filter(p => p.sg > fg + 0.001);
+    if (validPoints.length < 3) continue;
+
+    // Régression linéaire sur ln(SG - FG) = a - k*t
+    const n = validPoints.length;
+    const lnY = validPoints.map(p => Math.log(p.sg - fg));
+    const sumT = validPoints.reduce((s, p) => s + p.t, 0);
+    const sumLnY = lnY.reduce((s, y) => s + y, 0);
+    const sumTLnY = validPoints.reduce((s, p, i) => s + p.t * lnY[i], 0);
+    const sumT2 = validPoints.reduce((s, p) => s + p.t * p.t, 0);
+
+    const k = (n * sumTLnY - sumT * sumLnY) / (n * sumT2 - sumT * sumT);
+    if (k >= 0 || isNaN(k)) continue; // k doit être négatif (décroissance)
+
+    const kAbs = -k;
+    const a = (sumLnY - k * sumT) / n;
+
+    // Calculer R² pour évaluer la qualité du fit
+    const predicted = validPoints.map(p => fg + Math.exp(a) * Math.exp(k * p.t));
+    const actual = validPoints.map(p => p.sg);
+    const meanActual = actual.reduce((s, v) => s + v, 0) / n;
+    const ssRes = actual.reduce((s, v, i) => s + Math.pow(v - predicted[i], 2), 0);
+    const ssTot = actual.reduce((s, v) => s + Math.pow(v - meanActual, 2), 0);
+    const r2 = 1 - ssRes / ssTot;
+
+    if (r2 > bestR2) {
+      bestR2 = r2;
+      bestK = kAbs;
+      bestFG = fg;
+    }
+  }
+
+  // Si pas de bon fit trouvé, estimer avec les valeurs par défaut
+  if (bestK === 0 || bestR2 < 0.5) {
+    // Estimation simple basée sur la tendance actuelle
+    const daysSoFar = dataPoints[dataPoints.length - 1].t;
+    const dropSoFar = OG - currentSG;
+    const estimatedTotalDrop = dropSoFar * 1.3; // Estimer 30% de plus
+    bestFG = Math.max(OG - estimatedTotalDrop, 1.000);
+    bestK = -Math.log((currentSG - bestFG) / (OG - bestFG)) / daysSoFar;
+    bestR2 = 0.5;
+  }
+
+  // Calculer quand SG sera à 0.001 de FG (considéré comme terminé)
+  // SG(t) - FG = 0.001 => (OG - FG) × e^(-k×t) = 0.001
+  // t = -ln(0.001 / (OG - FG)) / k
+  const threshold = 0.001;
+  const tEnd = -Math.log(threshold / (OG - bestFG)) / bestK;
+
+  const currentDays = dataPoints[dataPoints.length - 1].t;
+  const daysRemaining = Math.max(0, tEnd - currentDays);
+
+  const estimatedEndDate = new Date(Date.now() + daysRemaining * 24 * 60 * 60 * 1000);
+
+  // Calculer l'atténuation
+  const attenuation = ((OG - bestFG) / (OG - 1.000)) * 100;
+
+  // Déterminer le niveau de confiance
+  let confidence: 'low' | 'medium' | 'high' = 'low';
+  if (bestR2 >= 0.9 && data.length >= 5) {
+    confidence = 'high';
+  } else if (bestR2 >= 0.7 && data.length >= 4) {
+    confidence = 'medium';
+  }
+
+  // Vérifier si la fermentation est terminée
+  const isComplete = isStable && currentSG < OG - 0.010;
+
+  return {
+    estimatedFG: bestFG,
+    estimatedEndDate,
+    daysRemaining: Math.round(daysRemaining * 10) / 10,
+    attenuation: Math.round(attenuation),
+    confidence,
+    isComplete,
+    r2: bestR2
+  };
+}
+
+// Générer les points de la courbe de prédiction
+function generatePredictionCurve(
+  data: DensityReading[],
+  prediction: FermentationPrediction
+): { timestamp: number; predictedDensity: number }[] {
+  if (data.length < 2) return [];
+
+  const sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp);
+  const OG = sortedData[0].density;
+  const t0 = sortedData[0].timestamp;
+  const currentTime = sortedData[sortedData.length - 1].timestamp;
+
+  // Calculer k à partir des données
+  const currentDays = (currentTime - t0) / (24 * 60 * 60 * 1000);
+  const currentSG = sortedData[sortedData.length - 1].density;
+
+  // Estimer k à partir de la dernière mesure
+  const k = -Math.log((currentSG - prediction.estimatedFG) / (OG - prediction.estimatedFG)) / currentDays;
+
+  const points: { timestamp: number; predictedDensity: number }[] = [];
+
+  // Générer des points du début à la fin prédite + 2 jours
+  const endTime = prediction.estimatedEndDate.getTime() + 2 * 24 * 60 * 60 * 1000;
+  const totalDays = (endTime - t0) / (24 * 60 * 60 * 1000);
+  const step = totalDays / 50; // 50 points sur la courbe
+
+  for (let d = 0; d <= totalDays; d += step) {
+    const timestamp = t0 + d * 24 * 60 * 60 * 1000;
+    const predictedDensity = prediction.estimatedFG + (OG - prediction.estimatedFG) * Math.exp(-k * d);
+    points.push({ timestamp, predictedDensity });
+  }
+
+  return points;
+}
 
 interface DensityChartProps {
   data: DensityReading[];
@@ -91,6 +262,56 @@ export function DensityChart({ data, type, onAddDensity, role }: DensityChartPro
 
   const abv = calculateABV();
 
+  // Prédiction de fin de fermentation
+  const prediction = useMemo(() => predictFermentationEnd(data), [data]);
+
+  // Données du graphique avec courbe de prédiction
+  const chartDataWithPrediction = useMemo(() => {
+    if (!prediction || timePeriod === '1h' || timePeriod === '6h') {
+      return chartData.map(d => ({ ...d, predictedDensity: undefined }));
+    }
+
+    const predictionCurve = generatePredictionCurve(data, prediction);
+
+    // Fusionner les données réelles avec la courbe de prédiction
+    const allTimestamps = new Set([
+      ...chartData.map(d => d.timestamp),
+      ...predictionCurve.map(p => p.timestamp)
+    ]);
+
+    const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b);
+
+    return sortedTimestamps.map(ts => {
+      const realData = chartData.find(d => d.timestamp === ts);
+      const predData = predictionCurve.find(p => Math.abs(p.timestamp - ts) < 3600000); // 1h de tolérance
+
+      return {
+        time: formatTime(ts, isLongPeriod),
+        timestamp: ts,
+        density: realData?.density,
+        predictedDensity: predData?.predictedDensity
+      };
+    });
+  }, [chartData, prediction, data, timePeriod, isLongPeriod]);
+
+  // Formater la date de fin estimée
+  const formatEndDate = (date: Date) => {
+    return date.toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short'
+    });
+  };
+
+  // Icône de confiance
+  const confidenceIcon = (level: 'low' | 'medium' | 'high') => {
+    switch (level) {
+      case 'high': return '●●●';
+      case 'medium': return '●●○';
+      case 'low': return '●○○';
+    }
+  };
+
   return (
     <div className="chart-container">
       <div className="chart-header">
@@ -143,7 +364,7 @@ export function DensityChart({ data, type, onAddDensity, role }: DensityChartPro
       </div>
       <div className="chart-wrapper">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 20 }}>
+          <LineChart data={chartDataWithPrediction} margin={{ top: 5, right: 30, left: 0, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#2a2e33" />
             <XAxis
               dataKey="time"
@@ -156,7 +377,10 @@ export function DensityChart({ data, type, onAddDensity, role }: DensityChartPro
             <YAxis
               stroke="#6e7175"
               style={{ fontSize: '11px', fill: '#8e9196' }}
-              domain={[1.000, 'dataMax + 0.005']}
+              domain={[
+                (dataMin: number) => Math.min(dataMin, prediction?.estimatedFG ?? dataMin) - 0.002,
+                'dataMax + 0.005'
+              ]}
               tickFormatter={(value) => value.toFixed(3)}
               label={{ value: 'SG', angle: -90, position: 'insideLeft', style: { fill: '#8e9196' } }}
             />
@@ -169,7 +393,33 @@ export function DensityChart({ data, type, onAddDensity, role }: DensityChartPro
                 color: '#d4d5d8'
               }}
               labelStyle={{ color: '#8e9196', fontWeight: '500' }}
+              formatter={(value: number, name: string) => {
+                if (name === 'predictedDensity') return [value?.toFixed(3), 'Prédiction'];
+                return [value?.toFixed(3), 'Densité'];
+              }}
             />
+            {/* Ligne horizontale pour FG estimé */}
+            {prediction && (
+              <ReferenceLine
+                y={prediction.estimatedFG}
+                stroke="#4AC694"
+                strokeDasharray="5 5"
+                strokeOpacity={0.7}
+              />
+            )}
+            {/* Courbe de prédiction (en pointillés) */}
+            {prediction && (
+              <Line
+                type="monotone"
+                dataKey="predictedDensity"
+                stroke="#4AC694"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+                connectNulls
+              />
+            )}
+            {/* Données réelles */}
             <Line
               type="monotone"
               dataKey="density"
@@ -177,6 +427,7 @@ export function DensityChart({ data, type, onAddDensity, role }: DensityChartPro
               strokeWidth={2}
               dot={{ fill: config.color, r: 4 }}
               activeDot={{ r: 6 }}
+              connectNulls
             />
           </LineChart>
         </ResponsiveContainer>
@@ -202,6 +453,42 @@ export function DensityChart({ data, type, onAddDensity, role }: DensityChartPro
           </span>
         </div>
       </div>
+
+      {/* Section prédiction */}
+      {prediction && (
+        <div className="prediction-section">
+          <div className="prediction-header">
+            <h4>Prédiction de fin de fermentation</h4>
+            <span className={`confidence confidence-${prediction.confidence}`} title={`Confiance: ${prediction.confidence}`}>
+              {confidenceIcon(prediction.confidence)}
+            </span>
+          </div>
+          {prediction.isComplete ? (
+            <div className="prediction-complete">
+              Fermentation terminée ! La densité est stable.
+            </div>
+          ) : (
+            <div className="prediction-stats">
+              <div className="prediction-stat">
+                <span className="prediction-label">FG estimé</span>
+                <span className="prediction-value">{prediction.estimatedFG.toFixed(3)}</span>
+              </div>
+              <div className="prediction-stat">
+                <span className="prediction-label">Fin estimée</span>
+                <span className="prediction-value">{formatEndDate(prediction.estimatedEndDate)}</span>
+              </div>
+              <div className="prediction-stat">
+                <span className="prediction-label">Jours restants</span>
+                <span className="prediction-value">~{prediction.daysRemaining}j</span>
+              </div>
+              <div className="prediction-stat">
+                <span className="prediction-label">Atténuation</span>
+                <span className="prediction-value">{prediction.attenuation}%</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>

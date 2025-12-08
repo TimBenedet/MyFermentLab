@@ -73,6 +73,15 @@
 - **Inclut** : informations générales, recette, statistiques, densité, journal
 - **Impression propre** avec mise en page optimisée
 
+### 🏷️ Générateur d'Étiquettes
+
+- **Éditeur visuel** : Drag & drop avec snap intelligent sur grille
+- **3 thèmes élégants** : Bière (houblon), Hydromel (abeilles), Koji (spores)
+- **Personnalisation complète** : Textes, couleurs, tailles, rotations
+- **Guides d'alignement** : Affichage des coordonnées et distances en temps réel
+- **QR Code intégré** : Lien vers la fiche du brassin
+- **Export optimisé** : Impression directe ou PDF
+
 ### 🔐 Gestion des Utilisateurs
 
 - **Mode Admin** : Contrôle complet (création, modification, suppression)
@@ -678,7 +687,15 @@ Les skills sont définis dans `.claude/commands/`.
 
 ## 📊 Roadmap
 
-### ✅ Version 1.1 (Décembre 2024) - Complété
+### ✅ Version 1.0 (Décembre 2024)
+- [x] Monitoring température en temps réel
+- [x] Contrôle automatique PID du chauffage
+- [x] Suivi de densité avec calcul ABV et courbe de prédiction
+- [x] Gestion multi-projets
+- [x] Mode Admin / Lecture seule
+- [x] PWA installable
+
+### ✅ Version 1.1 (Décembre 2024)
 - [x] Gestion complète des recettes de brassage
 - [x] Journal de brassage interactif avec chronomètre
 - [x] Export PDF des rapports de brassage
@@ -686,18 +703,14 @@ Les skills sont définis dans `.claude/commands/`.
 - [x] Accès au journal depuis la carte projet
 - [x] Simulation de données pour tests
 
-### 🚧 Version 1.2 (Q1 2025)
-- [ ] Notifications push pour alertes température
-- [ ] Graphiques de densité avec courbe de prédiction
-- [ ] Support multi-langues (EN, FR)
-- [ ] Intégration Brewfather API (import recettes)
-- [ ] Bibliothèque de recettes partagées
-
-### Version 2.0 (Q2 2025)
-- [ ] Application mobile native (React Native)
-- [ ] Support caméra pour notes visuelles
-- [ ] IA pour prédiction de fin de fermentation
-- [ ] Partage social des brassins
+### ✅ Version 1.2 (Décembre 2024)
+- [x] **Générateur d'étiquettes HAKKO**
+  - Éditeur drag & drop avec snap intelligent
+  - 3 thèmes : Bière, Hydromel, Koji
+  - Illustrations SVG décoratives (houblon, abeilles, koji)
+  - Affichage coordonnées et distances en temps réel
+  - Support QR Code personnalisé
+  - Export/impression optimisée
 
 ## 🤝 Contribution
 
