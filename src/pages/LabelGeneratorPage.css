@@ -554,6 +554,59 @@
   color: #e8b87e;
 }
 
+/* Distance markers */
+.distance-marker {
+  position: absolute;
+  pointer-events: none;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.distance-marker.left,
+.distance-marker.right {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(126, 181, 232, 0.6) 10%, rgba(126, 181, 232, 0.6) 90%, transparent 100%);
+}
+
+.distance-marker.top,
+.distance-marker.bottom {
+  width: 1px;
+  background: linear-gradient(180deg, transparent 0%, rgba(232, 184, 126, 0.6) 10%, rgba(232, 184, 126, 0.6) 90%, transparent 100%);
+  flex-direction: column;
+}
+
+.distance-marker .distance-label {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', monospace;
+  font-size: 9px;
+  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.distance-marker.left .distance-label,
+.distance-marker.right .distance-label {
+  color: #7eb5e8;
+}
+
+.distance-marker.top .distance-label,
+.distance-marker.bottom .distance-label {
+  color: #e8b87e;
+}
+
+/* Hide distance markers if too small */
+.distance-marker.left,
+.distance-marker.right {
+  min-width: 30px;
+}
+
+.distance-marker.top,
+.distance-marker.bottom {
+  min-height: 30px;
+}
+
 /* ========================================
    ELEMENT CONTROLS (Style Controls)
    ======================================== */

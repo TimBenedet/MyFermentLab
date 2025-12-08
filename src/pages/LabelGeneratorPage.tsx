@@ -794,10 +794,25 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
             {/* Tooltip coordonnées pendant le drag */}
             {dragCoords && (
-              <div className="drag-coords-tooltip" style={{ left: dragCoords.x + 10, top: dragCoords.y - 30 }}>
-                <span className="coord">X: {dragCoords.x}px</span>
-                <span className="coord">Y: {dragCoords.y}px</span>
-              </div>
+              <>
+                <div className="drag-coords-tooltip" style={{ left: dragCoords.x + 10, top: dragCoords.y - 30 }}>
+                  <span className="coord">X: {dragCoords.x}px</span>
+                  <span className="coord">Y: {dragCoords.y}px</span>
+                </div>
+                {/* Distance markers */}
+                <div className="distance-marker left" style={{ left: 0, top: dragCoords.y + 10, width: dragCoords.x }}>
+                  <span className="distance-label">{dragCoords.x}px</span>
+                </div>
+                <div className="distance-marker right" style={{ left: dragCoords.x + 20, top: dragCoords.y + 10, width: LABEL_WIDTH - dragCoords.x - 20 }}>
+                  <span className="distance-label">{LABEL_WIDTH - dragCoords.x - 20}px</span>
+                </div>
+                <div className="distance-marker top" style={{ left: dragCoords.x + 10, top: 0, height: dragCoords.y }}>
+                  <span className="distance-label">{dragCoords.y}px</span>
+                </div>
+                <div className="distance-marker bottom" style={{ left: dragCoords.x + 10, top: dragCoords.y + 20, height: LABEL_HEIGHT - dragCoords.y - 20 }}>
+                  <span className="distance-label">{LABEL_HEIGHT - dragCoords.y - 20}px</span>
+                </div>
+              </>
             )}
 
             {/* Guides d'alignement */}
