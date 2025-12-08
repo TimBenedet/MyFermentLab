@@ -420,21 +420,35 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     }));
   };
 
-  // Obtenir les points d'ancrage d'un élément
+  // Obtenir les points d'ancrage d'un élément (basé sur le TEXTE, pas le container)
   const getElementAnchors = useCallback((elementKey: string) => {
     const element = elementRefs.current[elementKey];
     if (!element) return null;
     const pos = positions[elementKey];
     const rect = element.getBoundingClientRect();
+
+    // Padding des éléments draggables
+    const PADDING_X = 8;
+    const PADDING_Y = 4;
+
+    // Calculer les ancres sur le texte
+    const textLeft = pos.x + PADDING_X;
+    const textTop = pos.y + PADDING_Y;
+    const textWidth = rect.width - (PADDING_X * 2);
+    const textHeight = rect.height - (PADDING_Y * 2);
+
     return {
-      left: pos.x,
-      centerX: pos.x + rect.width / 2,
-      right: pos.x + rect.width,
-      top: pos.y,
-      centerY: pos.y + rect.height / 2,
-      bottom: pos.y + rect.height,
-      width: rect.width,
-      height: rect.height
+      left: textLeft,
+      centerX: textLeft + textWidth / 2,
+      right: textLeft + textWidth,
+      top: textTop,
+      centerY: textTop + textHeight / 2,
+      bottom: textTop + textHeight,
+      width: textWidth,
+      height: textHeight,
+      // Position du container (pour le calcul du snap)
+      containerX: pos.x,
+      containerY: pos.y
     };
   }, [positions]);
 
@@ -449,66 +463,79 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
     const snaps: SnapResult = { x: null, y: null, guides: [] };
 
+    // Padding des éléments draggables (défini dans CSS)
+    const PADDING_X = 8;
+    const PADDING_Y = 4;
+
+    // Calculer les ancres sur le TEXTE (pas le container)
+    // On ajoute le padding pour obtenir le début réel du texte
+    const textLeft = newLeft + PADDING_X;
+    const textTop = newTop + PADDING_Y;
+    const textWidth = currentWidth - (PADDING_X * 2);
+    const textHeight = currentHeight - (PADDING_Y * 2);
+
     const currentAnchors = {
-      left: newLeft,
-      centerX: newLeft + currentWidth / 2,
-      right: newLeft + currentWidth,
-      top: newTop,
-      centerY: newTop + currentHeight / 2,
-      bottom: newTop + currentHeight
+      left: textLeft,
+      centerX: textLeft + textWidth / 2,
+      right: textLeft + textWidth,
+      top: textTop,
+      centerY: textTop + textHeight / 2,
+      bottom: textTop + textHeight
     };
 
     // Snaps avec les ancres de l'étiquette (X)
+    // On soustrait PADDING_X car snaps.x est la position du container, pas du texte
     for (const anchor of labelAnchorsX) {
       if (Math.abs(currentAnchors.left - anchor.pos) < SNAP_THRESHOLD) {
-        snaps.x = anchor.pos;
+        snaps.x = anchor.pos - PADDING_X;
         snaps.guides.push({ type: anchor.type === 'center' ? 'vCenter' : 'vertical', pos: anchor.pos, style: anchor.type });
       } else if (Math.abs(currentAnchors.centerX - anchor.pos) < SNAP_THRESHOLD) {
-        snaps.x = anchor.pos - currentWidth / 2;
+        snaps.x = anchor.pos - textWidth / 2 - PADDING_X;
         snaps.guides.push({ type: anchor.type === 'center' ? 'vCenter' : 'vertical', pos: anchor.pos, style: anchor.type });
       } else if (Math.abs(currentAnchors.right - anchor.pos) < SNAP_THRESHOLD) {
-        snaps.x = anchor.pos - currentWidth;
+        snaps.x = anchor.pos - textWidth - PADDING_X;
         snaps.guides.push({ type: anchor.type === 'center' ? 'vCenter' : 'vertical', pos: anchor.pos, style: anchor.type });
       }
     }
 
     // Snaps avec les ancres de l'étiquette (Y)
+    // On soustrait PADDING_Y car snaps.y est la position du container, pas du texte
     for (const anchor of labelAnchorsY) {
       if (Math.abs(currentAnchors.top - anchor.pos) < SNAP_THRESHOLD) {
-        snaps.y = anchor.pos;
+        snaps.y = anchor.pos - PADDING_Y;
         snaps.guides.push({ type: anchor.type === 'center' ? 'hCenter' : 'horizontal', pos: anchor.pos, style: anchor.type });
       } else if (Math.abs(currentAnchors.centerY - anchor.pos) < SNAP_THRESHOLD) {
-        snaps.y = anchor.pos - currentHeight / 2;
+        snaps.y = anchor.pos - textHeight / 2 - PADDING_Y;
         snaps.guides.push({ type: anchor.type === 'center' ? 'hCenter' : 'horizontal', pos: anchor.pos, style: anchor.type });
       } else if (Math.abs(currentAnchors.bottom - anchor.pos) < SNAP_THRESHOLD) {
-        snaps.y = anchor.pos - currentHeight;
+        snaps.y = anchor.pos - textHeight - PADDING_Y;
         snaps.guides.push({ type: anchor.type === 'center' ? 'hCenter' : 'horizontal', pos: anchor.pos, style: anchor.type });
       }
     }
 
-    // Alignement avec les autres éléments
+    // Alignement avec les autres éléments (basé sur le texte)
     Object.keys(positions).forEach(otherKey => {
       if (otherKey === currentKey) return;
       const otherAnchors = getElementAnchors(otherKey);
       if (!otherAnchors) return;
 
-      // Alignements horizontaux
+      // Alignements horizontaux (top des textes alignés)
       if (Math.abs(currentAnchors.top - otherAnchors.top) < SNAP_THRESHOLD) {
-        snaps.y = otherAnchors.top;
+        snaps.y = otherAnchors.top - PADDING_Y;
         snaps.guides.push({ type: 'horizontal', pos: otherAnchors.top, style: 'element' });
       }
       if (Math.abs(currentAnchors.centerY - otherAnchors.centerY) < SNAP_THRESHOLD) {
-        snaps.y = otherAnchors.centerY - currentHeight / 2;
+        snaps.y = otherAnchors.centerY - textHeight / 2 - PADDING_Y;
         snaps.guides.push({ type: 'horizontal', pos: otherAnchors.centerY, style: 'element' });
       }
 
-      // Alignements verticaux
+      // Alignements verticaux (left des textes alignés)
       if (Math.abs(currentAnchors.left - otherAnchors.left) < SNAP_THRESHOLD) {
-        snaps.x = otherAnchors.left;
+        snaps.x = otherAnchors.left - PADDING_X;
         snaps.guides.push({ type: 'vertical', pos: otherAnchors.left, style: 'element' });
       }
       if (Math.abs(currentAnchors.centerX - otherAnchors.centerX) < SNAP_THRESHOLD) {
-        snaps.x = otherAnchors.centerX - currentWidth / 2;
+        snaps.x = otherAnchors.centerX - textWidth / 2 - PADDING_X;
         snaps.guides.push({ type: 'vertical', pos: otherAnchors.centerX, style: 'element' });
       }
     });
@@ -546,7 +573,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
     setActiveGuides(snaps.guides);
     setIsSnapped(snaps.guides.length > 0);
-    setDragCoords({ x: Math.round(newLeft), y: Math.round(newTop), mouseX: e.clientX, mouseY: e.clientY });
+    // Afficher les coordonnées du TEXTE (avec padding ajouté)
+    setDragCoords({ x: Math.round(newLeft + 8), y: Math.round(newTop + 4), mouseX: e.clientX, mouseY: e.clientY });
 
     setPositions(prev => ({
       ...prev,
