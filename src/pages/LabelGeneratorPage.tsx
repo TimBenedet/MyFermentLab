@@ -160,7 +160,10 @@ const THEMES: Record<LabelTheme, {
 // Composant SVG Hop Vine pour la bière
 const HopVineSVG = ({ color }: { color: string }) => (
   <svg viewBox="0 0 300 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M0 28 Q50 10 100 24 Q150 42 200 26 Q250 10 300 30" stroke={color} strokeWidth="1.2" fill="none"/>
+    {/* 3 wavy lines stacked together (no gap) */}
+    <path d="M0 20 Q50 5 100 18 Q150 34 200 20 Q250 5 300 22" stroke={color} strokeWidth="1.2" fill="none"/>
+    <path d="M0 32 Q50 17 100 30 Q150 46 200 32 Q250 17 300 34" stroke={color} strokeWidth="1.2" fill="none"/>
+    <path d="M0 44 Q50 29 100 42 Q150 58 200 44 Q250 29 300 46" stroke={color} strokeWidth="1.2" fill="none"/>
     <path d="M55 18 Q60 10 56 2" stroke={color} strokeWidth="0.6" fill="none"/>
     <path d="M115 38 Q122 48 118 58 Q114 65 119 70" stroke={color} strokeWidth="0.5" fill="none"/>
     <path d="M220 16 Q228 8 224 0" stroke={color} strokeWidth="0.6" fill="none"/>
