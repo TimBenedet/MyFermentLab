@@ -522,6 +522,39 @@
 }
 
 /* ========================================
+   DRAG COORDINATES TOOLTIP
+   ======================================== */
+
+.drag-coords-tooltip {
+  position: absolute;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #c4a574;
+  border-radius: 4px;
+  padding: 6px 10px;
+  display: flex;
+  gap: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.drag-coords-tooltip .coord {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', monospace;
+  font-size: 11px;
+  color: #e8e4df;
+  letter-spacing: 0.02em;
+}
+
+.drag-coords-tooltip .coord:first-child {
+  color: #7eb5e8;
+}
+
+.drag-coords-tooltip .coord:last-child {
+  color: #e8b87e;
+}
+
+/* ========================================
    ELEMENT CONTROLS (Style Controls)
    ======================================== */
 
@@ -600,8 +633,30 @@
 .rotation-control span {
   font-size: 0.7rem;
   color: #888;
-  min-width: 35px;
-  text-align: right;
+  min-width: 12px;
+}
+
+.rotation-control .rotation-input {
+  width: 45px;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #e8e4df;
+  font-size: 0.75rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.rotation-control .rotation-input::-webkit-outer-spin-button,
+.rotation-control .rotation-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.rotation-control .rotation-input:focus {
+  outline: none;
+  border-color: #c4a574;
 }
 
 .style-btn {

@@ -49,29 +49,58 @@ const SNAP_THRESHOLD = 8;
 const LABEL_WIDTH = 700;
 const LABEL_HEIGHT = 320;
 const MARGIN = 20;
+const SMALL_MARGIN = 10;
 
-// Points d'ancrage de l'étiquette
+// Points d'ancrage de l'étiquette - grille complète
 const labelAnchorsX = [
   { pos: 0, type: 'edge' },
+  { pos: SMALL_MARGIN, type: 'margin-sm' },
   { pos: MARGIN, type: 'margin' },
+  { pos: 40, type: 'grid' },
+  { pos: 60, type: 'grid' },
+  { pos: 80, type: 'grid' },
+  { pos: 100, type: 'grid' },
+  { pos: 120, type: 'grid' },
+  { pos: 140, type: 'grid' },
+  { pos: 170, type: 'grid' },
   { pos: LABEL_WIDTH / 4, type: 'quarter' },
   { pos: LABEL_WIDTH / 3, type: 'third' },
   { pos: LABEL_WIDTH / 2, type: 'center' },
   { pos: (LABEL_WIDTH * 2) / 3, type: 'third' },
   { pos: (LABEL_WIDTH * 3) / 4, type: 'quarter' },
+  { pos: LABEL_WIDTH - 100, type: 'grid' },
+  { pos: LABEL_WIDTH - 80, type: 'grid' },
+  { pos: LABEL_WIDTH - 60, type: 'grid' },
+  { pos: LABEL_WIDTH - 40, type: 'grid' },
   { pos: LABEL_WIDTH - MARGIN, type: 'margin' },
+  { pos: LABEL_WIDTH - SMALL_MARGIN, type: 'margin-sm' },
   { pos: LABEL_WIDTH, type: 'edge' }
 ];
 
 const labelAnchorsY = [
   { pos: 0, type: 'edge' },
+  { pos: SMALL_MARGIN, type: 'margin-sm' },
   { pos: MARGIN, type: 'margin' },
+  { pos: 40, type: 'grid' },
+  { pos: 50, type: 'grid' },
+  { pos: 60, type: 'grid' },
+  { pos: 80, type: 'grid' },
   { pos: LABEL_HEIGHT / 4, type: 'quarter' },
+  { pos: 100, type: 'grid' },
   { pos: LABEL_HEIGHT / 3, type: 'third' },
+  { pos: 120, type: 'grid' },
+  { pos: 140, type: 'grid' },
   { pos: LABEL_HEIGHT / 2, type: 'center' },
+  { pos: 180, type: 'grid' },
+  { pos: 200, type: 'grid' },
   { pos: (LABEL_HEIGHT * 2) / 3, type: 'third' },
+  { pos: 220, type: 'grid' },
+  { pos: 240, type: 'grid' },
   { pos: (LABEL_HEIGHT * 3) / 4, type: 'quarter' },
+  { pos: 260, type: 'grid' },
+  { pos: 280, type: 'grid' },
   { pos: LABEL_HEIGHT - MARGIN, type: 'margin' },
+  { pos: LABEL_HEIGHT - SMALL_MARGIN, type: 'margin-sm' },
   { pos: LABEL_HEIGHT, type: 'edge' }
 ];
 
@@ -269,6 +298,7 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
   const [isSnapped, setIsSnapped] = useState(false);
+  const [dragCoords, setDragCoords] = useState<{ x: number; y: number; mouseX: number; mouseY: number } | null>(null);
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     brand: true,
@@ -454,6 +484,7 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
     setActiveGuides(snaps.guides);
     setIsSnapped(snaps.guides.length > 0);
+    setDragCoords({ x: Math.round(newLeft), y: Math.round(newTop), mouseX: e.clientX, mouseY: e.clientY });
 
     setPositions(prev => ({
       ...prev,
@@ -465,6 +496,7 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
     setIsDragging(false);
     setActiveGuides([]);
     setIsSnapped(false);
+    setDragCoords(null);
     dragStateRef.current = null;
   }, []);
 
@@ -609,7 +641,15 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
               value={positions[element]?.rotation || 0}
               onChange={(e) => handleRotationChange(element, parseInt(e.target.value))}
             />
-            <span>{positions[element]?.rotation || 0}°</span>
+            <input
+              type="number"
+              className="rotation-input"
+              min="-180"
+              max="180"
+              value={positions[element]?.rotation || 0}
+              onChange={(e) => handleRotationChange(element, parseInt(e.target.value) || 0)}
+            />
+            <span>°</span>
           </div>
         </div>
       </div>
@@ -677,7 +717,8 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                       <input type="color" value={styles.ingredients?.color || '#6a5a4a'} onChange={(e) => handleColorChange('ingredients', e.target.value)} className="color-picker" />
                       <div className="rotation-control">
                         <input type="range" min="-180" max="180" value={positions.ingredients?.rotation || 0} onChange={(e) => handleRotationChange('ingredients', parseInt(e.target.value))} />
-                        <span>{positions.ingredients?.rotation || 0}°</span>
+                        <input type="number" className="rotation-input" min="-180" max="180" value={positions.ingredients?.rotation || 0} onChange={(e) => handleRotationChange('ingredients', parseInt(e.target.value) || 0)} />
+                        <span>°</span>
                       </div>
                     </div>
                   </div>
@@ -750,6 +791,14 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
 
           <div ref={labelRef} className={`label-preview label-${labelData.theme}`} style={{ background: theme.background }}>
             <div className="linen-texture" />
+
+            {/* Tooltip coordonnées pendant le drag */}
+            {dragCoords && (
+              <div className="drag-coords-tooltip" style={{ left: dragCoords.x + 10, top: dragCoords.y - 30 }}>
+                <span className="coord">X: {dragCoords.x}px</span>
+                <span className="coord">Y: {dragCoords.y}px</span>
+              </div>
+            )}
 
             {/* Guides d'alignement */}
             {activeGuides.map((guide, index) => (
