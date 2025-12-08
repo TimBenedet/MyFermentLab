@@ -687,7 +687,7 @@ Les skills sont définis dans `.claude/commands/`.
 
 ## 📊 Roadmap
 
-### ✅ Version 1.0 (Décembre 2024)
+### ✅ Version 1.0 (Novembre 2025)
 - [x] Monitoring température en temps réel
 - [x] Contrôle automatique PID du chauffage
 - [x] Suivi de densité avec calcul ABV
@@ -695,7 +695,7 @@ Les skills sont définis dans `.claude/commands/`.
 - [x] Mode Admin / Lecture seule
 - [x] PWA installable
 
-### ✅ Version 1.1 (Décembre 2024)
+### ✅ Version 1.1 (Novembre 2025)
 - [x] Gestion complète des recettes de brassage
 - [x] Journal de brassage interactif avec chronomètre
 - [x] Export PDF des rapports de brassage
@@ -703,7 +703,7 @@ Les skills sont définis dans `.claude/commands/`.
 - [x] Accès au journal depuis la carte projet
 - [x] Simulation de données pour tests
 
-### ✅ Version 1.2 (Décembre 2024)
+### ✅ Version 1.2 (Décembre 2025)
 - [x] **Générateur d'étiquettes**
   - Éditeur drag & drop avec snap intelligent
   - 3 thèmes : Bière, Hydromel, Koji
@@ -712,7 +712,7 @@ Les skills sont définis dans `.claude/commands/`.
   - Support QR Code personnalisé
   - Export/impression optimisée
 
-### ✅ Version 1.3 (Janvier 2025)
+### ✅ Version 1.3 (Décembre 2025)
 - [x] **Prédiction de fin de fermentation**
   - Algorithme basé sur modèle de décroissance exponentielle
   - Affichage FG estimé, date de fin, jours restants
