@@ -119,17 +119,17 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
             <div className="temp-buttons">
               <button
                 className="temp-btn"
-                onClick={() => onUpdateTarget(Math.max(config.minTemp, project.targetTemperature - 1))}
+                onClick={() => onUpdateTarget(Math.max(config.minTemp, project.targetTemperature - 0.5))}
                 disabled={role === 'viewer'}
               >
-                -1°C
+                -0.5°C
               </button>
               <button
                 className="temp-btn"
-                onClick={() => onUpdateTarget(Math.min(config.maxTemp, project.targetTemperature + 1))}
+                onClick={() => onUpdateTarget(Math.min(config.maxTemp, project.targetTemperature + 0.5))}
                 disabled={role === 'viewer'}
               >
-                +1°C
+                +0.5°C
               </button>
             </div>
           </div>
