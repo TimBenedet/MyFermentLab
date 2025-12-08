@@ -309,6 +309,7 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
   const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
   const [isSnapped, setIsSnapped] = useState(false);
   const [dragCoords, setDragCoords] = useState<{ x: number; y: number; mouseX: number; mouseY: number } | null>(null);
+  const [customBackground, setCustomBackground] = useState<string | null>(null);
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     brand: true,
@@ -553,6 +554,7 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
       ingredients: { bold: false, italic: true, color: '#6a5a4a', fontSize: 20 }
     });
     setFontSizePopover(null);
+    setCustomBackground(null);
   };
 
   // Mettre à jour les couleurs quand le thème change
@@ -752,13 +754,38 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
                       <button
                         key={themeKey}
                         className={`theme-option ${labelData.theme === themeKey ? 'active' : ''}`}
-                        onClick={() => handleInputChange('theme', themeKey)}
+                        onClick={() => {
+                          handleInputChange('theme', themeKey);
+                          setCustomBackground(null);
+                        }}
                         style={{ background: THEMES[themeKey].background }}
                       >
                         <span className="theme-name">{THEMES[themeKey].name}</span>
                       </button>
                     ))}
                   </div>
+                </div>
+                <div className="label-form-group">
+                  <label>Couleur de fond personnalisée</label>
+                  <div className="background-color-control">
+                    <input
+                      type="color"
+                      value={customBackground || theme.background}
+                      onChange={(e) => setCustomBackground(e.target.value)}
+                      className="color-picker"
+                    />
+                    <span className="color-value">{customBackground || theme.background}</span>
+                    {customBackground && (
+                      <button
+                        className="btn-reset-color"
+                        onClick={() => setCustomBackground(null)}
+                        title="Revenir au thème"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <p className="input-hint">La texture lin sera conservée par-dessus la couleur</p>
                 </div>
               </div>
             )}
@@ -799,7 +826,7 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
         <div className="label-preview-section">
           <p className="edit-hint">Cliquez et glissez pour déplacer les éléments</p>
 
-          <div ref={labelRef} className={`label-preview label-${labelData.theme}`} style={{ background: theme.background }}>
+          <div ref={labelRef} className={`label-preview label-${labelData.theme}`} style={{ background: customBackground || theme.background }}>
             <div className="linen-texture" />
 
             {/* Tooltip coordonnées pendant le drag */}

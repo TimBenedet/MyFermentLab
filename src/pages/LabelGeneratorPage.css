@@ -657,6 +657,41 @@
   border: none;
 }
 
+/* Background color control */
+.background-color-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.background-color-control .color-picker {
+  width: 40px;
+  height: 32px;
+}
+
+.background-color-control .color-value {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', monospace;
+  font-size: 0.75rem;
+  color: #8e9196;
+  text-transform: uppercase;
+}
+
+.btn-reset-color {
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #d4d5d8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-reset-color:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
 .rotation-control {
   display: flex;
   align-items: center;
