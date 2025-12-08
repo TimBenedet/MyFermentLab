@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAKKO Brewery - Nouvelles Étiquettes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Josefin+Sans:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #2a2a2a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            padding: 60px 20px;
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        h1 {
+            color: #d4c4a8;
+            font-family: 'Josefin Sans', sans-serif;
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            font-size: 14px;
+            margin-bottom: -20px;
+        }
+
+        .label-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .label-title {
+            color: #888;
+            font-family: 'Josefin Sans', sans-serif;
+            font-weight: 300;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        /* Base label styling */
+        .label {
+            width: 700px;
+            height: 320px;
+            position: relative;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Texture overlay for linen effect */
+        .label::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 1;
+            background-image: 
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* HYDROMEL LABEL */
+        .label-hydromel {
+            background: linear-gradient(135deg, #c9a55c 0%, #d4b068 30%, #c19a4e 70%, #b8914a 100%);
+        }
+
+        .label-hydromel .logo-section {
+            background: rgba(0,0,0,0.03);
+        }
+
+        .label-hydromel .logo-text {
+            color: #5a4220;
+        }
+
+        .label-hydromel .brewery-text {
+            color: #5a4220;
+        }
+
+        .label-hydromel .divider {
+            background: #5a4220;
+        }
+
+        .label-hydromel .beer-name {
+            color: #4a3518;
+        }
+
+        .label-hydromel .series {
+            color: #8b5a00;
+        }
+
+        .label-hydromel .ingredients {
+            color: #5a4220;
+        }
+
+        /* BIERE LABEL */
+        .label-biere {
+            background: linear-gradient(135deg, #c9c0b0 0%, #d4cab8 30%, #c5baa8 70%, #bdb2a0 100%);
+        }
+
+        .label-biere .logo-section {
+            background: rgba(0,0,0,0.02);
+        }
+
+        .label-biere .logo-text {
+            color: #5c4a3a;
+        }
+
+        .label-biere .brewery-text {
+            color: #5c4a3a;
+        }
+
+        .label-biere .divider {
+            background: #5c4a3a;
+        }
+
+        .label-biere .beer-name {
+            color: #4a3828;
+        }
+
+        .label-biere .series {
+            color: #c45c20;
+        }
+
+        .label-biere .ingredients {
+            color: #6a5a4a;
+        }
+
+        /* Hop vine positioning */
+        .hop-vine {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.22;
+            z-index: 1;
+        }
+
+        .hop-vine svg {
+            width: 380px;
+            height: 210px;
+        }
+
+        /* KOJI LABEL */
+        .label-koji {
+            background: linear-gradient(135deg, #e8e4dc 0%, #f0ebe3 30%, #e5e0d6 70%, #ddd8ce 100%);
+        }
+
+        .label-koji .logo-section {
+            background: rgba(0,0,0,0.02);
+        }
+
+        .label-koji .logo-text {
+            color: #4a5548;
+        }
+
+        .label-koji .brewery-text {
+            color: #4a5548;
+        }
+
+        .label-koji .divider {
+            background: #4a5548;
+        }
+
+        .label-koji .beer-name {
+            color: #3a4538;
+        }
+
+        .label-koji .series {
+            color: #6b8068;
+        }
+
+        .label-koji .ingredients {
+            color: #4a5548;
+        }
+
+        /* Logo section */
+        .logo-section {
+            width: 140px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-text {
+            font-family: 'Josefin Sans', sans-serif;
+            font-weight: 300;
+            font-size: 38px;
+            letter-spacing: 0.15em;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+
+        .brewery-text {
+            font-family: 'Josefin Sans', sans-serif;
+            font-weight: 300;
+            font-size: 9px;
+            letter-spacing: 0.25em;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            text-transform: uppercase;
+        }
+
+        .divider {
+            width: 1px;
+            height: 85%;
+            align-self: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Content section */
+        .content-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px 50px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .beer-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            font-size: 58px;
+            margin-bottom: 8px;
+            letter-spacing: 0.02em;
+        }
+
+        .series {
+            font-family: 'Josefin Sans', sans-serif;
+            font-weight: 400;
+            font-size: 13px;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+
+        .ingredients {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-weight: 300;
+            font-size: 20px;
+            letter-spacing: 0.02em;
+        }
+
+        /* Decorative elements */
+        .honeycomb-pattern {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.12;
+            z-index: 1;
+        }
+
+        .honeycomb-pattern svg {
+            width: 180px;
+            height: 180px;
+        }
+
+        .koji-pattern {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.15;
+            z-index: 1;
+        }
+
+        .koji-pattern svg {
+            width: 200px;
+            height: 200px;
+        }
+
+        /* Bee illustration */
+        .bee-illustration {
+            position: absolute;
+            right: 180px;
+            bottom: 60px;
+            opacity: 0.25;
+            z-index: 1;
+        }
+
+        .bee-illustration svg {
+            width: 45px;
+            height: 45px;
+        }
+
+        /* Spore illustration */
+        .spore-cluster {
+            position: absolute;
+            left: 200px;
+            top: 40px;
+            opacity: 0.2;
+            z-index: 1;
+        }
+
+        .spore-cluster svg {
+            width: 60px;
+            height: 60px;
+        }
+    </style>
+</head>
+<body>
+    <h1>HAKKO Brewery — Collection Complète</h1>
+
+    <!-- BIERE LABEL -->
+    <div class="label-container">
+        <div class="label-title">Série I — Bière de Noël</div>
+        <div class="label label-biere">
+            <!-- Hop vine with hanging cones -->
+            <div class="hop-vine">
+                <svg viewBox="0 0 300 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Main curving vine -->
+                    <path d="M0 28 Q50 10 100 24 Q150 42 200 26 Q250 10 300 30" 
+                          stroke="#4a3828" stroke-width="1.2" fill="none"/>
+                    
+                    <!-- Curling tendrils -->
+                    <path d="M55 18 Q60 10 56 2" stroke="#4a3828" stroke-width="0.6" fill="none"/>
+                    <path d="M115 38 Q122 48 118 58 Q114 65 119 70" stroke="#4a3828" stroke-width="0.5" fill="none"/>
+                    <path d="M220 16 Q228 8 224 0" stroke="#4a3828" stroke-width="0.6" fill="none"/>
+                    <path d="M275 28 Q282 36 278 45" stroke="#4a3828" stroke-width="0.5" fill="none"/>
+                    
+                    <!-- Hop leaf 1 -->
+                    <path d="M32 22 Q24 14 18 18 Q14 24 18 32 Q22 38 30 36 Q36 32 36 26 Q36 20 32 22" 
+                          stroke="#4a3828" stroke-width="0.5" fill="none"/>
+                    <path d="M26 22 Q24 28 26 34" stroke="#4a3828" stroke-width="0.25" fill="none"/>
+                    
+                    <!-- Hop leaf 2 -->
+                    <path d="M165 30 Q156 22 150 26 Q146 32 150 40 Q154 46 162 44 Q168 40 168 34 Q168 28 165 30" 
+                          stroke="#4a3828" stroke-width="0.5" fill="none"/>
+                    <path d="M158 28 Q156 34 158 42" stroke="#4a3828" stroke-width="0.25" fill="none"/>
+                    
+                    <!-- Hop leaf 3 -->
+                    <path d="M252 22 Q244 14 238 18 Q234 24 238 32 Q242 38 250 36 Q256 32 256 26 Q256 20 252 22" 
+                          stroke="#4a3828" stroke-width="0.5" fill="none"/>
+                    <path d="M246 22 Q244 28 246 34" stroke="#4a3828" stroke-width="0.25" fill="none"/>
+                    
+                    
+                    <!-- ========== HOP CONE 1 ========== -->
+                    <g transform="translate(65, 22)">
+                        <!-- Stem -->
+                        <path d="M0 0 L0 8" stroke="#4a3828" stroke-width="0.8" fill="none"/>
+                        <ellipse cx="0" cy="8" rx="2" ry="3" stroke="#4a3828" stroke-width="0.5" fill="none"/>
+                        
+                        <!-- Top small bracts -->
+                        <path d="M0 10 Q-3 14 -2 20 Q0 22 2 20 Q3 14 0 10 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M0 12 L0 20" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 1 - left and right -->
+                        <path d="M-2 16 Q-12 20 -14 32 Q-12 38 -6 36 Q-2 28 -2 20 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-8 22 Q-10 28 -8 34" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M2 16 Q12 20 14 32 Q12 38 6 36 Q2 28 2 20 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M8 22 Q10 28 8 34" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 2 -->
+                        <path d="M-4 28 Q-16 34 -18 48 Q-16 56 -8 52 Q-4 42 -4 32 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-11 36 Q-13 44 -11 50" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M0 26 Q-6 36 -6 50 Q0 56 6 50 Q6 36 0 26 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M0 30 L0 52" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M4 28 Q16 34 18 48 Q16 56 8 52 Q4 42 4 32 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M11 36 Q13 44 11 50" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 3 -->
+                        <path d="M-6 46 Q-18 54 -20 70 Q-18 78 -10 74 Q-6 62 -6 50 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-13 54 Q-15 64 -13 72" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M0 44 Q-8 56 -8 72 Q0 80 8 72 Q8 56 0 44 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M0 48 L0 76" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M6 46 Q18 54 20 70 Q18 78 10 74 Q6 62 6 50 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M13 54 Q15 64 13 72" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 4 - bottom -->
+                        <path d="M-4 68 Q-12 78 -12 90 Q-8 96 -2 90 Q-2 80 -4 72 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-7 76 Q-9 84 -7 90" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M4 68 Q12 78 12 90 Q8 96 2 90 Q2 80 4 72 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M7 76 Q9 84 7 90" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Bottom tip -->
+                        <path d="M0 84 Q-4 94 0 102 Q4 94 0 84 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M0 86 L0 100" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                    </g>
+                    
+                    
+                    <!-- ========== HOP CONE 2 (larger) ========== -->
+                    <g transform="translate(138, 38)">
+                        <!-- Stem -->
+                        <path d="M0 0 L0 10" stroke="#4a3828" stroke-width="0.8" fill="none"/>
+                        <ellipse cx="0" cy="10" rx="2.5" ry="3.5" stroke="#4a3828" stroke-width="0.5" fill="none"/>
+                        
+                        <!-- Top bract -->
+                        <path d="M0 12 Q-4 18 -3 26 Q0 29 3 26 Q4 18 0 12 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M0 14 L0 26" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 1 -->
+                        <path d="M-3 20 Q-14 26 -16 40 Q-14 48 -7 44 Q-3 34 -3 24 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-10 28 Q-12 36 -10 44" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M3 20 Q14 26 16 40 Q14 48 7 44 Q3 34 3 24 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M10 28 Q12 36 10 44" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 2 -->
+                        <path d="M-5 36 Q-20 44 -22 62 Q-20 72 -10 66 Q-5 52 -5 40 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-14 46 Q-16 56 -14 66" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M0 34 Q-8 46 -8 64 Q0 74 8 64 Q8 46 0 34 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M0 38 L0 70" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M5 36 Q20 44 22 62 Q20 72 10 66 Q5 52 5 40 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M14 46 Q16 56 14 66" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 3 -->
+                        <path d="M-7 58 Q-22 68 -24 88 Q-22 98 -12 92 Q-7 76 -7 62 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-16 70 Q-18 82 -16 92" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M0 56 Q-10 70 -10 90 Q0 100 10 90 Q10 70 0 56 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M0 60 L0 96" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M7 58 Q22 68 24 88 Q22 98 12 92 Q7 76 7 62 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M16 70 Q18 82 16 92" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 4 -->
+                        <path d="M-5 84 Q-14 96 -14 110 Q-10 118 -3 112 Q-3 98 -5 88 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-9 94 Q-11 104 -9 112" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M5 84 Q14 96 14 110 Q10 118 3 112 Q3 98 5 88 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M9 94 Q11 104 9 112" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Bottom tip -->
+                        <path d="M0 106 Q-5 118 0 128 Q5 118 0 106 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M0 108 L0 126" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                    </g>
+                    
+                    
+                    <!-- ========== HOP CONE 3 (smaller) ========== -->
+                    <g transform="translate(198, 20)">
+                        <!-- Stem -->
+                        <path d="M0 0 L0 6" stroke="#4a3828" stroke-width="0.7" fill="none"/>
+                        <ellipse cx="0" cy="6" rx="1.5" ry="2.5" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        
+                        <!-- Top bract -->
+                        <path d="M0 8 Q-2 12 -1.5 18 Q0 20 1.5 18 Q2 12 0 8 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M0 9 L0 18" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                        
+                        <!-- Row 1 -->
+                        <path d="M-2 14 Q-10 18 -11 28 Q-10 34 -5 31 Q-2 24 -2 17 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M-7 20 Q-8 26 -7 31" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                        <path d="M2 14 Q10 18 11 28 Q10 34 5 31 Q2 24 2 17 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M7 20 Q8 26 7 31" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                        
+                        <!-- Row 2 -->
+                        <path d="M-4 26 Q-14 32 -15 46 Q-14 54 -7 49 Q-4 38 -4 30 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M-10 34 Q-11 42 -10 50" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                        <path d="M0 24 Q-6 34 -6 48 Q0 56 6 48 Q6 34 0 24 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M0 28 L0 52" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                        <path d="M4 26 Q14 32 15 46 Q14 54 7 49 Q4 38 4 30 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M10 34 Q11 42 10 50" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                        
+                        <!-- Row 3 -->
+                        <path d="M-3 44 Q-10 54 -10 66 Q-7 72 -2 66 Q-2 56 -3 48 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M-6 52 Q-8 60 -6 66" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                        <path d="M3 44 Q10 54 10 66 Q7 72 2 66 Q2 56 3 48 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M6 52 Q8 60 6 66" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                        
+                        <!-- Bottom tip -->
+                        <path d="M0 62 Q-3 72 0 80 Q3 72 0 62 Z" stroke="#4a3828" stroke-width="0.3" fill="none"/>
+                        <path d="M0 64 L0 78" stroke="#4a3828" stroke-width="0.12" fill="none"/>
+                    </g>
+                    
+                    
+                    <!-- ========== HOP CONE 4 ========== -->
+                    <g transform="translate(262, 26)">
+                        <!-- Stem -->
+                        <path d="M0 0 L0 8" stroke="#4a3828" stroke-width="0.8" fill="none"/>
+                        <ellipse cx="0" cy="8" rx="2" ry="3" stroke="#4a3828" stroke-width="0.5" fill="none"/>
+                        
+                        <!-- Top bract -->
+                        <path d="M0 10 Q-3 14 -2 20 Q0 22 2 20 Q3 14 0 10 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M0 12 L0 20" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 1 -->
+                        <path d="M-2 16 Q-12 20 -14 32 Q-12 38 -6 36 Q-2 28 -2 20 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-8 22 Q-10 28 -8 34" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M2 16 Q12 20 14 32 Q12 38 6 36 Q2 28 2 20 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M8 22 Q10 28 8 34" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 2 -->
+                        <path d="M-4 28 Q-16 34 -18 48 Q-16 56 -8 52 Q-4 42 -4 32 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-11 36 Q-13 44 -11 50" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M0 26 Q-6 36 -6 50 Q0 56 6 50 Q6 36 0 26 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M0 30 L0 52" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M4 28 Q16 34 18 48 Q16 56 8 52 Q4 42 4 32 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M11 36 Q13 44 11 50" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 3 -->
+                        <path d="M-6 46 Q-18 54 -20 70 Q-18 78 -10 74 Q-6 62 -6 50 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-13 54 Q-15 64 -13 72" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M0 44 Q-8 56 -8 72 Q0 80 8 72 Q8 56 0 44 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M0 48 L0 76" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M6 46 Q18 54 20 70 Q18 78 10 74 Q6 62 6 50 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M13 54 Q15 64 13 72" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Row 4 -->
+                        <path d="M-4 68 Q-12 78 -12 90 Q-8 96 -2 90 Q-2 80 -4 72 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M-7 76 Q-9 84 -7 90" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        <path d="M4 68 Q12 78 12 90 Q8 96 2 90 Q2 80 4 72 Z" stroke="#4a3828" stroke-width="0.4" fill="none"/>
+                        <path d="M7 76 Q9 84 7 90" stroke="#4a3828" stroke-width="0.2" fill="none"/>
+                        
+                        <!-- Bottom tip -->
+                        <path d="M0 84 Q-4 94 0 102 Q4 94 0 84 Z" stroke="#4a3828" stroke-width="0.35" fill="none"/>
+                        <path d="M0 86 L0 100" stroke="#4a3828" stroke-width="0.15" fill="none"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="logo-section">
+                <div class="logo-wrapper">
+                    <span class="logo-text">HAKKO</span>
+                    <span class="brewery-text">BREWERY</span>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <div class="content-section">
+                <h2 class="beer-name">Lumière dorée</h2>
+                <p class="series">Série I — Bière de Noël</p>
+                <p class="ingredients">Malt pilsner, houblon Saaz, miel de tilleul, levure belge</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HYDROMEL LABEL -->
+    <div class="label-container">
+        <div class="label-title">Série II — Hydromel</div>
+        <div class="label label-hydromel">
+            <!-- Honeycomb pattern -->
+            <div class="honeycomb-pattern">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M25 10 L35 5 L45 10 L45 22 L35 27 L25 22 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M45 10 L55 5 L65 10 L65 22 L55 27 L45 22 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M65 10 L75 5 L85 10 L85 22 L75 27 L65 22 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M15 25 L25 20 L35 25 L35 37 L25 42 L15 37 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M35 25 L45 20 L55 25 L55 37 L45 42 L35 37 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M55 25 L65 20 L75 25 L75 37 L65 42 L55 37 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M75 25 L85 20 L95 25 L95 37 L85 42 L75 37 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M25 40 L35 35 L45 40 L45 52 L35 57 L25 52 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M45 40 L55 35 L65 40 L65 52 L55 57 L45 52 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M65 40 L75 35 L85 40 L85 52 L75 57 L65 52 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M15 55 L25 50 L35 55 L35 67 L25 72 L15 67 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M35 55 L45 50 L55 55 L55 67 L45 72 L35 67 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M55 55 L65 50 L75 55 L75 67 L65 72 L55 67 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M75 55 L85 50 L95 55 L95 67 L85 72 L75 67 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M25 70 L35 65 L45 70 L45 82 L35 87 L25 82 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M45 70 L55 65 L65 70 L65 82 L55 87 L45 82 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M65 70 L75 65 L85 70 L85 82 L75 87 L65 82 Z" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                </svg>
+            </div>
+            
+            <!-- Bee illustration -->
+            <div class="bee-illustration">
+                <svg viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Body -->
+                    <ellipse cx="25" cy="28" rx="10" ry="14" stroke="#4a3518" stroke-width="0.8" fill="none"/>
+                    <!-- Stripes -->
+                    <path d="M16 24 Q25 22 34 24" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M16 30 Q25 28 34 30" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M17 36 Q25 34 33 36" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <!-- Head -->
+                    <circle cx="25" cy="12" r="5" stroke="#4a3518" stroke-width="0.8" fill="none"/>
+                    <!-- Wings -->
+                    <ellipse cx="14" cy="22" rx="7" ry="4" stroke="#4a3518" stroke-width="0.5" fill="none" transform="rotate(-20 14 22)"/>
+                    <ellipse cx="36" cy="22" rx="7" ry="4" stroke="#4a3518" stroke-width="0.5" fill="none" transform="rotate(20 36 22)"/>
+                    <!-- Antennae -->
+                    <path d="M22 8 Q20 4 18 2" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                    <path d="M28 8 Q30 4 32 2" stroke="#4a3518" stroke-width="0.5" fill="none"/>
+                </svg>
+            </div>
+
+            <div class="logo-section">
+                <div class="logo-wrapper">
+                    <span class="logo-text">HAKKO</span>
+                    <span class="brewery-text">BREWERY</span>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <div class="content-section">
+                <h2 class="beer-name">Nectar d'Ambre</h2>
+                <p class="series">Série II — Hydromel Traditionnel</p>
+                <p class="ingredients">Miel de tilleul, eau de source, levure à hydromel</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- KOJI LABEL -->
+    <div class="label-container">
+        <div class="label-title">Série III — Fermentation Koji</div>
+        <div class="label label-koji">
+            <!-- Koji mycelium pattern -->
+            <div class="koji-pattern">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Central spore cluster -->
+                    <circle cx="50" cy="50" r="3" fill="#3a4538" opacity="0.6"/>
+                    <circle cx="50" cy="50" r="6" stroke="#3a4538" stroke-width="0.3" fill="none" opacity="0.4"/>
+                    
+                    <!-- Radiating hyphae -->
+                    <path d="M50 50 Q55 40 60 25" stroke="#3a4538" stroke-width="0.4" fill="none"/>
+                    <path d="M50 50 Q60 45 75 40" stroke="#3a4538" stroke-width="0.4" fill="none"/>
+                    <path d="M50 50 Q60 55 78 58" stroke="#3a4538" stroke-width="0.4" fill="none"/>
+                    <path d="M50 50 Q55 60 62 78" stroke="#3a4538" stroke-width="0.4" fill="none"/>
+                    <path d="M50 50 Q45 60 40 80" stroke="#3a4538" stroke-width="0.4" fill="none"/>
+                    <path d="M50 50 Q40 55 22 60" stroke="#3a4538" stroke-width="0.4" fill="none"/>
+                    <path d="M50 50 Q40 48 20 45" stroke="#3a4538" stroke-width="0.4" fill="none"/>
+                    <path d="M50 50 Q45 40 35 22" stroke="#3a4538" stroke-width="0.4" fill="none"/>
+                    
+                    <!-- Branching -->
+                    <path d="M60 25 Q62 20 58 15" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M60 25 Q65 22 70 18" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M75 40 Q80 35 85 32" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M75 40 Q80 42 88 45" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M78 58 Q82 55 90 55" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M78 58 Q82 62 88 68" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M62 78 Q58 82 55 90" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M62 78 Q68 82 72 88" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M40 80 Q38 85 35 92" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M40 80 Q35 82 28 88" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M22 60 Q15 58 8 55" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M22 60 Q18 65 12 72" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M20 45 Q12 42 5 40" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M20 45 Q15 50 8 52" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M35 22 Q30 18 25 12" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    <path d="M35 22 Q38 15 40 8" stroke="#3a4538" stroke-width="0.3" fill="none"/>
+                    
+                    <!-- Spore heads (conidiophores) -->
+                    <circle cx="58" cy="15" r="2" fill="#3a4538" opacity="0.5"/>
+                    <circle cx="70" cy="18" r="1.5" fill="#3a4538" opacity="0.4"/>
+                    <circle cx="85" cy="32" r="2" fill="#3a4538" opacity="0.5"/>
+                    <circle cx="88" cy="45" r="1.5" fill="#3a4538" opacity="0.4"/>
+                    <circle cx="90" cy="55" r="1.8" fill="#3a4538" opacity="0.5"/>
+                    <circle cx="88" cy="68" r="1.5" fill="#3a4538" opacity="0.4"/>
+                    <circle cx="55" cy="90" r="2" fill="#3a4538" opacity="0.5"/>
+                    <circle cx="72" cy="88" r="1.5" fill="#3a4538" opacity="0.4"/>
+                    <circle cx="35" cy="92" r="1.8" fill="#3a4538" opacity="0.5"/>
+                    <circle cx="28" cy="88" r="1.5" fill="#3a4538" opacity="0.4"/>
+                    <circle cx="8" cy="55" r="2" fill="#3a4538" opacity="0.5"/>
+                    <circle cx="12" cy="72" r="1.5" fill="#3a4538" opacity="0.4"/>
+                    <circle cx="5" cy="40" r="1.8" fill="#3a4538" opacity="0.5"/>
+                    <circle cx="8" cy="52" r="1.2" fill="#3a4538" opacity="0.4"/>
+                    <circle cx="25" cy="12" r="2" fill="#3a4538" opacity="0.5"/>
+                    <circle cx="40" cy="8" r="1.5" fill="#3a4538" opacity="0.4"/>
+                </svg>
+            </div>
+
+            <!-- Small spore cluster -->
+            <div class="spore-cluster">
+                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="2" fill="#3a4538" opacity="0.4"/>
+                    <path d="M20 20 Q22 15 25 10" stroke="#3a4538" stroke-width="0.3" fill="none" opacity="0.5"/>
+                    <path d="M20 20 Q25 18 30 15" stroke="#3a4538" stroke-width="0.3" fill="none" opacity="0.5"/>
+                    <path d="M20 20 Q25 22 32 25" stroke="#3a4538" stroke-width="0.3" fill="none" opacity="0.5"/>
+                    <path d="M20 20 Q18 25 15 32" stroke="#3a4538" stroke-width="0.3" fill="none" opacity="0.5"/>
+                    <path d="M20 20 Q15 22 8 25" stroke="#3a4538" stroke-width="0.3" fill="none" opacity="0.5"/>
+                    <path d="M20 20 Q15 18 10 12" stroke="#3a4538" stroke-width="0.3" fill="none" opacity="0.5"/>
+                    <circle cx="25" cy="10" r="1" fill="#3a4538" opacity="0.3"/>
+                    <circle cx="30" cy="15" r="0.8" fill="#3a4538" opacity="0.3"/>
+                    <circle cx="32" cy="25" r="1" fill="#3a4538" opacity="0.3"/>
+                    <circle cx="15" cy="32" r="0.8" fill="#3a4538" opacity="0.3"/>
+                    <circle cx="8" cy="25" r="1" fill="#3a4538" opacity="0.3"/>
+                    <circle cx="10" cy="12" r="0.8" fill="#3a4538" opacity="0.3"/>
+                </svg>
+            </div>
+
+            <div class="logo-section">
+                <div class="logo-wrapper">
+                    <span class="logo-text">HAKKO</span>
+                    <span class="brewery-text">BREWERY</span>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <div class="content-section">
+                <h2 class="beer-name">Brume de Riz</h2>
+                <p class="series">Série III — Amazake • Fermentation Koji</p>
+                <p class="ingredients">Riz japonais, koji (Aspergillus oryzae), eau de source</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

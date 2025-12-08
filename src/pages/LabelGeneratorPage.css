@@ -430,12 +430,11 @@
   font-family: 'Josefin Sans', sans-serif;
   font-weight: 300;
   font-size: 2.8rem;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  writing-mode: vertical-lr;
+  writing-mode: vertical-rl;
   text-orientation: mixed;
   line-height: 1;
-  margin-bottom: -0.03em; /* Compense le letter-spacing après la dernière lettre */
 }
 
 /* Wrapper pour le sous-titre */
@@ -449,12 +448,11 @@
   font-family: 'Josefin Sans', sans-serif;
   font-weight: 300;
   font-size: 0.65rem;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
-  writing-mode: vertical-lr;
+  writing-mode: vertical-rl;
   text-orientation: mixed;
   line-height: 1;
-  margin-bottom: -0.35em; /* Compense le letter-spacing après la dernière lettre */
 }
 
 /* Ligne verticale séparatrice */
