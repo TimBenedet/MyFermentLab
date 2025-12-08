@@ -690,7 +690,7 @@ Les skills sont définis dans `.claude/commands/`.
 ### ✅ Version 1.0 (Décembre 2024)
 - [x] Monitoring température en temps réel
 - [x] Contrôle automatique PID du chauffage
-- [x] Suivi de densité avec calcul ABV et courbe de prédiction
+- [x] Suivi de densité avec calcul ABV
 - [x] Gestion multi-projets
 - [x] Mode Admin / Lecture seule
 - [x] PWA installable
@@ -704,13 +704,20 @@ Les skills sont définis dans `.claude/commands/`.
 - [x] Simulation de données pour tests
 
 ### ✅ Version 1.2 (Décembre 2024)
-- [x] **Générateur d'étiquettes HAKKO**
+- [x] **Générateur d'étiquettes**
   - Éditeur drag & drop avec snap intelligent
   - 3 thèmes : Bière, Hydromel, Koji
   - Illustrations SVG décoratives (houblon, abeilles, koji)
   - Affichage coordonnées et distances en temps réel
   - Support QR Code personnalisé
   - Export/impression optimisée
+
+### ✅ Version 1.3 (Janvier 2025)
+- [x] **Prédiction de fin de fermentation**
+  - Algorithme basé sur modèle de décroissance exponentielle
+  - Affichage FG estimé, date de fin, jours restants
+  - Courbe de prédiction sur le graphique de densité
+  - Indicateur de confiance (basé sur R²)
 
 ## 🤝 Contribution
 
