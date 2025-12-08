@@ -365,7 +365,7 @@
 
 /* Hop vine (Houblon) - Bière */
 .hop-vine {
-  right: -50px;
+  right: 25px;
   top: 50%;
   transform: translateY(-50%);
   opacity: 0.18;
