@@ -414,6 +414,18 @@
   height: 200px;
 }
 
+/* Spore cluster (small, for koji) */
+.spore-cluster {
+  left: 200px;
+  top: 40px;
+  opacity: 0.2;
+}
+
+.spore-cluster svg {
+  width: 60px;
+  height: 60px;
+}
+
 /* Animation */
 @keyframes fadeInScale {
   from {

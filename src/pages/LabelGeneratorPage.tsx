@@ -246,11 +246,14 @@ const BeeSVG = ({ color }: { color: string }) => (
   </svg>
 );
 
-// Composant SVG Koji pattern
+// Composant SVG Koji pattern - mycélium avec ramifications
 const KojiPatternSVG = ({ color }: { color: string }) => (
   <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Central spore cluster */}
     <circle cx="50" cy="50" r="3" fill={color} opacity="0.6"/>
     <circle cx="50" cy="50" r="6" stroke={color} strokeWidth="0.3" fill="none" opacity="0.4"/>
+
+    {/* Radiating hyphae */}
     <path d="M50 50 Q55 40 60 25" stroke={color} strokeWidth="0.4" fill="none"/>
     <path d="M50 50 Q60 45 75 40" stroke={color} strokeWidth="0.4" fill="none"/>
     <path d="M50 50 Q60 55 78 58" stroke={color} strokeWidth="0.4" fill="none"/>
@@ -259,14 +262,61 @@ const KojiPatternSVG = ({ color }: { color: string }) => (
     <path d="M50 50 Q40 55 22 60" stroke={color} strokeWidth="0.4" fill="none"/>
     <path d="M50 50 Q40 48 20 45" stroke={color} strokeWidth="0.4" fill="none"/>
     <path d="M50 50 Q45 40 35 22" stroke={color} strokeWidth="0.4" fill="none"/>
+
+    {/* Branching */}
+    <path d="M60 25 Q62 20 58 15" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M60 25 Q65 22 70 18" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M75 40 Q80 35 85 32" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M75 40 Q80 42 88 45" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M78 58 Q82 55 90 55" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M78 58 Q82 62 88 68" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M62 78 Q58 82 55 90" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M62 78 Q68 82 72 88" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M40 80 Q38 85 35 92" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M40 80 Q35 82 28 88" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M22 60 Q15 58 8 55" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M22 60 Q18 65 12 72" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M20 45 Q12 42 5 40" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M20 45 Q15 50 8 52" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M35 22 Q30 18 25 12" stroke={color} strokeWidth="0.3" fill="none"/>
+    <path d="M35 22 Q38 15 40 8" stroke={color} strokeWidth="0.3" fill="none"/>
+
+    {/* Spore heads (conidiophores) */}
     <circle cx="58" cy="15" r="2" fill={color} opacity="0.5"/>
+    <circle cx="70" cy="18" r="1.5" fill={color} opacity="0.4"/>
     <circle cx="85" cy="32" r="2" fill={color} opacity="0.5"/>
+    <circle cx="88" cy="45" r="1.5" fill={color} opacity="0.4"/>
     <circle cx="90" cy="55" r="1.8" fill={color} opacity="0.5"/>
+    <circle cx="88" cy="68" r="1.5" fill={color} opacity="0.4"/>
     <circle cx="55" cy="90" r="2" fill={color} opacity="0.5"/>
+    <circle cx="72" cy="88" r="1.5" fill={color} opacity="0.4"/>
     <circle cx="35" cy="92" r="1.8" fill={color} opacity="0.5"/>
+    <circle cx="28" cy="88" r="1.5" fill={color} opacity="0.4"/>
     <circle cx="8" cy="55" r="2" fill={color} opacity="0.5"/>
+    <circle cx="12" cy="72" r="1.5" fill={color} opacity="0.4"/>
     <circle cx="5" cy="40" r="1.8" fill={color} opacity="0.5"/>
+    <circle cx="8" cy="52" r="1.2" fill={color} opacity="0.4"/>
     <circle cx="25" cy="12" r="2" fill={color} opacity="0.5"/>
+    <circle cx="40" cy="8" r="1.5" fill={color} opacity="0.4"/>
+  </svg>
+);
+
+// Petit cluster de spores pour le koji
+const SporeClusterSVG = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="2" fill={color} opacity="0.4"/>
+    <path d="M20 20 Q22 15 25 10" stroke={color} strokeWidth="0.3" fill="none" opacity="0.5"/>
+    <path d="M20 20 Q25 18 30 15" stroke={color} strokeWidth="0.3" fill="none" opacity="0.5"/>
+    <path d="M20 20 Q25 22 32 25" stroke={color} strokeWidth="0.3" fill="none" opacity="0.5"/>
+    <path d="M20 20 Q18 25 15 32" stroke={color} strokeWidth="0.3" fill="none" opacity="0.5"/>
+    <path d="M20 20 Q15 22 8 25" stroke={color} strokeWidth="0.3" fill="none" opacity="0.5"/>
+    <path d="M20 20 Q15 18 10 12" stroke={color} strokeWidth="0.3" fill="none" opacity="0.5"/>
+    <circle cx="25" cy="10" r="1" fill={color} opacity="0.3"/>
+    <circle cx="30" cy="15" r="0.8" fill={color} opacity="0.3"/>
+    <circle cx="32" cy="25" r="1" fill={color} opacity="0.3"/>
+    <circle cx="15" cy="32" r="0.8" fill={color} opacity="0.3"/>
+    <circle cx="8" cy="25" r="1" fill={color} opacity="0.3"/>
+    <circle cx="10" cy="12" r="0.8" fill={color} opacity="0.3"/>
   </svg>
 );
 
@@ -581,7 +631,12 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
           </>
         );
       case 'koji':
-        return <div className="decoration koji-pattern"><KojiPatternSVG color={theme.productColor} /></div>;
+        return (
+          <>
+            <div className="decoration koji-pattern"><KojiPatternSVG color={theme.productColor} /></div>
+            <div className="decoration spore-cluster"><SporeClusterSVG color={theme.productColor} /></div>
+          </>
+        );
       default:
         return null;
     }
