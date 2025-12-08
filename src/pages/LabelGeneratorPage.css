@@ -430,12 +430,12 @@
   font-family: 'Josefin Sans', sans-serif;
   font-weight: 300;
   font-size: 2.8rem;
-  letter-spacing: 0.5em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   writing-mode: vertical-lr;
   text-orientation: mixed;
   line-height: 1;
-  margin-bottom: -0.5em; /* Compense le letter-spacing après la dernière lettre */
+  margin-bottom: -0.15em; /* Compense le letter-spacing après la dernière lettre */
 }
 
 /* Wrapper pour le sous-titre */
