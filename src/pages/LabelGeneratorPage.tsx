@@ -225,9 +225,10 @@ const HoneycombSVG = ({ color }: { color: string }) => (
     <path d="M25 40 L35 35 L45 40 L45 52 L35 57 L25 52 Z" stroke={color} strokeWidth="0.5" fill="none"/>
     <path d="M45 40 L55 35 L65 40 L65 52 L55 57 L45 52 Z" stroke={color} strokeWidth="0.5" fill="none"/>
     <path d="M65 40 L75 35 L85 40 L85 52 L75 57 L65 52 Z" stroke={color} strokeWidth="0.5" fill="none"/>
-    <path d="M25 70 L35 65 L45 70 L45 82 L35 87 L25 82 Z" stroke={color} strokeWidth="0.5" fill="none"/>
-    <path d="M45 70 L55 65 L65 70 L65 82 L55 87 L45 82 Z" stroke={color} strokeWidth="0.5" fill="none"/>
-    <path d="M65 70 L75 65 L85 70 L85 82 L75 87 L65 82 Z" stroke={color} strokeWidth="0.5" fill="none"/>
+    <path d="M15 55 L25 50 L35 55 L35 67 L25 72 L15 67 Z" stroke={color} strokeWidth="0.5" fill="none"/>
+    <path d="M35 55 L45 50 L55 55 L55 67 L45 72 L35 67 Z" stroke={color} strokeWidth="0.5" fill="none"/>
+    <path d="M55 55 L65 50 L75 55 L75 67 L65 72 L55 67 Z" stroke={color} strokeWidth="0.5" fill="none"/>
+    <path d="M75 55 L85 50 L95 55 L95 67 L85 72 L75 67 Z" stroke={color} strokeWidth="0.5" fill="none"/>
   </svg>
 );
 
