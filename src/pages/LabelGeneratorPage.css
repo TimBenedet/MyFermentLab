@@ -521,11 +521,82 @@
    ======================================== */
 
 .element-controls {
+  margin-top: 10px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.style-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.font-size-control {
+  position: relative;
+  display: inline-block;
+}
+
+.px-btn {
+  font-size: 0.65rem !important;
+  letter-spacing: 0.05em;
+}
+
+.color-picker {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.color-picker::-webkit-color-swatch {
+  border-radius: 2px;
+  border: none;
+}
+
+.rotation-control {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 8px;
+}
+
+.rotation-control input[type="range"] {
+  width: 60px;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.rotation-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #c4a574;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.rotation-control span {
+  font-size: 0.7rem;
+  color: #888;
+  min-width: 35px;
+  text-align: right;
 }
 
 .style-btn {
@@ -631,27 +702,15 @@
   border-radius: 6px;
   padding: 10px;
   z-index: 1000;
-  min-width: 140px;
+  min-width: 100px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
-.font-size-popover label {
-  display: block;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #888;
-  margin-bottom: 6px;
-}
-
-.font-size-input-group {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.font-size-input-group input[type="number"] {
-  width: 60px;
+.font-size-popover input[type="number"] {
+  width: 55px;
   padding: 6px 8px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -661,13 +720,13 @@
   text-align: center;
 }
 
-.font-size-input-group input[type="number"]:focus {
+.font-size-popover input[type="number"]:focus {
   outline: none;
   border-color: #c4a574;
 }
 
-.font-size-input-group span {
-  color: #666;
+.font-size-popover span {
+  color: #888;
   font-size: 0.75rem;
 }
 
