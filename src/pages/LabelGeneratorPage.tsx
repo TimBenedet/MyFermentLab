@@ -244,13 +244,14 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
   });
 
   // Positions des éléments (pour le drag & drop)
+  // Layout par défaut basé sur hakko_labels-2.html
   const [positions, setPositions] = useState<Record<string, ElementPosition>>({
-    brand: { x: 30, y: 40, rotation: 0 },
-    subtitle: { x: 75, y: 70, rotation: 0 },
+    brand: { x: 45, y: 50, rotation: 0 },
+    subtitle: { x: 95, y: 95, rotation: 0 },
     divider: { x: 140, y: 25, rotation: 0 },
-    product: { x: 170, y: 50, rotation: 0 },
-    series: { x: 170, y: 115, rotation: 0 },
-    ingredients: { x: 170, y: 180, rotation: 0 },
+    product: { x: 170, y: 55, rotation: 0 },
+    series: { x: 170, y: 125, rotation: 0 },
+    ingredients: { x: 170, y: 200, rotation: 0 },
     qrcode: { x: 630, y: 250, rotation: 0 }
   });
 
@@ -494,12 +495,12 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
       showQrCode: false
     });
     setPositions({
-      brand: { x: 30, y: 40, rotation: 0 },
-      subtitle: { x: 75, y: 70, rotation: 0 },
+      brand: { x: 45, y: 50, rotation: 0 },
+      subtitle: { x: 95, y: 95, rotation: 0 },
       divider: { x: 140, y: 25, rotation: 0 },
-      product: { x: 170, y: 50, rotation: 0 },
-      series: { x: 170, y: 115, rotation: 0 },
-      ingredients: { x: 170, y: 180, rotation: 0 },
+      product: { x: 170, y: 55, rotation: 0 },
+      series: { x: 170, y: 125, rotation: 0 },
+      ingredients: { x: 170, y: 200, rotation: 0 },
       qrcode: { x: 630, y: 250, rotation: 0 }
     });
     setStyles({

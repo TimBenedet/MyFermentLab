@@ -456,16 +456,21 @@
 .draggable.series,
 .draggable.ingredients {
   position: absolute;
-  writing-mode: horizontal-tb;
-  text-orientation: mixed;
   margin: 0;
   padding: 4px 8px;
   border-radius: 2px;
 }
 
+/* Preserve vertical writing mode for brand elements */
+.draggable.logo-text,
+.draggable.brewery-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
 .draggable.divider {
-  width: 2px;
-  height: 200px;
+  width: 1px;
+  height: 85%;
   padding: 0;
 }
 
