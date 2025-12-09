@@ -214,14 +214,21 @@ class ApiService {
     return response.json();
   }
 
-  async updateProject(id: string, data: { brewingSession?: BrewingSession }): Promise<Project> {
+  async updateProject(id: string, data: {
+    brewingSession?: BrewingSession;
+    name?: string;
+    fermentationType?: FermentationType;
+    sensorId?: string;
+    outletId?: string;
+  }): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify(data)
     });
     if (!response.ok) {
-      throw new Error('Failed to update project');
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to update project');
     }
     return response.json();
   }

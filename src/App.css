@@ -281,6 +281,35 @@
   color: white;
 }
 
+.btn-settings-project {
+  position: absolute;
+  top: 8px;
+  right: 44px;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid #333333;
+  border-radius: 2px;
+  color: #999999;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.project-card:hover .btn-settings-project {
+  opacity: 1;
+}
+
+.btn-settings-project:hover {
+  background: #3B82F6;
+  border-color: #3B82F6;
+  color: white;
+}
+
 .project-header {
   display: flex;
   align-items: flex-start;
@@ -550,6 +579,16 @@
   gap: 12px;
   justify-content: flex-end;
   margin-top: 8px;
+}
+
+.error-message {
+  background: #EF444420;
+  border: 1px solid #EF4444;
+  color: #EF4444;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
 }
 
 /* Devices Page */

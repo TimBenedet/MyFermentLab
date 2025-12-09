@@ -1,8 +1,17 @@
 import { useState } from 'react';
-import { Project, FERMENTATION_TYPES } from '../types';
+import { Project, Device, FermentationType, FERMENTATION_TYPES } from '../types';
+
+// Icône engrenage SVG
+const GearIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+);
 
 interface HomePageProps {
   projects: Project[];
+  devices: Device[];
   onCreateProject: () => void;
   onSelectProject: (projectId: string) => void;
   onViewSummary: (projectId: string) => void;
@@ -11,6 +20,7 @@ interface HomePageProps {
   onUnarchiveProject: (projectId: string) => void;
   onDeleteProject: (projectId: string) => void;
   onStartBrewing: (projectId: string) => void;
+  onUpdateProject: (projectId: string, data: { name?: string; fermentationType?: FermentationType; sensorId?: string; outletId?: string }) => Promise<void>;
   onManageDevices: () => void;
   onLabelGenerator: () => void;
   onViewStats: () => void;
@@ -19,6 +29,7 @@ interface HomePageProps {
 
 export function HomePage({
   projects,
+  devices,
   onCreateProject,
   onSelectProject,
   onViewSummary,
@@ -27,12 +38,56 @@ export function HomePage({
   onUnarchiveProject,
   onDeleteProject,
   onStartBrewing,
+  onUpdateProject,
   onManageDevices,
   onLabelGenerator,
   onViewStats,
   role
 }: HomePageProps) {
   const [showArchived, setShowArchived] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editFermentationType, setEditFermentationType] = useState<FermentationType>('beer');
+  const [editSensorId, setEditSensorId] = useState('');
+  const [editOutletId, setEditOutletId] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const sensors = devices.filter(d => d.type === 'sensor');
+  const outlets = devices.filter(d => d.type === 'outlet');
+
+  const openEditModal = (project: Project) => {
+    setEditingProject(project);
+    setEditName(project.name);
+    setEditFermentationType(project.fermentationType);
+    setEditSensorId(project.sensorId);
+    setEditOutletId(project.outletId);
+    setError(null);
+  };
+
+  const closeEditModal = () => {
+    setEditingProject(null);
+    setError(null);
+  };
+
+  const handleSaveProject = async () => {
+    if (!editingProject) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await onUpdateProject(editingProject.id, {
+        name: editName,
+        fermentationType: editFermentationType,
+        sensorId: editSensorId,
+        outletId: editOutletId
+      });
+      closeEditModal();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const activeProjects = projects.filter(p => !p.archived);
   const archivedProjects = projects.filter(p => p.archived);
@@ -57,6 +112,20 @@ export function HomePage({
         >
           ×
         </button>
+
+        {/* Bouton engrenage pour modifier le projet */}
+        {role === 'admin' && !project.archived && (
+          <button
+            className="btn-settings-project"
+            onClick={(e) => {
+              e.stopPropagation();
+              openEditModal(project);
+            }}
+            title="Paramètres du projet"
+          >
+            <GearIcon />
+          </button>
+        )}
 
         <div
           className="project-card-content"
@@ -246,6 +315,82 @@ export function HomePage({
       ) : (
         <div className="projects-grid">
           {displayedProjects.map(renderProject)}
+        </div>
+      )}
+
+      {/* Modal d'édition du projet */}
+      {editingProject && (
+        <div className="modal-overlay" onClick={closeEditModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Paramètres du projet</h2>
+            {error && (
+              <div className="error-message">{error}</div>
+            )}
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveProject(); }}>
+              <div className="form-group">
+                <label className="form-label">Nom du projet</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Type de fermentation</label>
+                <select
+                  className="form-select"
+                  value={editFermentationType}
+                  onChange={(e) => setEditFermentationType(e.target.value as FermentationType)}
+                >
+                  {Object.entries(FERMENTATION_TYPES).map(([key, value]) => (
+                    <option key={key} value={key}>
+                      {value.icon} {value.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Sonde de température</label>
+                <select
+                  className="form-select"
+                  value={editSensorId}
+                  onChange={(e) => setEditSensorId(e.target.value)}
+                  required
+                >
+                  {sensors.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Prise connectée</label>
+                <select
+                  className="form-select"
+                  value={editOutletId}
+                  onChange={(e) => setEditOutletId(e.target.value)}
+                  required
+                >
+                  {outlets.map(o => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={closeEditModal} disabled={saving}>
+                  Annuler
+                </button>
+                <button type="submit" className="btn-primary" disabled={saving}>
+                  {saving ? 'Enregistrement...' : 'Enregistrer'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

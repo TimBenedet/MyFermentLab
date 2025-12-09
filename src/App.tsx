@@ -202,18 +202,23 @@ function App() {
     }
   };
 
-  const handleUpdateDevices = async (sensorId: string, outletId: string) => {
-    if (!selectedProjectId) return;
-
+  const handleUpdateProject = async (projectId: string, data: {
+    name?: string;
+    fermentationType?: FermentationType;
+    sensorId?: string;
+    outletId?: string;
+  }) => {
     try {
-      const updatedProject = await apiService.updateProjectDevices(selectedProjectId, sensorId, outletId);
-      setSelectedProject(prev => prev ? { ...prev, sensorId: updatedProject.sensorId, outletId: updatedProject.outletId } : null);
+      const updatedProject = await apiService.updateProject(projectId, data);
       setProjects(prev => prev.map(p =>
-        p.id === selectedProjectId ? { ...p, sensorId: updatedProject.sensorId, outletId: updatedProject.outletId } : p
+        p.id === projectId ? { ...p, ...updatedProject } : p
       ));
+      if (selectedProjectId === projectId && selectedProject) {
+        setSelectedProject(prev => prev ? { ...prev, ...updatedProject } : null);
+      }
     } catch (err) {
-      console.error('Failed to update devices:', err);
-      setError(err instanceof Error ? err.message : 'Impossible de modifier les appareils');
+      console.error('Failed to update project:', err);
+      throw err; // Re-throw pour que le modal puisse afficher l'erreur
     }
   };
 
@@ -426,6 +431,7 @@ function App() {
         {currentPage === 'home' && (
           <HomePage
             projects={projects}
+            devices={devices}
             onCreateProject={() => setCurrentPage('create-project')}
             onSelectProject={handleSelectProject}
             onViewSummary={handleViewSummary}
@@ -434,6 +440,7 @@ function App() {
             onUnarchiveProject={handleUnarchiveProject}
             onDeleteProject={handleDeleteProject}
             onStartBrewing={handleStartBrewing}
+            onUpdateProject={handleUpdateProject}
             onManageDevices={() => setCurrentPage('devices')}
             onLabelGenerator={() => setCurrentPage('labels')}
             onViewStats={() => setCurrentPage('stats')}
@@ -454,12 +461,10 @@ function App() {
         {currentPage === 'monitoring' && selectedProject && (
           <MonitoringPage
             project={selectedProject}
-            devices={devices}
             onUpdateTarget={handleUpdateTarget}
             onToggleOutlet={handleToggleOutlet}
             onAddDensity={handleAddDensity}
             onToggleControlMode={handleToggleControlMode}
-            onUpdateDevices={handleUpdateDevices}
             onRefreshTemperature={() => selectedProjectId && loadProject(selectedProjectId)}
             onBack={() => setCurrentPage('home')}
             role={role}

@@ -1,39 +1,20 @@
-import { useState } from 'react';
-import { Project, Device, FERMENTATION_TYPES } from '../types';
+import { Project, FERMENTATION_TYPES } from '../types';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { DensityChart } from '../components/DensityChart';
 import { TemperatureAlert } from '../components/TemperatureAlert';
 
 interface MonitoringPageProps {
   project: Project;
-  devices: Device[];
   onUpdateTarget: (temp: number) => void;
   onToggleOutlet: () => void;
   onAddDensity: (density: number, timestamp: number) => void;
   onToggleControlMode?: () => void;
-  onUpdateDevices?: (sensorId: string, outletId: string) => void;
   onRefreshTemperature?: () => void;
   onBack: () => void;
   role: 'admin' | 'viewer' | null;
 }
 
-export function MonitoringPage({ project, devices, onUpdateTarget, onToggleOutlet, onAddDensity, onToggleControlMode, onUpdateDevices, onRefreshTemperature, onBack, role }: MonitoringPageProps) {
-  const [editingDevices, setEditingDevices] = useState(false);
-  const [selectedSensor, setSelectedSensor] = useState(project.sensorId);
-  const [selectedOutlet, setSelectedOutlet] = useState(project.outletId);
-
-  const sensors = devices.filter(d => d.type === 'sensor');
-  const outlets = devices.filter(d => d.type === 'outlet');
-
-  const currentSensor = devices.find(d => d.id === project.sensorId);
-  const currentOutlet = devices.find(d => d.id === project.outletId);
-
-  const handleSaveDevices = () => {
-    if (onUpdateDevices && selectedSensor && selectedOutlet) {
-      onUpdateDevices(selectedSensor, selectedOutlet);
-      setEditingDevices(false);
-    }
-  };
+export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onToggleControlMode, onRefreshTemperature, onBack, role }: MonitoringPageProps) {
   const config = FERMENTATION_TYPES[project.fermentationType];
   const diff = project.targetTemperature - project.currentTemperature;
 
@@ -176,70 +157,6 @@ export function MonitoringPage({ project, devices, onUpdateTarget, onToggleOutle
               )}
             </div>
           </div>
-
-          {role === 'admin' && !project.archived && (
-            <div className="panel-section">
-              <div className="section-header-with-action">
-                <h2>Appareils</h2>
-                {!editingDevices && (
-                  <button className="btn-edit-small" onClick={() => setEditingDevices(true)}>
-                    Modifier
-                  </button>
-                )}
-              </div>
-              {editingDevices ? (
-                <div className="devices-edit-form">
-                  <div className="form-group-compact">
-                    <label>Sonde</label>
-                    <select
-                      value={selectedSensor}
-                      onChange={(e) => setSelectedSensor(e.target.value)}
-                      className="form-select-compact"
-                    >
-                      {sensors.map(s => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group-compact">
-                    <label>Prise</label>
-                    <select
-                      value={selectedOutlet}
-                      onChange={(e) => setSelectedOutlet(e.target.value)}
-                      className="form-select-compact"
-                    >
-                      {outlets.map(o => (
-                        <option key={o.id} value={o.id}>{o.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="devices-edit-actions">
-                    <button className="btn-cancel-small" onClick={() => {
-                      setEditingDevices(false);
-                      setSelectedSensor(project.sensorId);
-                      setSelectedOutlet(project.outletId);
-                    }}>
-                      Annuler
-                    </button>
-                    <button className="btn-save-small" onClick={handleSaveDevices}>
-                      Enregistrer
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="devices-info">
-                  <div className="device-row">
-                    <span className="device-type">Sonde:</span>
-                    <span className="device-name">{currentSensor?.name || 'Non configurée'}</span>
-                  </div>
-                  <div className="device-row">
-                    <span className="device-type">Prise:</span>
-                    <span className="device-name">{currentOutlet?.name || 'Non configurée'}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         <div className={`charts-section ${project.fermentationType === 'beer' ? 'with-density' : ''}`}>

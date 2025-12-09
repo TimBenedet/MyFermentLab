@@ -406,7 +406,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req: Request, res: Respo
 router.patch('/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { brewingSession, recipe } = req.body;
+    const { brewingSession, recipe, name, fermentationType, sensorId, outletId } = req.body;
 
     const project = databaseService.getProject(id);
     if (!project) {
@@ -419,6 +419,31 @@ router.patch('/:id', requireAuth, requireAdmin, async (req: Request, res: Respon
 
     if (recipe !== undefined) {
       databaseService.updateProjectRecipe(id, recipe);
+    }
+
+    // Mise à jour des informations de base (nom et type de fermentation)
+    if (name !== undefined || fermentationType !== undefined) {
+      databaseService.updateProjectInfo(
+        id,
+        name ?? project.name,
+        fermentationType ?? project.fermentationType
+      );
+    }
+
+    // Mise à jour des appareils (sonde et prise)
+    if (sensorId !== undefined || outletId !== undefined) {
+      const newSensorId = sensorId ?? project.sensorId;
+      const newOutletId = outletId ?? project.outletId;
+
+      // Vérifier que les appareils ne sont pas utilisés par d'autres projets
+      if (newSensorId !== project.sensorId && databaseService.isDeviceInUse(newSensorId, id)) {
+        return res.status(400).json({ error: 'Cette sonde est déjà utilisée par un autre projet actif' });
+      }
+      if (newOutletId !== project.outletId && databaseService.isDeviceInUse(newOutletId, id)) {
+        return res.status(400).json({ error: 'Cette prise est déjà utilisée par un autre projet actif' });
+      }
+
+      databaseService.updateProjectDevices(id, newSensorId, newOutletId);
     }
 
     const updatedProject = databaseService.getProject(id);

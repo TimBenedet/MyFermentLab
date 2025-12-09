@@ -215,6 +215,11 @@ class DatabaseService {
     stmt.run(sensorId, outletId, id);
   }
 
+  updateProjectInfo(id: string, name: string, fermentationType: string) {
+    const stmt = this.db.prepare('UPDATE projects SET name = ?, fermentation_type = ? WHERE id = ?');
+    stmt.run(name, fermentationType, id);
+  }
+
   archiveProject(id: string) {
     const stmt = this.db.prepare('UPDATE projects SET archived = 1, archived_at = ? WHERE id = ?');
     stmt.run(Date.now(), id);
