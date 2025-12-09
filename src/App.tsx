@@ -187,6 +187,19 @@ function App() {
     }
   };
 
+  const handleAddHumidity = async (humidity: number, timestamp: number) => {
+    if (!selectedProjectId) return;
+
+    try {
+      await apiService.addHumidity(selectedProjectId, humidity, timestamp);
+      // Recharger le projet pour obtenir l'historique mis à jour
+      await loadProject(selectedProjectId);
+    } catch (err) {
+      console.error('Failed to add humidity:', err);
+      setError('Impossible d\'ajouter la mesure d\'humidité');
+    }
+  };
+
   const handleToggleControlMode = async () => {
     if (!selectedProjectId) return;
 
@@ -464,6 +477,7 @@ function App() {
             onUpdateTarget={handleUpdateTarget}
             onToggleOutlet={handleToggleOutlet}
             onAddDensity={handleAddDensity}
+            onAddHumidity={handleAddHumidity}
             onToggleControlMode={handleToggleControlMode}
             onRefreshTemperature={() => selectedProjectId && loadProject(selectedProjectId)}
             onBack={() => setCurrentPage('home')}

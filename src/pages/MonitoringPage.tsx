@@ -1,6 +1,7 @@
 import { Project, FERMENTATION_TYPES } from '../types';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { DensityChart } from '../components/DensityChart';
+import { HumidityChart } from '../components/HumidityChart';
 import { TemperatureAlert } from '../components/TemperatureAlert';
 
 interface MonitoringPageProps {
@@ -8,13 +9,14 @@ interface MonitoringPageProps {
   onUpdateTarget: (temp: number) => void;
   onToggleOutlet: () => void;
   onAddDensity: (density: number, timestamp: number) => void;
+  onAddHumidity?: (humidity: number, timestamp: number) => void;
   onToggleControlMode?: () => void;
   onRefreshTemperature?: () => void;
   onBack: () => void;
   role: 'admin' | 'viewer' | null;
 }
 
-export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onToggleControlMode, onRefreshTemperature, onBack, role }: MonitoringPageProps) {
+export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddDensity, onAddHumidity, onToggleControlMode, onRefreshTemperature, onBack, role }: MonitoringPageProps) {
   const config = FERMENTATION_TYPES[project.fermentationType];
   const diff = project.targetTemperature - project.currentTemperature;
 
@@ -97,6 +99,27 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
             </div>
           </div>
 
+          {/* Section Humidité pour les champignons */}
+          {project.fermentationType === 'mushroom' && (
+            <div className="panel-section">
+              <h2>Humidité</h2>
+              <div className="temperature-controls">
+                <div className="temp-display">
+                  <div className="temp-label">Actuelle</div>
+                  <div className="temp-value" style={{ color: '#3B82F6' }}>
+                    {project.currentHumidity?.toFixed(1) ?? '—'}%
+                  </div>
+                </div>
+                <div className="temp-display">
+                  <div className="temp-label">Cible</div>
+                  <div className="temp-value" style={{ color: '#3B82F6' }}>
+                    {project.targetHumidity ?? '—'}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="panel-section panel-section-flex">
             <h2>Température cible</h2>
             <div className="slider-container">
@@ -159,7 +182,7 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
           </div>
         </div>
 
-        <div className={`charts-section ${project.fermentationType === 'beer' ? 'with-density' : ''}`}>
+        <div className={`charts-section ${(project.fermentationType === 'beer' || project.fermentationType === 'mushroom') ? 'with-density' : ''}`}>
           <div className="chart-zone">
             <TemperatureChart
               data={project.history}
@@ -173,6 +196,16 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
                 data={project.densityHistory || []}
                 type={project.fermentationType}
                 onAddDensity={onAddDensity}
+                role={role}
+              />
+            </div>
+          )}
+          {project.fermentationType === 'mushroom' && (
+            <div className="chart-zone">
+              <HumidityChart
+                data={project.humidityHistory || []}
+                targetHumidity={project.targetHumidity}
+                onAddHumidity={onAddHumidity}
                 role={role}
               />
             </div>

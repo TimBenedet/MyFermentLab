@@ -5,7 +5,7 @@ import { existsSync, mkdirSync } from 'fs';
 export interface Project {
   id: string;
   name: string;
-  fermentationType: 'beer' | 'wine' | 'cheese' | 'bread' | 'koji' | 'kombucha';
+  fermentationType: 'beer' | 'mead' | 'cheese' | 'bread' | 'koji' | 'kombucha' | 'mushroom';
   sensorId: string;
   outletId: string;
   targetTemperature: number;
@@ -17,6 +17,11 @@ export interface Project {
   archivedAt?: number;
   brewingSession?: any;
   recipe?: any;
+  // Mushroom-specific fields
+  humiditySensorId?: string;
+  targetHumidity?: number;
+  currentHumidity?: number;
+  mushroomType?: string;
 }
 
 export interface Device {
@@ -103,6 +108,35 @@ class DatabaseService {
         this.db.exec("ALTER TABLE projects ADD COLUMN recipe TEXT");
         console.log('Migration completed successfully');
       }
+
+      // Mushroom-specific columns
+      const hasHumiditySensorId = columns.some(col => col.name === 'humidity_sensor_id');
+      if (!hasHumiditySensorId) {
+        console.log('Adding humidity_sensor_id column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN humidity_sensor_id TEXT");
+        console.log('Migration completed successfully');
+      }
+
+      const hasTargetHumidity = columns.some(col => col.name === 'target_humidity');
+      if (!hasTargetHumidity) {
+        console.log('Adding target_humidity column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN target_humidity REAL");
+        console.log('Migration completed successfully');
+      }
+
+      const hasCurrentHumidity = columns.some(col => col.name === 'current_humidity');
+      if (!hasCurrentHumidity) {
+        console.log('Adding current_humidity column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN current_humidity REAL");
+        console.log('Migration completed successfully');
+      }
+
+      const hasMushroomType = columns.some(col => col.name === 'mushroom_type');
+      if (!hasMushroomType) {
+        console.log('Adding mushroom_type column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN mushroom_type TEXT");
+        console.log('Migration completed successfully');
+      }
     } catch (error) {
       console.error('Migration error:', error);
     }
@@ -126,7 +160,11 @@ class DatabaseService {
       createdAt: row.created_at,
       archivedAt: row.archived_at || undefined,
       brewingSession: row.brewing_session ? JSON.parse(row.brewing_session) : undefined,
-      recipe: row.recipe ? JSON.parse(row.recipe) : undefined
+      recipe: row.recipe ? JSON.parse(row.recipe) : undefined,
+      humiditySensorId: row.humidity_sensor_id || undefined,
+      targetHumidity: row.target_humidity || undefined,
+      currentHumidity: row.current_humidity || undefined,
+      mushroomType: row.mushroom_type || undefined
     }));
   }
 
@@ -149,14 +187,18 @@ class DatabaseService {
       createdAt: row.created_at,
       archivedAt: row.archived_at || undefined,
       brewingSession: row.brewing_session ? JSON.parse(row.brewing_session) : undefined,
-      recipe: row.recipe ? JSON.parse(row.recipe) : undefined
+      recipe: row.recipe ? JSON.parse(row.recipe) : undefined,
+      humiditySensorId: row.humidity_sensor_id || undefined,
+      targetHumidity: row.target_humidity || undefined,
+      currentHumidity: row.current_humidity || undefined,
+      mushroomType: row.mushroom_type || undefined
     };
   }
 
   createProject(project: Omit<Project, 'currentTemperature' | 'outletActive'>): Project {
     const stmt = this.db.prepare(`
-      INSERT INTO projects (id, name, fermentation_type, sensor_id, outlet_id, target_temperature, control_mode, created_at, recipe)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO projects (id, name, fermentation_type, sensor_id, outlet_id, target_temperature, control_mode, created_at, recipe, humidity_sensor_id, target_humidity, mushroom_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const recipeJson = project.recipe ? JSON.stringify(project.recipe) : null;
@@ -170,7 +212,10 @@ class DatabaseService {
       project.targetTemperature,
       project.controlMode,
       project.createdAt,
-      recipeJson
+      recipeJson,
+      project.humiditySensorId || null,
+      project.targetHumidity || null,
+      project.mushroomType || null
     );
 
     return this.getProject(project.id)!;
@@ -233,12 +278,12 @@ class DatabaseService {
   isDeviceInUse(deviceId: string, excludeProjectId?: string): boolean {
     let stmt;
     if (excludeProjectId) {
-      stmt = this.db.prepare('SELECT COUNT(*) as count FROM projects WHERE (sensor_id = ? OR outlet_id = ?) AND archived = 0 AND id != ?');
-      const result = stmt.get(deviceId, deviceId, excludeProjectId) as { count: number };
+      stmt = this.db.prepare('SELECT COUNT(*) as count FROM projects WHERE (sensor_id = ? OR outlet_id = ? OR humidity_sensor_id = ?) AND archived = 0 AND id != ?');
+      const result = stmt.get(deviceId, deviceId, deviceId, excludeProjectId) as { count: number };
       return result.count > 0;
     } else {
-      stmt = this.db.prepare('SELECT COUNT(*) as count FROM projects WHERE (sensor_id = ? OR outlet_id = ?) AND archived = 0');
-      const result = stmt.get(deviceId, deviceId) as { count: number };
+      stmt = this.db.prepare('SELECT COUNT(*) as count FROM projects WHERE (sensor_id = ? OR outlet_id = ? OR humidity_sensor_id = ?) AND archived = 0');
+      const result = stmt.get(deviceId, deviceId, deviceId) as { count: number };
       return result.count > 0;
     }
   }

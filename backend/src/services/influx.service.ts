@@ -42,6 +42,19 @@ export class InfluxService {
     await this.writeApi.flush();
   }
 
+  async writeHumidity(projectId: string, humidity: number, timestamp?: number) {
+    const point = new Point('humidity')
+      .tag('project_id', projectId)
+      .floatField('value', humidity);
+
+    if (timestamp) {
+      point.timestamp(timestamp * 1000000); // Convert ms to ns
+    }
+
+    this.writeApi.writePoint(point);
+    await this.writeApi.flush();
+  }
+
   async getTemperatureHistory(projectId: string, start: string = '-30d'): Promise<Array<{ timestamp: number; temperature: number }>> {
     const query = `
       from(bucket: "${INFLUX_BUCKET}")
@@ -93,6 +106,38 @@ export class InfluxService {
           result.push({
             timestamp: new Date(obj._time).getTime(),
             density: obj._value
+          });
+        },
+        error: (error) => {
+          console.error('InfluxDB query error:', error);
+          reject(error);
+        },
+        complete: () => {
+          resolve(result);
+        }
+      });
+    });
+  }
+
+  async getHumidityHistory(projectId: string, start: string = '-30d'): Promise<Array<{ timestamp: number; humidity: number }>> {
+    const query = `
+      from(bucket: "${INFLUX_BUCKET}")
+        |> range(start: ${start})
+        |> filter(fn: (r) => r._measurement == "humidity")
+        |> filter(fn: (r) => r.project_id == "${projectId}")
+        |> filter(fn: (r) => r._field == "value")
+        |> sort(columns: ["_time"])
+    `;
+
+    const result: Array<{ timestamp: number; humidity: number }> = [];
+
+    return new Promise((resolve, reject) => {
+      this.queryApi.queryRows(query, {
+        next: (row, tableMeta) => {
+          const obj = tableMeta.toObject(row);
+          result.push({
+            timestamp: new Date(obj._time).getTime(),
+            humidity: obj._value
           });
         },
         error: (error) => {
@@ -188,6 +233,54 @@ export class InfluxService {
     await this.writeApi.flush();
 
     console.log(`Generated test data for project ${projectId}: ${tempPoints.length} temperature points, ${densityPoints.length} density points`);
+  }
+
+  // Génère des données simulées pour les projets de champignons de test
+  async generateMushroomTestData(projectId: string, targetTemp: number = 22, targetHumidity: number = 85) {
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+
+    // Générer des données de température toutes les 30 minutes sur 7 jours
+    const tempPoints: Point[] = [];
+    for (let t = sevenDaysAgo; t <= now; t += 30 * 60 * 1000) {
+      // Température qui oscille autour de la cible avec du bruit
+      const noise = (Math.random() - 0.5) * 1.5; // ±0.75°C de bruit
+      const oscillation = Math.sin((t - sevenDaysAgo) / (12 * 60 * 60 * 1000) * Math.PI) * 0.3;
+      const temp = targetTemp + noise + oscillation;
+
+      const point = new Point('temperature')
+        .tag('project_id', projectId)
+        .floatField('value', Math.round(temp * 10) / 10)
+        .timestamp(t * 1000000);
+
+      tempPoints.push(point);
+    }
+
+    // Générer des données d'humidité toutes les 30 minutes sur 7 jours
+    const humidityPoints: Point[] = [];
+    for (let t = sevenDaysAgo; t <= now; t += 30 * 60 * 1000) {
+      // Humidité qui oscille autour de la cible avec du bruit
+      const noise = (Math.random() - 0.5) * 8; // ±4% de bruit
+      const oscillation = Math.sin((t - sevenDaysAgo) / (6 * 60 * 60 * 1000) * Math.PI) * 3; // oscillation plus rapide
+      let humidity = targetHumidity + noise + oscillation;
+      // Limiter entre 0 et 100
+      humidity = Math.max(0, Math.min(100, humidity));
+
+      const point = new Point('humidity')
+        .tag('project_id', projectId)
+        .floatField('value', Math.round(humidity * 10) / 10)
+        .timestamp(t * 1000000);
+
+      humidityPoints.push(point);
+    }
+
+    // Écrire tous les points
+    for (const point of [...tempPoints, ...humidityPoints]) {
+      this.writeApi.writePoint(point);
+    }
+    await this.writeApi.flush();
+
+    console.log(`Generated mushroom test data for project ${projectId}: ${tempPoints.length} temperature points, ${humidityPoints.length} humidity points`);
   }
 }
 

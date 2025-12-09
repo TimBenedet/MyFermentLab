@@ -1,4 +1,4 @@
-export type FermentationType = 'beer' | 'koji' | 'kombucha' | 'wine' | 'cheese';
+export type FermentationType = 'beer' | 'koji' | 'kombucha' | 'mead' | 'cheese' | 'mushroom';
 
 export interface TemperatureReading {
   timestamp: number;
@@ -8,6 +8,11 @@ export interface TemperatureReading {
 export interface DensityReading {
   timestamp: number;
   density: number; // Densité en g/L
+}
+
+export interface HumidityReading {
+  timestamp: number;
+  humidity: number; // Humidité en %
 }
 
 // ========================================
@@ -276,14 +281,19 @@ export interface Project {
   fermentationType: FermentationType;
   sensorId: string;
   outletId: string;
+  humiditySensorId?: string; // Sonde d'humidité (pour champignons)
   targetTemperature: number;
   currentTemperature: number;
+  currentHumidity?: number; // Humidité actuelle (pour champignons)
+  targetHumidity?: number; // Humidité cible (pour champignons)
   outletActive: boolean;
   controlMode: 'manual' | 'automatic'; // Mode de contrôle
   archived: boolean;
   history: TemperatureReading[];
   densityHistory?: DensityReading[];
+  humidityHistory?: HumidityReading[]; // Historique humidité (pour champignons)
   showDensity?: boolean;
+  mushroomType?: string; // Type de champignon
   createdAt: number;
   archivedAt?: number;
 
@@ -301,8 +311,9 @@ export const FERMENTATION_TYPES = {
   beer: { name: 'Bière', icon: '🍺', color: '#F5A742', minTemp: 18, maxTemp: 45 },
   koji: { name: 'Koji', icon: '🍚', color: '#4AC694', minTemp: 18, maxTemp: 45 },
   kombucha: { name: 'Kombucha', icon: '🍵', color: '#9D7EDB', minTemp: 18, maxTemp: 45 },
-  wine: { name: 'Vin', icon: '🍷', color: '#E74856', minTemp: 18, maxTemp: 45 },
-  cheese: { name: 'Fromage', icon: '🧀', color: '#E9B54D', minTemp: 18, maxTemp: 45 }
+  mead: { name: 'Hydromel', icon: '🍯', color: '#E74856', minTemp: 18, maxTemp: 45 },
+  cheese: { name: 'Fromage', icon: '🧀', color: '#E9B54D', minTemp: 18, maxTemp: 45 },
+  mushroom: { name: 'Champignon', icon: '🍄', color: '#8B4513', minTemp: 18, maxTemp: 30 }
 } as const;
 
 // Styles de bière courants
@@ -316,6 +327,24 @@ export const BEER_STYLES = [
   'Amber Ale', 'Red Ale', 'Brown Ale',
   'Sour', 'Gose', 'Berliner Weisse',
   'Barleywine', 'Scottish Ale',
+  'Autre'
+] as const;
+
+// Types de champignons
+export const MUSHROOM_TYPES = [
+  '🧪 Test champignon (données auto)',
+  'Pleurote (Oyster)',
+  'Shiitake',
+  'Lion\'s Mane (Hericium)',
+  'Reishi',
+  'Maitake',
+  'Enoki',
+  'King Oyster',
+  'Pink Oyster',
+  'Blue Oyster',
+  'Golden Oyster',
+  'Chestnut',
+  'Pioppino',
   'Autre'
 ] as const;
 

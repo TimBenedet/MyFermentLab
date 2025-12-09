@@ -32,10 +32,17 @@ router.get('/:id', async (req: Request, res: Response) => {
     const temperatureHistory = await influxService.getTemperatureHistory(id, start);
     const densityHistory = await influxService.getDensityHistory(id, start);
 
+    // Récupérer l'historique d'humidité pour les projets champignon
+    let humidityHistory: any[] = [];
+    if (project.fermentationType === 'mushroom') {
+      humidityHistory = await influxService.getHumidityHistory(id, start);
+    }
+
     res.json({
       ...project,
       history: temperatureHistory,
-      densityHistory
+      densityHistory,
+      humidityHistory
     });
   } catch (error) {
     console.error('Error fetching project:', error);
@@ -91,10 +98,15 @@ router.get('/:id/stats', requireAuth, async (req: Request, res: Response) => {
 // POST /api/projects - Créer un nouveau projet
 router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { name, fermentationType, sensorId, outletId, targetTemperature, controlMode, recipe } = req.body;
+    const { name, fermentationType, sensorId, outletId, targetTemperature, controlMode, recipe, humiditySensorId, targetHumidity, mushroomType } = req.body;
 
     if (!name || !fermentationType || !sensorId || !outletId || !targetTemperature) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Vérifier les champs requis pour les champignons
+    if (fermentationType === 'mushroom' && !humiditySensorId) {
+      return res.status(400).json({ error: 'Humidity sensor is required for mushroom projects' });
     }
 
     // Vérifier que les devices ne sont pas déjà utilisés par un projet actif
@@ -104,6 +116,10 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
 
     if (databaseService.isDeviceInUse(outletId)) {
       return res.status(400).json({ error: 'Outlet is already in use by another active project' });
+    }
+
+    if (humiditySensorId && databaseService.isDeviceInUse(humiditySensorId)) {
+      return res.status(400).json({ error: 'Humidity sensor is already in use by another active project' });
     }
 
     const projectId = Date.now().toString();
@@ -124,21 +140,35 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
       controlMode: controlMode || 'automatic',
       archived: false,
       createdAt: Date.now(),
-      recipe: recipe || undefined
+      recipe: recipe || undefined,
+      humiditySensorId: humiditySensorId || undefined,
+      targetHumidity: targetHumidity || undefined,
+      mushroomType: mushroomType || undefined
     });
 
     console.log('Project created, has recipe:', !!newProject?.recipe);
 
-    // Si c'est un projet de test, générer des données simulées
-    const isTestProject = recipe?.style?.includes('Test bière') || name?.includes('Test');
-    if (isTestProject) {
-      console.log('Test project detected - generating simulated data...');
+    // Si c'est un projet de test bière, générer des données simulées
+    const isTestBeerProject = recipe?.style?.includes('Test bière') || (name?.includes('Test') && fermentationType === 'beer');
+    if (isTestBeerProject) {
+      console.log('Test beer project detected - generating simulated data...');
       try {
         await influxService.generateTestData(projectId, targetTemperature);
         console.log('Simulated data generated successfully');
       } catch (err) {
         console.error('Failed to generate test data:', err);
-        // On continue même si la génération échoue
+      }
+    }
+
+    // Si c'est un projet de test champignon, générer des données simulées
+    const isTestMushroomProject = mushroomType?.includes('Test champignon') || (name?.includes('Test') && fermentationType === 'mushroom');
+    if (isTestMushroomProject) {
+      console.log('Test mushroom project detected - generating simulated humidity data...');
+      try {
+        await influxService.generateMushroomTestData(projectId, targetTemperature, targetHumidity || 85);
+        console.log('Simulated mushroom data generated successfully');
+      } catch (err) {
+        console.error('Failed to generate mushroom test data:', err);
       }
     }
 
@@ -292,6 +322,27 @@ router.post('/:id/density', requireAuth, requireAdmin, async (req: Request, res:
     res.status(201).json({ success: true });
   } catch (error) {
     console.error('Error adding density:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/projects/:id/humidity - Ajouter une mesure d'humidité
+router.post('/:id/humidity', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { humidity, timestamp } = req.body;
+
+    if (humidity === undefined) {
+      return res.status(400).json({ error: 'Missing humidity value' });
+    }
+
+    const ts = timestamp || Date.now();
+
+    await influxService.writeHumidity(id, humidity, ts);
+
+    res.status(201).json({ success: true });
+  } catch (error) {
+    console.error('Error adding humidity:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

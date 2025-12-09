@@ -49,7 +49,9 @@
       "Bash(for i in 1 2 3 4 5)",
       "Bash(do curl -s -o /dev/null -w \"Test $i: %{time_total}s\\n\" \"http://192.168.1.51:30080/\")",
       "Bash(done)",
-      "Bash(do curl -s -o /dev/null -w \"Test $i: %{time_total}s\\n\" \"http://192.168.1.51:30080/api/projects\")"
+      "Bash(do curl -s -o /dev/null -w \"Test $i: %{time_total}s\\n\" \"http://192.168.1.51:30080/api/projects\")",
+      "Bash(python3:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

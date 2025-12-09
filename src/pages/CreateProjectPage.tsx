@@ -3,6 +3,7 @@ import {
   FermentationType,
   FERMENTATION_TYPES,
   BEER_STYLES,
+  MUSHROOM_TYPES,
   FERMENTERS,
   Device,
   BrewingRecipe,
@@ -40,7 +41,10 @@ interface CreateProjectPageProps {
     fermentationType: FermentationType;
     sensorId: string;
     outletId: string;
+    humiditySensorId?: string;
     targetTemperature: number;
+    targetHumidity?: number;
+    mushroomType?: string;
     controlMode: 'manual' | 'automatic';
     recipe?: BrewingRecipe;
   }, startBrewing?: boolean) => void;
@@ -53,6 +57,9 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
   const [fermentationType, setFermentationType] = useState<FermentationType>('beer');
   const [sensorId, setSensorId] = useState('');
   const [outletId, setOutletId] = useState('');
+  const [humiditySensorId, setHumiditySensorId] = useState('');
+  const [targetHumidity, setTargetHumidity] = useState(85);
+  const [mushroomType, setMushroomType] = useState('');
   const [controlMode, setControlMode] = useState<'manual' | 'automatic'>('automatic');
 
   // État pour la recette (uniquement pour la bière)
@@ -92,7 +99,8 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
     return calculateBrewingMetrics(recipe, efficiency / 100);
   }, [recipe, efficiency, fermentationType, showRecipe]);
 
-  const canSubmit = name.trim() && sensorId && outletId;
+  const canSubmit = name.trim() && sensorId && outletId &&
+    (fermentationType !== 'mushroom' || humiditySensorId);
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -239,7 +247,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
       estimatedColor: calculations?.colorEBC
     } : undefined;
 
-    return {
+    const projectData: any = {
       name: name.trim(),
       fermentationType,
       sensorId,
@@ -248,6 +256,15 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
       controlMode,
       recipe: finalRecipe
     };
+
+    // Ajouter les champs spécifiques aux champignons
+    if (fermentationType === 'mushroom') {
+      projectData.humiditySensorId = humiditySensorId;
+      projectData.targetHumidity = targetHumidity;
+      projectData.mushroomType = mushroomType;
+    }
+
+    return projectData;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -337,6 +354,30 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
               </select>
             </div>
           )}
+
+          {fermentationType === 'mushroom' && (
+            <div className="form-group">
+              <label className="form-label">Type de champignon</label>
+              <select
+                className="form-select"
+                value={mushroomType}
+                onChange={(e) => {
+                  const selectedType = e.target.value;
+                  setMushroomType(selectedType);
+                  // Si c'est le type de test, générer des données de test
+                  if (selectedType === '🧪 Test champignon (données auto)') {
+                    setName('Test Pleurote');
+                    setTargetHumidity(90);
+                  }
+                }}
+              >
+                <option value="">Sélectionner un type</option>
+                {MUSHROOM_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Configuration des appareils */}
@@ -411,6 +452,52 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
               </select>
             </div>
           </div>
+
+          {fermentationType === 'mushroom' && (
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="humidity-sensor" className="form-label">
+                  Sonde d'humidité
+                </label>
+                {sensors.length === 0 ? (
+                  <div className="form-warning">
+                    Aucune sonde disponible.
+                  </div>
+                ) : (
+                  <select
+                    id="humidity-sensor"
+                    className="form-select"
+                    value={humiditySensorId}
+                    onChange={(e) => setHumiditySensorId(e.target.value)}
+                    required
+                  >
+                    <option value="">Sélectionner une sonde</option>
+                    {sensors.filter(s => s.id !== sensorId).map(sensor => (
+                      <option key={sensor.id} value={sensor.id}>
+                        {sensor.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="target-humidity" className="form-label">
+                  Humidité cible (%)
+                </label>
+                <input
+                  id="target-humidity"
+                  type="number"
+                  className="form-input"
+                  value={targetHumidity}
+                  onChange={(e) => setTargetHumidity(Number(e.target.value))}
+                  min="0"
+                  max="100"
+                  step="1"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Recette de brassage - uniquement pour la bière */}
