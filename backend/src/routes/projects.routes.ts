@@ -74,20 +74,28 @@ router.get('/:id/stats', requireAuth, async (req: Request, res: Response) => {
     const temperatureHistory = await influxService.getTemperatureHistory(id, `-${daysSinceCreation}d`);
     const densityHistory = await influxService.getDensityHistory(id, `-${daysSinceCreation}d`);
 
+    // Récupérer l'historique d'humidité pour les projets champignon
+    let humidityHistory: any[] = [];
+    if (project.fermentationType === 'mushroom') {
+      humidityHistory = await influxService.getHumidityHistory(id, `-${daysSinceCreation}d`);
+    }
+
     // Calculer les statistiques
     const stats = await statsService.calculateProjectStats(
       id,
       project.createdAt,
       endDate,
       temperatureHistory,
-      densityHistory
+      densityHistory,
+      humidityHistory
     );
 
     res.json({
       project,
       stats,
       temperatureHistory,
-      densityHistory
+      densityHistory,
+      humidityHistory
     });
   } catch (error) {
     console.error('Error fetching project stats:', error);

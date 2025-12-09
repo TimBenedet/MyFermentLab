@@ -18,6 +18,12 @@ export interface ProjectStats {
     final: number;
     abv: number;
   };
+  humidity?: {
+    average: number;
+    min: number;
+    max: number;
+    stdDeviation: number;
+  };
   heatingHours: number;
   dataPoints: number;
 }
@@ -31,7 +37,8 @@ class StatsService {
     createdAt: number,
     completedAt: number,
     temperatureHistory: Array<{ timestamp: number; temperature: number }>,
-    densityHistory?: Array<{ timestamp: number; density: number }>
+    densityHistory?: Array<{ timestamp: number; density: number }>,
+    humidityHistory?: Array<{ timestamp: number; humidity: number }>
   ): Promise<ProjectStats> {
     // Calculer la durée
     const durationMs = completedAt - createdAt;
@@ -55,6 +62,13 @@ class StatsService {
       densityStats = { initial, final, abv };
     }
 
+    // Calculer les stats d'humidité (si applicable)
+    let humidityStats: ProjectStats['humidity'] | undefined;
+    if (humidityHistory && humidityHistory.length > 0) {
+      const humidities = humidityHistory.map(h => h.humidity);
+      humidityStats = this.calculateHumidityStats(humidities);
+    }
+
     // Estimer les heures de chauffage (simplifié)
     // TODO: Améliorer en récupérant l'historique réel du state de la prise depuis InfluxDB
     const heatingHours = await this.estimateHeatingHours(projectId, createdAt, completedAt);
@@ -68,6 +82,7 @@ class StatsService {
       },
       temperature: tempStats,
       density: densityStats,
+      humidity: humidityStats,
       heatingHours,
       dataPoints: temperatureHistory.length
     };
@@ -88,6 +103,31 @@ class StatsService {
 
     // Calculer l'écart-type
     const variance = temperatures.reduce((acc, t) => acc + Math.pow(t - average, 2), 0) / temperatures.length;
+    const stdDeviation = Math.sqrt(variance);
+
+    return {
+      average: Math.round(average * 10) / 10,
+      min: Math.round(min * 10) / 10,
+      max: Math.round(max * 10) / 10,
+      stdDeviation: Math.round(stdDeviation * 10) / 10
+    };
+  }
+
+  /**
+   * Calcule les statistiques d'humidité
+   */
+  private calculateHumidityStats(humidities: number[]): ProjectStats['humidity'] {
+    if (humidities.length === 0) {
+      return { average: 0, min: 0, max: 0, stdDeviation: 0 };
+    }
+
+    const sum = humidities.reduce((acc, h) => acc + h, 0);
+    const average = sum / humidities.length;
+    const min = Math.min(...humidities);
+    const max = Math.max(...humidities);
+
+    // Calculer l'écart-type
+    const variance = humidities.reduce((acc, h) => acc + Math.pow(h - average, 2), 0) / humidities.length;
     const stdDeviation = Math.sqrt(variance);
 
     return {

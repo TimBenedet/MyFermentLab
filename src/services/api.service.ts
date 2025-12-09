@@ -44,6 +44,12 @@ export interface ProjectStats {
     final: number;
     abv: number;
   };
+  humidity?: {
+    average: number;
+    min: number;
+    max: number;
+    stdDeviation: number;
+  };
   heatingHours: number;
   dataPoints: number;
 }
@@ -53,6 +59,7 @@ export interface ProjectStatsResponse {
   stats: ProjectStats;
   temperatureHistory: Array<{ timestamp: number; temperature: number }>;
   densityHistory: Array<{ timestamp: number; density: number }>;
+  humidityHistory: Array<{ timestamp: number; humidity: number }>;
 }
 
 class ApiService {
