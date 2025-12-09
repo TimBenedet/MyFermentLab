@@ -46,7 +46,7 @@ export interface BrewingLogEntry {
 export interface Device {
   id: string;
   name: string;
-  type: 'sensor' | 'outlet';
+  type: 'sensor' | 'outlet' | 'humidity_sensor';
   ip?: string;
   entityId?: string; // Home Assistant entity ID
 }

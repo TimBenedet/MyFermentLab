@@ -91,6 +91,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
   // Filtrer les devices non utilisés par d'autres projets actifs
   const sensors = devices.filter(d => d.type === 'sensor' && !usedDeviceIds.includes(d.id));
   const outlets = devices.filter(d => d.type === 'outlet' && !usedDeviceIds.includes(d.id));
+  const humiditySensors = devices.filter(d => d.type === 'humidity_sensor' && !usedDeviceIds.includes(d.id));
   const config = FERMENTATION_TYPES[fermentationType];
 
   // Calculs de brassage
@@ -459,9 +460,9 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                 <label htmlFor="humidity-sensor" className="form-label">
                   Sonde d'humidité
                 </label>
-                {sensors.length === 0 ? (
+                {humiditySensors.length === 0 ? (
                   <div className="form-warning">
-                    Aucune sonde disponible.
+                    Aucune sonde d'humidité disponible.
                   </div>
                 ) : (
                   <select
@@ -472,7 +473,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                     required
                   >
                     <option value="">Sélectionner une sonde</option>
-                    {sensors.filter(s => s.id !== sensorId).map(sensor => (
+                    {humiditySensors.map(sensor => (
                       <option key={sensor.id} value={sensor.id}>
                         {sensor.name}
                       </option>

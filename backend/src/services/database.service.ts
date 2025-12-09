@@ -27,7 +27,7 @@ export interface Project {
 export interface Device {
   id: string;
   name: string;
-  type: 'sensor' | 'outlet';
+  type: 'sensor' | 'outlet' | 'humidity_sensor';
   ip?: string;
   entityId?: string;
 }
@@ -137,8 +137,63 @@ class DatabaseService {
         this.db.exec("ALTER TABLE projects ADD COLUMN mushroom_type TEXT");
         console.log('Migration completed successfully');
       }
+
+      // Ajouter des sondes de test pour les champignons si elles n'existent pas
+      this.initTestDevices();
     } catch (error) {
       console.error('Migration error:', error);
+    }
+  }
+
+  private initTestDevices() {
+    // Vérifier si les sondes de test existent déjà
+    const testHumiditySensor1 = this.getDevice('test-humidity-sensor-1');
+    const testHumiditySensor2 = this.getDevice('test-humidity-sensor-2');
+    const testTempSensor = this.getDevice('test-temp-sensor-mushroom');
+    const testOutlet = this.getDevice('test-outlet-mushroom');
+
+    if (!testHumiditySensor1) {
+      console.log('Creating test humidity sensor 1...');
+      this.createDevice({
+        id: 'test-humidity-sensor-1',
+        name: '🧪 Sonde Humidité Test 1',
+        type: 'humidity_sensor',
+        ip: '',
+        entityId: 'sensor.test_humidity_1'
+      });
+    }
+
+    if (!testHumiditySensor2) {
+      console.log('Creating test humidity sensor 2...');
+      this.createDevice({
+        id: 'test-humidity-sensor-2',
+        name: '🧪 Sonde Humidité Test 2',
+        type: 'humidity_sensor',
+        ip: '',
+        entityId: 'sensor.test_humidity_2'
+      });
+    }
+
+    if (!testTempSensor) {
+      console.log('Creating test temperature sensor for mushrooms...');
+      this.createDevice({
+        id: 'test-temp-sensor-mushroom',
+        name: '🧪 Sonde Temp Champignon',
+        type: 'sensor',
+        ip: '',
+        entityId: 'sensor.test_temp_mushroom'
+      });
+    }
+
+    if (!testOutlet) {
+      console.log('Creating test outlet for mushrooms...');
+      this.createDevice({
+        id: 'test-outlet-mushroom',
+        name: '🧪 Prise Test Champignon',
+        type: 'outlet',
+        ip: '',
+        entityId: 'switch.test_outlet_mushroom'
+      });
     }
   }
 

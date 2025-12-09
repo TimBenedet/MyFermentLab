@@ -20,7 +20,7 @@ interface DevicesPageProps {
 
 export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack, role }: DevicesPageProps) {
   const [showForm, setShowForm] = useState(false);
-  const [deviceType, setDeviceType] = useState<'sensor' | 'outlet'>('sensor');
+  const [deviceType, setDeviceType] = useState<'sensor' | 'outlet' | 'humidity_sensor'>('sensor');
   const [deviceName, setDeviceName] = useState('');
   const [deviceIp, setDeviceIp] = useState('');
   const [entityId, setEntityId] = useState('');
@@ -29,6 +29,7 @@ export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack, role
 
   const sensors = devices.filter(d => d.type === 'sensor');
   const outlets = devices.filter(d => d.type === 'outlet');
+  const humiditySensors = devices.filter(d => d.type === 'humidity_sensor');
 
   // Charger l'état des prises au montage
   useEffect(() => {
@@ -107,9 +108,10 @@ export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack, role
                 <select
                   className="form-select"
                   value={deviceType}
-                  onChange={(e) => setDeviceType(e.target.value as 'sensor' | 'outlet')}
+                  onChange={(e) => setDeviceType(e.target.value as 'sensor' | 'outlet' | 'humidity_sensor')}
                 >
                   <option value="sensor">Sonde de température</option>
+                  <option value="humidity_sensor">Sonde d'humidité</option>
                   <option value="outlet">Prise connectée</option>
                 </select>
               </div>
@@ -232,6 +234,36 @@ export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack, role
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        <div className="device-section">
+          <h2>Sondes d'humidité ({humiditySensors.length})</h2>
+          {humiditySensors.length === 0 ? (
+            <div className="empty-list">Aucune sonde d'humidité configurée</div>
+          ) : (
+            <div className="device-list">
+              {humiditySensors.map(device => (
+                <div key={device.id} className="device-item">
+                  <div className="device-icon">💧</div>
+                  <div className="device-info">
+                    <div className="device-name">{device.name}</div>
+                    <div className="device-details">
+                      {device.ip && <span>IP: {device.ip}</span>}
+                      {device.entityId && <span>Entity: {device.entityId}</span>}
+                    </div>
+                  </div>
+                  {role === 'admin' && (
+                    <button
+                      className="btn-delete"
+                      onClick={() => onDeleteDevice(device.id)}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
