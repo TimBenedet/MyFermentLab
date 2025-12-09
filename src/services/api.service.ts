@@ -102,6 +102,19 @@ class ApiService {
     return response.json();
   }
 
+  async updateProjectDevices(id: string, sensorId: string, outletId: string): Promise<Project> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/devices`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ sensorId, outletId })
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to update project devices');
+    }
+    return response.json();
+  }
+
   async toggleOutlet(id: string): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/outlet/toggle`, {
       method: 'POST',

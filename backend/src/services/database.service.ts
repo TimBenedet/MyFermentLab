@@ -210,6 +210,11 @@ class DatabaseService {
     console.log('Update result - changes:', result.changes);
   }
 
+  updateProjectDevices(id: string, sensorId: string, outletId: string) {
+    const stmt = this.db.prepare('UPDATE projects SET sensor_id = ?, outlet_id = ? WHERE id = ?');
+    stmt.run(sensorId, outletId, id);
+  }
+
   archiveProject(id: string) {
     const stmt = this.db.prepare('UPDATE projects SET archived = 1, archived_at = ? WHERE id = ?');
     stmt.run(Date.now(), id);

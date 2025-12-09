@@ -149,6 +149,45 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
   }
 });
 
+// PUT /api/projects/:id/devices - Modifier la sonde et la prise du projet
+router.put('/:id/devices', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { sensorId, outletId } = req.body;
+
+    const project = databaseService.getProject(id);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.archived) {
+      return res.status(400).json({ error: 'Cannot modify archived project' });
+    }
+
+    if (!sensorId || !outletId) {
+      return res.status(400).json({ error: 'Missing sensorId or outletId' });
+    }
+
+    // Vérifier que les nouveaux devices ne sont pas utilisés par d'autres projets
+    if (sensorId !== project.sensorId && databaseService.isDeviceInUse(sensorId, id)) {
+      return res.status(400).json({ error: 'Sensor is already in use by another active project' });
+    }
+
+    if (outletId !== project.outletId && databaseService.isDeviceInUse(outletId, id)) {
+      return res.status(400).json({ error: 'Outlet is already in use by another active project' });
+    }
+
+    databaseService.updateProjectDevices(id, sensorId, outletId);
+    const updatedProject = databaseService.getProject(id);
+
+    console.log(`[Projects] Updated devices for project ${project.name}: sensor=${sensorId}, outlet=${outletId}`);
+    res.json(updatedProject);
+  } catch (error) {
+    console.error('Error updating project devices:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // PUT /api/projects/:id/target - Modifier la température cible
 router.put('/:id/target', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {

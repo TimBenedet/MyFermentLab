@@ -202,6 +202,21 @@ function App() {
     }
   };
 
+  const handleUpdateDevices = async (sensorId: string, outletId: string) => {
+    if (!selectedProjectId) return;
+
+    try {
+      const updatedProject = await apiService.updateProjectDevices(selectedProjectId, sensorId, outletId);
+      setSelectedProject(prev => prev ? { ...prev, sensorId: updatedProject.sensorId, outletId: updatedProject.outletId } : null);
+      setProjects(prev => prev.map(p =>
+        p.id === selectedProjectId ? { ...p, sensorId: updatedProject.sensorId, outletId: updatedProject.outletId } : p
+      ));
+    } catch (err) {
+      console.error('Failed to update devices:', err);
+      setError(err instanceof Error ? err.message : 'Impossible de modifier les appareils');
+    }
+  };
+
   // Session de brassage
   const handleUpdateBrewingSession = async (session: BrewingSession) => {
     if (!selectedProjectId || !selectedProject) return;
@@ -439,10 +454,12 @@ function App() {
         {currentPage === 'monitoring' && selectedProject && (
           <MonitoringPage
             project={selectedProject}
+            devices={devices}
             onUpdateTarget={handleUpdateTarget}
             onToggleOutlet={handleToggleOutlet}
             onAddDensity={handleAddDensity}
             onToggleControlMode={handleToggleControlMode}
+            onUpdateDevices={handleUpdateDevices}
             onRefreshTemperature={() => selectedProjectId && loadProject(selectedProjectId)}
             onBack={() => setCurrentPage('home')}
             role={role}
