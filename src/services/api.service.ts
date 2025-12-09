@@ -245,6 +245,28 @@ class ApiService {
       throw new Error('Failed to delete device');
     }
   }
+
+  async toggleDevice(id: string): Promise<Device & { isOn: boolean }> {
+    const response = await fetch(`${API_BASE_URL}/devices/${id}/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to toggle device');
+    }
+    return response.json();
+  }
+
+  async getDeviceState(id: string): Promise<Device & { isOn: boolean | null }> {
+    const response = await fetch(`${API_BASE_URL}/devices/${id}/state`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get device state');
+    }
+    return response.json();
+  }
 }
 
 export const apiService = new ApiService();

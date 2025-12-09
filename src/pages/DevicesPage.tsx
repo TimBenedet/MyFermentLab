@@ -1,5 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Device } from '../types';
+import { apiService } from '../services/api.service';
+
+// Icône Power SVG
+const PowerIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+    <line x1="12" y1="2" x2="12" y2="12" />
+  </svg>
+);
 
 interface DevicesPageProps {
   devices: Device[];
@@ -15,9 +24,45 @@ export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack, role
   const [deviceName, setDeviceName] = useState('');
   const [deviceIp, setDeviceIp] = useState('');
   const [entityId, setEntityId] = useState('');
+  const [outletStates, setOutletStates] = useState<Record<string, boolean | null>>({});
+  const [togglingDevices, setTogglingDevices] = useState<Set<string>>(new Set());
 
   const sensors = devices.filter(d => d.type === 'sensor');
   const outlets = devices.filter(d => d.type === 'outlet');
+
+  // Charger l'état des prises au montage
+  useEffect(() => {
+    const loadOutletStates = async () => {
+      for (const outlet of outlets) {
+        if (outlet.entityId) {
+          try {
+            const state = await apiService.getDeviceState(outlet.id);
+            setOutletStates(prev => ({ ...prev, [outlet.id]: state.isOn }));
+          } catch (error) {
+            console.error(`Failed to get state for ${outlet.name}:`, error);
+            setOutletStates(prev => ({ ...prev, [outlet.id]: null }));
+          }
+        }
+      }
+    };
+    loadOutletStates();
+  }, [devices]);
+
+  const handleToggleOutlet = async (deviceId: string) => {
+    setTogglingDevices(prev => new Set(prev).add(deviceId));
+    try {
+      const result = await apiService.toggleDevice(deviceId);
+      setOutletStates(prev => ({ ...prev, [deviceId]: result.isOn }));
+    } catch (error) {
+      console.error('Failed to toggle outlet:', error);
+    } finally {
+      setTogglingDevices(prev => {
+        const next = new Set(prev);
+        next.delete(deviceId);
+        return next;
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,26 +198,40 @@ export function DevicesPage({ devices, onAddDevice, onDeleteDevice, onBack, role
             <div className="empty-list">Aucune prise configurée</div>
           ) : (
             <div className="device-list">
-              {outlets.map(device => (
-                <div key={device.id} className="device-item">
-                  <div className="device-icon">🔌</div>
-                  <div className="device-info">
-                    <div className="device-name">{device.name}</div>
-                    <div className="device-details">
-                      {device.ip && <span>IP: {device.ip}</span>}
-                      {device.entityId && <span>Entity: {device.entityId}</span>}
+              {outlets.map(device => {
+                const isOn = outletStates[device.id];
+                const isToggling = togglingDevices.has(device.id);
+                return (
+                  <div key={device.id} className="device-item">
+                    <div className="device-icon">🔌</div>
+                    <div className="device-info">
+                      <div className="device-name">{device.name}</div>
+                      <div className="device-details">
+                        {device.ip && <span>IP: {device.ip}</span>}
+                        {device.entityId && <span>Entity: {device.entityId}</span>}
+                      </div>
                     </div>
+                    {role === 'admin' && device.entityId && (
+                      <button
+                        className={`btn-power ${isOn === true ? 'power-on' : isOn === false ? 'power-off' : ''}`}
+                        onClick={() => handleToggleOutlet(device.id)}
+                        disabled={isToggling}
+                        title={isOn ? 'Éteindre' : 'Allumer'}
+                      >
+                        <PowerIcon />
+                      </button>
+                    )}
+                    {role === 'admin' && (
+                      <button
+                        className="btn-delete"
+                        onClick={() => onDeleteDevice(device.id)}
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
-                  {role === 'admin' && (
-                    <button
-                      className="btn-delete"
-                      onClick={() => onDeleteDevice(device.id)}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -87,6 +87,101 @@ router.put('/:id', requireAuth, requireAdmin, async (req: Request, res: Response
   }
 });
 
+// POST /api/devices/:id/toggle - Toggle l'état d'une prise
+router.post('/:id/toggle', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const device = databaseService.getDevice(id);
+
+    if (!device) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+
+    if (device.type !== 'outlet') {
+      return res.status(400).json({ error: 'Device is not an outlet' });
+    }
+
+    if (!device.entityId) {
+      return res.status(400).json({ error: 'No entityId configured for this outlet' });
+    }
+
+    // Récupérer l'état actuel de la prise via Home Assistant
+    const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.140:8124';
+    const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
+
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (HOME_ASSISTANT_TOKEN) {
+      headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
+    }
+
+    // D'abord, récupérer l'état actuel
+    const stateResponse = await fetch(`${HOME_ASSISTANT_URL}/api/states/${device.entityId}`, { headers });
+    if (!stateResponse.ok) {
+      return res.status(500).json({ error: 'Failed to get outlet state from Home Assistant' });
+    }
+
+    const stateData = await stateResponse.json();
+    const currentState = stateData.state === 'on';
+    const newState = !currentState;
+
+    // Envoyer la commande toggle
+    const service = newState ? 'turn_on' : 'turn_off';
+    const url = `${HOME_ASSISTANT_URL}/api/services/switch/${service}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ entity_id: device.entityId })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(500).json({ error: `Home Assistant API error: ${errorText}` });
+    }
+
+    console.log(`[Devices] Outlet ${device.name} (${device.entityId}) set to ${newState ? 'ON' : 'OFF'}`);
+    res.json({ ...device, isOn: newState });
+  } catch (error) {
+    console.error('Error toggling device:', error);
+    res.status(500).json({ error: 'Failed to toggle device' });
+  }
+});
+
+// GET /api/devices/:id/state - Récupérer l'état d'une prise
+router.get('/:id/state', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const device = databaseService.getDevice(id);
+
+    if (!device) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+
+    if (device.type !== 'outlet' || !device.entityId) {
+      return res.json({ ...device, isOn: null });
+    }
+
+    const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.140:8124';
+    const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
+
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (HOME_ASSISTANT_TOKEN) {
+      headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
+    }
+
+    const stateResponse = await fetch(`${HOME_ASSISTANT_URL}/api/states/${device.entityId}`, { headers });
+    if (!stateResponse.ok) {
+      return res.json({ ...device, isOn: null });
+    }
+
+    const stateData = await stateResponse.json();
+    res.json({ ...device, isOn: stateData.state === 'on' });
+  } catch (error) {
+    console.error('Error getting device state:', error);
+    res.json({ isOn: null });
+  }
+});
+
 // DELETE /api/devices/:id - Supprimer un appareil
 router.delete('/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
