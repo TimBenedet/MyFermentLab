@@ -964,6 +964,134 @@
   transition: all 0.2s ease;
 }
 
+/* Outlet Control Panel with Tabs */
+.outlet-control-panel {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.outlet-control-panel .outlet-control {
+  padding: 16px;
+}
+
+.outlet-tabs {
+  display: flex;
+  border-bottom: 1px solid #333333;
+}
+
+.outlet-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: #999999;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.outlet-tab:hover {
+  color: #e8e4df;
+  background: #252525;
+}
+
+.outlet-tab.active {
+  color: #c4a574;
+  border-bottom: 2px solid #c4a574;
+  margin-bottom: -1px;
+}
+
+/* Outlet History */
+.outlet-history {
+  padding: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.history-loading,
+.history-empty {
+  text-align: center;
+  color: #666666;
+  padding: 24px;
+  font-size: 0.875rem;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #252525;
+  border-radius: 4px;
+  border-left: 3px solid transparent;
+}
+
+.history-entry.on {
+  border-left-color: #c4a574;
+}
+
+.history-entry.off {
+  border-left-color: #666666;
+}
+
+.history-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.history-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-action {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e8e4df;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-source {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 400;
+}
+
+.history-source.automatic {
+  background: #3B82F6;
+  color: white;
+}
+
+.history-source.manual {
+  background: #c4a574;
+  color: white;
+}
+
+.history-time {
+  font-size: 0.75rem;
+  color: #999999;
+  margin-top: 2px;
+}
+
+.history-duration {
+  font-size: 0.7rem;
+  color: #666666;
+  margin-top: 2px;
+  font-style: italic;
+}
+
 /* Control mode compact layout */
 .control-mode-compact {
   display: flex;

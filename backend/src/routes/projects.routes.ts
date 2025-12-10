@@ -304,6 +304,10 @@ router.post('/:id/outlet/toggle', requireAuth, requireAdmin, async (req: Request
     }
 
     databaseService.updateProjectOutletStatus(id, newState);
+
+    // Enregistrer l'état dans InfluxDB pour l'historique
+    await influxService.writeOutletState(id, newState, 'manual');
+
     const updatedProject = databaseService.getProject(id);
 
     res.json(updatedProject);
@@ -351,6 +355,26 @@ router.post('/:id/humidity', requireAuth, requireAdmin, async (req: Request, res
     res.status(201).json({ success: true });
   } catch (error) {
     console.error('Error adding humidity:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/projects/:id/outlet-history - Récupérer l'historique des états de la prise
+router.get('/:id/outlet-history', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = databaseService.getProject(id);
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const start = req.query.start as string || '-7d';
+    const outletHistory = await influxService.getOutletHistory(id, start);
+
+    res.json({ outletHistory });
+  } catch (error) {
+    console.error('Error fetching outlet history:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

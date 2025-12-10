@@ -3,6 +3,7 @@ import { TemperatureChart } from '../components/TemperatureChart';
 import { DensityChart } from '../components/DensityChart';
 import { HumidityChart } from '../components/HumidityChart';
 import { TemperatureAlert } from '../components/TemperatureAlert';
+import { OutletControl } from '../components/OutletControl';
 
 interface MonitoringPageProps {
   project: Project;
@@ -45,29 +46,11 @@ export function MonitoringPage({ project, onUpdateTarget, onToggleOutlet, onAddD
 
       <div className="monitoring-grid">
         <div className="control-panel">
-          <div className="panel-section">
-            <h2>Contrôle de la prise</h2>
-            <div className="outlet-control">
-              <div className="outlet-status">
-                <span className={`outlet-indicator ${project.outletActive ? 'active' : 'inactive'}`}>
-                  {project.outletActive ? '●' : '○'}
-                </span>
-                <div className="outlet-info">
-                  <div className="outlet-label">Tapis chauffant</div>
-                  <div className="outlet-state" style={{ color: project.outletActive ? '#10B981' : '#EF4444' }}>
-                    {project.outletActive ? 'Activé' : 'Désactivé'}
-                  </div>
-                </div>
-              </div>
-              <button
-                className={`btn-outlet ${project.outletActive ? 'active' : 'inactive'}`}
-                onClick={onToggleOutlet}
-                disabled={project.controlMode === 'automatic' || role === 'viewer'}
-              >
-                {project.outletActive ? 'Désactiver' : 'Activer'}
-              </button>
-            </div>
-          </div>
+          <OutletControl
+            project={project}
+            onToggleOutlet={onToggleOutlet}
+            role={role}
+          />
 
           <div className="panel-section">
             <div className="section-header-with-action">

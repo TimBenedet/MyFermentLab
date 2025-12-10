@@ -55,6 +55,20 @@ export class InfluxService {
     await this.writeApi.flush();
   }
 
+  async writeOutletState(projectId: string, state: boolean, source: 'manual' | 'automatic', timestamp?: number) {
+    const point = new Point('outlet_state')
+      .tag('project_id', projectId)
+      .tag('source', source)
+      .booleanField('state', state);
+
+    if (timestamp) {
+      point.timestamp(timestamp * 1000000); // Convert ms to ns
+    }
+
+    this.writeApi.writePoint(point);
+    await this.writeApi.flush();
+  }
+
   async getTemperatureHistory(projectId: string, start: string = '-30d'): Promise<Array<{ timestamp: number; temperature: number }>> {
     const query = `
       from(bucket: "${INFLUX_BUCKET}")
@@ -138,6 +152,39 @@ export class InfluxService {
           result.push({
             timestamp: new Date(obj._time).getTime(),
             humidity: obj._value
+          });
+        },
+        error: (error) => {
+          console.error('InfluxDB query error:', error);
+          reject(error);
+        },
+        complete: () => {
+          resolve(result);
+        }
+      });
+    });
+  }
+
+  async getOutletHistory(projectId: string, start: string = '-30d'): Promise<Array<{ timestamp: number; state: boolean; source: string }>> {
+    const query = `
+      from(bucket: "${INFLUX_BUCKET}")
+        |> range(start: ${start})
+        |> filter(fn: (r) => r._measurement == "outlet_state")
+        |> filter(fn: (r) => r.project_id == "${projectId}")
+        |> filter(fn: (r) => r._field == "state")
+        |> sort(columns: ["_time"])
+    `;
+
+    const result: Array<{ timestamp: number; state: boolean; source: string }> = [];
+
+    return new Promise((resolve, reject) => {
+      this.queryApi.queryRows(query, {
+        next: (row, tableMeta) => {
+          const obj = tableMeta.toObject(row);
+          result.push({
+            timestamp: new Date(obj._time).getTime(),
+            state: obj._value,
+            source: obj.source || 'unknown'
           });
         },
         error: (error) => {

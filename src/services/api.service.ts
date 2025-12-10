@@ -198,6 +198,16 @@ class ApiService {
     return response.json();
   }
 
+  async getOutletHistory(id: string, start: string = '-7d'): Promise<{ outletHistory: Array<{ timestamp: number; state: boolean; source: string }> }> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/outlet-history?start=${start}`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch outlet history');
+    }
+    return response.json();
+  }
+
   async unarchiveProject(id: string): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/unarchive`, {
       method: 'PUT',

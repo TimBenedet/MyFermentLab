@@ -1,7 +1,7 @@
 import { databaseService } from './database.service.js';
 import { influxService } from './influx.service.js';
 
-const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.140:8124';
+const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
 const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL || '30000'); // 30s par défaut
 
@@ -125,6 +125,8 @@ class SensorPollerService {
         try {
           await this.controlOutlet(device, shouldActivate);
           databaseService.updateProjectOutletStatus(projectId, shouldActivate);
+          // Enregistrer le changement d'état dans l'historique
+          await influxService.writeOutletState(projectId, shouldActivate, 'automatic');
         } catch (error) {
           console.error(`[SensorPoller] Failed to control outlet for ${project.name}:`, error);
         }
