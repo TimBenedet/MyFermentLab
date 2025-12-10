@@ -10,7 +10,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933.svg)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](https://www.docker.com/)
 
-*Contrôlez et surveillez vos fermentations de bière, vin et saké avec précision et simplicité*
+*Contrôlez et surveillez vos fermentations de bière, vin, saké et culture de champignons avec précision et simplicité*
 
 [Fonctionnalités](#-fonctionnalités) • [Installation](#-installation) • [Documentation](#-configuration) • [Architecture](#-architecture)
 
@@ -20,13 +20,14 @@
 
 ## 📖 À propos
 
-**MyFermentLab** est une application web moderne et complète pour le monitoring et le contrôle automatique de vos fermentations artisanales. Conçue pour les brasseurs et vignerons amateurs, elle offre un suivi précis de la température et de la densité, avec un contrôle intelligent du chauffage.
+**MyFermentLab** est une application web moderne et complète pour le monitoring et le contrôle automatique de vos fermentations artisanales. Conçue pour les brasseurs, vignerons amateurs et cultivateurs de champignons, elle offre un suivi précis de la température, de la densité et de l'humidité, avec un contrôle intelligent du chauffage.
 
 ### 🎯 Cas d'usage
 
 - 🍺 **Brassage de bière** : Contrôle précis de la température et suivi de la densité pour calculer l'ABV
 - 🍷 **Vinification** : Surveillance des températures de fermentation primaire et secondaire
 - 🍶 **Production de saké** : Contrôle des températures basses pour fermentation traditionnelle
+- 🍄 **Culture de champignons** : Suivi de la température et de l'humidité pour myciculture
 - 📊 **Suivi historique** : Archivage et comparaison de vos brassins passés
 
 ## ✨ Fonctionnalités
@@ -48,9 +49,10 @@
 ### 📊 Suivi de Fermentation
 
 - **Enregistrement de densité** (SG) avec calcul automatique ABV
-- **Historique complet** de température et densité
+- **Suivi d'humidité** pour les projets champignon avec graphiques dédiés
+- **Historique complet** de température, densité et humidité
 - **Notes et observations** pour chaque projet
-- **Multi-projets** avec gestion des ressources (capteurs, prises)
+- **Multi-projets** avec gestion des ressources (capteurs, prises, sondes d'humidité)
 
 ### 🍺 Gestion des Recettes de Brassage
 
@@ -151,6 +153,7 @@ graph TB
 ### Matériel Requis
 
 - **Capteurs de température** Zigbee (ex: Aqara, Sonoff)
+- **Capteurs d'humidité** Zigbee (ex: Aqara, Sonoff) - pour projets champignon
 - **Prises connectées** Zigbee ou WiFi (ex: Sonoff S31, Aqara)
 - **Coordinateur Zigbee** (ConBee II, Sonoff ZBDongle, etc.)
 - **Tapis chauffant** pour fermentation
@@ -429,10 +432,12 @@ influx auth create \
 | Champ | Description | Exemple |
 |-------|-------------|---------|
 | Nom | Nom de votre brassin | "IPA Cascade 2024" |
-| Type | Bière / Vin / Saké | Bière |
+| Type | Bière / Vin / Saké / Champignon | Bière |
 | Capteur | Capteur de température HA | sensor.temp_ferment_beer |
 | Prise | Prise connectée HA | switch.heating_mat |
 | Température | Température cible | 20°C |
+| Sonde humidité | Sonde d'humidité (champignon) | sensor.humidity_mushroom |
+| Humidité cible | Humidité cible (champignon) | 85% |
 | Mode | Auto / Manuel | Auto |
 
 4. **Sauvegarder** → Le monitoring démarre automatiquement!
@@ -495,6 +500,7 @@ Parfait pour partager l'accès sans risque de modification :
 | `PUT` | `/api/projects/:id/archive` | Archiver |
 | `DELETE` | `/api/projects/:id` | Supprimer |
 | `POST` | `/api/projects/:id/density` | Ajouter densité |
+| `POST` | `/api/projects/:id/humidity` | Ajouter humidité |
 | `GET` | `/api/devices` | Liste devices HA |
 
 <details>
@@ -718,6 +724,15 @@ Les skills sont définis dans `.claude/commands/`.
   - Affichage FG estimé, date de fin, jours restants
   - Courbe de prédiction sur le graphique de densité
   - Indicateur de confiance (basé sur R²)
+
+### ✅ Version 1.4 (Décembre 2025)
+- [x] **Culture de champignons (Myciculture)**
+  - Nouveau type de projet "Champignon" avec icône 🍄
+  - Gestion des sondes d'humidité (💧) dans les appareils
+  - Suivi de l'humidité cible par projet
+  - Graphique d'évolution de l'humidité dans le récapitulatif
+  - Statistiques d'humidité (moyenne, min, max, écart-type)
+  - Données de test simulées sur 7 jours pour les projets test
 
 ## 🤝 Contribution
 

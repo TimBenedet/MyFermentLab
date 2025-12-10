@@ -106,7 +106,7 @@ router.post('/:id/toggle', requireAuth, requireAdmin, async (req: Request, res: 
     }
 
     // Récupérer l'état actuel de la prise via Home Assistant
-    const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.140:8124';
+    const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
     const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
 
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
@@ -161,7 +161,7 @@ router.get('/:id/state', requireAuth, async (req: Request, res: Response) => {
       return res.json({ ...device, isOn: null });
     }
 
-    const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.140:8124';
+    const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
     const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
 
     const headers: HeadersInit = { 'Content-Type': 'application/json' };

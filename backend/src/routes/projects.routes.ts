@@ -265,7 +265,7 @@ router.post('/:id/outlet/toggle', requireAuth, requireAdmin, async (req: Request
 
     // Utiliser Home Assistant API si entityId est disponible, sinon fallback sur IP directe
     if (device.entityId) {
-      const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8124';
+      const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
       const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
 
       const service = newState ? 'turn_on' : 'turn_off';
