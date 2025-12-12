@@ -24,7 +24,6 @@ interface HomePageProps {
   onManageDevices: () => void;
   onLabelGenerator: () => void;
   onViewStats: () => void;
-  onViewHealth: () => void;
   role: 'admin' | 'viewer' | null;
 }
 
@@ -43,7 +42,6 @@ export function HomePage({
   onManageDevices,
   onLabelGenerator,
   onViewStats,
-  onViewHealth,
   role
 }: HomePageProps) {
   const [showArchived, setShowArchived] = useState(false);
@@ -269,9 +267,6 @@ export function HomePage({
           </button>
           <button className="btn-secondary" onClick={onLabelGenerator}>
             Étiquettes
-          </button>
-          <button className="btn-secondary" onClick={onViewHealth}>
-            Santé Système
           </button>
           {role === 'admin' && (
             <>

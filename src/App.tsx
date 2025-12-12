@@ -14,7 +14,7 @@ import { apiService, ProjectWithHistory } from './services/api.service';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
-type Page = 'home' | 'create-project' | 'monitoring' | 'brewing-session' | 'devices' | 'summary' | 'labels' | 'stats' | 'health';
+type Page = 'home' | 'create-project' | 'monitoring' | 'brewing-session' | 'devices' | 'summary' | 'labels' | 'stats';
 
 function App() {
   const { isAuthenticated, role, logout } = useAuth();
@@ -466,7 +466,6 @@ function App() {
             onManageDevices={() => setCurrentPage('devices')}
             onLabelGenerator={() => setCurrentPage('labels')}
             onViewStats={() => setCurrentPage('stats')}
-            onViewHealth={() => setCurrentPage('health')}
             role={role}
           />
         )}
@@ -533,12 +532,6 @@ function App() {
         {currentPage === 'stats' && (
           <StatsPage
             projects={projects}
-            onBack={() => setCurrentPage('home')}
-          />
-        )}
-
-        {currentPage === 'health' && (
-          <HealthCheckPage
             onBack={() => setCurrentPage('home')}
           />
         )}
