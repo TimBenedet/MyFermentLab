@@ -315,6 +315,41 @@ class ApiService {
     }
     return response.json();
   }
+
+  // Health Check
+  async getHealthCheck(): Promise<HealthCheckReport> {
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch health check');
+    }
+    return response.json();
+  }
+
+  async getLastHealthCheck(): Promise<HealthCheckReport> {
+    const response = await fetch(`${API_BASE_URL}/health/last`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch last health check');
+    }
+    return response.json();
+  }
+}
+
+export interface HealthCheckResult {
+  service: string;
+  status: 'ok' | 'warning' | 'error';
+  message: string;
+  lastCheck: number;
+  details?: Record<string, any>;
+}
+
+export interface HealthCheckReport {
+  timestamp: number;
+  overall: 'ok' | 'warning' | 'error';
+  checks: HealthCheckResult[];
 }
 
 export const apiService = new ApiService();
