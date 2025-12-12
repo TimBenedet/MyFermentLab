@@ -116,12 +116,12 @@ export function LoginPage({ onViewHealth }: LoginPageProps) {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+          background: #1f1f1f;
           padding: 20px;
         }
 
         .login-container {
-          background: #1e1e1e;
+          background: #252525;
           border-radius: 12px;
           padding: 40px;
           max-width: 500px;
@@ -218,7 +218,7 @@ export function LoginPage({ onViewHealth }: LoginPageProps) {
           padding: 12px 16px;
           border-radius: 6px;
           border: 1px solid #333;
-          background: #121212;
+          background: #1f1f1f;
           color: #fff;
           font-size: 14px;
           box-sizing: border-box;
@@ -250,7 +250,7 @@ export function LoginPage({ onViewHealth }: LoginPageProps) {
         }
 
         .login-divider span {
-          background: #1e1e1e;
+          background: #252525;
           padding: 0 16px;
           color: #666;
           position: relative;

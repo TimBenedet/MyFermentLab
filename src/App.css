@@ -2225,7 +2225,7 @@
   align-items: center;
   gap: 20px;
   padding: 20px;
-  background: #1a1a1a;
+  background: #252525;
   border-radius: 8px;
   border: 2px solid;
   margin-bottom: 24px;
@@ -2274,7 +2274,7 @@
 }
 
 .health-check-card {
-  background: #1a1a1a;
+  background: #252525;
   border-radius: 8px;
   padding: 20px;
   border: 1px solid #333333;
@@ -2363,7 +2363,7 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  background: #1a1a1a;
+  background: #1f1f1f;
   border-radius: 4px;
   font-size: 11px;
 }
@@ -2396,7 +2396,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  background: #1a1a1a;
+  background: #1f1f1f;
   border-radius: 4px;
   border-left: 3px solid #333;
 }
@@ -2481,7 +2481,7 @@
 .health-info {
   text-align: center;
   padding: 16px;
-  background: #1a1a1a;
+  background: #1f1f1f;
   border-radius: 8px;
   border: 1px solid #333333;
 }
