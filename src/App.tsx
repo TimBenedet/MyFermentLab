@@ -20,6 +20,7 @@ function App() {
   const { isAuthenticated, role, logout } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [showHealthFromLogin, setShowHealthFromLogin] = useState(false);
 
   // États
   const [projects, setProjects] = useState<Project[]>([]);
@@ -355,7 +356,14 @@ function App() {
 
   // Show login page if not authenticated
   if (!isAuthenticated) {
-    return <LoginPage />;
+    if (showHealthFromLogin) {
+      return (
+        <HealthCheckPage
+          onBack={() => setShowHealthFromLogin(false)}
+        />
+      );
+    }
+    return <LoginPage onViewHealth={() => setShowHealthFromLogin(true)} />;
   }
 
   // Afficher une erreur si le backend n'est pas accessible

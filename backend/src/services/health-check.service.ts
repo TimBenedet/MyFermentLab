@@ -242,11 +242,12 @@ class HealthCheckService {
         if (!device?.entityId) continue;
 
         const sensorState = states.find((s: any) => s.entity_id === device.entityId);
+        const sensorName = sensorState?.attributes?.friendly_name || device.name;
 
         if (!sensorState) {
           sensorResults.push({
             project: project.name,
-            sensor: device.name,
+            sensor: sensorName,
             status: 'error'
           });
           hasError = true;
@@ -256,7 +257,7 @@ class HealthCheckService {
         if (sensorState.state === 'unavailable' || sensorState.state === 'unknown') {
           sensorResults.push({
             project: project.name,
-            sensor: device.name,
+            sensor: sensorName,
             status: 'error'
           });
           hasError = true;
@@ -269,7 +270,7 @@ class HealthCheckService {
         if (ageMinutes > 120) {
           sensorResults.push({
             project: project.name,
-            sensor: device.name,
+            sensor: sensorName,
             status: 'error',
             temperature: sensorState.state,
             ageMinutes
@@ -278,7 +279,7 @@ class HealthCheckService {
         } else if (ageMinutes > 60) {
           sensorResults.push({
             project: project.name,
-            sensor: device.name,
+            sensor: sensorName,
             status: 'warning',
             temperature: sensorState.state,
             ageMinutes
@@ -287,7 +288,7 @@ class HealthCheckService {
         } else {
           sensorResults.push({
             project: project.name,
-            sensor: device.name,
+            sensor: sensorName,
             status: 'ok',
             temperature: sensorState.state,
             ageMinutes

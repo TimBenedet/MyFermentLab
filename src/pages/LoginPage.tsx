@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-export function LoginPage() {
+interface LoginPageProps {
+  onViewHealth?: () => void;
+}
+
+export function LoginPage({ onViewHealth }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,6 +89,24 @@ export function LoginPage() {
             </form>
             {error && <p className="error-message">{error}</p>}
           </div>
+
+          {onViewHealth && (
+            <>
+              <div className="login-divider">
+                <span>ou</span>
+              </div>
+
+              <div className="login-option">
+                <button
+                  className="btn-health"
+                  onClick={onViewHealth}
+                  disabled={loading}
+                >
+                  Santé du système
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -94,17 +116,18 @@ export function LoginPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #1a1d23 0%, #2a2e33 100%);
+          background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
           padding: 20px;
         }
 
         .login-container {
-          background: #1f2328;
+          background: #1e1e1e;
           border-radius: 12px;
           padding: 40px;
           max-width: 500px;
           width: 100%;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+          border: 1px solid #333;
         }
 
         .login-header {
@@ -115,11 +138,11 @@ export function LoginPage() {
         .login-header h1 {
           font-size: 32px;
           margin: 0 0 8px 0;
-          color: #e6e7e9;
+          color: #fff;
         }
 
         .login-header p {
-          color: #8e9196;
+          color: #888;
           margin: 0;
         }
 
@@ -136,16 +159,16 @@ export function LoginPage() {
         .login-option h2 {
           font-size: 18px;
           margin: 0 0 8px 0;
-          color: #e6e7e9;
+          color: #fff;
         }
 
         .option-description {
-          color: #8e9196;
+          color: #888;
           font-size: 14px;
           margin: 0 0 20px 0;
         }
 
-        .btn-viewer, .btn-admin {
+        .btn-viewer, .btn-admin, .btn-health {
           width: 100%;
           padding: 14px 24px;
           border-radius: 6px;
@@ -157,25 +180,35 @@ export function LoginPage() {
         }
 
         .btn-viewer {
-          background: #2ea043;
+          background: #10B981;
           color: white;
         }
 
         .btn-viewer:hover:not(:disabled) {
-          background: #2c974b;
+          background: #059669;
         }
 
         .btn-admin {
-          background: #1f6feb;
+          background: #3B82F6;
           color: white;
           margin-top: 12px;
         }
 
         .btn-admin:hover:not(:disabled) {
-          background: #388bfd;
+          background: #2563EB;
         }
 
-        .btn-viewer:disabled, .btn-admin:disabled {
+        .btn-health {
+          background: transparent;
+          color: #10B981;
+          border: 1px solid #10B981;
+        }
+
+        .btn-health:hover:not(:disabled) {
+          background: rgba(16, 185, 129, 0.1);
+        }
+
+        .btn-viewer:disabled, .btn-admin:disabled, .btn-health:disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
@@ -184,15 +217,20 @@ export function LoginPage() {
           width: 100%;
           padding: 12px 16px;
           border-radius: 6px;
-          border: 1px solid #30363d;
-          background: #0d1117;
-          color: #e6e7e9;
+          border: 1px solid #333;
+          background: #121212;
+          color: #fff;
           font-size: 14px;
+          box-sizing: border-box;
         }
 
         .password-input:focus {
           outline: none;
-          border-color: #1f6feb;
+          border-color: #10B981;
+        }
+
+        .password-input::placeholder {
+          color: #666;
         }
 
         .login-divider {
@@ -208,19 +246,19 @@ export function LoginPage() {
           top: 50%;
           width: 100%;
           height: 1px;
-          background: #30363d;
+          background: #333;
         }
 
         .login-divider span {
-          background: #1f2328;
+          background: #1e1e1e;
           padding: 0 16px;
-          color: #8e9196;
+          color: #666;
           position: relative;
           z-index: 1;
         }
 
         .error-message {
-          color: #f85149;
+          color: #EF4444;
           font-size: 14px;
           margin: 12px 0 0 0;
         }
