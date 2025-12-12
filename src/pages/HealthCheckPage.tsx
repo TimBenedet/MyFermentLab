@@ -65,7 +65,7 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
   const getStatusLabel = (status: 'ok' | 'warning' | 'error') => {
     switch (status) {
       case 'ok':
-        return 'Opérationnel';
+        return 'OK';
       case 'warning':
         return 'Attention';
       case 'error':
@@ -88,18 +88,38 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
   const renderDetails = (check: HealthCheckResult) => {
     if (!check.details) return null;
 
-    // Cas spécial pour les outlets
-    if (check.service === 'Smart Outlets' && check.details.outlets) {
+    // Cas spécial pour les prises connectées
+    if (check.service === 'Prises Connectées' && check.details.outlets) {
       return (
         <div className="health-details-outlets">
-          {check.details.outlets.map((outlet: { id: string; state: string }) => (
+          {check.details.outlets.map((outlet: { id: string; name: string; state: string }) => (
             <div key={outlet.id} className="outlet-item">
               <span className={`outlet-state ${outlet.state}`}>
                 {outlet.state === 'on' ? '●' : '○'}
               </span>
-              <span className="outlet-id">{outlet.id.replace('switch.smart_switch_', '').replace('_outlet', '')}</span>
+              <span className="outlet-name">{outlet.name}</span>
             </div>
           ))}
+        </div>
+      );
+    }
+
+    // Cas spécial pour VM Home Assistant
+    if (check.service === 'VM Home Assistant' && check.details.ip) {
+      return (
+        <div className="health-details-info">
+          <span>IP: {check.details.ip}:{check.details.port}</span>
+          {check.details.latency && <span>Latence: {check.details.latency}ms</span>}
+        </div>
+      );
+    }
+
+    // Cas spécial pour Home Assistant
+    if (check.service === 'Home Assistant' && check.details.version) {
+      return (
+        <div className="health-details-info">
+          <span>Version: {check.details.version}</span>
+          {check.details.latency && <span>Latence: {check.details.latency}ms</span>}
         </div>
       );
     }
@@ -114,12 +134,29 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
       );
     }
 
-    // Cas spécial pour les capteurs
-    if (check.service === 'Sensor Data' && check.details.temperature) {
+    // Cas spécial pour les capteurs actifs
+    if (check.service === 'Capteurs Actifs' && check.details.sensors) {
       return (
-        <div className="health-details-info">
-          <span>Température: {check.details.temperature}°C</span>
-          <span>Dernière mise à jour: {new Date(check.details.lastUpdated).toLocaleString('fr-FR')}</span>
+        <div className="health-details-sensors">
+          {check.details.sensors.map((sensor: { project: string; sensor: string; status: string; temperature?: string; ageMinutes?: number }, index: number) => (
+            <div key={index} className={`sensor-item ${sensor.status}`}>
+              <span className={`sensor-status-dot ${sensor.status}`}>
+                {sensor.status === 'ok' ? '●' : sensor.status === 'warning' ? '◐' : '○'}
+              </span>
+              <div className="sensor-info">
+                <span className="sensor-project">{sensor.project}</span>
+                <span className="sensor-name">{sensor.sensor}</span>
+              </div>
+              {sensor.temperature && (
+                <span className="sensor-temp">{sensor.temperature}°C</span>
+              )}
+              {sensor.ageMinutes !== undefined && (
+                <span className={`sensor-age ${sensor.status}`}>
+                  {sensor.ageMinutes < 60 ? `${sensor.ageMinutes}min` : `${Math.round(sensor.ageMinutes / 60)}h`}
+                </span>
+              )}
+            </div>
+          ))}
         </div>
       );
     }
@@ -192,9 +229,9 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
               <span className="overall-label">{getStatusLabel(report.overall)}</span>
             </div>
             <div className="overall-info">
-              <span className="overall-title">Statut Global du Système</span>
+              <span className="overall-title">Statut Global</span>
               <span className="overall-timestamp">
-                Dernière vérification: {formatTimestamp(report.timestamp)}
+                {formatTimestamp(report.timestamp)}
               </span>
             </div>
           </div>
@@ -230,8 +267,7 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
 
           <div className="health-info">
             <p>
-              Les vérifications automatiques sont effectuées toutes les heures.
-              Un rapport est généré et enregistré dans les logs du backend.
+              Vérifications automatiques toutes les heures.
             </p>
           </div>
         </>

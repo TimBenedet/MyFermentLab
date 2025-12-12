@@ -1,3 +1,5 @@
+import { databaseService } from './database.service.js';
+
 interface HealthCheckResult {
   service: string;
   status: 'ok' | 'warning' | 'error';
@@ -15,6 +17,7 @@ interface SystemHealthReport {
 const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
 const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
 const INFLUX_URL = process.env.INFLUX_URL || 'http://influxdb:8086';
+const HA_VM_IP = process.env.HA_VM_IP || '192.168.1.51';
 
 class HealthCheckService {
   private lastReport: SystemHealthReport | null = null;
@@ -22,16 +25,19 @@ class HealthCheckService {
   async runAllChecks(): Promise<SystemHealthReport> {
     const checks: HealthCheckResult[] = [];
 
+    // Check VM connectivity first
+    checks.push(await this.checkVMConnectivity());
+
     // Check Home Assistant
     checks.push(await this.checkHomeAssistant());
 
     // Check InfluxDB
     checks.push(await this.checkInfluxDB());
 
-    // Check sensors are reporting
-    checks.push(await this.checkSensorData());
+    // Check all active project sensors
+    checks.push(await this.checkActiveSensors());
 
-    // Check outlet connectivity
+    // Check outlet connectivity with friendly names
     checks.push(await this.checkOutlets());
 
     // Determine overall status
@@ -53,6 +59,55 @@ class HealthCheckService {
     return report;
   }
 
+  private async checkVMConnectivity(): Promise<HealthCheckResult> {
+    const service = 'VM Home Assistant';
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
+      // Try to connect to HA VM port directly
+      const startTime = Date.now();
+      const response = await fetch(`http://${HA_VM_IP}:8123/api/`, {
+        signal: controller.signal,
+        headers: {
+          'Authorization': `Bearer ${HOME_ASSISTANT_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      clearTimeout(timeout);
+
+      const latency = Date.now() - startTime;
+
+      if (response.ok) {
+        return {
+          service,
+          status: latency > 2000 ? 'warning' : 'ok',
+          message: latency > 2000
+            ? `VM accessible mais lente (${latency}ms)`
+            : `VM accessible (${latency}ms)`,
+          lastCheck: Date.now(),
+          details: { ip: HA_VM_IP, latency, port: 8123 }
+        };
+      } else {
+        return {
+          service,
+          status: 'warning',
+          message: `VM accessible mais HTTP ${response.status}`,
+          lastCheck: Date.now(),
+          details: { ip: HA_VM_IP, httpStatus: response.status }
+        };
+      }
+    } catch (error: any) {
+      return {
+        service,
+        status: 'error',
+        message: `VM inaccessible: ${error.name === 'AbortError' ? 'timeout' : error.message}`,
+        lastCheck: Date.now(),
+        details: { ip: HA_VM_IP }
+      };
+    }
+  }
+
   private async checkHomeAssistant(): Promise<HealthCheckResult> {
     const service = 'Home Assistant';
     try {
@@ -64,18 +119,23 @@ class HealthCheckService {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
 
+      const startTime = Date.now();
       const response = await fetch(`${HOME_ASSISTANT_URL}/api/`, {
         headers,
         signal: controller.signal
       });
       clearTimeout(timeout);
 
+      const latency = Date.now() - startTime;
+
       if (response.ok) {
+        const data = await response.json();
         return {
           service,
           status: 'ok',
-          message: 'Home Assistant API accessible',
-          lastCheck: Date.now()
+          message: `API accessible (${latency}ms)`,
+          lastCheck: Date.now(),
+          details: { version: data.version, latency }
         };
       } else {
         return {
@@ -133,58 +193,128 @@ class HealthCheckService {
     }
   }
 
-  private async checkSensorData(): Promise<HealthCheckResult> {
-    const service = 'Sensor Data';
+  private async checkActiveSensors(): Promise<HealthCheckResult> {
+    const service = 'Capteurs Actifs';
     try {
+      // Get all active (non-archived) projects
+      const projects = databaseService.getAllProjects().filter((p: any) => !p.archived);
+
+      if (projects.length === 0) {
+        return {
+          service,
+          status: 'ok',
+          message: 'Aucun projet actif',
+          lastCheck: Date.now()
+        };
+      }
+
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (HOME_ASSISTANT_TOKEN) {
         headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
       }
 
-      // Get sensor state from Home Assistant
-      const response = await fetch(
-        `${HOME_ASSISTANT_URL}/api/states/sensor.sonde_sonoff_1_temperature`,
-        { headers }
-      );
-
+      // Get all states from HA
+      const response = await fetch(`${HOME_ASSISTANT_URL}/api/states`, { headers });
       if (!response.ok) {
         return {
           service,
           status: 'error',
-          message: 'Cannot fetch sensor state from Home Assistant',
+          message: 'Cannot fetch sensor states from Home Assistant',
           lastCheck: Date.now()
         };
       }
 
-      const data = await response.json();
-      const lastUpdated = new Date(data.last_updated).getTime();
-      const ageMinutes = (Date.now() - lastUpdated) / 60000;
+      const states = await response.json();
+      const sensorResults: Array<{
+        project: string;
+        sensor: string;
+        status: 'ok' | 'warning' | 'error';
+        temperature?: string;
+        ageMinutes?: number;
+      }> = [];
 
-      if (ageMinutes > 120) {
-        return {
-          service,
-          status: 'error',
-          message: `Sensor data is stale (${Math.round(ageMinutes)} minutes old)`,
-          lastCheck: Date.now(),
-          details: { lastUpdated: data.last_updated, ageMinutes: Math.round(ageMinutes) }
-        };
-      } else if (ageMinutes > 60) {
-        return {
-          service,
-          status: 'warning',
-          message: `Sensor data is ${Math.round(ageMinutes)} minutes old`,
-          lastCheck: Date.now(),
-          details: { lastUpdated: data.last_updated, ageMinutes: Math.round(ageMinutes) }
-        };
-      } else {
-        return {
-          service,
-          status: 'ok',
-          message: `Sensor reporting normally (${data.state}°C)`,
-          lastCheck: Date.now(),
-          details: { temperature: data.state, lastUpdated: data.last_updated }
-        };
+      let hasError = false;
+      let hasWarning = false;
+
+      for (const project of projects) {
+        // Get device for this project
+        const device = databaseService.getDevice(project.sensorId);
+        if (!device?.entityId) continue;
+
+        const sensorState = states.find((s: any) => s.entity_id === device.entityId);
+
+        if (!sensorState) {
+          sensorResults.push({
+            project: project.name,
+            sensor: device.name,
+            status: 'error'
+          });
+          hasError = true;
+          continue;
+        }
+
+        if (sensorState.state === 'unavailable' || sensorState.state === 'unknown') {
+          sensorResults.push({
+            project: project.name,
+            sensor: device.name,
+            status: 'error'
+          });
+          hasError = true;
+          continue;
+        }
+
+        const lastUpdated = new Date(sensorState.last_updated).getTime();
+        const ageMinutes = Math.round((Date.now() - lastUpdated) / 60000);
+
+        if (ageMinutes > 120) {
+          sensorResults.push({
+            project: project.name,
+            sensor: device.name,
+            status: 'error',
+            temperature: sensorState.state,
+            ageMinutes
+          });
+          hasError = true;
+        } else if (ageMinutes > 60) {
+          sensorResults.push({
+            project: project.name,
+            sensor: device.name,
+            status: 'warning',
+            temperature: sensorState.state,
+            ageMinutes
+          });
+          hasWarning = true;
+        } else {
+          sensorResults.push({
+            project: project.name,
+            sensor: device.name,
+            status: 'ok',
+            temperature: sensorState.state,
+            ageMinutes
+          });
+        }
       }
+
+      const okCount = sensorResults.filter(s => s.status === 'ok').length;
+      const warningCount = sensorResults.filter(s => s.status === 'warning').length;
+      const errorCount = sensorResults.filter(s => s.status === 'error').length;
+
+      let message: string;
+      if (hasError) {
+        message = `${errorCount} capteur(s) en erreur`;
+      } else if (hasWarning) {
+        message = `${warningCount} capteur(s) avec données anciennes`;
+      } else {
+        message = `${okCount} capteur(s) OK`;
+      }
+
+      return {
+        service,
+        status: hasError ? 'error' : hasWarning ? 'warning' : 'ok',
+        message,
+        lastCheck: Date.now(),
+        details: { sensors: sensorResults }
+      };
     } catch (error: any) {
       return {
         service,
@@ -196,7 +326,7 @@ class HealthCheckService {
   }
 
   private async checkOutlets(): Promise<HealthCheckResult> {
-    const service = 'Smart Outlets';
+    const service = 'Prises Connectées';
     try {
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (HOME_ASSISTANT_TOKEN) {
@@ -225,18 +355,29 @@ class HealthCheckService {
         return {
           service,
           status: 'error',
-          message: `${unavailable.length} outlet(s) unavailable`,
+          message: `${unavailable.length} prise(s) indisponible(s)`,
           lastCheck: Date.now(),
-          details: { unavailable: unavailable.map((o: any) => o.entity_id) }
+          details: {
+            unavailable: unavailable.map((o: any) => ({
+              id: o.entity_id,
+              name: o.attributes?.friendly_name || o.entity_id
+            }))
+          }
         };
       }
 
       return {
         service,
         status: 'ok',
-        message: `${outlets.length} outlet(s) available`,
+        message: `${outlets.length} prise(s) disponible(s)`,
         lastCheck: Date.now(),
-        details: { outlets: outlets.map((o: any) => ({ id: o.entity_id, state: o.state })) }
+        details: {
+          outlets: outlets.map((o: any) => ({
+            id: o.entity_id,
+            name: o.attributes?.friendly_name || o.entity_id,
+            state: o.state
+          }))
+        }
       };
     } catch (error: any) {
       return {

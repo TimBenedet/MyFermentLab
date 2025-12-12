@@ -2376,12 +2376,106 @@
   color: #666666;
 }
 
-.outlet-id {
-  color: #888888;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.outlet-name {
+  color: #e8e4df;
+  font-size: 12px;
+}
+
+/* Sensors details */
+.health-details-sensors {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: #252525;
+  border-radius: 4px;
+}
+
+.sensor-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  border-left: 3px solid #333;
+}
+
+.sensor-item.ok {
+  border-left-color: #10B981;
+}
+
+.sensor-item.warning {
+  border-left-color: #F59E0B;
+}
+
+.sensor-item.error {
+  border-left-color: #EF4444;
+}
+
+.sensor-status-dot {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.sensor-status-dot.ok {
+  color: #10B981;
+}
+
+.sensor-status-dot.warning {
+  color: #F59E0B;
+}
+
+.sensor-status-dot.error {
+  color: #EF4444;
+}
+
+.sensor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sensor-project {
+  font-size: 13px;
+  color: #e8e4df;
+  font-weight: 500;
+}
+
+.sensor-name {
+  font-size: 11px;
+  color: #666666;
+}
+
+.sensor-temp {
+  font-size: 14px;
+  font-weight: 600;
+  color: #c4a574;
+  flex-shrink: 0;
+}
+
+.sensor-age {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.sensor-age.ok {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10B981;
+}
+
+.sensor-age.warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #F59E0B;
+}
+
+.sensor-age.error {
+  background: rgba(239, 68, 68, 0.2);
+  color: #EF4444;
 }
 
 .health-info {
@@ -2398,17 +2492,133 @@
   font-size: 13px;
 }
 
+/* Health Check Mobile Responsive */
 @media (max-width: 768px) {
+  .health-check-page {
+    padding: 0 10px;
+  }
+
   .health-overall {
     flex-direction: column;
     text-align: center;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .overall-status {
+    padding: 10px 16px;
+  }
+
+  .overall-icon {
+    font-size: 20px;
+  }
+
+  .overall-label {
+    font-size: 14px;
   }
 
   .overall-info {
     align-items: center;
   }
 
+  .overall-title {
+    font-size: 16px;
+  }
+
+  .overall-timestamp {
+    font-size: 12px;
+  }
+
   .health-checks-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .health-check-card {
+    padding: 16px;
+  }
+
+  .check-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  .check-title h3 {
+    font-size: 14px;
+  }
+
+  .check-message {
+    font-size: 13px;
+  }
+
+  .health-details-outlets {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .outlet-item {
+    padding: 6px 8px;
+  }
+
+  .outlet-name {
+    font-size: 11px;
+  }
+
+  .health-details-sensors {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .sensor-item {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+
+  .sensor-project {
+    font-size: 12px;
+  }
+
+  .sensor-temp {
+    font-size: 13px;
+  }
+
+  .health-info {
+    padding: 12px;
+  }
+
+  .health-info p {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .health-overall {
+    padding: 12px;
+  }
+
+  .overall-status {
+    padding: 8px 12px;
+  }
+
+  .overall-icon {
+    font-size: 18px;
+  }
+
+  .overall-label {
+    font-size: 13px;
+  }
+
+  .sensor-item {
+    flex-wrap: wrap;
+  }
+
+  .sensor-info {
+    flex: 1 1 60%;
+  }
+
+  .sensor-temp,
+  .sensor-age {
+    flex: 0 0 auto;
   }
 }
