@@ -180,32 +180,32 @@ export function LoginPage({ onViewHealth }: LoginPageProps) {
         }
 
         .btn-viewer {
-          background: #10B981;
-          color: white;
+          background: #c4a574;
+          color: #1f1f1f;
         }
 
         .btn-viewer:hover:not(:disabled) {
-          background: #059669;
+          background: #d4b584;
         }
 
         .btn-admin {
-          background: #3B82F6;
-          color: white;
+          background: #c4a574;
+          color: #1f1f1f;
           margin-top: 12px;
         }
 
         .btn-admin:hover:not(:disabled) {
-          background: #2563EB;
+          background: #d4b584;
         }
 
         .btn-health {
           background: transparent;
-          color: #10B981;
-          border: 1px solid #10B981;
+          color: #c4a574;
+          border: 1px solid #c4a574;
         }
 
         .btn-health:hover:not(:disabled) {
-          background: rgba(16, 185, 129, 0.1);
+          background: rgba(196, 165, 116, 0.1);
         }
 
         .btn-viewer:disabled, .btn-admin:disabled, .btn-health:disabled {
@@ -226,7 +226,7 @@ export function LoginPage({ onViewHealth }: LoginPageProps) {
 
         .password-input:focus {
           outline: none;
-          border-color: #10B981;
+          border-color: #c4a574;
         }
 
         .password-input::placeholder {

@@ -2282,7 +2282,7 @@
 }
 
 .health-check-card.ok {
-  border-left: 4px solid #10B981;
+  border-left: 4px solid #c4a574;
 }
 
 .health-check-card.warning {
@@ -2369,7 +2369,7 @@
 }
 
 .outlet-state.on {
-  color: #10B981;
+  color: #c4a574;
 }
 
 .outlet-state.off {
@@ -2402,7 +2402,7 @@
 }
 
 .sensor-item.ok {
-  border-left-color: #10B981;
+  border-left-color: #c4a574;
 }
 
 .sensor-item.warning {
@@ -2419,7 +2419,7 @@
 }
 
 .sensor-status-dot.ok {
-  color: #10B981;
+  color: #c4a574;
 }
 
 .sensor-status-dot.warning {
@@ -2464,8 +2464,8 @@
 }
 
 .sensor-age.ok {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10B981;
+  background: rgba(196, 165, 116, 0.2);
+  color: #c4a574;
 }
 
 .sensor-age.warning {

@@ -54,7 +54,7 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
   const getStatusColor = (status: 'ok' | 'warning' | 'error') => {
     switch (status) {
       case 'ok':
-        return '#10B981';
+        return '#c4a574';
       case 'warning':
         return '#F59E0B';
       case 'error':
@@ -65,7 +65,7 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
   const getStatusLabel = (status: 'ok' | 'warning' | 'error') => {
     switch (status) {
       case 'ok':
-        return 'OK';
+        return 'Opérationnel';
       case 'warning':
         return 'Attention';
       case 'error':
