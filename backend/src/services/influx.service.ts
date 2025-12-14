@@ -55,11 +55,16 @@ export class InfluxService {
     await this.writeApi.flush();
   }
 
-  async writeOutletState(projectId: string, state: boolean, source: 'manual' | 'automatic', timestamp?: number) {
+  async writeOutletState(projectId: string, state: boolean, source: 'manual' | 'automatic', temperature?: number, timestamp?: number) {
     const point = new Point('outlet_state')
       .tag('project_id', projectId)
       .tag('source', source)
       .booleanField('state', state);
+
+    // Ajouter la température si fournie
+    if (temperature !== undefined) {
+      point.floatField('temperature', temperature);
+    }
 
     if (timestamp) {
       point.timestamp(timestamp * 1000000); // Convert ms to ns
@@ -165,27 +170,33 @@ export class InfluxService {
     });
   }
 
-  async getOutletHistory(projectId: string, start: string = '-30d'): Promise<Array<{ timestamp: number; state: boolean; source: string }>> {
+  async getOutletHistory(projectId: string, start: string = '-30d'): Promise<Array<{ timestamp: number; state: boolean; source: string; temperature?: number }>> {
+    // Requête pour récupérer les états et les températures avec pivot
     const query = `
       from(bucket: "${INFLUX_BUCKET}")
         |> range(start: ${start})
         |> filter(fn: (r) => r._measurement == "outlet_state")
         |> filter(fn: (r) => r.project_id == "${projectId}")
-        |> filter(fn: (r) => r._field == "state")
+        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
         |> sort(columns: ["_time"])
     `;
 
-    const result: Array<{ timestamp: number; state: boolean; source: string }> = [];
+    const result: Array<{ timestamp: number; state: boolean; source: string; temperature?: number }> = [];
 
     return new Promise((resolve, reject) => {
       this.queryApi.queryRows(query, {
         next: (row, tableMeta) => {
           const obj = tableMeta.toObject(row);
-          result.push({
+          const entry: { timestamp: number; state: boolean; source: string; temperature?: number } = {
             timestamp: new Date(obj._time).getTime(),
-            state: obj._value,
+            state: obj.state,
             source: obj.source || 'unknown'
-          });
+          };
+          // Ajouter la température si présente
+          if (obj.temperature !== undefined && obj.temperature !== null) {
+            entry.temperature = obj.temperature;
+          }
+          result.push(entry);
         },
         error: (error) => {
           console.error('InfluxDB query error:', error);

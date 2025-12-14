@@ -198,7 +198,7 @@ class ApiService {
     return response.json();
   }
 
-  async getOutletHistory(id: string, start: string = '-7d'): Promise<{ outletHistory: Array<{ timestamp: number; state: boolean; source: string }> }> {
+  async getOutletHistory(id: string, start: string = '-7d'): Promise<{ outletHistory: Array<{ timestamp: number; state: boolean; source: string; temperature?: number }> }> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/outlet-history?start=${start}`, {
       headers: getAuthHeaders()
     });

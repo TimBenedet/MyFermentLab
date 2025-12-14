@@ -945,6 +945,12 @@
   color: #3B82F6;
 }
 
+.scada-history-temp {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .scada-history-time {
   font-size: 11px;
   color: var(--text-muted);
@@ -2483,6 +2489,12 @@
 .scada-history-source.automatic {
   background: rgba(59, 130, 246, 0.15);
   color: #3B82F6;
+}
+
+.scada-history-temp {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
 }
 
 .scada-history-time {

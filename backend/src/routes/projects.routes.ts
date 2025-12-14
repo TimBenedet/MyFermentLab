@@ -305,8 +305,8 @@ router.post('/:id/outlet/toggle', requireAuth, requireAdmin, async (req: Request
 
     databaseService.updateProjectOutletStatus(id, newState);
 
-    // Enregistrer l'état dans InfluxDB pour l'historique
-    await influxService.writeOutletState(id, newState, 'manual');
+    // Enregistrer l'état dans InfluxDB pour l'historique avec la température actuelle
+    await influxService.writeOutletState(id, newState, 'manual', project.currentTemperature);
 
     const updatedProject = databaseService.getProject(id);
 

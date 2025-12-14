@@ -118,15 +118,15 @@ class SensorPollerService {
 
     // Si l'état doit changer
     if (project.outletActive !== shouldActivate) {
-      console.log(`[SensorPoller] Project ${project.name}: Setting outlet to ${shouldActivate ? 'ON' : 'OFF'}`);
+      console.log(`[SensorPoller] Project ${project.name}: Setting outlet to ${shouldActivate ? 'ON' : 'OFF'} at ${currentTemp}°C`);
 
       const device = databaseService.getDevice(outletId);
       if (device) {
         try {
           await this.controlOutlet(device, shouldActivate);
           databaseService.updateProjectOutletStatus(projectId, shouldActivate);
-          // Enregistrer le changement d'état dans l'historique
-          await influxService.writeOutletState(projectId, shouldActivate, 'automatic');
+          // Enregistrer le changement d'état dans l'historique avec la température
+          await influxService.writeOutletState(projectId, shouldActivate, 'automatic', currentTemp);
         } catch (error) {
           console.error(`[SensorPoller] Failed to control outlet for ${project.name}:`, error);
         }

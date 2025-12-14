@@ -11,6 +11,7 @@ interface OutletHistoryEntry {
   timestamp: number;
   state: boolean;
   source: string;
+  temperature?: number;
 }
 
 // Generate mock temperature data for 7 days
@@ -668,6 +669,11 @@ export function MonitoringPage({
                         <div className="scada-history-details">
                           <div className="scada-history-action">
                             {entry.state ? 'Activé' : 'Désactivé'}
+                            {entry.temperature !== undefined && (
+                              <span className="scada-history-temp">
+                                à {entry.temperature.toFixed(1)}°C
+                              </span>
+                            )}
                             <span className={`scada-history-source ${entry.source}`}>
                               {getSourceLabel(entry.source)}
                             </span>
