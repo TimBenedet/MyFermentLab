@@ -130,30 +130,6 @@ export function MonitoringPage({
   const progress = (localTarget - minTemp) / (maxTemp - minTemp);
   const strokeDashoffset = circumference - (progress * circumference);
 
-  // Calculate density stats for beer
-  const densityStats = useMemo(() => {
-    if (project.fermentationType !== 'beer' || densityHistoryData.length === 0) {
-      return null;
-    }
-
-    const sortedHistory = [...densityHistoryData].sort((a, b) => a.timestamp - b.timestamp);
-    const initialDensity = sortedHistory[0]?.density || 1.050;
-    const currentDensity = sortedHistory[sortedHistory.length - 1]?.density || 1.010;
-
-    // Attenuation = (OG - FG) / (OG - 1) * 100
-    const attenuation = ((initialDensity - currentDensity) / (initialDensity - 1)) * 100;
-
-    // ABV = (OG - FG) * 131.25
-    const abv = (initialDensity - currentDensity) * 131.25;
-
-    return {
-      initial: initialDensity.toFixed(3),
-      current: currentDensity.toFixed(3),
-      attenuation: Math.min(100, Math.max(0, attenuation)).toFixed(0),
-      abv: abv.toFixed(1)
-    };
-  }, [project.fermentationType, densityHistoryData]);
-
   const handleIncreaseTemp = () => {
     if (localTarget < maxTemp) {
       setLocalTarget(prev => Math.min(maxTemp, prev + 0.5));
@@ -432,80 +408,34 @@ export function MonitoringPage({
       <div className="scada-charts-fullwidth">
         {/* Temperature Chart */}
         <div className="scada-chart-card fade-in">
-          <div className="scada-chart-header">
-            <h3 className="scada-chart-title">Evolution Temperature</h3>
-          </div>
-          <div className="scada-chart-container">
-            <TemperatureChart
-              data={temperatureHistory}
-              targetTemperature={project.targetTemperature}
-              type={project.fermentationType}
-            />
-          </div>
+          <TemperatureChart
+            data={temperatureHistory}
+            targetTemperature={project.targetTemperature}
+            type={project.fermentationType}
+          />
         </div>
 
         {/* Density Chart for beer */}
         {project.fermentationType === 'beer' && (
           <div className="scada-chart-card fade-in">
-            <div className="scada-chart-header">
-              <h3 className="scada-chart-title">Evolution Densite</h3>
-              <div className="scada-chart-legend">
-                <span className="scada-legend-item">
-                  <span className="scada-legend-dot accent"></span>
-                  Mesures
-                </span>
-                <span className="scada-legend-item">
-                  <span className="scada-legend-dot success"></span>
-                  Cible finale
-                </span>
-              </div>
-            </div>
-            <div className="scada-chart-container">
-              <DensityChart
-                data={densityHistoryData}
-                type={project.fermentationType}
-                onAddDensity={onAddDensity}
-                role={role}
-              />
-            </div>
-            {/* Density Stats */}
-            {densityStats && (
-              <div className="scada-density-info">
-                <div className="scada-density-stat">
-                  <span className="scada-density-label">Densite initiale</span>
-                  <span className="scada-density-value">{densityStats.initial}</span>
-                </div>
-                <div className="scada-density-stat">
-                  <span className="scada-density-label">Densite actuelle</span>
-                  <span className="scada-density-value highlight">{densityStats.current}</span>
-                </div>
-                <div className="scada-density-stat">
-                  <span className="scada-density-label">Attenuation</span>
-                  <span className="scada-density-value">{densityStats.attenuation}%</span>
-                </div>
-                <div className="scada-density-stat">
-                  <span className="scada-density-label">Alcool estime</span>
-                  <span className="scada-density-value">{densityStats.abv}%</span>
-                </div>
-              </div>
-            )}
+            <DensityChart
+              data={densityHistoryData}
+              type={project.fermentationType}
+              onAddDensity={onAddDensity}
+              role={role}
+            />
           </div>
         )}
 
         {/* Humidity Chart for mushrooms */}
         {project.fermentationType === 'mushroom' && (
           <div className="scada-chart-card fade-in">
-            <div className="scada-chart-header">
-              <h3 className="scada-chart-title">Evolution Humidite</h3>
-            </div>
-            <div className="scada-chart-container">
-              <HumidityChart
-                data={project.humidityHistory || []}
-                targetHumidity={project.targetHumidity}
-                onAddHumidity={onAddHumidity}
-                role={role}
-              />
-            </div>
+            <HumidityChart
+              data={project.humidityHistory || []}
+              targetHumidity={project.targetHumidity}
+              onAddHumidity={onAddHumidity}
+              role={role}
+            />
           </div>
         )}
       </div>
