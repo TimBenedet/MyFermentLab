@@ -529,18 +529,19 @@
 }
 
 .scada-metric-label {
+  display: block;
   font-size: 12px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 .scada-metric-value {
+  display: block;
   font-size: 20px;
   font-weight: 700;
+  line-height: 1.2;
   color: var(--text-primary);
 }
 
