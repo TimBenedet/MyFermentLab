@@ -4,19 +4,120 @@
   box-sizing: border-box;
 }
 
+:root {
+  /* SCADA Design System */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-card: #161616;
+  --bg-elevated: #1c1c1c;
+
+  /* Accent colors */
+  --accent: #c4a574;
+  --accent-light: #d4b584;
+  --accent-dark: #a08050;
+  --accent-glow: rgba(196, 165, 116, 0.4);
+
+  /* Type-specific colors */
+  --beer-color: #f59e0b;
+  --beer-glow: rgba(245, 158, 11, 0.3);
+  --koji-color: #7cb342;
+  --koji-glow: rgba(124, 179, 66, 0.3);
+  --mushroom-color: #8b6914;
+  --mushroom-glow: rgba(139, 105, 20, 0.3);
+  --wine-color: #9333ea;
+  --wine-glow: rgba(147, 51, 234, 0.3);
+
+  /* Text colors */
+  --text-primary: #ffffff;
+  --text-secondary: #888888;
+  --text-muted: #555555;
+
+  /* Status colors */
+  --success: #10b981;
+  --success-glow: rgba(16, 185, 129, 0.3);
+  --warning: #f59e0b;
+  --warning-glow: rgba(245, 158, 11, 0.3);
+  --error: #ef4444;
+  --error-glow: rgba(239, 68, 68, 0.3);
+
+  /* Borders and glass */
+  --border: #252525;
+  --border-light: #333333;
+  --glass: rgba(255, 255, 255, 0.03);
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'SF Pro Display', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #1a1a1a;
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #e8e4df;
+  color: var(--text-primary);
+  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
+  position: relative;
+}
+
+/* Animated Particles Background */
+.particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 50%;
+  opacity: 0.15;
+  animation: float 25s infinite linear;
+}
+
+@keyframes float {
+  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.15; }
+  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Global Animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 10px var(--success), 0 0 20px var(--success-glow); transform: scale(1); }
+  50% { box-shadow: 0 0 15px var(--success), 0 0 30px var(--success-glow); transform: scale(1.1); }
+}
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+@keyframes led-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
 }
 
 /* ========================================

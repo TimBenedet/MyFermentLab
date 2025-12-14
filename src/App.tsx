@@ -391,35 +391,68 @@ function App() {
     );
   }
 
+  // Update datetime
+  const [datetime, setDatetime] = useState('');
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      setDatetime(now.toLocaleDateString('fr-FR', options));
+    };
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="header-content">
-          <div>
-            <h1>Moniteur de Fermentation</h1>
-            <p className="app-subtitle">Contrôle et surveillance en temps réel</p>
-          </div>
-          <div className="header-actions">
-            <span className="role-badge">
-              {role === 'admin' ? 'Mode Admin' : 'Mode Lecture'}
-            </span>
-            {currentPage !== 'home' && (
-              <button
-                className="btn-secondary"
-                onClick={() => setCurrentPage('home')}
-              >
-                ← Accueil
+    <div className="scada-app">
+      <header className="scada-header">
+        <div className="scada-logo">
+          <div className="scada-logo-icon">🧪</div>
+          <div className="scada-logo-text">MyFerment<span>Lab</span></div>
+        </div>
+        <div className="scada-header-actions">
+          {currentPage === 'home' && (
+            <>
+              <div className="scada-system-status">
+                <div className="scada-status-dot"></div>
+                <span>Systèmes opérationnels</span>
+              </div>
+              <button className="scada-header-btn" onClick={() => setCurrentPage('devices')}>
+                <span>⚙️</span>
+                Appareils
               </button>
-            )}
-            {currentPage === 'home' && (
-              <button
-                className="logout-btn"
-                onClick={logout}
-              >
+              <button className="scada-header-btn" onClick={() => setCurrentPage('stats')}>
+                <span>📊</span>
+                Statistiques
+              </button>
+              <button className="scada-header-btn" onClick={() => setCurrentPage('labels')}>
+                <span>🏷️</span>
+                Étiquettes
+              </button>
+              {role === 'admin' && (
+                <button className="scada-header-btn primary" onClick={() => setCurrentPage('create-project')}>
+                  <span>+</span>
+                  Nouveau projet
+                </button>
+              )}
+              <button className="scada-header-btn" onClick={logout}>
                 Déconnexion
               </button>
-            )}
-          </div>
+            </>
+          )}
+          {currentPage !== 'home' && (
+            <button className="scada-header-btn" onClick={() => setCurrentPage('home')}>
+              ← Accueil
+            </button>
+          )}
+          <div className="scada-datetime">{datetime}</div>
         </div>
       </header>
 
@@ -449,7 +482,7 @@ function App() {
         </div>
       )}
 
-      <main className="app-main">
+      <main className="scada-main">
         {currentPage === 'home' && (
           <HomePage
             projects={projects}
@@ -537,11 +570,6 @@ function App() {
         )}
       </main>
 
-      {currentPage === 'home' && (
-        <footer className="app-footer">
-          <p>Intégré avec Home Assistant et InfluxDB</p>
-        </footer>
-      )}
     </div>
   );
 }

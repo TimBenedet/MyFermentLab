@@ -7,6 +7,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   rules:
+  # Version principale (design actuel)
   - host: myfermentlab
     http:
       paths:
@@ -15,6 +16,24 @@ spec:
         backend:
           service:
             name: fermentation-frontend
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: fermentation-backend
+            port:
+              number: 3001
+  # Version SCADA (nouveau design)
+  - host: scada.myfermentlab
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: fermentation-monitor-scada
             port:
               number: 80
       - path: /api

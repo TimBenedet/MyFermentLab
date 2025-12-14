@@ -1,3 +1,151 @@
+/* ========================================
+   SCADA App Container
+   ======================================== */
+
+.scada-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* SCADA Header */
+.scada-header {
+  background: linear-gradient(180deg, rgba(17, 17, 17, 0.98) 0%, rgba(10, 10, 10, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.scada-logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.scada-logo-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 20px var(--accent-glow);
+  position: relative;
+  overflow: hidden;
+}
+
+.scada-logo-icon::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.2) 50%, transparent 60%);
+  animation: shine 3s infinite;
+}
+
+.scada-logo-text {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+}
+
+.scada-logo-text span {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.scada-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.scada-header-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.scada-header-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.scada-header-btn.primary {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  border-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+.scada-header-btn.primary:hover {
+  box-shadow: 0 4px 25px var(--accent-glow);
+  transform: translateY(-2px);
+}
+
+.scada-system-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: var(--glass);
+  border-radius: 25px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.scada-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 10px var(--success), 0 0 20px var(--success-glow);
+  animation: pulse-glow 2s infinite;
+}
+
+.scada-datetime {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  margin-left: 16px;
+  white-space: nowrap;
+}
+
+/* SCADA Main Content */
+.scada-main {
+  flex: 1;
+  padding: 32px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Legacy App Styles (for non-home pages) */
 .app {
   min-height: 100vh;
   padding: 5px 24px 24px 24px;
@@ -8,19 +156,19 @@
 .app-header {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #333333;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .app-header h1 {
   font-size: 1.5rem;
   font-weight: 500;
   margin-bottom: 4px;
-  color: #e8e4df;
+  color: var(--text-primary);
 }
 
 .app-subtitle {
   font-size: 0.875rem;
-  color: #999999;
+  color: var(--text-secondary);
   font-weight: 400;
 }
 
@@ -40,7 +188,7 @@
 }
 
 .role-badge {
-  color: #999999;
+  color: var(--text-secondary);
   font-size: 14px;
   white-space: nowrap;
 }
@@ -52,7 +200,7 @@
 
 .app-footer {
   text-align: center;
-  color: #666666;
+  color: var(--text-muted);
   margin-top: auto;
   padding: 20px;
   font-size: 0.75rem;
@@ -1672,6 +1820,108 @@
 .logout-btn:hover {
   background: #262b31;
   border-color: #444444;
+}
+
+/* SCADA Header Responsive */
+@media (max-width: 1200px) {
+  .scada-header-actions {
+    gap: 12px;
+  }
+
+  .scada-header-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .scada-header {
+    padding: 12px 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .scada-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .scada-system-status span {
+    display: none;
+  }
+
+  .scada-system-status {
+    padding: 8px;
+    border-radius: 50%;
+  }
+
+  .scada-main {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .scada-header {
+    padding: 12px 16px;
+  }
+
+  .scada-logo-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .scada-logo-text {
+    font-size: 20px;
+  }
+
+  .scada-header-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .scada-header-btn span:first-child {
+    display: none;
+  }
+
+  .scada-datetime {
+    display: none;
+  }
+
+  .scada-main {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .scada-header {
+    padding: 10px 12px;
+  }
+
+  .scada-logo {
+    gap: 10px;
+  }
+
+  .scada-logo-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+
+  .scada-logo-text {
+    font-size: 18px;
+  }
+
+  .scada-header-btn {
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+
+  .scada-main {
+    padding: 12px;
+  }
 }
 
 /* Responsive */

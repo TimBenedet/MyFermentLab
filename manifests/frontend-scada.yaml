@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fermentation-monitor-scada
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fermentation-monitor-scada
+  template:
+    metadata:
+      labels:
+        app: fermentation-monitor-scada
+    spec:
+      containers:
+      - name: frontend
+        image: ghcr.io/timbenedet/myfermentlab-frontend:scada
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fermentation-monitor-scada
+  namespace: default
+spec:
+  selector:
+    app: fermentation-monitor-scada
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30081
+  type: NodePort

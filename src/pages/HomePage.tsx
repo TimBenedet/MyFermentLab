@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Project, Device, FermentationType, FERMENTATION_TYPES } from '../types';
+import './HomePage.css';
 
-// Icône engrenage SVG
+// Gear Icon SVG
 const GearIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3" />
@@ -27,6 +28,84 @@ interface HomePageProps {
   role: 'admin' | 'viewer' | null;
 }
 
+// Mini Tank visualization for beer
+const MiniTank = ({ level = 75 }: { level?: number }) => (
+  <div className="mini-tank">
+    <div className="mini-tank-neck"></div>
+    <div className="mini-tank-body">
+      <div className="mini-tank-liquid" style={{ height: `${level}%` }}>
+        <div className="mini-bubbles">
+          <div className="mini-bubble"></div>
+          <div className="mini-bubble"></div>
+          <div className="mini-bubble"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Mini Chamber visualization for koji
+const MiniChamber = ({ growth = 50 }: { growth?: number }) => (
+  <div className="mini-chamber">
+    <div className="mini-substrate">
+      <div className="mini-mycelium" style={{ height: `${growth}%` }}></div>
+    </div>
+  </div>
+);
+
+// Mini Tent visualization for mushroom
+const MiniTent = ({ stage = 'colonization' }: { stage?: 'colonization' | 'fruiting' }) => (
+  <div className="mini-tent">
+    {stage === 'fruiting' ? (
+      <div className="mini-mushrooms">
+        <div>
+          <div className="mini-mushroom-cap"></div>
+          <div className="mini-mushroom-stem"></div>
+        </div>
+        <div>
+          <div className="mini-mushroom-cap" style={{ transform: 'scale(0.8)' }}></div>
+          <div className="mini-mushroom-stem"></div>
+        </div>
+        <div>
+          <div className="mini-mushroom-cap"></div>
+          <div className="mini-mushroom-stem"></div>
+        </div>
+      </div>
+    ) : (
+      <div className="mini-colonization"></div>
+    )}
+  </div>
+);
+
+// Mini Wine visualization
+const MiniWine = ({ level = 70 }: { level?: number }) => (
+  <div className="mini-wine">
+    <div className="mini-wine-neck"></div>
+    <div className="mini-wine-body">
+      <div className="mini-wine-liquid" style={{ height: `${level}%` }}></div>
+    </div>
+  </div>
+);
+
+// Particles background component
+const ParticlesBackground = () => {
+  useEffect(() => {
+    const container = document.getElementById('particles');
+    if (!container || container.children.length > 0) return;
+
+    for (let i = 0; i < 30; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.animationDelay = Math.random() * 25 + 's';
+      particle.style.animationDuration = (20 + Math.random() * 10) + 's';
+      container.appendChild(particle);
+    }
+  }, []);
+
+  return <div className="particles" id="particles"></div>;
+};
+
 export function HomePage({
   projects,
   devices,
@@ -39,12 +118,9 @@ export function HomePage({
   onDeleteProject,
   onStartBrewing,
   onUpdateProject,
-  onManageDevices,
-  onLabelGenerator,
-  onViewStats,
   role
 }: HomePageProps) {
-  const [showArchived, setShowArchived] = useState(false);
+  const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'all'>('active');
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editName, setEditName] = useState('');
   const [editFermentationType, setEditFermentationType] = useState<FermentationType>('beer');
@@ -55,6 +131,15 @@ export function HomePage({
 
   const sensors = devices.filter(d => d.type === 'sensor');
   const outlets = devices.filter(d => d.type === 'outlet');
+
+  const activeProjects = projects.filter(p => !p.archived);
+  const archivedProjects = projects.filter(p => p.archived);
+
+  const displayedProjects = activeTab === 'active'
+    ? activeProjects
+    : activeTab === 'archived'
+      ? archivedProjects
+      : projects;
 
   const openEditModal = (project: Project) => {
     setEditingProject(project);
@@ -89,259 +174,289 @@ export function HomePage({
     }
   };
 
-  const activeProjects = projects.filter(p => !p.archived);
-  const archivedProjects = projects.filter(p => p.archived);
+  const getProjectStatus = (project: Project) => {
+    if (project.archived) return { text: 'Archivé', type: 'archived' as const };
+    if (project.brewingSession && !project.brewingSession.completedAt) return { text: 'En brassage', type: 'brewing' as const };
 
-  const displayedProjects = showArchived ? archivedProjects : activeProjects;
+    const diff = project.targetTemperature - project.currentTemperature;
+    if (Math.abs(diff) < 0.5) return { text: 'Stable', type: 'active' as const };
+    if (project.outletActive) return { text: 'Chauffage', type: 'heating' as const };
+    return { text: 'Inactif', type: 'inactive' as const };
+  };
 
-  const renderProject = (project: Project) => {
+  const getProjectDuration = (project: Project) => {
+    if (!project.createdAt) return null;
+    const days = Math.floor((Date.now() - project.createdAt) / (1000 * 60 * 60 * 24));
+    if (days === 0) return "Aujourd'hui";
+    if (days === 1) return 'Jour 1';
+    return `Jour ${days}`;
+  };
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+  };
+
+  const getTypeClass = (type: FermentationType) => {
+    switch (type) {
+      case 'beer': return 'beer';
+      case 'koji': return 'koji';
+      case 'mushroom': return 'mushroom';
+      case 'mead': return 'wine';
+      case 'kombucha': return 'beer';
+      case 'cheese': return 'koji';
+      default: return 'beer';
+    }
+  };
+
+  const renderMiniVisualization = (project: Project) => {
+    switch (project.fermentationType) {
+      case 'beer':
+      case 'kombucha':
+        return <MiniTank level={75} />;
+      case 'koji':
+      case 'cheese':
+        return <MiniChamber growth={50} />;
+      case 'mushroom':
+        return <MiniTent stage={project.brewingSession?.completedAt ? 'fruiting' : 'colonization'} />;
+      case 'mead':
+        return <MiniWine level={70} />;
+      default:
+        return <MiniTank />;
+    }
+  };
+
+  const renderProjectCard = (project: Project, index: number) => {
     const config = FERMENTATION_TYPES[project.fermentationType];
+    const status = getProjectStatus(project);
+    const duration = getProjectDuration(project);
+    const typeClass = getTypeClass(project.fermentationType);
     const diff = project.targetTemperature - project.currentTemperature;
 
     return (
-      <div key={project.id} className="project-card">
-        <button
-          className="btn-delete-project"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (window.confirm(`Supprimer définitivement le projet "${project.name}" ?`)) {
-              onDeleteProject(project.id);
-            }
-          }}
-          title="Supprimer le projet"
-        >
-          ×
-        </button>
-
-        {/* Bouton engrenage pour modifier le projet */}
-        {role === 'admin' && !project.archived && (
-          <button
-            className="btn-settings-project"
-            onClick={(e) => {
-              e.stopPropagation();
-              openEditModal(project);
-            }}
-            title="Paramètres du projet"
-          >
-            <GearIcon />
-          </button>
-        )}
+      <div
+        key={project.id}
+        className={`scada-project-card ${typeClass} ${project.archived ? 'archived' : ''} fade-in`}
+        style={{ animationDelay: `${index * 0.1}s` }}
+      >
+        <div className="scada-project-header">
+          <div className="scada-project-type-icon">{config.icon}</div>
+          <div className={`scada-status-badge ${status.type}`}>
+            <span className="status-led"></span>
+            {status.text}
+          </div>
+        </div>
 
         <div
-          className="project-card-content"
+          className="scada-project-body"
           onClick={() => !project.archived && onSelectProject(project.id)}
-          style={{ cursor: project.archived ? 'default' : 'pointer' }}
         >
-          <div className="project-header">
-            <div className="project-icon" style={{ color: config.color }}>
-              {config.icon}
+          <h3 className="scada-project-name">{project.name}</h3>
+          <p className="scada-project-subtitle">
+            {config.name} {duration && `• ${duration}`}
+          </p>
+
+          <div className="scada-project-visual">
+            {renderMiniVisualization(project)}
+          </div>
+
+          <div className="scada-project-metrics">
+            <div className="scada-metric">
+              <div className="scada-metric-value">{project.currentTemperature.toFixed(1)}°</div>
+              <div className="scada-metric-label">Actuelle</div>
             </div>
-            <div className="project-info">
-              <h3>{project.name}</h3>
-              <span className="project-type">{config.name}</span>
+            <div className="scada-metric">
+              <div className="scada-metric-value">{project.targetTemperature}°</div>
+              <div className="scada-metric-label">Cible</div>
             </div>
-            {/* Bouton Journal de brassage si session existe */}
+            <div className="scada-metric">
+              <div className="scada-metric-value" style={{
+                color: Math.abs(diff) < 0.5 ? 'var(--success)' : 'inherit'
+              }}>
+                {Math.abs(diff) < 0.5 ? '✓' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)}°`}
+              </div>
+              <div className="scada-metric-label">Écart</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="scada-project-footer">
+          <span className="scada-project-date">
+            {project.archived && project.archivedAt
+              ? `Archivé le ${formatDate(project.archivedAt)}`
+              : project.createdAt
+                ? `Démarré le ${formatDate(project.createdAt)}`
+                : ''
+            }
+          </span>
+          <div className="scada-project-actions">
+            {/* View details / Brewing Journal */}
             {project.brewingSession && (
               <button
-                className="btn-brewing-journal"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewBrewingJournal(project.id);
-                }}
-                title="Voir le journal de brassage"
+                className="scada-action-btn"
+                title="Journal de brassage"
+                onClick={(e) => { e.stopPropagation(); onViewBrewingJournal(project.id); }}
               >
-                Journal de brassage
+                📋
               </button>
             )}
-          </div>
 
-          <div className="project-stats">
-            <div className="stat-item">
-              <span className="stat-label">Actuelle</span>
-              <span className="stat-value" style={{ color: config.color }}>
-                {project.currentTemperature.toFixed(1)}°C
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Cible</span>
-              <span className="stat-value">
-                {project.targetTemperature}°C
-              </span>
-            </div>
-          </div>
-
-          {!project.archived && (
-            <div className="project-status">
-              {/* Afficher le bouton Brasser si c'est une bière sans session de brassage */}
-              {project.fermentationType === 'beer' && !project.brewingSession && (
-                <button
-                  className="btn-start-brewing"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStartBrewing(project.id);
-                  }}
-                  title="Démarrer le brassage"
-                >
-                  🍺 Brasser
-                </button>
-              )}
-              {/* Afficher "En cours de brassage" si session active */}
-              {project.brewingSession && !project.brewingSession.completedAt && (
-                <span className="status-indicator brewing">En brassage</span>
-              )}
-              {/* Sinon afficher le statut normal */}
-              {(!project.brewingSession || project.brewingSession.completedAt) && (
-                <>
-                  <span className={`status-indicator ${project.outletActive ? 'active' : 'inactive'}`}>
-                    {project.outletActive ? 'Chauffage actif' : 'Inactif'}
-                  </span>
-                  <span className="status-diff" style={{ color: Math.abs(diff) < 0.5 ? '#10B981' : config.color }}>
-                    {Math.abs(diff) < 0.5 ? 'Stable' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)}°C`}
-                  </span>
-                </>
-              )}
+            {/* Start brewing for beer without session */}
+            {project.fermentationType === 'beer' && !project.brewingSession && !project.archived && (
               <button
-                className="btn-archive"
+                className="scada-action-btn brewing"
+                title="Démarrer le brassage"
+                onClick={(e) => { e.stopPropagation(); onStartBrewing(project.id); }}
+              >
+                🍺
+              </button>
+            )}
+
+            {/* Settings (admin only) */}
+            {role === 'admin' && !project.archived && (
+              <button
+                className="scada-action-btn"
+                title="Paramètres"
+                onClick={(e) => { e.stopPropagation(); openEditModal(project); }}
+              >
+                <GearIcon />
+              </button>
+            )}
+
+            {/* Archive/Unarchive */}
+            {project.archived ? (
+              <>
+                <button
+                  className="scada-action-btn"
+                  title="Voir récapitulatif"
+                  onClick={(e) => { e.stopPropagation(); onViewSummary(project.id); }}
+                >
+                  📊
+                </button>
+                {role === 'admin' && (
+                  <button
+                    className="scada-action-btn"
+                    title="Désarchiver"
+                    onClick={(e) => { e.stopPropagation(); onUnarchiveProject(project.id); }}
+                  >
+                    ↩️
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                className="scada-action-btn"
+                title="Archiver"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (window.confirm(`Archiver le projet "${project.name}" ?\n\nCela libérera les capteurs et prises associés.`)) {
                     onArchiveProject(project.id);
                   }
                 }}
-                title="Archiver le projet"
               >
                 📦
               </button>
-            </div>
-          )}
+            )}
 
-          {project.archived && project.archivedAt && (
-            <div className="project-status">
-              <span className="status-indicator archived">
-                Archivé le {new Date(project.archivedAt).toLocaleDateString()}
-              </span>
-              <div className="archived-actions">
-                <button
-                  className="btn-view-summary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewSummary(project.id);
-                  }}
-                  title="Voir le récapitulatif"
-                >
-                  📊 Récapitulatif
-                </button>
-                {role === 'admin' && (
-                  <button
-                    className="btn-archive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onUnarchiveProject(project.id);
-                    }}
-                    title="Désarchiver le projet"
-                  >
-                    ↩
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+            {/* Delete (always visible on hover) */}
+            <button
+              className="scada-action-btn delete"
+              title="Supprimer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Supprimer définitivement le projet "${project.name}" ?`)) {
+                  onDeleteProject(project.id);
+                }
+              }}
+            >
+              🗑️
+            </button>
+          </div>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="home-page">
-      <div className="home-header">
-        <div>
-          <h1>Mes Projets de Fermentation</h1>
-          <p className="home-subtitle">
-            {activeProjects.length} projet{activeProjects.length > 1 ? 's' : ''} actif{activeProjects.length > 1 ? 's' : ''}
-            {archivedProjects.length > 0 && ` • ${archivedProjects.length} archivé${archivedProjects.length > 1 ? 's' : ''}`}
-          </p>
-        </div>
-        <div className="home-actions">
-          <button className="btn-secondary" onClick={onViewStats}>
-            Statistiques
+    <div className="scada-home-page">
+      <ParticlesBackground />
+
+      {/* Section Header */}
+      <div className="scada-section-header">
+        <h2 className="scada-section-title">Mes Projets</h2>
+        <div className="scada-section-tabs">
+          <button
+            className={`scada-tab-btn ${activeTab === 'active' ? 'active' : ''}`}
+            onClick={() => setActiveTab('active')}
+          >
+            Actifs
+            <span className="scada-tab-count">{activeProjects.length}</span>
           </button>
-          <button className="btn-secondary" onClick={onLabelGenerator}>
-            Étiquettes
+          <button
+            className={`scada-tab-btn ${activeTab === 'archived' ? 'active' : ''}`}
+            onClick={() => setActiveTab('archived')}
+          >
+            Archivés
+            <span className="scada-tab-count">{archivedProjects.length}</span>
           </button>
-          {role === 'admin' && (
-            <>
-              <button className="btn-secondary" onClick={onManageDevices}>
-                Gérer les appareils
-              </button>
-              <button className="btn-primary" onClick={onCreateProject}>
-                + Nouveau projet
-              </button>
-            </>
-          )}
+          <button
+            className={`scada-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveTab('all')}
+          >
+            Tous
+            <span className="scada-tab-count">{projects.length}</span>
+          </button>
         </div>
       </div>
 
-      <div className="projects-filter">
-        <button
-          className={`filter-btn ${!showArchived ? 'active' : ''}`}
-          onClick={() => setShowArchived(false)}
-        >
-          Projets actifs ({activeProjects.length})
-        </button>
-        <button
-          className={`filter-btn ${showArchived ? 'active' : ''}`}
-          onClick={() => setShowArchived(true)}
-        >
-          Projets archivés ({archivedProjects.length})
-        </button>
-      </div>
-
+      {/* Projects Grid */}
       {displayedProjects.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">{showArchived ? '📦' : '🍺'}</div>
-          <h2>{showArchived ? 'Aucun projet archivé' : 'Aucun projet actif'}</h2>
-          <p>
-            {showArchived
+        <div className="scada-empty-state">
+          <div className="scada-empty-icon">
+            {activeTab === 'archived' ? '📦' : '🧪'}
+          </div>
+          <h3 className="scada-empty-title">
+            {activeTab === 'archived' ? 'Aucun projet archivé' : 'Aucun projet actif'}
+          </h3>
+          <p className="scada-empty-text">
+            {activeTab === 'archived'
               ? 'Les projets archivés apparaîtront ici'
               : 'Créez votre premier projet de fermentation pour commencer'
             }
           </p>
-          {!showArchived && role === 'admin' && (
-            <button className="btn-primary" onClick={onCreateProject}>
-              Créer un projet
+          {activeTab !== 'archived' && role === 'admin' && (
+            <button className="scada-btn primary" onClick={onCreateProject}>
+              + Nouveau projet
             </button>
           )}
         </div>
       ) : (
-        <div className="projects-grid">
-          {displayedProjects.map(renderProject)}
+        <div className="scada-projects-grid">
+          {displayedProjects.map((project, index) => renderProjectCard(project, index))}
         </div>
       )}
 
-      {/* Modal d'édition du projet */}
+      {/* Edit Modal */}
       {editingProject && (
-        <div className="modal-overlay" onClick={closeEditModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="scada-modal-overlay" onClick={closeEditModal}>
+          <div className="scada-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Paramètres du projet</h2>
-            {error && (
-              <div className="error-message">{error}</div>
-            )}
+            {error && <div className="scada-error-message">{error}</div>}
             <form onSubmit={(e) => { e.preventDefault(); handleSaveProject(); }}>
-              <div className="form-group">
-                <label className="form-label">Nom du projet</label>
+              <div className="scada-form-group">
+                <label className="scada-form-label">Nom du projet</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="scada-form-input"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   required
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Type de fermentation</label>
+              <div className="scada-form-group">
+                <label className="scada-form-label">Type de fermentation</label>
                 <select
-                  className="form-select"
+                  className="scada-form-select"
                   value={editFermentationType}
                   onChange={(e) => setEditFermentationType(e.target.value as FermentationType)}
                 >
@@ -353,10 +468,10 @@ export function HomePage({
                 </select>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Sonde de température</label>
+              <div className="scada-form-group">
+                <label className="scada-form-label">Sonde de température</label>
                 <select
-                  className="form-select"
+                  className="scada-form-select"
                   value={editSensorId}
                   onChange={(e) => setEditSensorId(e.target.value)}
                   required
@@ -367,10 +482,10 @@ export function HomePage({
                 </select>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Prise connectée</label>
+              <div className="scada-form-group">
+                <label className="scada-form-label">Prise connectée</label>
                 <select
-                  className="form-select"
+                  className="scada-form-select"
                   value={editOutletId}
                   onChange={(e) => setEditOutletId(e.target.value)}
                   required
@@ -381,11 +496,11 @@ export function HomePage({
                 </select>
               </div>
 
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={closeEditModal} disabled={saving}>
+              <div className="scada-modal-actions">
+                <button type="button" className="scada-btn secondary" onClick={closeEditModal} disabled={saving}>
                   Annuler
                 </button>
-                <button type="submit" className="btn-primary" disabled={saving}>
+                <button type="submit" className="scada-btn primary" disabled={saving}>
                   {saving ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </div>
