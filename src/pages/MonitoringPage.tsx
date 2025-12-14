@@ -1,11 +1,17 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Project, FERMENTATION_TYPES, TemperatureReading, DensityReading, HumidityReading } from '../types';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { DensityChart } from '../components/DensityChart';
 import { HumidityChart } from '../components/HumidityChart';
 import { TemperatureAlert } from '../components/TemperatureAlert';
-import { OutletControl } from '../components/OutletControl';
+import { apiService } from '../services/api.service';
 import './MonitoringPage.css';
+
+interface OutletHistoryEntry {
+  timestamp: number;
+  state: boolean;
+  source: string;
+}
 
 // Generate mock temperature data for 7 days
 function generateMockTemperatureData(targetTemp: number, days: number = 7): TemperatureReading[] {
@@ -101,8 +107,67 @@ export function MonitoringPage({
   role
 }: MonitoringPageProps) {
   const [localTarget, setLocalTarget] = useState(project.targetTemperature);
+  const [controlPanelTab, setControlPanelTab] = useState<'control' | 'history'>('control');
+  const [outletHistory, setOutletHistory] = useState<OutletHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const config = FERMENTATION_TYPES[project.fermentationType];
+
+  // Load outlet history when switching to history tab
+  useEffect(() => {
+    if (controlPanelTab === 'history') {
+      loadOutletHistory();
+    }
+  }, [controlPanelTab, project.id]);
+
+  const loadOutletHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const data = await apiService.getOutletHistory(project.id, '-7d');
+      setOutletHistory(data.outletHistory.sort((a, b) => b.timestamp - a.timestamp));
+    } catch (error) {
+      console.error('Failed to load outlet history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const formatHistoryDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const formatHistoryTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const getSourceLabel = (source: string) => {
+    switch (source) {
+      case 'automatic': return 'Auto';
+      case 'manual': return 'Manuel';
+      default: return source;
+    }
+  };
+
+  const calculateDuration = (index: number) => {
+    if (index === 0) return null;
+    const current = outletHistory[index];
+    const previous = outletHistory[index - 1];
+    const durationMs = previous.timestamp - current.timestamp;
+    const hours = Math.floor(durationMs / 3600000);
+    const minutes = Math.floor((durationMs % 3600000) / 60000);
+    const seconds = Math.floor((durationMs % 60000) / 1000);
+    if (hours > 0) return `${hours}h ${minutes}min`;
+    if (minutes > 0) return `${minutes}min ${seconds}s`;
+    return `${seconds}s`;
+  };
 
   // Use mock data if no real data available (for demo purposes)
   const temperatureHistory = useMemo(() => {
@@ -468,97 +533,165 @@ export function MonitoringPage({
 
         {/* Right Panel */}
         <aside className="scada-right-panel">
-          {/* Temperature Control Panel */}
+          {/* Temperature Control Panel with Tabs */}
           <div className="scada-control-panel fade-in">
-            <div className="scada-control-header">
-              <span className="scada-control-title">Controle Temperature</span>
-              <span className={`scada-control-mode ${project.controlMode === 'manual' ? 'manual' : ''}`}>
-                {project.controlMode === 'automatic' ? 'AUTO' : 'MANUEL'}
-              </span>
+            {/* Tab Header */}
+            <div className="scada-panel-tabs">
+              <button
+                className={`scada-panel-tab ${controlPanelTab === 'control' ? 'active' : ''}`}
+                onClick={() => setControlPanelTab('control')}
+              >
+                Controle Temperature
+              </button>
+              <button
+                className={`scada-panel-tab ${controlPanelTab === 'history' ? 'active' : ''}`}
+                onClick={() => setControlPanelTab('history')}
+              >
+                Historique
+              </button>
             </div>
-            <div className="scada-control-body">
-              {/* Circular Gauge */}
-              <div className="scada-circular-gauge">
-                <svg className="scada-gauge-svg" viewBox="0 0 180 180">
-                  <defs>
-                    <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#a08050"/>
-                      <stop offset="100%" stopColor="#d4b584"/>
-                    </linearGradient>
-                  </defs>
-                  <circle className="scada-gauge-track" cx="90" cy="90" r="80"/>
-                  <circle
-                    className="scada-gauge-progress"
-                    cx="90"
-                    cy="90"
-                    r="80"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                  />
-                </svg>
-                <div className="scada-gauge-center">
-                  <div className="scada-gauge-temp">
-                    <span>{localTarget}</span>
-                    <span className="unit">°C</span>
+
+            {controlPanelTab === 'control' ? (
+              /* Temperature Control Content */
+              <div className="scada-control-body">
+                {/* Mode Badge */}
+                <div className="scada-mode-badge-container">
+                  <span className={`scada-control-mode ${project.controlMode === 'manual' ? 'manual' : ''}`}>
+                    {project.controlMode === 'automatic' ? 'AUTO' : 'MANUEL'}
+                  </span>
+                </div>
+
+                {/* Circular Gauge */}
+                <div className="scada-circular-gauge">
+                  <svg className="scada-gauge-svg" viewBox="0 0 180 180">
+                    <defs>
+                      <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#a08050"/>
+                        <stop offset="100%" stopColor="#d4b584"/>
+                      </linearGradient>
+                    </defs>
+                    <circle className="scada-gauge-track" cx="90" cy="90" r="80"/>
+                    <circle
+                      className="scada-gauge-progress"
+                      cx="90"
+                      cy="90"
+                      r="80"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={strokeDashoffset}
+                    />
+                  </svg>
+                  <div className="scada-gauge-center">
+                    <div className="scada-gauge-temp">
+                      <span>{localTarget}</span>
+                      <span className="unit">°C</span>
+                    </div>
+                    <div className="scada-gauge-label">Cible</div>
                   </div>
-                  <div className="scada-gauge-label">Cible</div>
                 </div>
-              </div>
 
-              <div className="scada-control-row">
-                <button
-                  className="scada-btn scada-btn-adjust"
-                  onClick={handleDecreaseTemp}
-                  disabled={role === 'viewer'}
-                >
-                  −
-                </button>
-                <button
-                  className="scada-btn scada-btn-primary"
-                  onClick={handleApplyTemp}
-                  disabled={role === 'viewer'}
-                >
-                  Appliquer
-                </button>
-                <button
-                  className="scada-btn scada-btn-adjust"
-                  onClick={handleIncreaseTemp}
-                  disabled={role === 'viewer'}
-                >
-                  +
-                </button>
-              </div>
-
-              {/* Mode Toggle */}
-              {onToggleControlMode && (
-                <div className="scada-mode-buttons">
+                <div className="scada-control-row">
                   <button
-                    className={`scada-btn-mode ${project.controlMode === 'automatic' ? 'active' : ''}`}
-                    onClick={onToggleControlMode}
+                    className="scada-btn scada-btn-adjust"
+                    onClick={handleDecreaseTemp}
                     disabled={role === 'viewer'}
                   >
-                    ⚙ Auto
+                    −
                   </button>
                   <button
-                    className={`scada-btn-mode ${project.controlMode === 'manual' ? 'active' : ''}`}
-                    onClick={onToggleControlMode}
+                    className="scada-btn scada-btn-primary"
+                    onClick={handleApplyTemp}
                     disabled={role === 'viewer'}
                   >
-                    ✋ Manuel
+                    Appliquer
+                  </button>
+                  <button
+                    className="scada-btn scada-btn-adjust"
+                    onClick={handleIncreaseTemp}
+                    disabled={role === 'viewer'}
+                  >
+                    +
                   </button>
                 </div>
-              )}
 
-              {/* Outlet Control with History Tabs - Integrated */}
-              <OutletControl
-                project={project}
-                onToggleOutlet={onToggleOutlet}
-                role={role}
-                variant="scada"
-              />
-            </div>
+                {/* Outlet Control */}
+                <div className="scada-outlet-section">
+                  <div className="scada-outlet-status">
+                    <span className={`scada-outlet-indicator ${project.outletActive ? 'active' : 'inactive'}`}>
+                      {project.outletActive ? '●' : '○'}
+                    </span>
+                    <div className="scada-outlet-info">
+                      <div className="scada-outlet-label">Tapis chauffant</div>
+                      <div className="scada-outlet-state" style={{ color: project.outletActive ? '#10B981' : '#EF4444' }}>
+                        {project.outletActive ? 'Activé' : 'Désactivé'}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    className={`scada-btn-outlet ${project.outletActive ? 'active' : 'inactive'}`}
+                    onClick={onToggleOutlet}
+                    disabled={project.controlMode === 'automatic' || role === 'viewer'}
+                  >
+                    {project.outletActive ? 'Désactiver' : 'Activer'}
+                  </button>
+                </div>
+
+                {/* Mode Toggle */}
+                {onToggleControlMode && (
+                  <div className="scada-mode-buttons">
+                    <button
+                      className={`scada-btn-mode ${project.controlMode === 'automatic' ? 'active' : ''}`}
+                      onClick={onToggleControlMode}
+                      disabled={role === 'viewer'}
+                    >
+                      ⚙ Auto
+                    </button>
+                    <button
+                      className={`scada-btn-mode ${project.controlMode === 'manual' ? 'active' : ''}`}
+                      onClick={onToggleControlMode}
+                      disabled={role === 'viewer'}
+                    >
+                      ✋ Manuel
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* History Content */
+              <div className="scada-history-body">
+                {historyLoading ? (
+                  <div className="scada-history-loading">Chargement...</div>
+                ) : outletHistory.length === 0 ? (
+                  <div className="scada-history-empty">Aucun historique disponible</div>
+                ) : (
+                  <div className="scada-history-list">
+                    {outletHistory.map((entry, index) => (
+                      <div key={entry.timestamp} className={`scada-history-entry ${entry.state ? 'on' : 'off'}`}>
+                        <div className="scada-history-icon">
+                          {entry.state ? '🔥' : '❄️'}
+                        </div>
+                        <div className="scada-history-details">
+                          <div className="scada-history-action">
+                            {entry.state ? 'Activé' : 'Désactivé'}
+                            <span className={`scada-history-source ${entry.source}`}>
+                              {getSourceLabel(entry.source)}
+                            </span>
+                          </div>
+                          <div className="scada-history-time">
+                            {formatHistoryDate(entry.timestamp)} à {formatHistoryTime(entry.timestamp)}
+                          </div>
+                          {calculateDuration(index) && (
+                            <div className="scada-history-duration">
+                              Durée: {calculateDuration(index)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-
         </aside>
       </div>
 
