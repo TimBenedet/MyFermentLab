@@ -4,7 +4,6 @@ import { TemperatureChart } from '../components/TemperatureChart';
 import { DensityChart } from '../components/DensityChart';
 import { HumidityChart } from '../components/HumidityChart';
 import { TemperatureAlert } from '../components/TemperatureAlert';
-import { OutletControl } from '../components/OutletControl';
 import './MonitoringPage.css';
 
 interface MonitoringPageProps {
@@ -62,6 +61,84 @@ export function MonitoringPage({
   const maxTemp = config.maxTemp;
   const progress = (localTarget - minTemp) / (maxTemp - minTemp);
   const strokeDashoffset = circumference - (progress * circumference);
+
+  // Calculate density stats for beer
+  const densityStats = useMemo(() => {
+    if (project.fermentationType !== 'beer' || !project.densityHistory || project.densityHistory.length === 0) {
+      return null;
+    }
+
+    const sortedHistory = [...project.densityHistory].sort((a, b) => a.timestamp - b.timestamp);
+    const initialDensity = sortedHistory[0]?.density || 1.050;
+    const currentDensity = sortedHistory[sortedHistory.length - 1]?.density || 1.010;
+
+    // Attenuation = (OG - FG) / (OG - 1) * 100
+    const attenuation = ((initialDensity - currentDensity) / (initialDensity - 1)) * 100;
+
+    // ABV = (OG - FG) * 131.25
+    const abv = (initialDensity - currentDensity) * 131.25;
+
+    return {
+      initial: initialDensity.toFixed(3),
+      current: currentDensity.toFixed(3),
+      attenuation: Math.min(100, Math.max(0, attenuation)).toFixed(0),
+      abv: abv.toFixed(1)
+    };
+  }, [project.fermentationType, project.densityHistory]);
+
+  // Generate recent activity based on project data
+  const recentActivity = useMemo(() => {
+    const activities: Array<{
+      type: 'success' | 'warning' | 'info' | 'error';
+      icon: string;
+      message: string;
+      time: string;
+    }> = [];
+
+    // Check temperature status
+    if (Math.abs(diff) < 0.5) {
+      activities.push({
+        type: 'success',
+        icon: '✓',
+        message: `Temperature cible atteinte pour ${project.name}`,
+        time: 'Maintenant'
+      });
+    } else if (project.outletActive) {
+      activities.push({
+        type: 'warning',
+        icon: '⚠',
+        message: `Chauffage actif pour ${project.name}`,
+        time: 'En cours'
+      });
+    }
+
+    // Add density info if available
+    if (project.densityHistory && project.densityHistory.length > 0) {
+      const lastDensity = project.densityHistory[project.densityHistory.length - 1];
+      const lastDate = new Date(lastDensity.timestamp);
+      const now = new Date();
+      const hoursAgo = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60));
+
+      activities.push({
+        type: 'info',
+        icon: 'ℹ',
+        message: `Derniere mesure de densite: ${lastDensity.density.toFixed(3)}`,
+        time: hoursAgo < 1 ? 'Il y a moins d\'1 heure' : `Il y a ${hoursAgo} heures`
+      });
+    }
+
+    // Add fermentation duration info
+    if (fermentationDuration > 0) {
+      activities.push({
+        type: 'info',
+        icon: '📊',
+        message: `Fermentation en cours depuis ${fermentationDuration} jours`,
+        time: `Jour ${fermentationDuration}`
+      });
+    }
+
+    return activities;
+  }, [project, diff, fermentationDuration]);
 
   const handleIncreaseTemp = () => {
     if (localTarget < maxTemp) {
@@ -169,21 +246,21 @@ export function MonitoringPage({
               <div className="scada-metrics-panel">
                 <div className="scada-metrics-row">
                   <div className="scada-metric-card">
-                    <div className="scada-metric-icon">&#127919;</div>
+                    <div className="scada-metric-icon">🎯</div>
                     <div className="scada-metric-info">
                       <span className="scada-metric-label">Temperature cible</span>
                       <span className="scada-metric-value highlight">{project.targetTemperature}°C</span>
                     </div>
                   </div>
                   <div className="scada-metric-card">
-                    <div className="scada-metric-icon">&#128197;</div>
+                    <div className="scada-metric-icon">📅</div>
                     <div className="scada-metric-info">
                       <span className="scada-metric-label">Duree fermentation</span>
                       <span className="scada-metric-value">{fermentationDuration} jours</span>
                     </div>
                   </div>
                   <div className="scada-metric-card">
-                    <div className="scada-metric-icon">&#128200;</div>
+                    <div className="scada-metric-icon">📊</div>
                     <div className="scada-metric-info">
                       <span className="scada-metric-label">Ecart temperature</span>
                       <span className={`scada-metric-value ${Math.abs(diff) < 0.5 ? 'success' : Math.abs(diff) < 2 ? 'warning' : 'error'}`}>
@@ -192,7 +269,7 @@ export function MonitoringPage({
                     </div>
                   </div>
                   <div className="scada-metric-card">
-                    <div className="scada-metric-icon">&#9889;</div>
+                    <div className="scada-metric-icon">⚡</div>
                     <div className="scada-metric-info">
                       <span className="scada-metric-label">Chauffage</span>
                       <span className="scada-metric-value">
@@ -205,7 +282,7 @@ export function MonitoringPage({
                   {project.fermentationType === 'mushroom' && (
                     <>
                       <div className="scada-metric-card">
-                        <div className="scada-metric-icon">&#128167;</div>
+                        <div className="scada-metric-icon">💧</div>
                         <div className="scada-metric-info">
                           <span className="scada-metric-label">Humidite actuelle</span>
                           <span className="scada-metric-value highlight">
@@ -214,7 +291,7 @@ export function MonitoringPage({
                         </div>
                       </div>
                       <div className="scada-metric-card">
-                        <div className="scada-metric-icon">&#127919;</div>
+                        <div className="scada-metric-icon">🎯</div>
                         <div className="scada-metric-info">
                           <span className="scada-metric-label">Humidite cible</span>
                           <span className="scada-metric-value">
@@ -250,6 +327,16 @@ export function MonitoringPage({
               <div className="scada-chart-card fade-in">
                 <div className="scada-chart-header">
                   <h3 className="scada-chart-title">Evolution Densite</h3>
+                  <div className="scada-chart-legend">
+                    <span className="scada-legend-item">
+                      <span className="scada-legend-dot accent"></span>
+                      Mesures
+                    </span>
+                    <span className="scada-legend-item">
+                      <span className="scada-legend-dot success"></span>
+                      Cible finale
+                    </span>
+                  </div>
                 </div>
                 <div className="scada-chart-container">
                   <DensityChart
@@ -259,6 +346,27 @@ export function MonitoringPage({
                     role={role}
                   />
                 </div>
+                {/* Density Stats */}
+                {densityStats && (
+                  <div className="scada-density-info">
+                    <div className="scada-density-stat">
+                      <span className="scada-density-label">Densite initiale</span>
+                      <span className="scada-density-value">{densityStats.initial}</span>
+                    </div>
+                    <div className="scada-density-stat">
+                      <span className="scada-density-label">Densite actuelle</span>
+                      <span className="scada-density-value highlight">{densityStats.current}</span>
+                    </div>
+                    <div className="scada-density-stat">
+                      <span className="scada-density-label">Attenuation</span>
+                      <span className="scada-density-value">{densityStats.attenuation}%</span>
+                    </div>
+                    <div className="scada-density-stat">
+                      <span className="scada-density-label">Alcool estime</span>
+                      <span className="scada-density-value">{densityStats.abv}%</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -326,7 +434,7 @@ export function MonitoringPage({
                   onClick={handleDecreaseTemp}
                   disabled={role === 'viewer'}
                 >
-                  -
+                  −
                 </button>
                 <button
                   className="scada-btn scada-btn-primary"
@@ -344,6 +452,24 @@ export function MonitoringPage({
                 </button>
               </div>
 
+              {/* Activate / Stop buttons */}
+              <div className="scada-control-row">
+                <button
+                  className="scada-btn scada-btn-success"
+                  onClick={onToggleOutlet}
+                  disabled={role === 'viewer' || project.outletActive}
+                >
+                  ⚡ Activer
+                </button>
+                <button
+                  className="scada-btn scada-btn-danger"
+                  onClick={onToggleOutlet}
+                  disabled={role === 'viewer' || !project.outletActive}
+                >
+                  ⏹ Arreter
+                </button>
+              </div>
+
               {/* Mode Toggle */}
               {onToggleControlMode && (
                 <div className="scada-mode-buttons">
@@ -352,40 +478,50 @@ export function MonitoringPage({
                     onClick={onToggleControlMode}
                     disabled={role === 'viewer'}
                   >
-                    &#9881; Auto
+                    ⚙ Auto
                   </button>
                   <button
                     className={`scada-btn-mode ${project.controlMode === 'manual' ? 'active' : ''}`}
                     onClick={onToggleControlMode}
                     disabled={role === 'viewer'}
                   >
-                    &#9995; Manuel
+                    ✋ Manuel
                   </button>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Outlet Control Panel */}
-          <div className="scada-control-panel fade-in">
-            <div className="scada-control-header">
-              <span className="scada-control-title">Prises Connectees</span>
-            </div>
-            <div className="scada-control-body">
-              <OutletControl
-                project={project}
-                onToggleOutlet={onToggleOutlet}
-                role={role}
-              />
-            </div>
-          </div>
-
-          {/* System Health */}
+          {/* Activity / Alerts Panel */}
           <div className="scada-alerts-panel fade-in">
             <div className="scada-alerts-header">
-              <span className="scada-alerts-title">Etat du Systeme</span>
+              <span className="scada-alerts-title">Activite Recente</span>
+              <span className="scada-alerts-count">{recentActivity.length}</span>
             </div>
-            <div className="scada-health-section" style={{ borderTop: 'none' }}>
+            <div className="scada-alerts-list">
+              {recentActivity.map((activity, index) => (
+                <div key={index} className={`scada-alert-item ${activity.type}`}>
+                  <span className="scada-alert-icon">{activity.icon}</span>
+                  <div className="scada-alert-content">
+                    <div className="scada-alert-message">{activity.message}</div>
+                    <div className="scada-alert-time">{activity.time}</div>
+                  </div>
+                </div>
+              ))}
+              {recentActivity.length === 0 && (
+                <div className="scada-alert-item info">
+                  <span className="scada-alert-icon">ℹ</span>
+                  <div className="scada-alert-content">
+                    <div className="scada-alert-message">Aucune activite recente</div>
+                    <div className="scada-alert-time">-</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* System Health */}
+            <div className="scada-health-section">
+              <div className="scada-health-title">Sante Systeme</div>
               <div className="scada-health-grid">
                 <div className="scada-health-item">
                   <div className="scada-health-indicator ok"></div>

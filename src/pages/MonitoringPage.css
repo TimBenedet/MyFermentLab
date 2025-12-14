@@ -1035,6 +1035,77 @@
   transform: translateX(-4px);
 }
 
+/* Chart Legend */
+.scada-chart-legend {
+  display: flex;
+  gap: 16px;
+}
+
+.scada-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.scada-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.scada-legend-dot.accent {
+  background: var(--accent);
+}
+
+.scada-legend-dot.success {
+  background: var(--success);
+}
+
+/* Density Info Stats */
+.scada-density-info {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.scada-density-stat {
+  text-align: center;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+}
+
+.scada-density-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scada-density-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.scada-density-value.highlight {
+  color: var(--accent);
+}
+
+/* Alerts List */
+.scada-alerts-list {
+  padding: 16px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .scada-monitoring-layout {
@@ -1090,5 +1161,9 @@
 
   .scada-health-grid {
     grid-template-columns: 1fr;
+  }
+
+  .scada-density-info {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
