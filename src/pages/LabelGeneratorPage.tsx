@@ -816,11 +816,12 @@ export function LabelGeneratorPage({ onBack }: LabelGeneratorPageProps) {
   return (
     <div className="label-generator-page">
       <div className="page-header">
-        <div>
-          <h1>Générateur d'étiquettes</h1>
-          <p className="page-subtitle">Créez vos étiquettes personnalisées</p>
+        <div className="page-header-left">
+          <button className="scada-btn-back" onClick={onBack}>
+            <span>←</span> Retour
+          </button>
+          <h1>Generateur d'etiquettes</h1>
         </div>
-        <button className="btn-secondary" onClick={onBack}>← Retour</button>
       </div>
 
       <div className="label-generator-container">

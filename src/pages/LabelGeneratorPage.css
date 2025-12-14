@@ -1,49 +1,109 @@
 /* ========================================
-   LabelGeneratorPage - Style hakko_labels-2
+   LabelGeneratorPage - SCADA Design
    ======================================== */
 
 .label-generator-page {
+  min-height: calc(100vh - 80px);
+  position: relative;
+  z-index: 1;
+  padding: 12px 24px 24px;
   max-width: 1500px;
   margin: 0 auto;
+}
+
+/* Header */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+
+.page-header h1::before {
+  content: '';
+  width: 4px;
+  height: 28px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.page-header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.scada-btn-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.scada-btn-back:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .label-generator-container {
   display: grid;
   grid-template-columns: 380px 1fr;
-  gap: 50px;
+  gap: 24px;
   align-items: start;
 }
 
-/* Section formulaire */
+/* Section formulaire - Style SCADA Card */
 .label-form-section {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 30px;
-  backdrop-filter: blur(10px);
-}
-
-.section-title {
-  font-size: 0.7rem;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: #c4a574;
-  margin-bottom: 15px;
-  font-weight: 400;
-}
-
-.section-divider {
-  border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin: 25px 0;
-}
-
-/* Accordions */
-.accordion-section {
-  margin-bottom: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  position: relative;
   overflow: hidden;
+}
+
+.label-form-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 50%, transparent 100%);
+}
+
+/* Accordions - Style SCADA */
+.accordion-section {
+  margin-bottom: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.accordion-section:hover {
+  border-color: var(--accent);
 }
 
 .accordion-header {
@@ -51,31 +111,31 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 18px;
-  background: rgba(255, 255, 255, 0.03);
+  padding: 16px 18px;
+  background: transparent;
   border: none;
   cursor: pointer;
-  font-family: 'Josefin Sans', sans-serif;
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #bbb;
+  color: var(--text-secondary);
   transition: all 0.2s ease;
 }
 
 .accordion-header:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #e8e4df;
+  color: var(--text-primary);
 }
 
 .accordion-header.open {
-  background: rgba(196, 165, 116, 0.1);
-  color: #c4a574;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(196, 165, 116, 0.08);
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
 }
 
 .accordion-icon {
-  font-size: 1.1rem;
+  font-size: 18px;
   font-weight: 300;
   color: inherit;
   transition: transform 0.2s ease;
@@ -83,7 +143,7 @@
 
 .accordion-content {
   padding: 20px 18px;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--bg-primary);
 }
 
 .label-form-group {
@@ -96,24 +156,24 @@
 
 .label-form-group label {
   display: block;
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
+  font-size: 11px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #bbb;
+  color: var(--text-muted);
   margin-bottom: 8px;
-  font-weight: 300;
+  font-weight: 500;
 }
 
 .label-form-group input[type="text"],
 .label-form-group textarea {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  padding: 12px 15px;
-  font-family: 'Josefin Sans', sans-serif;
-  font-size: 0.95rem;
-  color: #e8e4df;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
   transition: all 0.3s ease;
   outline: none;
 }
@@ -122,13 +182,13 @@
   resize: vertical;
   min-height: 70px;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 1rem;
+  font-size: 15px;
 }
 
 .label-form-group input:focus,
 .label-form-group textarea:focus {
-  border-color: #c4a574;
-  background: rgba(196, 165, 116, 0.08);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .toggle-label {
@@ -141,17 +201,17 @@
 .toggle-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #c4a574;
+  accent-color: var(--accent);
 }
 
 .input-hint {
-  font-size: 0.7rem;
-  color: #666;
+  font-size: 11px;
+  color: var(--text-muted);
   margin-top: 6px;
   font-style: italic;
 }
 
-/* Theme selector */
+/* Theme selector - Style SCADA */
 .theme-selector {
   display: flex;
   gap: 12px;
@@ -162,14 +222,14 @@
   flex: 1;
   min-width: 90px;
   height: 70px;
-  border: 2px solid transparent;
-  border-radius: 8px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
   cursor: pointer;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
@@ -185,45 +245,89 @@
 
 .theme-option:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .theme-option.active {
-  border-color: #fff;
-  box-shadow: 0 0 0 3px rgba(196, 165, 116, 0.4);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow), 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .theme-name {
-  font-family: 'Josefin Sans', sans-serif;
-  font-size: 0.65rem;
+  font-family: inherit;
+  font-size: 10px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: rgba(0, 0, 0, 0.7);
   position: relative;
   z-index: 1;
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+  font-weight: 600;
 }
 
-/* Actions */
+/* Actions - Style SCADA */
 .label-actions {
   display: flex;
   gap: 10px;
-  margin-top: 25px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
 }
 
-/* Section preview */
+.label-actions .btn-primary {
+  flex: 1;
+  padding: 14px 20px;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+  border: none;
+  border-radius: 12px;
+  color: var(--bg-primary);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.label-actions .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.label-actions .btn-secondary {
+  padding: 14px 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.label-actions .btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Section preview - Style SCADA */
 .label-preview-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .edit-hint {
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
+  font-size: 12px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #666;
+  color: var(--text-muted);
+  padding: 8px 16px;
+  background: var(--bg-elevated);
+  border-radius: 20px;
+  border: 1px solid var(--border);
 }
 
 /* ========================================
@@ -236,7 +340,8 @@
   position: relative;
   display: flex;
   overflow: hidden;
-  border-radius: 2px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
   box-shadow:
     0 25px 80px rgba(0, 0, 0, 0.5),
     0 10px 30px rgba(0, 0, 0, 0.3);
@@ -363,7 +468,7 @@
   z-index: 1;
 }
 
-/* Hop vine (Houblon) - Bière */
+/* Hop vine (Houblon) - Biere */
 .hop-vine {
   right: 25px;
   top: 50%;
@@ -451,16 +556,24 @@
 }
 
 .draggable:hover {
-  box-shadow: 0 0 0 2px rgba(196, 165, 116, 0.5);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .draggable.dragging {
   cursor: grabbing;
-  box-shadow: 0 0 0 2px #c4a574;
+  box-shadow: 0 0 0 2px var(--accent);
   z-index: 100;
 }
 
-/* Reset des styles par défaut pour éléments draggables */
+.draggable.selected {
+  box-shadow: 0 0 0 2px var(--accent), 0 0 12px var(--accent-glow);
+}
+
+.draggable.snapped {
+  box-shadow: 0 0 0 2px var(--success), 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+/* Reset des styles par defaut pour elements draggables */
 .draggable.logo-text,
 .draggable.brewery-text,
 .draggable.divider,
@@ -491,14 +604,20 @@
 }
 
 /* ========================================
-   SNAP GUIDES
+   SNAP GUIDES - Style SCADA
    ======================================== */
 
 .snap-guide {
   position: absolute;
-  background: #c4a574;
+  background: var(--accent);
   pointer-events: none;
   z-index: 50;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.snap-guide.visible {
+  opacity: 1;
 }
 
 .snap-guide.horizontal {
@@ -513,24 +632,20 @@
   bottom: 0;
 }
 
-.snap-guide.dashed {
-  background: repeating-linear-gradient(
-    90deg,
-    #c4a574,
-    #c4a574 4px,
-    transparent 4px,
-    transparent 8px
-  );
+.snap-guide.center,
+.snap-guide.hCenter,
+.snap-guide.vCenter {
+  background: var(--success);
 }
 
-.snap-guide.vertical.dashed {
-  background: repeating-linear-gradient(
-    180deg,
-    #c4a574,
-    #c4a574 4px,
-    transparent 4px,
-    transparent 8px
-  );
+.snap-guide.margin,
+.snap-guide.margin-sm {
+  background: var(--warning);
+  opacity: 0.6;
+}
+
+.snap-guide.element {
+  background: #7eb5e8;
 }
 
 /* ========================================
@@ -540,21 +655,21 @@
 .drag-coords-tooltip {
   position: absolute;
   z-index: 200;
-  background: rgba(0, 0, 0, 0.85);
-  border: 1px solid #c4a574;
-  border-radius: 4px;
-  padding: 6px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 12px;
   display: flex;
   gap: 12px;
   pointer-events: none;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .drag-coords-tooltip .coord {
   font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', monospace;
   font-size: 11px;
-  color: #e8e4df;
+  color: var(--text-primary);
   letter-spacing: 0.02em;
 }
 
@@ -563,7 +678,7 @@
 }
 
 .drag-coords-tooltip .coord:last-child {
-  color: #e8b87e;
+  color: var(--accent);
 }
 
 /* Distance markers */
@@ -585,16 +700,16 @@
 .distance-marker.top,
 .distance-marker.bottom {
   width: 1px;
-  background: linear-gradient(180deg, transparent 0%, rgba(232, 184, 126, 0.6) 10%, rgba(232, 184, 126, 0.6) 90%, transparent 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(196, 165, 116, 0.6) 10%, rgba(196, 165, 116, 0.6) 90%, transparent 100%);
   flex-direction: column;
 }
 
 .distance-marker .distance-label {
   font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', monospace;
   font-size: 9px;
-  padding: 2px 4px;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 2px;
+  padding: 2px 6px;
+  background: var(--bg-card);
+  border-radius: 4px;
   white-space: nowrap;
 }
 
@@ -605,7 +720,7 @@
 
 .distance-marker.top .distance-label,
 .distance-marker.bottom .distance-label {
-  color: #e8b87e;
+  color: var(--accent);
 }
 
 /* Hide distance markers if too small */
@@ -620,11 +735,11 @@
 }
 
 /* ========================================
-   ELEMENT CONTROLS (Style Controls)
+   ELEMENT CONTROLS (Style Controls) - SCADA
    ======================================== */
 
 .element-controls {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .control-row {
@@ -646,26 +761,31 @@
 }
 
 .px-btn {
-  font-size: 0.65rem !important;
+  font-size: 10px !important;
   letter-spacing: 0.05em;
 }
 
 .color-picker {
   width: 32px;
-  height: 28px;
+  height: 32px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   background: transparent;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-picker:hover {
+  border-color: var(--accent);
 }
 
 .color-picker::-webkit-color-swatch-wrapper {
-  padding: 2px;
+  padding: 3px;
 }
 
 .color-picker::-webkit-color-swatch {
-  border-radius: 2px;
+  border-radius: 4px;
   border: none;
 }
 
@@ -678,30 +798,31 @@
 
 .background-color-control .color-picker {
   width: 40px;
-  height: 32px;
+  height: 36px;
 }
 
 .background-color-control .color-value {
   font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', monospace;
-  font-size: 0.75rem;
-  color: #8e9196;
+  font-size: 11px;
+  color: var(--text-muted);
   text-transform: uppercase;
 }
 
 .btn-reset-color {
-  padding: 4px 10px;
-  font-size: 0.7rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  color: #d4d5d8;
+  padding: 6px 12px;
+  font-size: 11px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-reset-color:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: var(--bg-card);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .rotation-control {
@@ -715,7 +836,7 @@
   height: 4px;
   -webkit-appearance: none;
   appearance: none;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border);
   border-radius: 2px;
   cursor: pointer;
 }
@@ -723,27 +844,28 @@
 .rotation-control input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 12px;
-  height: 12px;
-  background: #c4a574;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
   border-radius: 50%;
   cursor: pointer;
+  box-shadow: 0 2px 8px var(--accent-glow);
 }
 
 .rotation-control span {
-  font-size: 0.7rem;
-  color: #888;
+  font-size: 11px;
+  color: var(--text-muted);
   min-width: 12px;
 }
 
 .rotation-control .rotation-input {
-  width: 45px;
-  padding: 4px 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  color: #e8e4df;
-  font-size: 0.75rem;
+  width: 48px;
+  padding: 6px 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 12px;
   text-align: center;
   -moz-appearance: textfield;
 }
@@ -756,214 +878,81 @@
 
 .rotation-control .rotation-input:focus {
   outline: none;
-  border-color: #c4a574;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .style-btn {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  color: #999;
-  font-size: 0.8rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .style-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #ccc;
+  background: var(--bg-card);
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
 
 .style-btn.active {
-  background: rgba(196, 165, 116, 0.2);
-  border-color: #c4a574;
-  color: #c4a574;
+  background: rgba(196, 165, 116, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
 }
 
 .style-btn.italic {
   font-style: italic;
 }
 
-/* Color picker wrapper */
-.color-picker-wrapper {
-  position: relative;
-}
-
-.color-picker-btn {
-  width: 28px;
-  height: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.color-picker-btn::after {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border-radius: 2px;
-  background: currentColor;
-}
-
-.color-picker-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-/* Font size popover */
-.font-size-wrapper {
-  position: relative;
-}
-
-.font-size-btn {
-  min-width: 45px;
-  height: 28px;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  color: #999;
-  font-size: 0.7rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.font-size-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #ccc;
-}
-
+/* Font size popover - SCADA */
 .font-size-popover {
   position: absolute;
   top: 100%;
   left: 0;
-  margin-top: 4px;
-  background: #2a2a2a;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
-  padding: 10px;
+  margin-top: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
   z-index: 1000;
-  min-width: 100px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  min-width: 110px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .font-size-popover input[type="number"] {
-  width: 55px;
-  padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  color: #e8e4df;
-  font-size: 0.85rem;
+  width: 60px;
+  padding: 8px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
   text-align: center;
 }
 
 .font-size-popover input[type="number"]:focus {
   outline: none;
-  border-color: #c4a574;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .font-size-popover span {
-  color: #888;
-  font-size: 0.75rem;
-}
-
-/* Rotation control */
-.rotation-wrapper {
-  position: relative;
-}
-
-.rotation-btn {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  color: #999;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.rotation-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #ccc;
-}
-
-.rotation-popover {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 4px;
-  background: #2a2a2a;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
-  padding: 10px;
-  z-index: 1000;
-  min-width: 120px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
-.rotation-popover label {
-  display: block;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #888;
-  margin-bottom: 6px;
-}
-
-.rotation-input-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.rotation-input-group input[type="number"] {
-  width: 60px;
-  padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  color: #e8e4df;
-  font-size: 0.85rem;
-  text-align: center;
-}
-
-.rotation-input-group input[type="number"]:focus {
-  outline: none;
-  border-color: #c4a574;
-}
-
-.rotation-input-group span {
-  color: #666;
-  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 /* ========================================
@@ -973,13 +962,17 @@
 @media (max-width: 1200px) {
   .label-generator-container {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 24px;
   }
 
   .label-form-section {
     position: relative;
     top: 0;
     max-height: none;
+  }
+
+  .label-preview-section {
+    order: -1;
   }
 
   .label-preview {
@@ -989,6 +982,16 @@
 }
 
 @media (max-width: 768px) {
+  .label-generator-page {
+    padding: 12px 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
   .label-preview {
     transform: scale(0.6);
   }
@@ -1000,6 +1003,12 @@
   .theme-option {
     min-width: 100%;
   }
+
+  .control-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1008,7 +1017,7 @@
   }
 
   .label-generator-container {
-    gap: 24px;
+    gap: 16px;
   }
 
   .label-preview {
@@ -1016,6 +1025,10 @@
   }
 
   .label-form-section {
+    padding: 16px;
+  }
+
+  .accordion-content {
     padding: 14px;
   }
 }
