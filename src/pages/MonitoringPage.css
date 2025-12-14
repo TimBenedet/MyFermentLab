@@ -595,6 +595,15 @@
   margin-top: 24px;
 }
 
+/* Single chart layout (e.g., koji) - full width */
+.scada-charts-fullwidth.single-chart {
+  grid-template-columns: 1fr;
+}
+
+.scada-chart-card.full-width {
+  grid-column: 1 / -1;
+}
+
 .scada-chart-card {
   background: var(--bg-card);
   border-radius: 24px;

@@ -572,9 +572,9 @@ export function MonitoringPage({
       </div>
 
       {/* Charts Section - Full Width */}
-      <div className="scada-charts-fullwidth">
+      <div className={`scada-charts-fullwidth ${project.fermentationType === 'koji' ? 'single-chart' : ''}`}>
         {/* Temperature Chart */}
-        <div className="scada-chart-card fade-in">
+        <div className={`scada-chart-card fade-in ${project.fermentationType === 'koji' ? 'full-width' : ''}`}>
           <TemperatureChart
             data={temperatureHistory}
             targetTemperature={project.targetTemperature}
