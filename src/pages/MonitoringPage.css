@@ -493,13 +493,13 @@
   background: var(--bg-secondary);
   border-radius: 16px;
   padding: 16px;
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
   gap: 14px;
   border: 1px solid var(--border);
   transition: all 0.3s;
-  height: 80px;
-  overflow: hidden;
+  height: 80px !important;
   box-sizing: border-box;
 }
 
@@ -521,11 +521,12 @@
 }
 
 .scada-metric-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px;
   flex: 1;
   min-width: 0;
+  justify-content: center;
 }
 
 .scada-metric-label {
