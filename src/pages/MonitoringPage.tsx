@@ -431,36 +431,6 @@ export function MonitoringPage({
                     </>
                   )}
                 </div>
-
-                {/* Phase Timeline for mushrooms */}
-                {project.fermentationType === 'mushroom' && (
-                  <div className="scada-phase-timeline">
-                    <div className="scada-timeline-header">Cycle de croissance</div>
-                    <div className="scada-timeline-track">
-                      <div className="scada-timeline-progress" style={{ width: `${Math.min(100, (fermentationDuration / 60) * 100)}%` }}></div>
-                      <div className={`scada-timeline-phase ${fermentationDuration >= 3 ? 'completed' : fermentationDuration > 0 ? 'active' : ''}`}>
-                        <span className="scada-phase-icon">🧫</span>
-                        <span className="scada-phase-name">Inoculation</span>
-                        <span className="scada-phase-time">J1-3</span>
-                      </div>
-                      <div className={`scada-timeline-phase ${fermentationDuration >= 30 ? 'completed' : fermentationDuration >= 4 ? 'active' : ''}`}>
-                        <span className="scada-phase-icon">🕸️</span>
-                        <span className="scada-phase-name">Colonisation</span>
-                        <span className="scada-phase-time">J4-30</span>
-                      </div>
-                      <div className={`scada-timeline-phase ${fermentationDuration >= 60 ? 'completed' : fermentationDuration >= 31 ? 'active' : ''}`}>
-                        <span className="scada-phase-icon">🍄</span>
-                        <span className="scada-phase-name">Fructification</span>
-                        <span className="scada-phase-time">J31-60</span>
-                      </div>
-                      <div className={`scada-timeline-phase ${fermentationDuration >= 60 ? 'active' : ''}`}>
-                        <span className="scada-phase-icon">✂️</span>
-                        <span className="scada-phase-name">Recolte</span>
-                        <span className="scada-phase-time">J60+</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </section>
