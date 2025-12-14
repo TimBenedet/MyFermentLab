@@ -189,7 +189,7 @@ export function HumidityChart({ data, targetHumidity, onAddHumidity, role }: Hum
               dataKey="humidity"
               stroke={humidityColor}
               strokeWidth={2}
-              dot={{ fill: humidityColor, r: 3 }}
+              dot={chartData.length < 50 ? { fill: humidityColor, r: 3 } : false}
               activeDot={{ r: 5 }}
             />
           </LineChart>

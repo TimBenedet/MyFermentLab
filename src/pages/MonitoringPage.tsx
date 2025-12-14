@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Project, FERMENTATION_TYPES, TemperatureReading, DensityReading } from '../types';
+import { Project, FERMENTATION_TYPES, TemperatureReading, DensityReading, HumidityReading } from '../types';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { DensityChart } from '../components/DensityChart';
 import { HumidityChart } from '../components/HumidityChart';
@@ -55,6 +55,29 @@ function generateMockDensityData(days: number = 7): DensityReading[] {
   return data;
 }
 
+// Generate mock humidity data for 7 days (mushroom cultivation)
+function generateMockHumidityData(targetHumidity: number = 85, days: number = 7): HumidityReading[] {
+  const now = Date.now();
+  const data: HumidityReading[] = [];
+  const startTime = now - days * 24 * 60 * 60 * 1000;
+
+  // Generate data every 30 minutes
+  for (let t = startTime; t <= now; t += 30 * 60 * 1000) {
+    const noise = (Math.random() - 0.5) * 8; // +/- 4% noise
+    const oscillation = Math.sin((t - startTime) / (6 * 60 * 60 * 1000) * Math.PI) * 3; // faster oscillation for humidity
+    let humidity = targetHumidity + noise + oscillation;
+    // Clamp between 0 and 100
+    humidity = Math.max(0, Math.min(100, humidity));
+
+    data.push({
+      timestamp: t,
+      humidity: Math.round(humidity * 10) / 10
+    });
+  }
+
+  return data;
+}
+
 interface MonitoringPageProps {
   project: Project;
   onUpdateTarget: (temp: number) => void;
@@ -97,6 +120,28 @@ export function MonitoringPage({
     }
     return [];
   }, [project.densityHistory, project.fermentationType]);
+
+  // Use mock data for humidity if no real data available (for mushroom demo)
+  const humidityHistoryData = useMemo(() => {
+    if (project.humidityHistory && project.humidityHistory.length > 0) {
+      return project.humidityHistory;
+    }
+    if (project.fermentationType === 'mushroom') {
+      return generateMockHumidityData(project.targetHumidity || 85, 7);
+    }
+    return [];
+  }, [project.humidityHistory, project.fermentationType, project.targetHumidity]);
+
+  // Get current humidity (real or from mock data)
+  const currentHumidity = useMemo(() => {
+    if (project.currentHumidity !== undefined) {
+      return project.currentHumidity;
+    }
+    if (humidityHistoryData.length > 0) {
+      return humidityHistoryData[humidityHistoryData.length - 1].humidity;
+    }
+    return null;
+  }, [project.currentHumidity, humidityHistoryData]);
 
   const diff = project.targetTemperature - project.currentTemperature;
 
@@ -272,7 +317,7 @@ export function MonitoringPage({
                         <div className="scada-metric-info">
                           <span className="scada-metric-label">Humidite actuelle</span>
                           <span className="scada-metric-value highlight">
-                            {project.currentHumidity?.toFixed(1) ?? '—'}%
+                            {currentHumidity?.toFixed(1) ?? '—'}%
                           </span>
                         </div>
                       </div>
@@ -281,7 +326,7 @@ export function MonitoringPage({
                         <div className="scada-metric-info">
                           <span className="scada-metric-label">Humidite cible</span>
                           <span className="scada-metric-value">
-                            {project.targetHumidity ?? '—'}%
+                            {project.targetHumidity ?? 85}%
                           </span>
                         </div>
                       </div>
@@ -427,7 +472,7 @@ export function MonitoringPage({
         {project.fermentationType === 'mushroom' && (
           <div className="scada-chart-card fade-in">
             <HumidityChart
-              data={project.humidityHistory || []}
+              data={humidityHistoryData}
               targetHumidity={project.targetHumidity}
               onAddHumidity={onAddHumidity}
               role={role}
