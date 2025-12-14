@@ -379,6 +379,63 @@ router.get('/:id/outlet-history', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/projects/:id/live-temperature - Récupérer la température en temps réel depuis Home Assistant
+router.get('/:id/live-temperature', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = databaseService.getProject(id);
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const device = databaseService.getDevice(project.sensorId);
+    if (!device || !device.entityId) {
+      return res.status(400).json({ error: 'No sensor configured for this project' });
+    }
+
+    // Récupérer la température depuis Home Assistant
+    const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
+    const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
+    };
+    if (HOME_ASSISTANT_TOKEN) {
+      headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
+    }
+
+    const haResponse = await fetch(`${HOME_ASSISTANT_URL}/api/states/${device.entityId}`, { headers });
+
+    if (!haResponse.ok) {
+      throw new Error(`Home Assistant API returned ${haResponse.status}`);
+    }
+
+    const haData = await haResponse.json();
+    const temperature = parseFloat(haData.state);
+
+    if (isNaN(temperature)) {
+      return res.status(500).json({ error: 'Invalid temperature value from sensor' });
+    }
+
+    // Mettre à jour la température dans la base de données
+    databaseService.updateProjectTemperature(id, temperature);
+
+    // Enregistrer dans InfluxDB
+    await influxService.writeTemperature(id, temperature);
+
+    res.json({
+      temperature,
+      timestamp: Date.now(),
+      entityId: device.entityId,
+      sensorName: device.name
+    });
+  } catch (error) {
+    console.error('Error fetching live temperature:', error);
+    res.status(500).json({ error: 'Failed to fetch temperature from Home Assistant' });
+  }
+});
+
 // PUT /api/projects/:id/control-mode - Basculer le mode de contrôle
 router.put('/:id/control-mode', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {

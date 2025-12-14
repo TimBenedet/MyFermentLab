@@ -238,6 +238,22 @@ function App() {
     }
   };
 
+  const handleRefreshTemperature = async () => {
+    if (!selectedProjectId) return;
+
+    try {
+      const data = await apiService.getLiveTemperature(selectedProjectId);
+      // Mettre à jour la température dans le projet sélectionné
+      setSelectedProject(prev => prev ? { ...prev, currentTemperature: data.temperature } : null);
+      setProjects(prev => prev.map(p =>
+        p.id === selectedProjectId ? { ...p, currentTemperature: data.temperature } : p
+      ));
+    } catch (err) {
+      console.error('Failed to refresh temperature:', err);
+      setError('Impossible de récupérer la température depuis Home Assistant');
+    }
+  };
+
   const handleUpdateProject = async (projectId: string, data: {
     name?: string;
     fermentationType?: FermentationType;
@@ -523,7 +539,7 @@ function App() {
             onAddDensity={handleAddDensity}
             onAddHumidity={handleAddHumidity}
             onToggleControlMode={handleToggleControlMode}
-            onRefreshTemperature={() => selectedProjectId && loadProject(selectedProjectId)}
+            onRefreshTemperature={handleRefreshTemperature}
             role={role}
           />
         )}

@@ -208,6 +208,17 @@ class ApiService {
     return response.json();
   }
 
+  async getLiveTemperature(id: string): Promise<{ temperature: number; timestamp: number; entityId: string; sensorName: string }> {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/live-temperature`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to fetch live temperature');
+    }
+    return response.json();
+  }
+
   async unarchiveProject(id: string): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/unarchive`, {
       method: 'PUT',
