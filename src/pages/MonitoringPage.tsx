@@ -409,10 +409,6 @@ export function MonitoringPage({
                         <div className="scada-display-value temp">{project.currentTemperature.toFixed(1)}°C</div>
                         <div className="scada-display-label">Temp.</div>
                       </div>
-                      <div className="scada-display-item">
-                        <div className="scada-display-value humidity">{currentHumidity !== null ? `${currentHumidity.toFixed(0)}%` : '—'}</div>
-                        <div className="scada-display-label">Humid.</div>
-                      </div>
                     </div>
                   </div>
                 </div>
