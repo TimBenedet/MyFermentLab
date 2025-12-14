@@ -113,7 +113,7 @@
 .scada-chamber-layout {
   display: flex;
   gap: 32px;
-  align-items: stretch;
+  align-items: flex-start;
 }
 
 /* Tank Card */

@@ -304,22 +304,6 @@ export function MonitoringPage({
                         </div>
                       </div>
                     </div>
-
-                    {/* Sensor display overlay */}
-                    <div className="scada-chamber-display">
-                      <div className="scada-display-item">
-                        <div className="scada-display-value temp">
-                          <span>{project.currentTemperature.toFixed(1)}</span>°
-                        </div>
-                        <div className="scada-display-label">Temp</div>
-                      </div>
-                      <div className="scada-display-item">
-                        <div className="scada-display-value humidity">
-                          <span>{currentHumidity?.toFixed(0) ?? '—'}</span>%
-                        </div>
-                        <div className="scada-display-label">Humid</div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               ) : (
