@@ -225,7 +225,7 @@ export function MonitoringPage({
               </div>
             </div>
 
-            <div className={project.fermentationType === 'mushroom' ? 'scada-chamber-layout' : 'scada-tank-layout'}>
+            <div className={project.fermentationType === 'mushroom' || project.fermentationType === 'koji' ? 'scada-chamber-layout' : 'scada-tank-layout'}>
               {/* Mushroom Grow Chamber visualization */}
               {project.fermentationType === 'mushroom' ? (
                 <div className="scada-chamber-card active">
@@ -294,8 +294,64 @@ export function MonitoringPage({
                     </div>
                   </div>
                 </div>
+              ) : project.fermentationType === 'koji' ? (
+                /* Koji Incubation Chamber visualization */
+                <div className="scada-koji-chamber-card active">
+                  <div className="scada-koji-header">
+                    <div>
+                      <div className="scada-koji-name">{project.name}</div>
+                      <div className="scada-koji-type">{config.name}</div>
+                    </div>
+                    <div className="scada-koji-status growing">
+                      <span className="led"></span>
+                      Croissance active
+                    </div>
+                  </div>
+
+                  <div className="scada-koji-visual">
+                    <div className="scada-koji-container">
+                      <div className="scada-koji-lid">
+                        <div className="scada-vent-holes">
+                          <div className="scada-vent-hole"></div>
+                          <div className="scada-vent-hole"></div>
+                          <div className="scada-vent-hole"></div>
+                          <div className="scada-vent-hole"></div>
+                          <div className="scada-vent-hole"></div>
+                        </div>
+                      </div>
+                      <div className="scada-koji-body">
+                        <div className="scada-koji-window">
+                          <div className="scada-spore-particles">
+                            <div className="scada-spore"></div>
+                            <div className="scada-spore"></div>
+                            <div className="scada-spore"></div>
+                            <div className="scada-spore"></div>
+                            <div className="scada-spore"></div>
+                            <div className="scada-spore"></div>
+                          </div>
+                          <div className="scada-substrate-tray">
+                            <div className="scada-mycelium-layer">
+                              <div className="scada-mycelium-texture"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="scada-koji-display">
+                      <div className="scada-display-item">
+                        <div className="scada-display-value temp">{project.currentTemperature.toFixed(1)}°C</div>
+                        <div className="scada-display-label">Temp.</div>
+                      </div>
+                      <div className="scada-display-item">
+                        <div className="scada-display-value humidity">{latestHumidity !== null ? `${latestHumidity.toFixed(0)}%` : '—'}</div>
+                        <div className="scada-display-label">Humid.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ) : (
-                /* Tank visualization for beer/koji/mead */
+                /* Tank visualization for beer/mead */
                 <div className={`scada-tank-card active ${typeClass}`}>
                   <div className="scada-tank-header">
                     <div>
