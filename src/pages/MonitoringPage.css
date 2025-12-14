@@ -531,6 +531,9 @@
   border-radius: 24px;
   border: 1px solid var(--border);
   padding: 16px;
+  height: 473px;
+  display: flex;
+  flex-direction: column;
 }
 
 .scada-chart-card .chart-container {
@@ -544,9 +547,8 @@
 
 .scada-chart-card .chart-wrapper {
   margin-top: 8px;
-  height: 473px !important;
-  min-height: 473px !important;
-  flex: none !important;
+  flex: 1 !important;
+  min-height: 0 !important;
 }
 
 .scada-chart-card .chart-header {
