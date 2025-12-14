@@ -1,10 +1,59 @@
 import { useState, useMemo } from 'react';
-import { Project, FERMENTATION_TYPES } from '../types';
+import { Project, FERMENTATION_TYPES, TemperatureReading, DensityReading } from '../types';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { DensityChart } from '../components/DensityChart';
 import { HumidityChart } from '../components/HumidityChart';
 import { TemperatureAlert } from '../components/TemperatureAlert';
 import './MonitoringPage.css';
+
+// Generate mock temperature data for 7 days
+function generateMockTemperatureData(targetTemp: number, days: number = 7): TemperatureReading[] {
+  const now = Date.now();
+  const data: TemperatureReading[] = [];
+  const startTime = now - days * 24 * 60 * 60 * 1000;
+
+  // Generate data every 30 minutes
+  for (let t = startTime; t <= now; t += 30 * 60 * 1000) {
+    const noise = (Math.random() - 0.5) * 2; // +/- 1C noise
+    const oscillation = Math.sin((t - startTime) / (12 * 60 * 60 * 1000) * Math.PI) * 0.5;
+    const temp = targetTemp + noise + oscillation;
+
+    data.push({
+      timestamp: t,
+      temperature: Math.round(temp * 10) / 10
+    });
+  }
+
+  return data;
+}
+
+// Generate mock density data for 7 days (fermentation curve)
+function generateMockDensityData(days: number = 7): DensityReading[] {
+  const now = Date.now();
+  const data: DensityReading[] = [];
+  const startTime = now - days * 24 * 60 * 60 * 1000;
+
+  const og = 1.052; // Original gravity
+  const fg = 1.010; // Final gravity
+
+  // Density measurements at specific days
+  const measurementDays = [0, 1, 2, 3, 5, 7];
+
+  for (const day of measurementDays) {
+    if (day > days) break;
+    const t = startTime + day * 24 * 60 * 60 * 1000;
+    // Exponential decay
+    const progress = 1 - Math.exp(-day * 0.5);
+    const density = og - (og - fg) * progress;
+
+    data.push({
+      timestamp: t,
+      density: Math.round(density * 1000) / 1000
+    });
+  }
+
+  return data;
+}
 
 interface MonitoringPageProps {
   project: Project;
@@ -32,6 +81,25 @@ export function MonitoringPage({
   const [localTarget, setLocalTarget] = useState(project.targetTemperature);
 
   const config = FERMENTATION_TYPES[project.fermentationType];
+
+  // Use mock data if no real data available (for demo purposes)
+  const temperatureHistory = useMemo(() => {
+    if (project.history && project.history.length > 0) {
+      return project.history;
+    }
+    return generateMockTemperatureData(project.targetTemperature, 7);
+  }, [project.history, project.targetTemperature]);
+
+  const densityHistoryData = useMemo(() => {
+    if (project.densityHistory && project.densityHistory.length > 0) {
+      return project.densityHistory;
+    }
+    if (project.fermentationType === 'beer') {
+      return generateMockDensityData(7);
+    }
+    return [];
+  }, [project.densityHistory, project.fermentationType]);
+
   const diff = project.targetTemperature - project.currentTemperature;
 
   const getStatus = () => {
@@ -64,11 +132,11 @@ export function MonitoringPage({
 
   // Calculate density stats for beer
   const densityStats = useMemo(() => {
-    if (project.fermentationType !== 'beer' || !project.densityHistory || project.densityHistory.length === 0) {
+    if (project.fermentationType !== 'beer' || densityHistoryData.length === 0) {
       return null;
     }
 
-    const sortedHistory = [...project.densityHistory].sort((a, b) => a.timestamp - b.timestamp);
+    const sortedHistory = [...densityHistoryData].sort((a, b) => a.timestamp - b.timestamp);
     const initialDensity = sortedHistory[0]?.density || 1.050;
     const currentDensity = sortedHistory[sortedHistory.length - 1]?.density || 1.010;
 
@@ -84,7 +152,7 @@ export function MonitoringPage({
       attenuation: Math.min(100, Math.max(0, attenuation)).toFixed(0),
       abv: abv.toFixed(1)
     };
-  }, [project.fermentationType, project.densityHistory]);
+  }, [project.fermentationType, densityHistoryData]);
 
   // Generate recent activity based on project data
   const recentActivity = useMemo(() => {
@@ -113,8 +181,8 @@ export function MonitoringPage({
     }
 
     // Add density info if available
-    if (project.densityHistory && project.densityHistory.length > 0) {
-      const lastDensity = project.densityHistory[project.densityHistory.length - 1];
+    if (densityHistoryData.length > 0) {
+      const lastDensity = densityHistoryData[densityHistoryData.length - 1];
       const lastDate = new Date(lastDensity.timestamp);
       const now = new Date();
       const hoursAgo = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60));
@@ -138,7 +206,7 @@ export function MonitoringPage({
     }
 
     return activities;
-  }, [project, diff, fermentationDuration]);
+  }, [project, diff, fermentationDuration, densityHistoryData]);
 
   const handleIncreaseTemp = () => {
     if (localTarget < maxTemp) {
@@ -315,7 +383,7 @@ export function MonitoringPage({
               </div>
               <div className="scada-chart-container">
                 <TemperatureChart
-                  data={project.history}
+                  data={temperatureHistory}
                   targetTemperature={project.targetTemperature}
                   type={project.fermentationType}
                 />
@@ -340,7 +408,7 @@ export function MonitoringPage({
                 </div>
                 <div className="scada-chart-container">
                   <DensityChart
-                    data={project.densityHistory || []}
+                    data={densityHistoryData}
                     type={project.fermentationType}
                     onAddDensity={onAddDensity}
                     role={role}
