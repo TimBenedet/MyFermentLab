@@ -154,60 +154,6 @@ export function MonitoringPage({
     };
   }, [project.fermentationType, densityHistoryData]);
 
-  // Generate recent activity based on project data
-  const recentActivity = useMemo(() => {
-    const activities: Array<{
-      type: 'success' | 'warning' | 'info' | 'error';
-      icon: string;
-      message: string;
-      time: string;
-    }> = [];
-
-    // Check temperature status
-    if (Math.abs(diff) < 0.5) {
-      activities.push({
-        type: 'success',
-        icon: '✓',
-        message: `Temperature cible atteinte pour ${project.name}`,
-        time: 'Maintenant'
-      });
-    } else if (project.outletActive) {
-      activities.push({
-        type: 'warning',
-        icon: '⚠',
-        message: `Chauffage actif pour ${project.name}`,
-        time: 'En cours'
-      });
-    }
-
-    // Add density info if available
-    if (densityHistoryData.length > 0) {
-      const lastDensity = densityHistoryData[densityHistoryData.length - 1];
-      const lastDate = new Date(lastDensity.timestamp);
-      const now = new Date();
-      const hoursAgo = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60));
-
-      activities.push({
-        type: 'info',
-        icon: 'ℹ',
-        message: `Derniere mesure de densite: ${lastDensity.density.toFixed(3)}`,
-        time: hoursAgo < 1 ? 'Il y a moins d\'1 heure' : `Il y a ${hoursAgo} heures`
-      });
-    }
-
-    // Add fermentation duration info
-    if (fermentationDuration > 0) {
-      activities.push({
-        type: 'info',
-        icon: '📊',
-        message: `Fermentation en cours depuis ${fermentationDuration} jours`,
-        time: `Jour ${fermentationDuration}`
-      });
-    }
-
-    return activities;
-  }, [project, diff, fermentationDuration, densityHistoryData]);
-
   const handleIncreaseTemp = () => {
     if (localTarget < maxTemp) {
       setLocalTarget(prev => Math.min(maxTemp, prev + 0.5));
@@ -374,87 +320,6 @@ export function MonitoringPage({
             </div>
           </section>
 
-          {/* Charts Section */}
-          <div className="scada-charts-grid">
-            {/* Temperature Chart */}
-            <div className="scada-chart-card fade-in">
-              <div className="scada-chart-header">
-                <h3 className="scada-chart-title">Evolution Temperature</h3>
-              </div>
-              <div className="scada-chart-container">
-                <TemperatureChart
-                  data={temperatureHistory}
-                  targetTemperature={project.targetTemperature}
-                  type={project.fermentationType}
-                />
-              </div>
-            </div>
-
-            {/* Density Chart for beer */}
-            {project.fermentationType === 'beer' && (
-              <div className="scada-chart-card fade-in">
-                <div className="scada-chart-header">
-                  <h3 className="scada-chart-title">Evolution Densite</h3>
-                  <div className="scada-chart-legend">
-                    <span className="scada-legend-item">
-                      <span className="scada-legend-dot accent"></span>
-                      Mesures
-                    </span>
-                    <span className="scada-legend-item">
-                      <span className="scada-legend-dot success"></span>
-                      Cible finale
-                    </span>
-                  </div>
-                </div>
-                <div className="scada-chart-container">
-                  <DensityChart
-                    data={densityHistoryData}
-                    type={project.fermentationType}
-                    onAddDensity={onAddDensity}
-                    role={role}
-                  />
-                </div>
-                {/* Density Stats */}
-                {densityStats && (
-                  <div className="scada-density-info">
-                    <div className="scada-density-stat">
-                      <span className="scada-density-label">Densite initiale</span>
-                      <span className="scada-density-value">{densityStats.initial}</span>
-                    </div>
-                    <div className="scada-density-stat">
-                      <span className="scada-density-label">Densite actuelle</span>
-                      <span className="scada-density-value highlight">{densityStats.current}</span>
-                    </div>
-                    <div className="scada-density-stat">
-                      <span className="scada-density-label">Attenuation</span>
-                      <span className="scada-density-value">{densityStats.attenuation}%</span>
-                    </div>
-                    <div className="scada-density-stat">
-                      <span className="scada-density-label">Alcool estime</span>
-                      <span className="scada-density-value">{densityStats.abv}%</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Humidity Chart for mushrooms */}
-            {project.fermentationType === 'mushroom' && (
-              <div className="scada-chart-card fade-in">
-                <div className="scada-chart-header">
-                  <h3 className="scada-chart-title">Evolution Humidite</h3>
-                </div>
-                <div className="scada-chart-container">
-                  <HumidityChart
-                    data={project.humidityHistory || []}
-                    targetHumidity={project.targetHumidity}
-                    onAddHumidity={onAddHumidity}
-                    role={role}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Right Panel */}
@@ -560,36 +425,12 @@ export function MonitoringPage({
             </div>
           </div>
 
-          {/* Activity / Alerts Panel */}
-          <div className="scada-alerts-panel fade-in">
-            <div className="scada-alerts-header">
-              <span className="scada-alerts-title">Activite Recente</span>
-              <span className="scada-alerts-count">{recentActivity.length}</span>
+          {/* System Health Panel */}
+          <div className="scada-health-panel fade-in">
+            <div className="scada-control-header">
+              <span className="scada-control-title">Sante Systeme</span>
             </div>
-            <div className="scada-alerts-list">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className={`scada-alert-item ${activity.type}`}>
-                  <span className="scada-alert-icon">{activity.icon}</span>
-                  <div className="scada-alert-content">
-                    <div className="scada-alert-message">{activity.message}</div>
-                    <div className="scada-alert-time">{activity.time}</div>
-                  </div>
-                </div>
-              ))}
-              {recentActivity.length === 0 && (
-                <div className="scada-alert-item info">
-                  <span className="scada-alert-icon">ℹ</span>
-                  <div className="scada-alert-content">
-                    <div className="scada-alert-message">Aucune activite recente</div>
-                    <div className="scada-alert-time">-</div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* System Health */}
-            <div className="scada-health-section">
-              <div className="scada-health-title">Sante Systeme</div>
+            <div className="scada-health-section" style={{ borderTop: 'none' }}>
               <div className="scada-health-grid">
                 <div className="scada-health-item">
                   <div className="scada-health-indicator ok"></div>
@@ -611,6 +452,88 @@ export function MonitoringPage({
             </div>
           </div>
         </aside>
+      </div>
+
+      {/* Charts Section - Full Width */}
+      <div className="scada-charts-fullwidth">
+        {/* Temperature Chart */}
+        <div className="scada-chart-card fade-in">
+          <div className="scada-chart-header">
+            <h3 className="scada-chart-title">Evolution Temperature</h3>
+          </div>
+          <div className="scada-chart-container">
+            <TemperatureChart
+              data={temperatureHistory}
+              targetTemperature={project.targetTemperature}
+              type={project.fermentationType}
+            />
+          </div>
+        </div>
+
+        {/* Density Chart for beer */}
+        {project.fermentationType === 'beer' && (
+          <div className="scada-chart-card fade-in">
+            <div className="scada-chart-header">
+              <h3 className="scada-chart-title">Evolution Densite</h3>
+              <div className="scada-chart-legend">
+                <span className="scada-legend-item">
+                  <span className="scada-legend-dot accent"></span>
+                  Mesures
+                </span>
+                <span className="scada-legend-item">
+                  <span className="scada-legend-dot success"></span>
+                  Cible finale
+                </span>
+              </div>
+            </div>
+            <div className="scada-chart-container">
+              <DensityChart
+                data={densityHistoryData}
+                type={project.fermentationType}
+                onAddDensity={onAddDensity}
+                role={role}
+              />
+            </div>
+            {/* Density Stats */}
+            {densityStats && (
+              <div className="scada-density-info">
+                <div className="scada-density-stat">
+                  <span className="scada-density-label">Densite initiale</span>
+                  <span className="scada-density-value">{densityStats.initial}</span>
+                </div>
+                <div className="scada-density-stat">
+                  <span className="scada-density-label">Densite actuelle</span>
+                  <span className="scada-density-value highlight">{densityStats.current}</span>
+                </div>
+                <div className="scada-density-stat">
+                  <span className="scada-density-label">Attenuation</span>
+                  <span className="scada-density-value">{densityStats.attenuation}%</span>
+                </div>
+                <div className="scada-density-stat">
+                  <span className="scada-density-label">Alcool estime</span>
+                  <span className="scada-density-value">{densityStats.abv}%</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Humidity Chart for mushrooms */}
+        {project.fermentationType === 'mushroom' && (
+          <div className="scada-chart-card fade-in">
+            <div className="scada-chart-header">
+              <h3 className="scada-chart-title">Evolution Humidite</h3>
+            </div>
+            <div className="scada-chart-container">
+              <HumidityChart
+                data={project.humidityHistory || []}
+                targetHumidity={project.targetHumidity}
+                onAddHumidity={onAddHumidity}
+                role={role}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

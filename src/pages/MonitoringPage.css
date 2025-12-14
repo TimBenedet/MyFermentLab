@@ -513,11 +513,21 @@
   color: var(--error);
 }
 
-/* Charts Grid */
+/* Charts Grid - OLD */
 .scada-charts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
+}
+
+/* Charts Full Width Section */
+.scada-charts-fullwidth {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 24px 24px;
 }
 
 .scada-chart-card {
@@ -825,6 +835,14 @@
   flex: 1;
 }
 
+/* Health Panel */
+.scada-health-panel {
+  background: var(--bg-card);
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
 .scada-alerts-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border);
@@ -1119,6 +1137,10 @@
   }
 
   .scada-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scada-charts-fullwidth {
     grid-template-columns: 1fr;
   }
 }
