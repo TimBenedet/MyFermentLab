@@ -51,7 +51,8 @@
       "Bash(done)",
       "Bash(do curl -s -o /dev/null -w \"Test $i: %{time_total}s\\n\" \"http://192.168.1.51:30080/api/projects\")",
       "Bash(python3:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

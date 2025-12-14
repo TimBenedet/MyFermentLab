@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyFermentLab - SCADA Interface</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #141414;
+      --bg-card: #1a1a1a;
+      --bg-elevated: #222222;
+      --accent: #c4a574;
+      --accent-light: #d4b584;
+      --accent-glow: rgba(196, 165, 116, 0.3);
+      --text-primary: #ffffff;
+      --text-secondary: #888888;
+      --text-muted: #555555;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --border: #2a2a2a;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span {
+      color: var(--accent);
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      50% { opacity: 0.8; box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    }
+
+    .datetime {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Main Layout */
+    .main-container {
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+      gap: 24px;
+      padding: 24px;
+      min-height: calc(100vh - 80px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .nav-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .nav-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-elevated);
+    }
+
+    .nav-item.active {
+      background: rgba(196, 165, 116, 0.1);
+      border-left-color: var(--accent);
+    }
+
+    .nav-item.active .nav-icon {
+      color: var(--accent);
+    }
+
+    .nav-icon {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
+    }
+
+    .nav-label {
+      font-size: 14px;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: var(--bg-primary);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    /* Quick Stats */
+    .quick-stats {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 20px;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-item:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.error { color: var(--error); }
+
+    /* Main Content */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Process Overview */
+    .process-overview {
+      background: var(--bg-card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .process-overview::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .section-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Fermentation Tanks */
+    .tanks-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .tank-card {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      position: relative;
+      transition: all 0.3s;
+    }
+
+    .tank-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 30px var(--accent-glow);
+      transform: translateY(-2px);
+    }
+
+    .tank-card.active {
+      border-color: var(--success);
+    }
+
+    .tank-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .tank-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .tank-type {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .tank-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .tank-status.heating {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    .tank-status.inactive {
+      background: rgba(136, 136, 136, 0.15);
+      color: var(--text-secondary);
+    }
+
+    .tank-visual {
+      position: relative;
+      height: 140px;
+      margin: 16px 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .tank-container {
+      width: 80px;
+      height: 120px;
+      position: relative;
+    }
+
+    .tank-body {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 100px;
+      background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+      border-radius: 0 0 40px 40px;
+      border: 2px solid #333;
+      overflow: hidden;
+    }
+
+    .tank-liquid {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 100%);
+      border-radius: 0 0 38px 38px;
+      transition: height 1s ease-out;
+    }
+
+    .tank-liquid::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+      animation: wave 2s ease-in-out infinite;
+    }
+
+    @keyframes wave {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(3px); }
+    }
+
+    .tank-neck {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 25px;
+      background: #333;
+      border-radius: 5px 5px 0 0;
+      border: 2px solid #444;
+      border-bottom: none;
+    }
+
+    .tank-temp-display {
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-primary);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .temp-unit {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .tank-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .metric {
+      background: var(--bg-primary);
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    /* Temperature Chart */
+    .chart-card {
+      background: var(--bg-card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      padding: 24px;
+      flex: 1;
+    }
+
+    .chart-container {
+      height: 200px;
+      position: relative;
+      margin-top: 20px;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .chart-grid line {
+      stroke: var(--border);
+      stroke-width: 1;
+    }
+
+    .chart-line {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .chart-area {
+      fill: url(#chartGradient);
+    }
+
+    .chart-dot {
+      fill: var(--accent);
+    }
+
+    .chart-target {
+      stroke: var(--success);
+      stroke-width: 1;
+      stroke-dasharray: 5 5;
+    }
+
+    .chart-labels {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
+
+    .y-label {
+      position: absolute;
+      left: 0;
+      font-size: 10px;
+      color: var(--text-muted);
+      transform: translateY(-50%);
+    }
+
+    .x-label {
+      position: absolute;
+      bottom: -20px;
+      font-size: 10px;
+      color: var(--text-muted);
+      transform: translateX(-50%);
+    }
+
+    /* Right Panel */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Control Panel */
+    .control-panel {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .control-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .control-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .control-mode {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 10px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .control-body {
+      padding: 20px;
+    }
+
+    .temperature-control {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .temp-display {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .temp-display .unit {
+      font-size: 24px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .temp-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .temp-slider {
+      margin: 24px 0;
+    }
+
+    .slider-track {
+      height: 8px;
+      background: var(--bg-primary);
+      border-radius: 4px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .slider-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 100%);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    .slider-thumb {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 50%;
+      border: 3px solid var(--bg-card);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      cursor: grab;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .control-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      color: var(--bg-primary);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 20px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--error);
+      border: 1px solid var(--error);
+    }
+
+    /* Alerts Panel */
+    .alerts-panel {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .alerts-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .alerts-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .alerts-count {
+      background: var(--warning);
+      color: var(--bg-primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .alerts-list {
+      padding: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .alert-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      border-left: 3px solid;
+    }
+
+    .alert-item.warning {
+      border-color: var(--warning);
+    }
+
+    .alert-item.info {
+      border-color: var(--accent);
+    }
+
+    .alert-item.success {
+      border-color: var(--success);
+    }
+
+    .alert-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .alert-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .alert-message {
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .alert-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* System Health */
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .health-item {
+      background: var(--bg-secondary);
+      padding: 14px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .health-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .health-indicator.ok { background: var(--success); }
+    .health-indicator.warning { background: var(--warning); }
+    .health-indicator.error { background: var(--error); }
+
+    .health-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Animations */
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 1400px) {
+      .main-container {
+        grid-template-columns: 240px 1fr 280px;
+        gap: 16px;
+        padding: 16px;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar, .right-panel {
+        display: none;
+      }
+
+      .tanks-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .tanks-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        padding: 12px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🍺</div>
+      <div class="logo-text">MyFerment<span>Lab</span></div>
+    </div>
+    <div class="header-status">
+      <div class="system-status">
+        <div class="status-dot"></div>
+        <span>Système opérationnel</span>
+      </div>
+      <div class="datetime" id="datetime">--</div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <nav class="nav-card">
+        <div class="nav-header">Navigation</div>
+        <div class="nav-item active">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Vue d'ensemble</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">🌡️</span>
+          <span class="nav-label">Contrôle Température</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">📈</span>
+          <span class="nav-label">Historique</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">⚡</span>
+          <span class="nav-label">Prises connectées</span>
+          <span class="nav-badge">6</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Configuration</span>
+        </div>
+      </nav>
+
+      <div class="quick-stats">
+        <div class="nav-header" style="padding: 0 0 12px 0; margin-bottom: 8px;">Statistiques Rapides</div>
+        <div class="stat-item">
+          <span class="stat-label">Projets actifs</span>
+          <span class="stat-value">3</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Capteurs en ligne</span>
+          <span class="stat-value success">4/4</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Prises actives</span>
+          <span class="stat-value warning">2/6</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Alertes</span>
+          <span class="stat-value">0</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Process Overview -->
+      <section class="process-overview fade-in">
+        <div class="section-header">
+          <h2 class="section-title">Cuves de Fermentation</h2>
+          <div class="section-actions">
+            <button class="btn-icon" title="Rafraîchir">↻</button>
+            <button class="btn-icon" title="Ajouter">+</button>
+          </div>
+        </div>
+
+        <div class="tanks-grid">
+          <!-- Tank 1 -->
+          <div class="tank-card active">
+            <div class="tank-header">
+              <div>
+                <div class="tank-name">Bière de Noël</div>
+                <div class="tank-type">Bière • Belgian Tripel</div>
+              </div>
+              <div class="tank-status">
+                <span class="status-dot"></span>
+                Stable
+              </div>
+            </div>
+            <div class="tank-visual">
+              <div class="tank-container">
+                <div class="tank-neck"></div>
+                <div class="tank-body">
+                  <div class="tank-liquid" style="height: 75%;"></div>
+                </div>
+              </div>
+              <div class="tank-temp-display">
+                20.3<span class="temp-unit">°C</span>
+              </div>
+            </div>
+            <div class="tank-metrics">
+              <div class="metric">
+                <div class="metric-value">20°C</div>
+                <div class="metric-label">Cible</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value">12j</div>
+                <div class="metric-label">Durée</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tank 2 -->
+          <div class="tank-card">
+            <div class="tank-header">
+              <div>
+                <div class="tank-name">IPA Houblonnée</div>
+                <div class="tank-type">Bière • IPA</div>
+              </div>
+              <div class="tank-status heating">
+                <span>●</span>
+                Chauffage
+              </div>
+            </div>
+            <div class="tank-visual">
+              <div class="tank-container">
+                <div class="tank-neck"></div>
+                <div class="tank-body">
+                  <div class="tank-liquid" style="height: 60%; background: linear-gradient(180deg, #d4a574 0%, #b8956a 100%);"></div>
+                </div>
+              </div>
+              <div class="tank-temp-display">
+                17.8<span class="temp-unit">°C</span>
+              </div>
+            </div>
+            <div class="tank-metrics">
+              <div class="metric">
+                <div class="metric-value">18°C</div>
+                <div class="metric-label">Cible</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value">5j</div>
+                <div class="metric-label">Durée</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tank 3 -->
+          <div class="tank-card">
+            <div class="tank-header">
+              <div>
+                <div class="tank-name">Shiitake Batch 2</div>
+                <div class="tank-type">Champignons • Shiitake</div>
+              </div>
+              <div class="tank-status inactive">
+                <span>○</span>
+                Inactif
+              </div>
+            </div>
+            <div class="tank-visual">
+              <div class="tank-container">
+                <div class="tank-neck"></div>
+                <div class="tank-body">
+                  <div class="tank-liquid" style="height: 85%; background: linear-gradient(180deg, #8b7355 0%, #6d5a45 100%);"></div>
+                </div>
+              </div>
+              <div class="tank-temp-display">
+                22.1<span class="temp-unit">°C</span>
+              </div>
+            </div>
+            <div class="tank-metrics">
+              <div class="metric">
+                <div class="metric-value">85%</div>
+                <div class="metric-label">Humidité</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value">21j</div>
+                <div class="metric-label">Durée</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Temperature Chart -->
+      <section class="chart-card fade-in">
+        <div class="section-header">
+          <h2 class="section-title">Évolution Température - Bière de Noël</h2>
+          <div class="section-actions">
+            <button class="btn-icon">24h</button>
+            <button class="btn-icon">7j</button>
+            <button class="btn-icon">30j</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <svg class="chart-svg" viewBox="0 0 800 180" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="rgba(196, 165, 116, 0.3)"/>
+                <stop offset="100%" stop-color="rgba(196, 165, 116, 0)"/>
+              </linearGradient>
+            </defs>
+            <!-- Grid -->
+            <g class="chart-grid">
+              <line x1="0" y1="36" x2="800" y2="36"/>
+              <line x1="0" y1="72" x2="800" y2="72"/>
+              <line x1="0" y1="108" x2="800" y2="108"/>
+              <line x1="0" y1="144" x2="800" y2="144"/>
+            </g>
+            <!-- Target line -->
+            <line class="chart-target" x1="0" y1="90" x2="800" y2="90"/>
+            <!-- Area -->
+            <path class="chart-area" d="M0,100 Q100,95 200,92 T400,88 T600,94 T800,90 L800,180 L0,180 Z"/>
+            <!-- Line -->
+            <path class="chart-line" d="M0,100 Q100,95 200,92 T400,88 T600,94 T800,90"/>
+            <!-- Current point -->
+            <circle class="chart-dot" cx="800" cy="90" r="5"/>
+          </svg>
+          <div class="chart-labels">
+            <span class="y-label" style="top: 0;">24°C</span>
+            <span class="y-label" style="top: 25%;">22°C</span>
+            <span class="y-label" style="top: 50%;">20°C</span>
+            <span class="y-label" style="top: 75%;">18°C</span>
+            <span class="y-label" style="top: 100%;">16°C</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Right Panel -->
+    <aside class="right-panel">
+      <!-- Control Panel -->
+      <div class="control-panel fade-in">
+        <div class="control-header">
+          <span class="control-title">Contrôle Température</span>
+          <span class="control-mode">Auto</span>
+        </div>
+        <div class="control-body">
+          <div class="temperature-control">
+            <div class="temp-display">20<span class="unit">°C</span></div>
+            <div class="temp-label">Température Cible</div>
+          </div>
+
+          <div class="temp-slider">
+            <div class="slider-track">
+              <div class="slider-fill" style="width: 50%;"></div>
+              <div class="slider-thumb" style="left: 50%;"></div>
+            </div>
+            <div class="slider-labels">
+              <span>10°C</span>
+              <span>30°C</span>
+            </div>
+          </div>
+
+          <div class="control-buttons">
+            <button class="btn btn-secondary">
+              <span>-</span> Diminuer
+            </button>
+            <button class="btn btn-secondary">
+              <span>+</span> Augmenter
+            </button>
+            <button class="btn btn-primary" style="grid-column: span 2;">
+              ⚡ Activer Chauffage
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts Panel -->
+      <div class="alerts-panel fade-in">
+        <div class="alerts-header">
+          <span class="alerts-title">Activité Récente</span>
+          <span class="alerts-count">3</span>
+        </div>
+        <div class="alerts-list">
+          <div class="alert-item success">
+            <span class="alert-icon">✓</span>
+            <div class="alert-content">
+              <div class="alert-message">Température cible atteinte pour Bière de Noël</div>
+              <div class="alert-time">Il y a 5 minutes</div>
+            </div>
+          </div>
+          <div class="alert-item warning">
+            <span class="alert-icon">⚠</span>
+            <div class="alert-content">
+              <div class="alert-message">Chauffage activé pour IPA Houblonnée (+0.2°C nécessaire)</div>
+              <div class="alert-time">Il y a 12 minutes</div>
+            </div>
+          </div>
+          <div class="alert-item info">
+            <span class="alert-icon">ℹ</span>
+            <div class="alert-content">
+              <div class="alert-message">Nouvelle mesure de densité enregistrée: 1.012</div>
+              <div class="alert-time">Il y a 1 heure</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-header" style="padding: 16px 20px; border-top: 1px solid var(--border);">Santé Système</div>
+        <div class="health-grid">
+          <div class="health-item">
+            <div class="health-indicator ok"></div>
+            <span class="health-label">Home Assistant</span>
+          </div>
+          <div class="health-item">
+            <div class="health-indicator ok"></div>
+            <span class="health-label">InfluxDB</span>
+          </div>
+          <div class="health-item">
+            <div class="health-indicator ok"></div>
+            <span class="health-label">Capteurs</span>
+          </div>
+          <div class="health-item">
+            <div class="health-indicator ok"></div>
+            <span class="health-label">Prises</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // Update datetime
+    function updateDateTime() {
+      const now = new Date();
+      const options = {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      };
+      document.getElementById('datetime').textContent = now.toLocaleDateString('fr-FR', options);
+    }
+
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+    // Simulate temperature updates
+    function simulateTemperature() {
+      const tanks = document.querySelectorAll('.tank-temp-display');
+      tanks.forEach(tank => {
+        const currentTemp = parseFloat(tank.textContent);
+        const variation = (Math.random() - 0.5) * 0.2;
+        const newTemp = (currentTemp + variation).toFixed(1);
+        tank.innerHTML = `${newTemp}<span class="temp-unit">°C</span>`;
+      });
+    }
+
+    setInterval(simulateTemperature, 5000);
+
+    // Interactive slider
+    const sliderTrack = document.querySelector('.slider-track');
+    const sliderFill = document.querySelector('.slider-fill');
+    const sliderThumb = document.querySelector('.slider-thumb');
+    const tempDisplay = document.querySelector('.temp-display');
+
+    let isDragging = false;
+
+    function updateSlider(percent) {
+      percent = Math.max(0, Math.min(100, percent));
+      sliderFill.style.width = percent + '%';
+      sliderThumb.style.left = percent + '%';
+
+      const temp = Math.round(10 + (percent / 100) * 20);
+      tempDisplay.innerHTML = `${temp}<span class="unit">°C</span>`;
+    }
+
+    sliderTrack.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      const rect = sliderTrack.getBoundingClientRect();
+      const percent = ((e.clientX - rect.left) / rect.width) * 100;
+      updateSlider(percent);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const rect = sliderTrack.getBoundingClientRect();
+      const percent = ((e.clientX - rect.left) / rect.width) * 100;
+      updateSlider(percent);
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    // Nav item click
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Button hover effects
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px)';
+      });
+      btn.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+      });
+    });
+  </script>
+</body>
+</html>

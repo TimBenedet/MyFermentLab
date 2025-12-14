@@ -1,0 +1,2325 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyFermentLab - SCADA Champignons Interface</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #111111;
+      --bg-card: #161616;
+      --bg-elevated: #1c1c1c;
+      --accent: #c4a574;
+      --accent-light: #d4b584;
+      --accent-dark: #a08050;
+      --accent-glow: rgba(196, 165, 116, 0.4);
+      --mushroom-brown: #8b6914;
+      --mushroom-brown-light: #a67c00;
+      --mushroom-brown-dark: #5c4a0f;
+      --mushroom-glow: rgba(139, 105, 20, 0.4);
+      --mycelium-white: #f5f5dc;
+      --text-primary: #ffffff;
+      --text-secondary: #888888;
+      --text-muted: #555555;
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.3);
+      --warning: #f59e0b;
+      --warning-glow: rgba(245, 158, 11, 0.3);
+      --error: #ef4444;
+      --error-glow: rgba(239, 68, 68, 0.3);
+      --humidity: #3b82f6;
+      --humidity-glow: rgba(59, 130, 246, 0.3);
+      --co2: #a855f7;
+      --co2-glow: rgba(168, 85, 247, 0.3);
+      --border: #252525;
+      --glass: rgba(255, 255, 255, 0.03);
+    }
+
+    body {
+      font-family: 'SF Pro Display', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated Background Particles - Spores */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: var(--mycelium-white);
+      border-radius: 50%;
+      opacity: 0.1;
+      animation: spore-fall 20s infinite linear;
+    }
+
+    @keyframes spore-fall {
+      0% { transform: translateY(-100vh) translateX(0) scale(0.5); opacity: 0; }
+      10% { opacity: 0.1; }
+      90% { opacity: 0.1; }
+      100% { transform: translateY(100vh) translateX(30px) scale(1); opacity: 0; }
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(180deg, rgba(17, 17, 17, 0.98) 0%, rgba(10, 10, 10, 0.95) 100%);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--mushroom-brown) 0%, var(--mushroom-brown-dark) 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 20px var(--mushroom-glow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo-icon::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%);
+      animation: shine 3s infinite;
+    }
+
+    @keyframes shine {
+      0% { transform: translateX(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) rotate(45deg); }
+    }
+
+    .logo-text {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span {
+      background: linear-gradient(135deg, var(--mushroom-brown-light) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      background: var(--glass);
+      border-radius: 25px;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success), 0 0 20px var(--success-glow);
+      animation: pulse-glow 2s infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        box-shadow: 0 0 10px var(--success), 0 0 20px var(--success-glow);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 15px var(--success), 0 0 30px var(--success-glow);
+        transform: scale(1.1);
+      }
+    }
+
+    .datetime {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+
+    /* Main Layout */
+    .main-container {
+      display: grid;
+      grid-template-columns: 260px 1fr 340px;
+      gap: 24px;
+      padding: 24px;
+      min-height: calc(100vh - 80px);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .nav-card {
+      background: var(--bg-card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-left: 3px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(139, 105, 20, 0.1) 0%, transparent 100%);
+      transition: width 0.3s;
+    }
+
+    .nav-item:hover::before {
+      width: 100%;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-elevated);
+    }
+
+    .nav-item.active {
+      background: rgba(139, 105, 20, 0.08);
+      border-left-color: var(--mushroom-brown);
+    }
+
+    .nav-item.active .nav-icon {
+      color: var(--mushroom-brown-light);
+      text-shadow: 0 0 10px var(--mushroom-glow);
+    }
+
+    .nav-icon {
+      font-size: 20px;
+      width: 28px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .nav-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      background: linear-gradient(135deg, var(--mushroom-brown) 0%, var(--mushroom-brown-dark) 100%);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px var(--mushroom-glow);
+    }
+
+    /* Quick Stats */
+    .quick-stats {
+      background: var(--bg-card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      padding: 20px;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-value.success {
+      color: var(--success);
+      text-shadow: 0 0 10px var(--success-glow);
+    }
+    .stat-value.warning {
+      color: var(--warning);
+      text-shadow: 0 0 10px var(--warning-glow);
+    }
+    .stat-value.error {
+      color: var(--error);
+      text-shadow: 0 0 10px var(--error-glow);
+    }
+
+    /* Main Content */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Process Overview */
+    .process-overview {
+      background: var(--bg-card);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .process-overview::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--mushroom-brown) 0%, var(--mushroom-brown-light) 50%, transparent 100%);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 24px;
+      background: var(--mushroom-brown);
+      border-radius: 2px;
+    }
+
+    .section-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      font-size: 16px;
+    }
+
+    .btn-icon:hover {
+      border-color: var(--mushroom-brown);
+      color: var(--mushroom-brown-light);
+      box-shadow: 0 0 20px var(--mushroom-glow);
+      transform: translateY(-2px);
+    }
+
+    /* Single Grow Chamber Layout */
+    .single-chamber-layout {
+      display: flex;
+      gap: 32px;
+      align-items: stretch;
+    }
+
+    /* Grow Chamber */
+    .chamber-card {
+      flex: 0 0 320px;
+      background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      padding: 24px;
+      position: relative;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .chamber-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(139, 105, 20, 0.05) 0%, transparent 50%);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .chamber-card:hover {
+      border-color: var(--mushroom-brown);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4), 0 0 30px var(--mushroom-glow);
+      transform: translateY(-4px);
+    }
+
+    .chamber-card:hover::before {
+      opacity: 1;
+    }
+
+    .chamber-card.active {
+      border-color: var(--success);
+      box-shadow: 0 0 30px var(--success-glow);
+    }
+
+    .chamber-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .chamber-name {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .chamber-type {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .chamber-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 14px;
+      background: rgba(139, 105, 20, 0.15);
+      color: var(--mushroom-brown-light);
+      border: 1px solid rgba(139, 105, 20, 0.3);
+    }
+
+    .chamber-status .led {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    .chamber-status.fruiting {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border-color: rgba(16, 185, 129, 0.3);
+      animation: fruit-pulse 2s infinite;
+    }
+
+    @keyframes fruit-pulse {
+      0%, 100% { box-shadow: 0 0 5px var(--success-glow); }
+      50% { box-shadow: 0 0 15px var(--success-glow); }
+    }
+
+    .chamber-status.colonizing {
+      background: rgba(245, 245, 220, 0.1);
+      color: var(--mycelium-white);
+      border-color: rgba(245, 245, 220, 0.3);
+    }
+
+    /* Grow Chamber Visual */
+    .chamber-visual {
+      position: relative;
+      height: 240px;
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .grow-tent {
+      width: 220px;
+      height: 220px;
+      position: relative;
+    }
+
+    /* Tent frame */
+    .tent-frame {
+      position: absolute;
+      inset: 0;
+      border: 3px solid #444;
+      border-radius: 8px;
+      background: linear-gradient(180deg,
+        rgba(20, 20, 20, 0.95) 0%,
+        rgba(15, 15, 15, 0.98) 100%
+      );
+      box-shadow:
+        inset 0 0 40px rgba(0,0,0,0.5),
+        0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    /* Interior lighting effect */
+    .tent-interior {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      background: radial-gradient(ellipse at 50% 0%,
+        rgba(100, 100, 120, 0.15) 0%,
+        transparent 60%
+      );
+      border-radius: 4px;
+    }
+
+    /* Grow light */
+    .grow-light {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 8px;
+      background: linear-gradient(90deg, #333 0%, #444 50%, #333 100%);
+      border-radius: 4px;
+      box-shadow: 0 3px 15px rgba(100, 100, 150, 0.3);
+    }
+
+    .grow-light::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 10%;
+      right: 10%;
+      height: 80px;
+      background: linear-gradient(180deg,
+        rgba(180, 180, 220, 0.08) 0%,
+        transparent 100%
+      );
+      clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+    }
+
+    .grow-light.on::after {
+      animation: light-flicker 4s infinite ease-in-out;
+    }
+
+    @keyframes light-flicker {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+
+    /* Substrate blocks */
+    .substrate-shelf {
+      position: absolute;
+      bottom: 30px;
+      left: 20px;
+      right: 20px;
+      height: 100px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      align-items: flex-end;
+    }
+
+    .substrate-block {
+      width: 50px;
+      height: 70px;
+      background: linear-gradient(180deg,
+        #5a4a3a 0%,
+        #4a3a2a 50%,
+        #3a2a1a 100%
+      );
+      border-radius: 4px;
+      position: relative;
+      border: 1px solid #3a3025;
+    }
+
+    /* Mycelium colonization on blocks */
+    .block-mycelium {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(245, 245, 220, 0.3) 30%,
+        rgba(245, 245, 220, 0.6) 100%
+      );
+      border-radius: 0 0 3px 3px;
+      transition: height 1s ease-out;
+    }
+
+    /* Mushroom fruiting bodies */
+    .mushrooms-container {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 3px;
+      justify-content: center;
+    }
+
+    .mushroom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: mushroom-grow 3s ease-out forwards;
+    }
+
+    .mushroom-cap {
+      width: 18px;
+      height: 10px;
+      background: linear-gradient(180deg,
+        var(--mushroom-brown-light) 0%,
+        var(--mushroom-brown) 50%,
+        var(--mushroom-brown-dark) 100%
+      );
+      border-radius: 50% 50% 40% 40%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .mushroom-stem {
+      width: 6px;
+      height: 12px;
+      background: linear-gradient(90deg,
+        #e8e0d0 0%,
+        #f5f0e5 50%,
+        #e8e0d0 100%
+      );
+      border-radius: 2px;
+      margin-top: -2px;
+    }
+
+    .mushroom:nth-child(1) { transform: scale(0.7); animation-delay: 0s; }
+    .mushroom:nth-child(2) { transform: scale(1); animation-delay: 0.3s; }
+    .mushroom:nth-child(3) { transform: scale(0.85); animation-delay: 0.5s; }
+    .mushroom:nth-child(4) { transform: scale(0.6); animation-delay: 0.2s; }
+
+    @keyframes mushroom-grow {
+      0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Humidity mist effect */
+    .mist-layer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(200, 200, 220, 0.05) 50%,
+        rgba(200, 200, 220, 0.1) 100%
+      );
+      animation: mist-flow 8s infinite ease-in-out;
+    }
+
+    @keyframes mist-flow {
+      0%, 100% { opacity: 0.5; transform: translateY(0); }
+      50% { opacity: 0.8; transform: translateY(-5px); }
+    }
+
+    /* Chamber sensors display */
+    .chamber-display {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-primary) 100%);
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      display: flex;
+      gap: 16px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+      z-index: 5;
+    }
+
+    .display-item {
+      text-align: center;
+    }
+
+    .display-value {
+      font-size: 16px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .display-value.temp {
+      color: var(--accent);
+    }
+
+    .display-value.humidity {
+      color: var(--humidity);
+    }
+
+    .display-value.co2 {
+      color: var(--co2);
+    }
+
+    .display-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Project metrics panel */
+    .project-metrics-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .metric-card {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border: 1px solid var(--border);
+      transition: all 0.3s;
+    }
+
+    .metric-card:hover {
+      border-color: var(--mushroom-brown);
+      transform: translateY(-2px);
+    }
+
+    .metric-icon {
+      font-size: 28px;
+      width: 50px;
+      height: 50px;
+      background: var(--bg-elevated);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .metric-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .metric-info .metric-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-info .metric-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .metric-info .metric-value.highlight {
+      color: var(--mushroom-brown-light);
+    }
+
+    .metric-info .metric-value.humidity {
+      color: var(--humidity);
+    }
+
+    .metric-info .metric-value.co2 {
+      color: var(--co2);
+    }
+
+    .metric-info .metric-value.success {
+      color: var(--success);
+    }
+
+    .metric-info .metric-value.warning {
+      color: var(--warning);
+    }
+
+    /* Phase Timeline */
+    .phase-timeline {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      margin-top: 8px;
+    }
+
+    .timeline-header {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    .timeline-track {
+      position: relative;
+      height: 50px;
+      background: var(--bg-elevated);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .timeline-phase {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: var(--text-muted);
+      border-right: 1px solid var(--border);
+      transition: all 0.3s;
+      cursor: default;
+      padding: 4px;
+    }
+
+    .timeline-phase:last-child {
+      border-right: none;
+    }
+
+    .timeline-phase.active {
+      background: linear-gradient(180deg, rgba(139, 105, 20, 0.2) 0%, rgba(139, 105, 20, 0.1) 100%);
+      color: var(--mushroom-brown-light);
+    }
+
+    .timeline-phase.completed {
+      background: rgba(139, 105, 20, 0.1);
+      color: var(--mushroom-brown-light);
+    }
+
+    .phase-icon {
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .phase-name {
+      font-weight: 600;
+    }
+
+    .phase-time {
+      font-size: 9px;
+      opacity: 0.7;
+    }
+
+    .timeline-progress {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--mushroom-brown) 0%, transparent 100%);
+      opacity: 0.15;
+      transition: width 0.5s ease-out;
+    }
+
+    @media (max-width: 900px) {
+      .single-chamber-layout {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .chamber-card {
+        flex: none;
+        width: 100%;
+        max-width: 340px;
+      }
+
+      .metrics-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Charts Grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 1200px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Chart Card */
+    .chart-card {
+      background: var(--bg-card);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      padding: 28px;
+      flex: 1;
+    }
+
+    .chart-container {
+      height: 220px;
+      position: relative;
+      margin-top: 24px;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .chart-grid line {
+      stroke: var(--border);
+      stroke-width: 1;
+    }
+
+    .chart-line {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 8px var(--accent-glow));
+    }
+
+    .chart-line.humidity {
+      stroke: var(--humidity);
+      filter: drop-shadow(0 0 8px var(--humidity-glow));
+    }
+
+    .chart-line.co2 {
+      stroke: var(--co2);
+      filter: drop-shadow(0 0 8px var(--co2-glow));
+    }
+
+    .chart-area {
+      fill: url(#chartGradient);
+    }
+
+    .chart-area.humidity {
+      fill: url(#humidityGradient);
+    }
+
+    .chart-area.co2 {
+      fill: url(#co2Gradient);
+    }
+
+    .chart-dot {
+      fill: var(--accent);
+      filter: drop-shadow(0 0 10px var(--accent));
+    }
+
+    .chart-dot.humidity {
+      fill: var(--humidity);
+      filter: drop-shadow(0 0 10px var(--humidity));
+    }
+
+    .chart-dot.co2 {
+      fill: var(--co2);
+      filter: drop-shadow(0 0 10px var(--co2));
+    }
+
+    .chart-target {
+      stroke: var(--success);
+      stroke-width: 2;
+      stroke-dasharray: 8 4;
+      opacity: 0.7;
+    }
+
+    .chart-warning {
+      stroke: var(--warning);
+      stroke-width: 2;
+      stroke-dasharray: 8 4;
+      opacity: 0.7;
+    }
+
+    /* Chart tooltip */
+    .chart-tooltip {
+      position: absolute;
+      background: var(--bg-elevated);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    }
+
+    .chart-tooltip.co2 {
+      border-color: var(--co2);
+    }
+
+    .chart-tooltip.visible {
+      opacity: 1;
+    }
+
+    .tooltip-time {
+      color: var(--text-muted);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .tooltip-value {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .tooltip-value.co2 {
+      color: var(--co2);
+    }
+
+    /* Optimal range zone */
+    .optimal-zone {
+      fill: rgba(16, 185, 129, 0.1);
+    }
+
+    .warning-zone {
+      fill: rgba(245, 158, 11, 0.08);
+    }
+
+    .chart-labels {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
+
+    .y-label {
+      position: absolute;
+      left: 0;
+      font-size: 11px;
+      color: var(--text-muted);
+      transform: translateY(-50%);
+      font-weight: 500;
+    }
+
+    /* Environment stats */
+    .env-info {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .env-stat {
+      text-align: center;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+    }
+
+    .env-label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .env-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .env-value.highlight {
+      color: var(--co2);
+    }
+
+    .env-value.warning {
+      color: var(--warning);
+    }
+
+    .env-value.success {
+      color: var(--success);
+    }
+
+    @media (max-width: 500px) {
+      .env-info {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* Period buttons */
+    .chart-periods {
+      display: flex;
+      gap: 8px;
+    }
+
+    .period-btn {
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .period-btn:hover {
+      border-color: var(--mushroom-brown);
+      color: var(--mushroom-brown-light);
+    }
+
+    .period-btn.active {
+      background: var(--mushroom-brown);
+      border-color: var(--mushroom-brown);
+      color: white;
+    }
+
+    /* Right Panel */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Control Panel */
+    .control-panel {
+      background: var(--bg-card);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .control-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-card) 100%);
+    }
+
+    .control-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .control-mode {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 12px;
+      background: rgba(139, 105, 20, 0.15);
+      color: var(--mushroom-brown-light);
+      border: 1px solid rgba(139, 105, 20, 0.3);
+    }
+
+    .control-body {
+      padding: 24px;
+    }
+
+    /* Triple Circular Gauges */
+    .triple-gauges {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .circular-gauge {
+      width: 90px;
+      height: 90px;
+      position: relative;
+    }
+
+    .gauge-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .gauge-track {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 8;
+    }
+
+    .gauge-progress {
+      fill: none;
+      stroke: url(#gaugeGradient);
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dasharray 0.5s ease-out;
+      filter: drop-shadow(0 0 6px var(--accent-glow));
+    }
+
+    .gauge-progress.humidity {
+      stroke: url(#humidityGaugeGradient);
+      filter: drop-shadow(0 0 6px var(--humidity-glow));
+    }
+
+    .gauge-progress.co2 {
+      stroke: url(#co2GaugeGradient);
+      filter: drop-shadow(0 0 6px var(--co2-glow));
+    }
+
+    .gauge-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .gauge-temp {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .gauge-temp.humidity {
+      color: var(--humidity);
+      text-shadow: 0 0 10px var(--humidity-glow);
+    }
+
+    .gauge-temp.co2 {
+      color: var(--co2);
+      text-shadow: 0 0 10px var(--co2-glow);
+      font-size: 14px;
+    }
+
+    .gauge-temp .unit {
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .gauge-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Control buttons */
+    .control-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--mushroom-brown) 0%, var(--mushroom-brown-dark) 100%);
+      color: white;
+      box-shadow: 0 4px 20px var(--mushroom-glow);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 8px 30px var(--mushroom-glow);
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--mushroom-brown);
+      color: var(--mushroom-brown-light);
+    }
+
+    .btn-mist {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--humidity);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-mist:hover {
+      background: var(--humidity);
+      color: white;
+      box-shadow: 0 0 20px var(--humidity-glow);
+    }
+
+    .btn-fan {
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--co2);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .btn-fan:hover {
+      background: var(--co2);
+      color: white;
+      box-shadow: 0 0 20px var(--co2-glow);
+    }
+
+    .btn-light {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-light:hover {
+      background: var(--warning);
+      color: white;
+      box-shadow: 0 0 20px var(--warning-glow);
+    }
+
+    /* Alerts Panel */
+    .alerts-panel {
+      background: var(--bg-card);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .alerts-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .alerts-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .alerts-count {
+      background: linear-gradient(135deg, var(--mushroom-brown) 0%, var(--mushroom-brown-dark) 100%);
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px var(--mushroom-glow);
+    }
+
+    .alerts-list {
+      padding: 16px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .alert-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      background: var(--bg-secondary);
+      border-radius: 14px;
+      margin-bottom: 10px;
+      border-left: 4px solid;
+      transition: all 0.3s;
+    }
+
+    .alert-item:hover {
+      transform: translateX(4px);
+    }
+
+    .alert-item.warning {
+      border-color: var(--warning);
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, var(--bg-secondary) 100%);
+    }
+
+    .alert-item.info {
+      border-color: var(--mushroom-brown);
+      background: linear-gradient(90deg, rgba(139, 105, 20, 0.1) 0%, var(--bg-secondary) 100%);
+    }
+
+    .alert-item.success {
+      border-color: var(--success);
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, var(--bg-secondary) 100%);
+    }
+
+    .alert-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--bg-elevated);
+    }
+
+    .alert-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .alert-message {
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .alert-time {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* System Health */
+    .health-section {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .health-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .health-item {
+      background: var(--bg-secondary);
+      padding: 12px 14px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .health-item:hover {
+      background: var(--bg-elevated);
+      transform: translateY(-2px);
+    }
+
+    .health-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .health-indicator::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      opacity: 0.3;
+    }
+
+    .health-indicator.ok {
+      background: var(--success);
+      color: var(--success);
+      box-shadow: 0 0 8px var(--success-glow);
+    }
+    .health-indicator.warning {
+      background: var(--warning);
+      color: var(--warning);
+      box-shadow: 0 0 8px var(--warning-glow);
+      animation: health-pulse 1.5s infinite;
+    }
+
+    @keyframes health-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    .health-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    /* Animations */
+    .fade-in {
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide-in {
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 1400px) {
+      .main-container {
+        grid-template-columns: 220px 1fr 300px;
+        gap: 16px;
+        padding: 16px;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar, .right-panel {
+        display: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .header {
+        padding: 12px 16px;
+      }
+
+      .process-overview, .chart-card {
+        padding: 20px;
+        border-radius: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Particles Background - Spores -->
+  <div class="particles" id="particles"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🍄</div>
+      <div class="logo-text">MyFerment<span>Lab</span></div>
+    </div>
+    <div class="header-status">
+      <div class="system-status">
+        <div class="status-dot"></div>
+        <span>Fructification en cours</span>
+      </div>
+      <div class="datetime" id="datetime">--</div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar slide-in">
+      <nav class="nav-card">
+        <div class="nav-header">Navigation</div>
+        <div class="nav-item active">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Vue d'ensemble</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">🌡️</span>
+          <span class="nav-label">Environnement</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">💨</span>
+          <span class="nav-label">CO2 & Ventilation</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">💡</span>
+          <span class="nav-label">Éclairage</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">📈</span>
+          <span class="nav-label">Historique</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">🔔</span>
+          <span class="nav-label">Alertes</span>
+          <span class="nav-badge">2</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Configuration</span>
+        </div>
+      </nav>
+
+      <div class="quick-stats">
+        <div class="nav-header" style="padding: 0 0 12px 0;">Statistiques</div>
+        <div class="stat-item">
+          <span class="stat-label">Phase actuelle</span>
+          <span class="stat-value" style="color: var(--success); font-size: 14px;">Fructification</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Capteurs en ligne</span>
+          <span class="stat-value success">4/4</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Humidificateur</span>
+          <span class="stat-value success">Auto</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">CO2 actuel</span>
+          <span class="stat-value warning">850ppm</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Project Overview -->
+      <section class="process-overview fade-in">
+        <div class="section-header">
+          <h2 class="section-title">Culture Champignons</h2>
+          <div class="section-actions">
+            <button class="btn-icon" title="Rafraîchir">↻</button>
+            <button class="btn-icon" title="Paramètres">⚙️</button>
+          </div>
+        </div>
+
+        <div class="single-chamber-layout">
+          <!-- Grow Chamber visualization -->
+          <div class="chamber-card active">
+            <div class="chamber-header">
+              <div>
+                <div class="chamber-name">Shiitake - Batch #8</div>
+                <div class="chamber-type">Lentinula edodes</div>
+              </div>
+              <div class="chamber-status fruiting">
+                <span class="led"></span>
+                Fructification
+              </div>
+            </div>
+            <div class="chamber-visual">
+              <div class="grow-tent">
+                <div class="tent-frame">
+                  <div class="tent-interior"></div>
+                  <div class="grow-light on"></div>
+                  <div class="mist-layer"></div>
+                  <div class="substrate-shelf">
+                    <div class="substrate-block">
+                      <div class="block-mycelium" style="height: 100%;"></div>
+                      <div class="mushrooms-container">
+                        <div class="mushroom">
+                          <div class="mushroom-cap"></div>
+                          <div class="mushroom-stem"></div>
+                        </div>
+                        <div class="mushroom">
+                          <div class="mushroom-cap"></div>
+                          <div class="mushroom-stem"></div>
+                        </div>
+                        <div class="mushroom">
+                          <div class="mushroom-cap"></div>
+                          <div class="mushroom-stem"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="substrate-block">
+                      <div class="block-mycelium" style="height: 100%;"></div>
+                      <div class="mushrooms-container">
+                        <div class="mushroom">
+                          <div class="mushroom-cap"></div>
+                          <div class="mushroom-stem"></div>
+                        </div>
+                        <div class="mushroom">
+                          <div class="mushroom-cap"></div>
+                          <div class="mushroom-stem"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="substrate-block">
+                      <div class="block-mycelium" style="height: 100%;"></div>
+                      <div class="mushrooms-container">
+                        <div class="mushroom">
+                          <div class="mushroom-cap"></div>
+                          <div class="mushroom-stem"></div>
+                        </div>
+                        <div class="mushroom">
+                          <div class="mushroom-cap"></div>
+                          <div class="mushroom-stem"></div>
+                        </div>
+                        <div class="mushroom">
+                          <div class="mushroom-cap"></div>
+                          <div class="mushroom-stem"></div>
+                        </div>
+                        <div class="mushroom">
+                          <div class="mushroom-cap"></div>
+                          <div class="mushroom-stem"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chamber-display">
+                <div class="display-item">
+                  <div class="display-value temp"><span id="currentTemp">18.5</span>°</div>
+                  <div class="display-label">Temp</div>
+                </div>
+                <div class="display-item">
+                  <div class="display-value humidity"><span id="currentHumidity">92</span>%</div>
+                  <div class="display-label">Humid</div>
+                </div>
+                <div class="display-item">
+                  <div class="display-value co2"><span id="currentCO2">850</span></div>
+                  <div class="display-label">CO2 ppm</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Project metrics panel -->
+          <div class="project-metrics-panel">
+            <div class="metrics-row">
+              <div class="metric-card">
+                <div class="metric-icon">🎯</div>
+                <div class="metric-info">
+                  <span class="metric-label">Température cible</span>
+                  <span class="metric-value highlight">16-20°C</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon">💧</div>
+                <div class="metric-info">
+                  <span class="metric-label">Humidité cible</span>
+                  <span class="metric-value humidity">85-95%</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon">💨</div>
+                <div class="metric-info">
+                  <span class="metric-label">CO2 maximum</span>
+                  <span class="metric-value co2">&lt; 1000ppm</span>
+                </div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-icon">⏱️</div>
+                <div class="metric-info">
+                  <span class="metric-label">Jour de culture</span>
+                  <span class="metric-value">Jour 45</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Phase Timeline -->
+            <div class="phase-timeline">
+              <div class="timeline-header">Cycle de croissance</div>
+              <div class="timeline-track">
+                <div class="timeline-progress" style="width: 75%;"></div>
+                <div class="timeline-phase completed">
+                  <span class="phase-icon">🧫</span>
+                  <span class="phase-name">Inoculation</span>
+                  <span class="phase-time">J1-3</span>
+                </div>
+                <div class="timeline-phase completed">
+                  <span class="phase-icon">🕸️</span>
+                  <span class="phase-name">Colonisation</span>
+                  <span class="phase-time">J4-30</span>
+                </div>
+                <div class="timeline-phase active">
+                  <span class="phase-icon">🍄</span>
+                  <span class="phase-name">Fructification</span>
+                  <span class="phase-time">J31-60</span>
+                </div>
+                <div class="timeline-phase">
+                  <span class="phase-icon">✂️</span>
+                  <span class="phase-name">Récolte</span>
+                  <span class="phase-time">J60+</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts Section -->
+      <div class="charts-grid">
+        <!-- Temperature & Humidity Chart -->
+        <section class="chart-card fade-in" style="animation-delay: 0.3s;">
+          <div class="section-header">
+            <h2 class="section-title">Temp. & Humidité</h2>
+            <div class="chart-periods">
+              <button class="period-btn active">24h</button>
+              <button class="period-btn">7j</button>
+              <button class="period-btn">30j</button>
+            </div>
+          </div>
+          <div class="chart-container" id="tempChartContainer">
+            <svg class="chart-svg" viewBox="0 0 800 200" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(196, 165, 116, 0.4)"/>
+                  <stop offset="100%" stop-color="rgba(196, 165, 116, 0)"/>
+                </linearGradient>
+                <linearGradient id="humidityGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(59, 130, 246, 0.3)"/>
+                  <stop offset="100%" stop-color="rgba(59, 130, 246, 0)"/>
+                </linearGradient>
+              </defs>
+
+              <!-- Optimal zone -->
+              <rect class="optimal-zone" x="0" y="60" width="800" height="80"/>
+
+              <!-- Grid -->
+              <g class="chart-grid">
+                <line x1="0" y1="40" x2="800" y2="40"/>
+                <line x1="0" y1="80" x2="800" y2="80"/>
+                <line x1="0" y1="120" x2="800" y2="120"/>
+                <line x1="0" y1="160" x2="800" y2="160"/>
+                <line x1="160" y1="0" x2="160" y2="200" stroke-dasharray="2 4"/>
+                <line x1="320" y1="0" x2="320" y2="200" stroke-dasharray="2 4"/>
+                <line x1="480" y1="0" x2="480" y2="200" stroke-dasharray="2 4"/>
+                <line x1="640" y1="0" x2="640" y2="200" stroke-dasharray="2 4"/>
+              </g>
+
+              <!-- Target line -->
+              <line class="chart-target" x1="0" y1="100" x2="800" y2="100"/>
+
+              <!-- Temperature Area & Line -->
+              <path class="chart-area" d="M0,110 C100,108 200,95 300,100 S500,105 600,98 S750,102 800,100 L800,200 L0,200 Z"/>
+              <path class="chart-line" d="M0,110 C100,108 200,95 300,100 S500,105 600,98 S750,102 800,100"/>
+
+              <!-- Humidity Line (secondary) -->
+              <path class="chart-line humidity" style="stroke-width: 2; opacity: 0.7;" d="M0,50 C100,45 200,42 300,48 S500,40 600,45 S750,42 800,44"/>
+
+              <!-- Data points -->
+              <circle class="chart-dot" cx="0" cy="110" r="4"/>
+              <circle class="chart-dot" cx="200" cy="95" r="4"/>
+              <circle class="chart-dot" cx="400" cy="103" r="4"/>
+              <circle class="chart-dot" cx="600" cy="98" r="4"/>
+              <circle class="chart-dot" cx="800" cy="100" r="6"/>
+            </svg>
+            <div class="chart-labels">
+              <span class="y-label" style="top: 0;">24°C</span>
+              <span class="y-label" style="top: 25%;">21°C</span>
+              <span class="y-label" style="top: 50%;">18°C</span>
+              <span class="y-label" style="top: 75%;">15°C</span>
+              <span class="y-label" style="top: 100%;">12°C</span>
+            </div>
+            <div class="chart-tooltip" id="tempTooltip">
+              <div class="tooltip-time">12:00</div>
+              <div class="tooltip-value">18.5°C</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CO2 Chart -->
+        <section class="chart-card fade-in" style="animation-delay: 0.4s;">
+          <div class="section-header">
+            <h2 class="section-title">Niveau CO2</h2>
+            <div class="chart-legend">
+              <span class="legend-item">
+                <span class="legend-dot" style="background: var(--co2);"></span>
+                CO2 (ppm)
+              </span>
+              <span class="legend-item">
+                <span class="legend-dot" style="background: var(--warning);"></span>
+                Seuil max
+              </span>
+            </div>
+          </div>
+          <div class="chart-container" id="co2ChartContainer">
+            <svg class="chart-svg" viewBox="0 0 800 200" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="co2Gradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(168, 85, 247, 0.4)"/>
+                  <stop offset="100%" stop-color="rgba(168, 85, 247, 0)"/>
+                </linearGradient>
+              </defs>
+
+              <!-- Warning zone (>1000ppm) -->
+              <rect class="warning-zone" x="0" y="0" width="800" height="40"/>
+
+              <!-- Grid -->
+              <g class="chart-grid">
+                <line x1="0" y1="40" x2="800" y2="40"/>
+                <line x1="0" y1="80" x2="800" y2="80"/>
+                <line x1="0" y1="120" x2="800" y2="120"/>
+                <line x1="0" y1="160" x2="800" y2="160"/>
+                <line x1="160" y1="0" x2="160" y2="200" stroke-dasharray="2 4"/>
+                <line x1="320" y1="0" x2="320" y2="200" stroke-dasharray="2 4"/>
+                <line x1="480" y1="0" x2="480" y2="200" stroke-dasharray="2 4"/>
+                <line x1="640" y1="0" x2="640" y2="200" stroke-dasharray="2 4"/>
+              </g>
+
+              <!-- Warning threshold line (1000ppm) -->
+              <line class="chart-warning" x1="0" y1="40" x2="800" y2="40"/>
+
+              <!-- Area -->
+              <path class="chart-area co2" d="M0,120 L100,100 L200,85 L300,95 L400,70 L500,90 L600,75 L700,85 L800,80 L800,200 L0,200 Z"/>
+
+              <!-- Line -->
+              <path class="chart-line co2" d="M0,120 L100,100 L200,85 L300,95 L400,70 L500,90 L600,75 L700,85 L800,80"/>
+
+              <!-- Data points -->
+              <circle class="chart-dot co2" cx="0" cy="120" r="4"/>
+              <circle class="chart-dot co2" cx="200" cy="85" r="4"/>
+              <circle class="chart-dot co2" cx="400" cy="70" r="4"/>
+              <circle class="chart-dot co2" cx="600" cy="75" r="4"/>
+              <circle class="chart-dot co2" cx="800" cy="80" r="6"/>
+            </svg>
+            <div class="chart-labels">
+              <span class="y-label" style="top: 0;">1200</span>
+              <span class="y-label" style="top: 25%;">1000</span>
+              <span class="y-label" style="top: 50%;">800</span>
+              <span class="y-label" style="top: 75%;">600</span>
+              <span class="y-label" style="top: 100%;">400</span>
+            </div>
+            <div class="chart-tooltip co2" id="co2Tooltip">
+              <div class="tooltip-time">12:00</div>
+              <div class="tooltip-value co2">850 ppm</div>
+            </div>
+          </div>
+          <div class="env-info">
+            <div class="env-stat">
+              <span class="env-label">CO2 Minimum</span>
+              <span class="env-value success">620 ppm</span>
+            </div>
+            <div class="env-stat">
+              <span class="env-label">CO2 Actuel</span>
+              <span class="env-value highlight">850 ppm</span>
+            </div>
+            <div class="env-stat">
+              <span class="env-label">CO2 Maximum</span>
+              <span class="env-value warning">1050 ppm</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Right Panel -->
+    <aside class="right-panel">
+      <!-- Control Panel -->
+      <div class="control-panel fade-in" style="animation-delay: 0.1s;">
+        <div class="control-header">
+          <span class="control-title">Contrôle Environnement</span>
+          <span class="control-mode">AUTO</span>
+        </div>
+        <div class="control-body">
+          <!-- Triple Circular Gauges -->
+          <div class="triple-gauges">
+            <div class="circular-gauge">
+              <svg class="gauge-svg" viewBox="0 0 90 90">
+                <defs>
+                  <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#a08050"/>
+                    <stop offset="100%" stop-color="#d4b584"/>
+                  </linearGradient>
+                </defs>
+                <circle class="gauge-track" cx="45" cy="45" r="38"/>
+                <circle class="gauge-progress" cx="45" cy="45" r="38"
+                        stroke-dasharray="120" stroke-dashoffset="48" id="tempGaugeProgress"/>
+              </svg>
+              <div class="gauge-center">
+                <div class="gauge-temp"><span id="targetTemp">18</span><span class="unit">°</span></div>
+                <div class="gauge-label">Temp</div>
+              </div>
+            </div>
+            <div class="circular-gauge">
+              <svg class="gauge-svg" viewBox="0 0 90 90">
+                <defs>
+                  <linearGradient id="humidityGaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#2563eb"/>
+                    <stop offset="100%" stop-color="#60a5fa"/>
+                  </linearGradient>
+                </defs>
+                <circle class="gauge-track" cx="45" cy="45" r="38"/>
+                <circle class="gauge-progress humidity" cx="45" cy="45" r="38"
+                        stroke-dasharray="120" stroke-dashoffset="12" id="humidityGaugeProgress"/>
+              </svg>
+              <div class="gauge-center">
+                <div class="gauge-temp humidity"><span id="targetHumidity">90</span><span class="unit">%</span></div>
+                <div class="gauge-label">Humid</div>
+              </div>
+            </div>
+            <div class="circular-gauge">
+              <svg class="gauge-svg" viewBox="0 0 90 90">
+                <defs>
+                  <linearGradient id="co2GaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#7c3aed"/>
+                    <stop offset="100%" stop-color="#a855f7"/>
+                  </linearGradient>
+                </defs>
+                <circle class="gauge-track" cx="45" cy="45" r="38"/>
+                <circle class="gauge-progress co2" cx="45" cy="45" r="38"
+                        stroke-dasharray="120" stroke-dashoffset="36" id="co2GaugeProgress"/>
+              </svg>
+              <div class="gauge-center">
+                <div class="gauge-temp co2"><span id="targetCO2">850</span></div>
+                <div class="gauge-label">CO2</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <button class="btn btn-mist">
+              💧 Brumiser
+            </button>
+            <button class="btn btn-fan">
+              💨 Ventiler
+            </button>
+          </div>
+
+          <div class="control-row">
+            <button class="btn btn-light">
+              💡 Éclairage
+            </button>
+            <button class="btn btn-primary">
+              ⚙️ Config
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts Panel -->
+      <div class="alerts-panel fade-in" style="animation-delay: 0.2s;">
+        <div class="alerts-header">
+          <span class="alerts-title">Activité Récente</span>
+          <span class="alerts-count">5</span>
+        </div>
+        <div class="alerts-list">
+          <div class="alert-item warning">
+            <span class="alert-icon">💨</span>
+            <div class="alert-content">
+              <div class="alert-message">CO2 élevé (1050ppm) - Ventilation activée</div>
+              <div class="alert-time">Il y a 25 minutes</div>
+            </div>
+          </div>
+          <div class="alert-item success">
+            <span class="alert-icon">🍄</span>
+            <div class="alert-content">
+              <div class="alert-message">Premiers primordia détectés sur bloc #2</div>
+              <div class="alert-time">Il y a 2 heures</div>
+            </div>
+          </div>
+          <div class="alert-item info">
+            <span class="alert-icon">💧</span>
+            <div class="alert-content">
+              <div class="alert-message">Cycle de brumisation terminé</div>
+              <div class="alert-time">Il y a 4 heures</div>
+            </div>
+          </div>
+          <div class="alert-item info">
+            <span class="alert-icon">💡</span>
+            <div class="alert-content">
+              <div class="alert-message">Éclairage activé (cycle 12h/12h)</div>
+              <div class="alert-time">Il y a 6 heures</div>
+            </div>
+          </div>
+          <div class="alert-item success">
+            <span class="alert-icon">✓</span>
+            <div class="alert-content">
+              <div class="alert-message">Phase fructification démarrée</div>
+              <div class="alert-time">Il y a 14 jours</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="health-section">
+          <div class="health-title">Santé Système</div>
+          <div class="health-grid">
+            <div class="health-item">
+              <div class="health-indicator ok"></div>
+              <span class="health-label">Sonde Temp</span>
+            </div>
+            <div class="health-item">
+              <div class="health-indicator ok"></div>
+              <span class="health-label">Sonde Humid</span>
+            </div>
+            <div class="health-item">
+              <div class="health-indicator ok"></div>
+              <span class="health-label">Capteur CO2</span>
+            </div>
+            <div class="health-item">
+              <div class="health-indicator warning"></div>
+              <span class="health-label">Humidificateur</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // Generate background particles (spores falling)
+    function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 30; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 20 + 's';
+        particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+        container.appendChild(particle);
+      }
+    }
+    createParticles();
+
+    // Update datetime
+    function updateDateTime() {
+      const now = new Date();
+      const options = {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      };
+      document.getElementById('datetime').textContent = now.toLocaleDateString('fr-FR', options);
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+    // Simulate sensor updates
+    function simulateEnvironment() {
+      // Temperature
+      const tempEl = document.getElementById('currentTemp');
+      const currentTemp = parseFloat(tempEl.textContent);
+      const tempVariation = (Math.random() - 0.5) * 0.4;
+      tempEl.textContent = (currentTemp + tempVariation).toFixed(1);
+
+      // Humidity
+      const humidityEl = document.getElementById('currentHumidity');
+      const currentHumidity = parseInt(humidityEl.textContent);
+      const humidityVariation = Math.round((Math.random() - 0.5) * 3);
+      humidityEl.textContent = Math.max(80, Math.min(98, currentHumidity + humidityVariation));
+
+      // CO2
+      const co2El = document.getElementById('currentCO2');
+      const currentCO2 = parseInt(co2El.textContent);
+      const co2Variation = Math.round((Math.random() - 0.5) * 30);
+      const newCO2 = Math.max(500, Math.min(1100, currentCO2 + co2Variation));
+      co2El.textContent = newCO2;
+      document.getElementById('targetCO2').textContent = newCO2;
+    }
+    setInterval(simulateEnvironment, 4000);
+
+    // Nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Period buttons
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const parent = this.closest('.chart-periods');
+        parent.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Temperature Chart tooltip
+    const tempContainer = document.getElementById('tempChartContainer');
+    const tempTooltip = document.getElementById('tempTooltip');
+
+    tempContainer.addEventListener('mousemove', (e) => {
+      const rect = tempContainer.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Temp range: 24°C (top) to 12°C (bottom)
+      const temp = 24 - (y / rect.height) * 12;
+      const hours = Math.floor((x / rect.width) * 24);
+      const time = `${String(hours).padStart(2, '0')}:00`;
+
+      tempTooltip.querySelector('.tooltip-time').textContent = time;
+      tempTooltip.querySelector('.tooltip-value').textContent = temp.toFixed(1) + '°C';
+
+      tempTooltip.style.left = (x + 10) + 'px';
+      tempTooltip.style.top = (y - 50) + 'px';
+      tempTooltip.classList.add('visible');
+    });
+
+    tempContainer.addEventListener('mouseleave', () => {
+      tempTooltip.classList.remove('visible');
+    });
+
+    // CO2 Chart tooltip
+    const co2Container = document.getElementById('co2ChartContainer');
+    const co2Tooltip = document.getElementById('co2Tooltip');
+
+    co2Container.addEventListener('mousemove', (e) => {
+      const rect = co2Container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // CO2 range: 1200ppm (top) to 400ppm (bottom)
+      const co2 = 1200 - (y / rect.height) * 800;
+      const hours = Math.floor((x / rect.width) * 24);
+      const time = `${String(hours).padStart(2, '0')}:00`;
+
+      co2Tooltip.querySelector('.tooltip-time').textContent = time;
+      co2Tooltip.querySelector('.tooltip-value').textContent = Math.round(co2) + ' ppm';
+
+      co2Tooltip.style.left = (x + 10) + 'px';
+      co2Tooltip.style.top = (y - 50) + 'px';
+      co2Tooltip.classList.add('visible');
+    });
+
+    co2Container.addEventListener('mouseleave', () => {
+      co2Tooltip.classList.remove('visible');
+    });
+  </script>
+</body>
+</html>
