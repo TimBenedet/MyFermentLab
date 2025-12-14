@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiService, HealthCheckReport, HealthCheckResult } from '../services/api.service';
+import './HealthCheckPage.css';
 
 interface HealthCheckPageProps {
   onBack: () => void;
@@ -22,7 +23,7 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
       const data = await apiService.getHealthCheck();
       setReport(data);
     } catch (err: any) {
-      setError(err.message || 'Impossible de charger le rapport de santé');
+      setError(err.message || 'Impossible de charger le rapport de sante');
     } finally {
       setLoading(false);
     }
@@ -51,21 +52,10 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
     }
   };
 
-  const getStatusColor = (status: 'ok' | 'warning' | 'error') => {
-    switch (status) {
-      case 'ok':
-        return '#c4a574';
-      case 'warning':
-        return '#F59E0B';
-      case 'error':
-        return '#EF4444';
-    }
-  };
-
   const getStatusLabel = (status: 'ok' | 'warning' | 'error') => {
     switch (status) {
       case 'ok':
-        return 'Opérationnel';
+        return 'Operationnel';
       case 'warning':
         return 'Attention';
       case 'error':
@@ -88,70 +78,70 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
   const renderDetails = (check: HealthCheckResult) => {
     if (!check.details) return null;
 
-    // Cas spécial pour les prises connectées
+    // Cas special pour les prises connectees
     if (check.service === 'Prises Connectées' && check.details.outlets) {
       return (
-        <div className="health-details-outlets">
+        <div className="scada-details-outlets">
           {check.details.outlets.map((outlet: { id: string; name: string; state: string }) => (
-            <div key={outlet.id} className="outlet-item">
-              <span className={`outlet-state ${outlet.state}`}>
+            <div key={outlet.id} className="scada-outlet-item">
+              <span className={`scada-outlet-dot ${outlet.state}`}>
                 {outlet.state === 'on' ? '●' : '○'}
               </span>
-              <span className="outlet-name">{outlet.name}</span>
+              <span className="scada-outlet-name">{outlet.name}</span>
             </div>
           ))}
         </div>
       );
     }
 
-    // Cas spécial pour VM Home Assistant
+    // Cas special pour VM Home Assistant
     if (check.service === 'VM Home Assistant' && check.details.ip) {
       return (
-        <div className="health-details-info">
+        <div className="scada-details-info">
           <span>IP: {check.details.ip}:{check.details.port}</span>
           {check.details.latency && <span>Latence: {check.details.latency}ms</span>}
         </div>
       );
     }
 
-    // Cas spécial pour Home Assistant
+    // Cas special pour Home Assistant
     if (check.service === 'Home Assistant' && check.details.version) {
       return (
-        <div className="health-details-info">
+        <div className="scada-details-info">
           <span>Version: {check.details.version}</span>
           {check.details.latency && <span>Latence: {check.details.latency}ms</span>}
         </div>
       );
     }
 
-    // Cas spécial pour InfluxDB
+    // Cas special pour InfluxDB
     if (check.service === 'InfluxDB' && check.details.version) {
       return (
-        <div className="health-details-info">
+        <div className="scada-details-info">
           <span>Version: {check.details.version}</span>
           <span>{check.details.message}</span>
         </div>
       );
     }
 
-    // Cas spécial pour les capteurs actifs
+    // Cas special pour les capteurs actifs
     if (check.service === 'Capteurs Actifs' && check.details.sensors) {
       return (
-        <div className="health-details-sensors">
+        <div className="scada-details-sensors">
           {check.details.sensors.map((sensor: { project: string; sensor: string; status: string; temperature?: string; ageMinutes?: number }, index: number) => (
-            <div key={index} className={`sensor-item ${sensor.status}`}>
-              <span className={`sensor-status-dot ${sensor.status}`}>
+            <div key={index} className={`scada-sensor-item ${sensor.status}`}>
+              <span className={`scada-sensor-dot ${sensor.status}`}>
                 {sensor.status === 'ok' ? '●' : sensor.status === 'warning' ? '◐' : '○'}
               </span>
-              <div className="sensor-info">
-                <span className="sensor-project">{sensor.project}</span>
-                <span className="sensor-name">{sensor.sensor}</span>
+              <div className="scada-sensor-info">
+                <span className="scada-sensor-project">{sensor.project}</span>
+                <span className="scada-sensor-name">{sensor.sensor}</span>
               </div>
               {sensor.temperature && (
-                <span className="sensor-temp">{sensor.temperature}°C</span>
+                <span className="scada-sensor-temp">{sensor.temperature}°C</span>
               )}
               {sensor.ageMinutes !== undefined && (
-                <span className={`sensor-age ${sensor.status}`}>
+                <span className={`scada-sensor-age ${sensor.status}`}>
                   {sensor.ageMinutes < 60 ? `${sensor.ageMinutes}min` : `${Math.round(sensor.ageMinutes / 60)}h`}
                 </span>
               )}
@@ -166,16 +156,18 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
 
   if (loading) {
     return (
-      <div className="health-check-page">
-        <div className="page-header-compact">
-          <button className="btn-text" onClick={onBack}>
-            ← Retour
-          </button>
-          <h1>État du Système</h1>
+      <div className="scada-health-page">
+        <div className="scada-health-header">
+          <div className="scada-health-header-left">
+            <button className="scada-btn-back" onClick={onBack}>
+              <span>←</span> Retour
+            </button>
+            <h1 className="scada-health-title">Etat du Systeme</h1>
+          </div>
         </div>
-        <div className="health-loading">
-          <div className="loading-spinner"></div>
-          <p>Vérification des services...</p>
+        <div className="scada-health-loading">
+          <div className="scada-loading-spinner"></div>
+          <p>Verification des services...</p>
         </div>
       </div>
     );
@@ -183,18 +175,20 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
 
   if (error && !report) {
     return (
-      <div className="health-check-page">
-        <div className="page-header-compact">
-          <button className="btn-text" onClick={onBack}>
-            ← Retour
-          </button>
-          <h1>État du Système</h1>
+      <div className="scada-health-page">
+        <div className="scada-health-header">
+          <div className="scada-health-header-left">
+            <button className="scada-btn-back" onClick={onBack}>
+              <span>←</span> Retour
+            </button>
+            <h1 className="scada-health-title">Etat du Systeme</h1>
+          </div>
         </div>
-        <div className="health-error">
-          <span className="error-icon">✗</span>
+        <div className="scada-health-error">
+          <div className="scada-error-icon">✗</div>
           <p>{error}</p>
-          <button className="btn-primary" onClick={loadHealthCheck}>
-            Réessayer
+          <button className="scada-btn-retry" onClick={loadHealthCheck}>
+            Reessayer
           </button>
         </div>
       </div>
@@ -202,73 +196,67 @@ export function HealthCheckPage({ onBack }: HealthCheckPageProps) {
   }
 
   return (
-    <div className="health-check-page">
-      <div className="page-header-compact">
-        <button className="btn-text" onClick={onBack}>
-          ← Retour
-        </button>
-        <h1>État du Système</h1>
+    <div className="scada-health-page">
+      <div className="scada-health-header">
+        <div className="scada-health-header-left">
+          <button className="scada-btn-back" onClick={onBack}>
+            <span>←</span> Retour
+          </button>
+          <h1 className="scada-health-title">Etat du Systeme</h1>
+        </div>
         <button
-          className="btn-refresh"
+          className={`scada-btn-refresh ${refreshing ? 'spinning' : ''}`}
           onClick={handleRefresh}
           disabled={refreshing}
           title="Actualiser"
         >
-          {refreshing ? '...' : '↻'}
+          ↻
         </button>
       </div>
 
       {report && (
         <>
-          <div className="health-overall" style={{ borderColor: getStatusColor(report.overall) }}>
-            <div
-              className="overall-status"
-              style={{ backgroundColor: getStatusColor(report.overall) }}
-            >
-              <span className="overall-icon">{getStatusIcon(report.overall)}</span>
-              <span className="overall-label">{getStatusLabel(report.overall)}</span>
-            </div>
-            <div className="overall-info">
-              <span className="overall-title">Statut Global</span>
-              <span className="overall-timestamp">
-                {formatTimestamp(report.timestamp)}
-              </span>
+          <div className={`scada-health-overall ${report.overall}`}>
+            <div className="scada-overall-content">
+              <div className={`scada-overall-badge ${report.overall}`}>
+                <span className="scada-overall-icon">{getStatusIcon(report.overall)}</span>
+                <span className="scada-overall-label">{getStatusLabel(report.overall)}</span>
+              </div>
+              <div className="scada-overall-info">
+                <span className="scada-overall-title">Statut Global</span>
+                <span className="scada-overall-timestamp">
+                  Derniere verification : {formatTimestamp(report.timestamp)}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="health-checks-grid">
+          <div className="scada-health-grid">
             {report.checks.map((check) => (
               <div
                 key={check.service}
-                className={`health-check-card ${check.status}`}
+                className={`scada-health-card ${check.status}`}
               >
-                <div className="check-header">
-                  <span
-                    className="check-icon"
-                    style={{ backgroundColor: getStatusColor(check.status) }}
-                  >
+                <div className="scada-card-header">
+                  <div className={`scada-card-icon ${check.status}`}>
                     {getStatusIcon(check.status)}
-                  </span>
-                  <div className="check-title">
-                    <h3>{check.service}</h3>
-                    <span
-                      className="check-status-badge"
-                      style={{ color: getStatusColor(check.status) }}
-                    >
+                  </div>
+                  <div className="scada-card-title-section">
+                    <h3 className="scada-card-title">{check.service}</h3>
+                    <span className={`scada-card-status ${check.status}`}>
+                      <span className="led"></span>
                       {getStatusLabel(check.status)}
                     </span>
                   </div>
                 </div>
-                <p className="check-message">{check.message}</p>
+                <p className="scada-card-message">{check.message}</p>
                 {renderDetails(check)}
               </div>
             ))}
           </div>
 
-          <div className="health-info">
-            <p>
-              Vérifications automatiques toutes les heures.
-            </p>
+          <div className="scada-health-footer">
+            <p>Verifications automatiques toutes les heures</p>
           </div>
         </>
       )}
