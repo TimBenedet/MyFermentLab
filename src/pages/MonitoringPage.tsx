@@ -425,32 +425,6 @@ export function MonitoringPage({
             </div>
           </div>
 
-          {/* System Health Panel */}
-          <div className="scada-health-panel fade-in">
-            <div className="scada-control-header">
-              <span className="scada-control-title">Sante Systeme</span>
-            </div>
-            <div className="scada-health-section" style={{ borderTop: 'none' }}>
-              <div className="scada-health-grid">
-                <div className="scada-health-item">
-                  <div className="scada-health-indicator ok"></div>
-                  <span className="scada-health-label">Home Assistant</span>
-                </div>
-                <div className="scada-health-item">
-                  <div className="scada-health-indicator ok"></div>
-                  <span className="scada-health-label">InfluxDB</span>
-                </div>
-                <div className="scada-health-item">
-                  <div className={`scada-health-indicator ${project.sensorId ? 'ok' : 'warning'}`}></div>
-                  <span className="scada-health-label">Capteurs</span>
-                </div>
-                <div className="scada-health-item">
-                  <div className={`scada-health-indicator ${project.outletId ? 'ok' : 'warning'}`}></div>
-                  <span className="scada-health-label">Prises</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </aside>
       </div>
 
