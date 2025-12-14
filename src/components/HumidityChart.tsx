@@ -198,12 +198,6 @@ export function HumidityChart({ data, targetHumidity, onAddHumidity, role }: Hum
 
       <div className="chart-stats">
         <div className="stat">
-          <span className="stat-label">Actuelle</span>
-          <span className="stat-value" style={{ color: humidityColor }}>
-            {stats.current !== null ? `${stats.current.toFixed(1)}%` : '—'}
-          </span>
-        </div>
-        <div className="stat">
           <span className="stat-label">Moyenne</span>
           <span className="stat-value">
             {stats.avg !== null ? `${stats.avg.toFixed(1)}%` : '—'}
