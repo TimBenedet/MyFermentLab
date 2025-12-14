@@ -29,6 +29,9 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // DateTime pour le header SCADA
+  const [datetime, setDatetime] = useState('');
+
   // Charger les projets et appareils au démarrage
   useEffect(() => {
     loadInitialData();
@@ -51,6 +54,24 @@ function App() {
       return () => clearInterval(interval);
     }
   }, [currentPage, selectedProjectId]);
+
+  // Mettre à jour la date/heure pour le header SCADA
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      setDatetime(now.toLocaleDateString('fr-FR', options));
+    };
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadInitialData = async () => {
     try {
@@ -390,25 +411,6 @@ function App() {
       </div>
     );
   }
-
-  // Update datetime
-  const [datetime, setDatetime] = useState('');
-  useEffect(() => {
-    const updateDateTime = () => {
-      const now = new Date();
-      const options: Intl.DateTimeFormatOptions = {
-        weekday: 'short',
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      };
-      setDatetime(now.toLocaleDateString('fr-FR', options));
-    };
-    updateDateTime();
-    const interval = setInterval(updateDateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="scada-app">
