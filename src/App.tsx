@@ -44,12 +44,12 @@ function App() {
     }
   }, [selectedProjectId]);
 
-  // Rafraîchir les données toutes les 10 secondes si on est sur la page de monitoring
+  // Rafraîchir les données toutes les 5 secondes si on est sur la page de monitoring
   useEffect(() => {
     if (currentPage === 'monitoring' && selectedProjectId) {
       const interval = setInterval(() => {
         loadProject(selectedProjectId);
-      }, 10000);
+      }, 5000);
 
       return () => clearInterval(interval);
     }
