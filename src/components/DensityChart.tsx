@@ -294,24 +294,6 @@ export function DensityChart({ data, type, onAddDensity, role }: DensityChartPro
     });
   }, [chartData, prediction, data, timePeriod, isLongPeriod]);
 
-  // Formater la date de fin estimée
-  const formatEndDate = (date: Date) => {
-    return date.toLocaleDateString('fr-FR', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short'
-    });
-  };
-
-  // Icône de confiance
-  const confidenceIcon = (level: 'low' | 'medium' | 'high') => {
-    switch (level) {
-      case 'high': return '●●●';
-      case 'medium': return '●●○';
-      case 'low': return '●○○';
-    }
-  };
-
   return (
     <div className="chart-container">
       <div className="chart-header">
@@ -453,42 +435,6 @@ export function DensityChart({ data, type, onAddDensity, role }: DensityChartPro
           </span>
         </div>
       </div>
-
-      {/* Section prédiction */}
-      {prediction && (
-        <div className="prediction-section">
-          <div className="prediction-header">
-            <h4>Prédiction de fin de fermentation</h4>
-            <span className={`confidence confidence-${prediction.confidence}`} title={`Confiance: ${prediction.confidence}`}>
-              {confidenceIcon(prediction.confidence)}
-            </span>
-          </div>
-          {prediction.isComplete ? (
-            <div className="prediction-complete">
-              Fermentation terminée ! La densité est stable.
-            </div>
-          ) : (
-            <div className="prediction-stats">
-              <div className="prediction-stat">
-                <span className="prediction-label">FG estimé</span>
-                <span className="prediction-value">{prediction.estimatedFG.toFixed(3)}</span>
-              </div>
-              <div className="prediction-stat">
-                <span className="prediction-label">Fin estimée</span>
-                <span className="prediction-value">{formatEndDate(prediction.estimatedEndDate)}</span>
-              </div>
-              <div className="prediction-stat">
-                <span className="prediction-label">Jours restants</span>
-                <span className="prediction-value">~{prediction.daysRemaining}j</span>
-              </div>
-              <div className="prediction-stat">
-                <span className="prediction-label">Atténuation</span>
-                <span className="prediction-value">{prediction.attenuation}%</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
