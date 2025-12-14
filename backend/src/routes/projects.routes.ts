@@ -424,11 +424,43 @@ router.get('/:id/live-temperature', async (req: Request, res: Response) => {
     // Enregistrer dans InfluxDB
     await influxService.writeTemperature(id, temperature);
 
+    // Gérer le contrôle automatique de la prise (seulement si mode automatique)
+    let outletChanged = false;
+    if (project.controlMode === 'automatic' && project.outletId) {
+      const diff = project.targetTemperature - temperature;
+      const shouldActivate = Math.abs(diff) > 0.2 && diff > 0;
+
+      // Si l'état doit changer
+      if (project.outletActive !== shouldActivate) {
+        const outletDevice = databaseService.getDevice(project.outletId);
+        if (outletDevice && outletDevice.entityId) {
+          try {
+            const action = shouldActivate ? 'turn_on' : 'turn_off';
+            const domain = outletDevice.entityId.split('.')[0];
+
+            await fetch(`${HOME_ASSISTANT_URL}/api/services/${domain}/${action}`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ entity_id: outletDevice.entityId })
+            });
+
+            databaseService.updateProjectOutletStatus(id, shouldActivate);
+            await influxService.writeOutletState(id, shouldActivate, 'automatic', temperature);
+            outletChanged = true;
+            console.log(`[LiveTemp] Project ${project.name}: Setting outlet to ${shouldActivate ? 'ON' : 'OFF'} at ${temperature}°C`);
+          } catch (err) {
+            console.error(`[LiveTemp] Failed to control outlet for ${project.name}:`, err);
+          }
+        }
+      }
+    }
+
     res.json({
       temperature,
       timestamp: Date.now(),
       entityId: device.entityId,
-      sensorName: device.name
+      sensorName: device.name,
+      outletChanged
     });
   } catch (error) {
     console.error('Error fetching live temperature:', error);

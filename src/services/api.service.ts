@@ -208,7 +208,7 @@ class ApiService {
     return response.json();
   }
 
-  async getLiveTemperature(id: string): Promise<{ temperature: number; timestamp: number; entityId: string; sensorName: string }> {
+  async getLiveTemperature(id: string): Promise<{ temperature: number; timestamp: number; entityId: string; sensorName: string; outletChanged?: boolean }> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/live-temperature`, {
       headers: getAuthHeaders()
     });

@@ -44,12 +44,32 @@ function App() {
     }
   }, [selectedProjectId]);
 
-  // Rafraîchir les données toutes les 5 secondes si on est sur la page de monitoring
+  // Rafraîchir la température toutes les 5 secondes si on est sur la page de monitoring
+  // Utilise getLiveTemperature pour récupérer directement depuis Home Assistant
+  // ce qui permet aussi de déclencher le contrôle automatique de la prise côté backend
   useEffect(() => {
     if (currentPage === 'monitoring' && selectedProjectId) {
-      const interval = setInterval(() => {
-        loadProject(selectedProjectId);
-      }, 5000);
+      const refreshTemperature = async () => {
+        try {
+          const data = await apiService.getLiveTemperature(selectedProjectId);
+          setSelectedProject(prev => prev ? {
+            ...prev,
+            currentTemperature: data.temperature
+          } : null);
+          setProjects(prev => prev.map(p =>
+            p.id === selectedProjectId ? { ...p, currentTemperature: data.temperature } : p
+          ));
+
+          // Si la prise a changé d'état, recharger le projet complet pour avoir l'état à jour
+          if (data.outletChanged) {
+            loadProject(selectedProjectId);
+          }
+        } catch (err) {
+          console.error('Failed to refresh temperature:', err);
+        }
+      };
+
+      const interval = setInterval(refreshTemperature, 5000);
 
       return () => clearInterval(interval);
     }
