@@ -357,39 +357,86 @@
   overflow: hidden;
 }
 
-.mini-mushrooms {
+.mini-tent-light {
   position: absolute;
-  bottom: 15px;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 3px;
+  background: #444;
+  border-radius: 2px;
+}
+
+.mini-tent-light::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 10%;
+  right: 10%;
+  height: 25px;
+  background: linear-gradient(180deg, rgba(180, 180, 220, 0.06) 0%, transparent 100%);
+  clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+}
+
+.mini-substrate-row {
+  position: absolute;
+  bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 4px;
+  align-items: flex-end;
+}
+
+.mini-substrate-block {
+  width: 16px;
+  height: 22px;
+  background: linear-gradient(180deg, #5a4a3a 0%, #3a2a1a 100%);
+  border-radius: 2px;
+  position: relative;
+  border: 1px solid #3a3025;
+}
+
+.mini-substrate-block::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(180deg, transparent 0%, rgba(245, 245, 220, 0.4) 100%);
+  border-radius: 0 0 1px 1px;
+}
+
+.mini-block-mushrooms {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1px;
+}
+
+.mini-mushroom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .mini-mushroom-cap {
-  width: 12px;
-  height: 7px;
+  width: 6px;
+  height: 4px;
   background: linear-gradient(180deg, #a67c00 0%, #5c4a0f 100%);
   border-radius: 50% 50% 40% 40%;
 }
 
 .mini-mushroom-stem {
-  width: 4px;
-  height: 8px;
+  width: 2px;
+  height: 4px;
   background: #f5f0e5;
-  border-radius: 2px;
-  margin: -2px auto 0;
-}
-
-.mini-colonization {
-  position: absolute;
-  bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 25px;
-  background: linear-gradient(180deg, rgba(245, 245, 220, 0.8) 0%, #5a4535 100%);
-  border-radius: 4px;
+  border-radius: 1px;
+  margin-top: -1px;
 }
 
 /* Mini Wine */

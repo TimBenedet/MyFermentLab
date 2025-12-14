@@ -54,26 +54,30 @@ const MiniChamber = ({ growth = 50 }: { growth?: number }) => (
 );
 
 // Mini Tent visualization for mushroom
-const MiniTent = ({ stage = 'colonization' }: { stage?: 'colonization' | 'fruiting' }) => (
+const MiniTent = () => (
   <div className="mini-tent">
-    {stage === 'fruiting' ? (
-      <div className="mini-mushrooms">
-        <div>
-          <div className="mini-mushroom-cap"></div>
-          <div className="mini-mushroom-stem"></div>
-        </div>
-        <div>
-          <div className="mini-mushroom-cap" style={{ transform: 'scale(0.8)' }}></div>
-          <div className="mini-mushroom-stem"></div>
-        </div>
-        <div>
-          <div className="mini-mushroom-cap"></div>
-          <div className="mini-mushroom-stem"></div>
+    <div className="mini-tent-light"></div>
+    <div className="mini-substrate-row">
+      <div className="mini-substrate-block">
+        <div className="mini-block-mushrooms">
+          <div className="mini-mushroom"><div className="mini-mushroom-cap"></div><div className="mini-mushroom-stem"></div></div>
+          <div className="mini-mushroom"><div className="mini-mushroom-cap"></div><div className="mini-mushroom-stem"></div></div>
         </div>
       </div>
-    ) : (
-      <div className="mini-colonization"></div>
-    )}
+      <div className="mini-substrate-block">
+        <div className="mini-block-mushrooms">
+          <div className="mini-mushroom"><div className="mini-mushroom-cap"></div><div className="mini-mushroom-stem"></div></div>
+          <div className="mini-mushroom"><div className="mini-mushroom-cap"></div><div className="mini-mushroom-stem"></div></div>
+          <div className="mini-mushroom"><div className="mini-mushroom-cap"></div><div className="mini-mushroom-stem"></div></div>
+        </div>
+      </div>
+      <div className="mini-substrate-block">
+        <div className="mini-block-mushrooms">
+          <div className="mini-mushroom"><div className="mini-mushroom-cap"></div><div className="mini-mushroom-stem"></div></div>
+          <div className="mini-mushroom"><div className="mini-mushroom-cap"></div><div className="mini-mushroom-stem"></div></div>
+        </div>
+      </div>
+    </div>
   </div>
 );
 
@@ -217,7 +221,7 @@ export function HomePage({
       case 'cheese':
         return <MiniChamber growth={50} />;
       case 'mushroom':
-        return <MiniTent stage={project.brewingSession?.completedAt ? 'fruiting' : 'colonization'} />;
+        return <MiniTent />;
       case 'mead':
         return <MiniWine level={70} />;
       default:
