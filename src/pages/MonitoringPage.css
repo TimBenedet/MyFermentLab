@@ -446,18 +446,19 @@
 .scada-metrics-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 12px;
 }
 
 .scada-metric-card {
   background: var(--bg-secondary);
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   border: 1px solid var(--border);
   transition: all 0.3s;
+  height: 80px;
 }
 
 .scada-metric-card:hover {
@@ -466,14 +467,15 @@
 }
 
 .scada-metric-icon {
-  font-size: 28px;
-  width: 50px;
-  height: 50px;
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
   background: var(--bg-elevated);
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .scada-metric-info {
@@ -490,7 +492,7 @@
 }
 
 .scada-metric-value {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
 }
