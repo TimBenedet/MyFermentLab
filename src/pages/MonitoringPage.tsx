@@ -195,10 +195,6 @@ export function MonitoringPage({
                     <div className="scada-tank-name">{project.name}</div>
                     <div className="scada-tank-type">{config.name}</div>
                   </div>
-                  <div className={`scada-tank-status ${status.class}`}>
-                    <span className="led"></span>
-                    {status.text}
-                  </div>
                 </div>
 
                 <div className="scada-tank-visual">
@@ -234,25 +230,29 @@ export function MonitoringPage({
 
               {/* Project metrics panel */}
               <div className="scada-metrics-panel">
+                <div className={`scada-status-badge ${status.class}`}>
+                  <span className="led"></span>
+                  Etat : {status.text}
+                </div>
                 <div className="scada-metrics-row">
                   <div className="scada-metric-card">
                     <div className="scada-metric-icon">🎯</div>
                     <div className="scada-metric-info">
-                      <span className="scada-metric-label">Temperature cible</span>
+                      <span className="scada-metric-label">Temp. cible</span>
                       <span className="scada-metric-value highlight">{project.targetTemperature}°C</span>
                     </div>
                   </div>
                   <div className="scada-metric-card">
                     <div className="scada-metric-icon">📅</div>
                     <div className="scada-metric-info">
-                      <span className="scada-metric-label">Duree fermentation</span>
+                      <span className="scada-metric-label">Duree</span>
                       <span className="scada-metric-value">{fermentationDuration} jours</span>
                     </div>
                   </div>
                   <div className="scada-metric-card">
                     <div className="scada-metric-icon">📊</div>
                     <div className="scada-metric-info">
-                      <span className="scada-metric-label">Ecart temperature</span>
+                      <span className="scada-metric-label">Ecart</span>
                       <span className={`scada-metric-value ${Math.abs(diff) < 0.5 ? 'success' : Math.abs(diff) < 2 ? 'warning' : 'error'}`}>
                         {diff >= 0 ? '+' : ''}{diff.toFixed(1)}°C
                       </span>
