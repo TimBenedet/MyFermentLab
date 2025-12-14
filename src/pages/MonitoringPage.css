@@ -1524,12 +1524,14 @@
 /* Mushrooms Container */
 .scada-mushrooms-container {
   position: absolute;
-  top: -20px;
+  top: -18px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 3px;
+  gap: 2px;
   justify-content: center;
+  width: 100%;
+  max-width: 46px;
 }
 
 /* Individual Mushroom */
@@ -1541,8 +1543,8 @@
 }
 
 .scada-mushroom-cap {
-  width: 18px;
-  height: 10px;
+  width: 16px;
+  height: 9px;
   background: linear-gradient(180deg,
     #a67c00 0%,
     #8b6914 50%,
@@ -1553,8 +1555,8 @@
 }
 
 .scada-mushroom-stem {
-  width: 6px;
-  height: 12px;
+  width: 5px;
+  height: 10px;
   background: linear-gradient(90deg,
     #e8e0d0 0%,
     #f5f0e5 50%,

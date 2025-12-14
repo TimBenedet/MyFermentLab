@@ -259,10 +259,6 @@ export function MonitoringPage({
                                 <div className="scada-mushroom-cap"></div>
                                 <div className="scada-mushroom-stem"></div>
                               </div>
-                              <div className="scada-mushroom">
-                                <div className="scada-mushroom-cap"></div>
-                                <div className="scada-mushroom-stem"></div>
-                              </div>
                             </div>
                           </div>
                           {/* Substrate block 2 */}
@@ -283,14 +279,6 @@ export function MonitoringPage({
                           <div className="scada-substrate-block">
                             <div className="scada-block-mycelium" style={{ height: '100%' }}></div>
                             <div className="scada-mushrooms-container">
-                              <div className="scada-mushroom">
-                                <div className="scada-mushroom-cap"></div>
-                                <div className="scada-mushroom-stem"></div>
-                              </div>
-                              <div className="scada-mushroom">
-                                <div className="scada-mushroom-cap"></div>
-                                <div className="scada-mushroom-stem"></div>
-                              </div>
                               <div className="scada-mushroom">
                                 <div className="scada-mushroom-cap"></div>
                                 <div className="scada-mushroom-stem"></div>
