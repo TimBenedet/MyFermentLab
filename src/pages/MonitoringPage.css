@@ -2017,20 +2017,22 @@
    SCADA OUTLET CONTROL WITH TABS
    ================================================ */
 
-/* Panel container */
+/* Panel container - integrated in control panel */
 .scada-outlet-panel {
-  background: var(--bg-secondary);
-  border-radius: 16px;
-  border: 1px solid var(--border);
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid var(--border);
   overflow: hidden;
-  margin-top: 16px;
+  margin-top: 20px;
+  padding-top: 0;
 }
 
 /* Tabs container */
 .scada-outlet-tabs {
   display: flex;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: var(--bg-primary);
 }
 
 /* Tab button */

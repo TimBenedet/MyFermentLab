@@ -548,16 +548,16 @@ export function MonitoringPage({
                   </button>
                 </div>
               )}
+
+              {/* Outlet Control with History Tabs - Integrated */}
+              <OutletControl
+                project={project}
+                onToggleOutlet={onToggleOutlet}
+                role={role}
+                variant="scada"
+              />
             </div>
           </div>
-
-          {/* Outlet Control with History Tabs */}
-          <OutletControl
-            project={project}
-            onToggleOutlet={onToggleOutlet}
-            role={role}
-            variant="scada"
-          />
 
         </aside>
       </div>
