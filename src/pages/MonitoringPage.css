@@ -46,6 +46,12 @@
 .scada-section.mushroom::before { background: linear-gradient(90deg, var(--mushroom-color) 0%, #a07820 50%, transparent 100%); }
 .scada-section.mead::before { background: linear-gradient(90deg, var(--wine-color) 0%, #a855f7 50%, transparent 100%); }
 
+/* Fixed height for mushroom section to match tank layout */
+.scada-section.mushroom {
+  height: 417px;
+  box-sizing: border-box;
+}
+
 /* Section Header */
 .scada-section-header {
   display: flex;
