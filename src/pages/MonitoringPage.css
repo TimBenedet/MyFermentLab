@@ -499,6 +499,7 @@
   border: 1px solid var(--border);
   transition: all 0.3s;
   height: 80px;
+  overflow: hidden;
 }
 
 .scada-metric-card:hover {
@@ -522,6 +523,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .scada-metric-label {
