@@ -63,7 +63,6 @@ interface MonitoringPageProps {
   onAddHumidity?: (humidity: number, timestamp: number) => void;
   onToggleControlMode?: () => void;
   onRefreshTemperature?: () => void;
-  onBack: () => void;
   role: 'admin' | 'viewer' | null;
 }
 
@@ -75,7 +74,6 @@ export function MonitoringPage({
   onAddHumidity,
   onToggleControlMode,
   onRefreshTemperature,
-  onBack,
   role
 }: MonitoringPageProps) {
   const [localTarget, setLocalTarget] = useState(project.targetTemperature);
@@ -160,11 +158,6 @@ export function MonitoringPage({
 
   return (
     <div className="scada-monitoring-page">
-      {/* Back button */}
-      <button className="scada-back-btn" onClick={onBack}>
-        <span>&#8592;</span> Retour aux projets
-      </button>
-
       {/* Temperature Alert */}
       <TemperatureAlert project={project} />
 

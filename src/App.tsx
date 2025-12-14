@@ -524,7 +524,6 @@ function App() {
             onAddHumidity={handleAddHumidity}
             onToggleControlMode={handleToggleControlMode}
             onRefreshTemperature={() => selectedProjectId && loadProject(selectedProjectId)}
-            onBack={() => setCurrentPage('home')}
             role={role}
           />
         )}

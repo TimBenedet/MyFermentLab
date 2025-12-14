@@ -4,7 +4,7 @@
   min-height: calc(100vh - 80px);
   position: relative;
   z-index: 1;
-  padding: 24px;
+  padding: 12px 24px 24px;
 }
 
 /* Main Layout - 2 columns on desktop */
@@ -498,8 +498,7 @@
   gap: 14px;
   border: 1px solid var(--border);
   transition: all 0.3s;
-  height: 80px;
-  overflow: hidden;
+  min-height: 80px;
 }
 
 .scada-metric-card:hover {
@@ -1104,29 +1103,6 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
-}
-
-/* Back button */
-.scada-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--text-secondary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-  margin-bottom: 24px;
-}
-
-.scada-back-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  transform: translateX(-4px);
 }
 
 /* Chart Legend */
