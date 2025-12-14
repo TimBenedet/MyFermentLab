@@ -225,46 +225,144 @@ export function MonitoringPage({
               </div>
             </div>
 
-            <div className="scada-tank-layout">
-              {/* Tank visualization */}
-              <div className={`scada-tank-card active ${typeClass}`}>
-                <div className="scada-tank-header">
-                  <div>
-                    <div className="scada-tank-name">{project.name}</div>
-                    <div className="scada-tank-type">{config.name}</div>
-                  </div>
-                </div>
-
-                <div className="scada-tank-visual">
-                  <div className="scada-tank-container">
-                    <div className="scada-tank-neck"></div>
-                    <div className="scada-tank-body">
-                      <div
-                        className={`scada-tank-liquid ${typeClass}`}
-                        style={{ height: `${liquidLevel}%` }}
-                      >
-                        <div className="scada-liquid-surface">
-                          <div className="scada-wave"></div>
-                        </div>
-                        <div className="scada-foam"></div>
-                        <div className="scada-bubbles">
-                          <div className="scada-bubble"></div>
-                          <div className="scada-bubble"></div>
-                          <div className="scada-bubble"></div>
-                          <div className="scada-bubble"></div>
-                          <div className="scada-bubble"></div>
-                          <div className="scada-bubble"></div>
-                        </div>
-                      </div>
+            <div className={project.fermentationType === 'mushroom' ? 'scada-chamber-layout' : 'scada-tank-layout'}>
+              {/* Mushroom Grow Chamber visualization */}
+              {project.fermentationType === 'mushroom' ? (
+                <div className="scada-chamber-card active">
+                  <div className="scada-chamber-header">
+                    <div>
+                      <div className="scada-chamber-name">{project.name}</div>
+                      <div className="scada-chamber-type">{config.name}</div>
+                    </div>
+                    <div className="scada-chamber-status fruiting">
+                      <span className="led"></span>
+                      Fructification
                     </div>
                   </div>
 
-                  <div className="scada-tank-temp-display">
-                    <span className="temp-value">{project.currentTemperature.toFixed(1)}</span>
-                    <span className="temp-unit">°C</span>
+                  <div className="scada-chamber-visual">
+                    <div className="scada-grow-tent">
+                      <div className="scada-tent-frame">
+                        <div className="scada-tent-interior"></div>
+                        <div className="scada-grow-light on"></div>
+                        <div className="scada-mist-layer"></div>
+                        <div className="scada-substrate-shelf">
+                          {/* Substrate block 1 */}
+                          <div className="scada-substrate-block">
+                            <div className="scada-block-mycelium" style={{ height: '100%' }}></div>
+                            <div className="scada-mushrooms-container">
+                              <div className="scada-mushroom">
+                                <div className="scada-mushroom-cap"></div>
+                                <div className="scada-mushroom-stem"></div>
+                              </div>
+                              <div className="scada-mushroom">
+                                <div className="scada-mushroom-cap"></div>
+                                <div className="scada-mushroom-stem"></div>
+                              </div>
+                              <div className="scada-mushroom">
+                                <div className="scada-mushroom-cap"></div>
+                                <div className="scada-mushroom-stem"></div>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Substrate block 2 */}
+                          <div className="scada-substrate-block">
+                            <div className="scada-block-mycelium" style={{ height: '100%' }}></div>
+                            <div className="scada-mushrooms-container">
+                              <div className="scada-mushroom">
+                                <div className="scada-mushroom-cap"></div>
+                                <div className="scada-mushroom-stem"></div>
+                              </div>
+                              <div className="scada-mushroom">
+                                <div className="scada-mushroom-cap"></div>
+                                <div className="scada-mushroom-stem"></div>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Substrate block 3 */}
+                          <div className="scada-substrate-block">
+                            <div className="scada-block-mycelium" style={{ height: '100%' }}></div>
+                            <div className="scada-mushrooms-container">
+                              <div className="scada-mushroom">
+                                <div className="scada-mushroom-cap"></div>
+                                <div className="scada-mushroom-stem"></div>
+                              </div>
+                              <div className="scada-mushroom">
+                                <div className="scada-mushroom-cap"></div>
+                                <div className="scada-mushroom-stem"></div>
+                              </div>
+                              <div className="scada-mushroom">
+                                <div className="scada-mushroom-cap"></div>
+                                <div className="scada-mushroom-stem"></div>
+                              </div>
+                              <div className="scada-mushroom">
+                                <div className="scada-mushroom-cap"></div>
+                                <div className="scada-mushroom-stem"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sensor display overlay */}
+                    <div className="scada-chamber-display">
+                      <div className="scada-display-item">
+                        <div className="scada-display-value temp">
+                          <span>{project.currentTemperature.toFixed(1)}</span>°
+                        </div>
+                        <div className="scada-display-label">Temp</div>
+                      </div>
+                      <div className="scada-display-item">
+                        <div className="scada-display-value humidity">
+                          <span>{currentHumidity?.toFixed(0) ?? '—'}</span>%
+                        </div>
+                        <div className="scada-display-label">Humid</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* Tank visualization for beer/koji/mead */
+                <div className={`scada-tank-card active ${typeClass}`}>
+                  <div className="scada-tank-header">
+                    <div>
+                      <div className="scada-tank-name">{project.name}</div>
+                      <div className="scada-tank-type">{config.name}</div>
+                    </div>
+                  </div>
+
+                  <div className="scada-tank-visual">
+                    <div className="scada-tank-container">
+                      <div className="scada-tank-neck"></div>
+                      <div className="scada-tank-body">
+                        <div
+                          className={`scada-tank-liquid ${typeClass}`}
+                          style={{ height: `${liquidLevel}%` }}
+                        >
+                          <div className="scada-liquid-surface">
+                            <div className="scada-wave"></div>
+                          </div>
+                          <div className="scada-foam"></div>
+                          <div className="scada-bubbles">
+                            <div className="scada-bubble"></div>
+                            <div className="scada-bubble"></div>
+                            <div className="scada-bubble"></div>
+                            <div className="scada-bubble"></div>
+                            <div className="scada-bubble"></div>
+                            <div className="scada-bubble"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="scada-tank-temp-display">
+                      <span className="temp-value">{project.currentTemperature.toFixed(1)}</span>
+                      <span className="temp-unit">°C</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Project metrics panel */}
               <div className="scada-metrics-panel">
@@ -333,6 +431,36 @@ export function MonitoringPage({
                     </>
                   )}
                 </div>
+
+                {/* Phase Timeline for mushrooms */}
+                {project.fermentationType === 'mushroom' && (
+                  <div className="scada-phase-timeline">
+                    <div className="scada-timeline-header">Cycle de croissance</div>
+                    <div className="scada-timeline-track">
+                      <div className="scada-timeline-progress" style={{ width: `${Math.min(100, (fermentationDuration / 60) * 100)}%` }}></div>
+                      <div className={`scada-timeline-phase ${fermentationDuration >= 3 ? 'completed' : fermentationDuration > 0 ? 'active' : ''}`}>
+                        <span className="scada-phase-icon">🧫</span>
+                        <span className="scada-phase-name">Inoculation</span>
+                        <span className="scada-phase-time">J1-3</span>
+                      </div>
+                      <div className={`scada-timeline-phase ${fermentationDuration >= 30 ? 'completed' : fermentationDuration >= 4 ? 'active' : ''}`}>
+                        <span className="scada-phase-icon">🕸️</span>
+                        <span className="scada-phase-name">Colonisation</span>
+                        <span className="scada-phase-time">J4-30</span>
+                      </div>
+                      <div className={`scada-timeline-phase ${fermentationDuration >= 60 ? 'completed' : fermentationDuration >= 31 ? 'active' : ''}`}>
+                        <span className="scada-phase-icon">🍄</span>
+                        <span className="scada-phase-name">Fructification</span>
+                        <span className="scada-phase-time">J31-60</span>
+                      </div>
+                      <div className={`scada-timeline-phase ${fermentationDuration >= 60 ? 'active' : ''}`}>
+                        <span className="scada-phase-icon">✂️</span>
+                        <span className="scada-phase-name">Recolte</span>
+                        <span className="scada-phase-time">J60+</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>

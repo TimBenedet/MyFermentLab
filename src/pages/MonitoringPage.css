@@ -109,6 +109,13 @@
   align-items: stretch;
 }
 
+/* Chamber Layout for mushrooms */
+.scada-chamber-layout {
+  display: flex;
+  gap: 32px;
+  align-items: stretch;
+}
+
 /* Tank Card */
 .scada-tank-card {
   flex: 0 0 280px;
@@ -1212,10 +1219,21 @@
     align-items: center;
   }
 
+  .scada-chamber-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+
   .scada-tank-card {
     flex: none;
     width: 100%;
     max-width: 300px;
+  }
+
+  .scada-chamber-card {
+    flex: none;
+    width: 100%;
+    max-width: 340px;
   }
 
   .scada-metrics-row {
@@ -1248,5 +1266,436 @@
 
   .scada-density-info {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ================================================
+   MUSHROOM GROW CHAMBER STYLES
+   ================================================ */
+
+/* Grow Chamber Card */
+.scada-chamber-card {
+  flex: 0 0 320px;
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  padding: 24px;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.scada-chamber-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(139, 105, 20, 0.05) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.scada-chamber-card:hover {
+  border-color: var(--mushroom-color, #8b6914);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4), 0 0 30px rgba(139, 105, 20, 0.2);
+  transform: translateY(-4px);
+}
+
+.scada-chamber-card:hover::before {
+  opacity: 1;
+}
+
+.scada-chamber-card.active {
+  border-color: var(--success);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+}
+
+/* Chamber Header */
+.scada-chamber-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.scada-chamber-name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.scada-chamber-type {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Phase Status Badge */
+.scada-phase-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: rgba(139, 105, 20, 0.15);
+  color: #a67c00;
+  border: 1px solid rgba(139, 105, 20, 0.3);
+}
+
+.scada-phase-badge .led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.scada-phase-badge.fruiting {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+  border-color: rgba(16, 185, 129, 0.3);
+  animation: fruit-pulse 2s infinite;
+}
+
+.scada-phase-badge.colonizing {
+  background: rgba(245, 245, 220, 0.1);
+  color: #f5f5dc;
+  border-color: rgba(245, 245, 220, 0.3);
+}
+
+.scada-phase-badge.inoculation {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+@keyframes fruit-pulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+}
+
+/* Chamber Visual */
+.scada-chamber-visual {
+  position: relative;
+  height: 240px;
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Grow Tent */
+.scada-grow-tent {
+  width: 220px;
+  height: 220px;
+  position: relative;
+}
+
+.scada-tent-frame {
+  position: absolute;
+  inset: 0;
+  border: 3px solid #444;
+  border-radius: 8px;
+  background: linear-gradient(180deg,
+    rgba(20, 20, 20, 0.95) 0%,
+    rgba(15, 15, 15, 0.98) 100%
+  );
+  box-shadow:
+    inset 0 0 40px rgba(0,0,0,0.5),
+    0 10px 30px rgba(0,0,0,0.5);
+}
+
+.scada-tent-interior {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  background: radial-gradient(ellipse at 50% 0%,
+    rgba(100, 100, 120, 0.15) 0%,
+    transparent 60%
+  );
+  border-radius: 4px;
+}
+
+/* Grow Light */
+.scada-grow-light {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 8px;
+  background: linear-gradient(90deg, #333 0%, #444 50%, #333 100%);
+  border-radius: 4px;
+  box-shadow: 0 3px 15px rgba(100, 100, 150, 0.3);
+}
+
+.scada-grow-light::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 10%;
+  right: 10%;
+  height: 80px;
+  background: linear-gradient(180deg,
+    rgba(180, 180, 220, 0.08) 0%,
+    transparent 100%
+  );
+  clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+  animation: light-flicker 4s infinite ease-in-out;
+}
+
+@keyframes light-flicker {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* Mist Layer */
+.scada-mist-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(200, 200, 220, 0.05) 50%,
+    rgba(200, 200, 220, 0.1) 100%
+  );
+  animation: mist-flow 8s infinite ease-in-out;
+  border-radius: 0 0 4px 4px;
+}
+
+@keyframes mist-flow {
+  0%, 100% { opacity: 0.5; transform: translateY(0); }
+  50% { opacity: 0.8; transform: translateY(-5px); }
+}
+
+/* Substrate Shelf */
+.scada-substrate-shelf {
+  position: absolute;
+  bottom: 30px;
+  left: 20px;
+  right: 20px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  align-items: flex-end;
+}
+
+/* Substrate Block */
+.scada-substrate-block {
+  width: 50px;
+  height: 70px;
+  background: linear-gradient(180deg,
+    #5a4a3a 0%,
+    #4a3a2a 50%,
+    #3a2a1a 100%
+  );
+  border-radius: 4px;
+  position: relative;
+  border: 1px solid #3a3025;
+}
+
+.scada-block-mycelium {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(245, 245, 220, 0.3) 30%,
+    rgba(245, 245, 220, 0.6) 100%
+  );
+  border-radius: 0 0 3px 3px;
+}
+
+/* Mushrooms Container */
+.scada-mushrooms-container {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+}
+
+/* Individual Mushroom */
+.scada-mushroom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: mushroom-grow 3s ease-out forwards;
+}
+
+.scada-mushroom-cap {
+  width: 18px;
+  height: 10px;
+  background: linear-gradient(180deg,
+    #a67c00 0%,
+    #8b6914 50%,
+    #5c4a0f 100%
+  );
+  border-radius: 50% 50% 40% 40%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.scada-mushroom-stem {
+  width: 6px;
+  height: 12px;
+  background: linear-gradient(90deg,
+    #e8e0d0 0%,
+    #f5f0e5 50%,
+    #e8e0d0 100%
+  );
+  border-radius: 2px;
+  margin-top: -2px;
+}
+
+.scada-mushroom:nth-child(1) { transform: scale(0.7); animation-delay: 0s; }
+.scada-mushroom:nth-child(2) { transform: scale(1); animation-delay: 0.3s; }
+.scada-mushroom:nth-child(3) { transform: scale(0.85); animation-delay: 0.5s; }
+.scada-mushroom:nth-child(4) { transform: scale(0.6); animation-delay: 0.2s; }
+
+@keyframes mushroom-grow {
+  0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Chamber Display (sensors overlay) */
+.scada-chamber-display {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-primary) 100%);
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  display: flex;
+  gap: 16px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+  z-index: 5;
+}
+
+.scada-display-item {
+  text-align: center;
+}
+
+.scada-display-value {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.scada-display-value.temp {
+  color: var(--accent);
+}
+
+.scada-display-value.humidity {
+  color: #3b82f6;
+}
+
+.scada-display-value.co2 {
+  color: #a855f7;
+}
+
+.scada-display-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Phase Timeline */
+.scada-phase-timeline {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-top: 8px;
+}
+
+.scada-timeline-header {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+.scada-timeline-track {
+  position: relative;
+  height: 50px;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+}
+
+.scada-timeline-phase {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  border-right: 1px solid var(--border);
+  transition: all 0.3s;
+  cursor: default;
+  padding: 4px;
+}
+
+.scada-timeline-phase:last-child {
+  border-right: none;
+}
+
+.scada-timeline-phase.active {
+  background: linear-gradient(180deg, rgba(139, 105, 20, 0.2) 0%, rgba(139, 105, 20, 0.1) 100%);
+  color: #a67c00;
+}
+
+.scada-timeline-phase.completed {
+  background: rgba(139, 105, 20, 0.1);
+  color: #a67c00;
+}
+
+.scada-phase-icon {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.scada-phase-name {
+  font-weight: 600;
+}
+
+.scada-phase-time {
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.scada-timeline-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #8b6914 0%, transparent 100%);
+  opacity: 0.15;
+  transition: width 0.5s ease-out;
+}
+
+/* Responsive adjustments for mushroom chamber */
+@media (max-width: 900px) {
+  .scada-chamber-card {
+    flex: none;
+    width: 100%;
+    max-width: 340px;
   }
 }
