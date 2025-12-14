@@ -498,7 +498,9 @@
   gap: 14px;
   border: 1px solid var(--border);
   transition: all 0.3s;
-  min-height: 80px;
+  height: 80px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .scada-metric-card:hover {
