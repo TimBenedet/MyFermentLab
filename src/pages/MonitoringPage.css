@@ -721,11 +721,11 @@
 
 .scada-panel-tab {
   flex: 1;
-  padding: 16px 20px;
+  padding: 12px 16px;
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
@@ -759,7 +759,7 @@
 .scada-mode-badge-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .scada-control-mode {
@@ -780,29 +780,30 @@
 
 /* Outlet Section in Control Tab */
 .scada-outlet-section {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 8px;
+  padding-top: 10px;
   border-top: 1px solid var(--border);
 }
 
 .scada-outlet-status {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 12px;
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
 .scada-outlet-indicator {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 14px;
   background: var(--bg-elevated);
   border: 2px solid var(--border);
   transition: all 0.3s;
+  flex-shrink: 0;
 }
 
 .scada-outlet-indicator.active {
@@ -820,20 +821,20 @@
 }
 
 .scada-outlet-label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
 }
 
 .scada-outlet-state {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 }
 
 .scada-btn-outlet {
   width: 100%;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
@@ -992,19 +993,22 @@
 }
 
 .scada-control-body {
-  padding: 16px 20px;
+  padding: 12px 16px;
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 8px;
+  overflow: hidden;
 }
 
 /* Circular Gauge */
 .scada-circular-gauge {
-  width: 160px;
-  height: 160px;
+  width: 130px;
+  height: 130px;
   margin: 0 auto;
   position: relative;
+  flex-shrink: 0;
 }
 
 .scada-gauge-svg {
@@ -1037,7 +1041,7 @@
 }
 
 .scada-gauge-temp {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 800;
   color: var(--accent);
   line-height: 1;
@@ -1046,15 +1050,15 @@
 }
 
 .scada-gauge-temp .unit {
-  font-size: 20px;
+  font-size: 16px;
   color: var(--text-secondary);
   font-weight: 500;
 }
 
 .scada-gauge-label {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--text-muted);
-  margin-top: 8px;
+  margin-top: 4px;
   text-transform: uppercase;
   letter-spacing: 2px;
 }
@@ -1062,15 +1066,15 @@
 /* Control buttons */
 .scada-control-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .scada-btn {
   flex: 1;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 10px;
+  border-radius: 10px;
   border: none;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1086,14 +1090,14 @@
 }
 
 .scada-btn-adjust {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   flex: none;
-  font-size: 22px;
+  font-size: 20px;
   background: var(--bg-elevated);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .scada-btn-adjust:hover:not(:disabled) {
@@ -1145,17 +1149,18 @@
 /* Mode Toggle Buttons */
 .scada-mode-buttons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .scada-btn-mode {
   flex: 1;
-  padding: 10px;
-  border-radius: 12px;
+  padding: 8px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
