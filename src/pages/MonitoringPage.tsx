@@ -245,8 +245,11 @@ export function MonitoringPage({
                   <div className="scada-metric-card">
                     <div className="scada-metric-icon">📊</div>
                     <div className="scada-metric-info">
-                      <span className="scada-metric-label">Ecart</span>
-                      <span className={`scada-metric-value ${Math.abs(diff) < 0.5 ? 'success' : Math.abs(diff) < 2 ? 'warning' : 'error'}`}>
+                      <span className="scada-metric-label" style={{ display: 'block', position: 'static' }}>Ecart</span>
+                      <span
+                        className="scada-metric-value"
+                        style={{ color: Math.abs(diff) < 0.5 ? 'var(--success)' : Math.abs(diff) < 2 ? 'var(--warning)' : 'var(--error)' }}
+                      >
                         {diff >= 0 ? '+' : ''}{diff.toFixed(1)}°C
                       </span>
                     </div>
