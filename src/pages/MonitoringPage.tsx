@@ -121,12 +121,12 @@ export function MonitoringPage({
     return [];
   }, [project.densityHistory, project.fermentationType]);
 
-  // Use mock data for humidity if no real data available (for mushroom demo)
+  // Use mock data for humidity if no real data available (for mushroom/koji demo)
   const humidityHistoryData = useMemo(() => {
     if (project.humidityHistory && project.humidityHistory.length > 0) {
       return project.humidityHistory;
     }
-    if (project.fermentationType === 'mushroom') {
+    if (project.fermentationType === 'mushroom' || project.fermentationType === 'koji') {
       return generateMockHumidityData(project.targetHumidity || 85, 7);
     }
     return [];
@@ -344,7 +344,7 @@ export function MonitoringPage({
                         <div className="scada-display-label">Temp.</div>
                       </div>
                       <div className="scada-display-item">
-                        <div className="scada-display-value humidity">{latestHumidity !== null ? `${latestHumidity.toFixed(0)}%` : '—'}</div>
+                        <div className="scada-display-value humidity">{currentHumidity !== null ? `${currentHumidity.toFixed(0)}%` : '—'}</div>
                         <div className="scada-display-label">Humid.</div>
                       </div>
                     </div>
