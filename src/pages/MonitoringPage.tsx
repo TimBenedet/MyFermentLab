@@ -4,6 +4,7 @@ import { TemperatureChart } from '../components/TemperatureChart';
 import { DensityChart } from '../components/DensityChart';
 import { HumidityChart } from '../components/HumidityChart';
 import { TemperatureAlert } from '../components/TemperatureAlert';
+import { OutletControl } from '../components/OutletControl';
 import './MonitoringPage.css';
 
 // Generate mock temperature data for 7 days
@@ -528,24 +529,6 @@ export function MonitoringPage({
                 </button>
               </div>
 
-              {/* Activate / Stop buttons */}
-              <div className="scada-control-row">
-                <button
-                  className="scada-btn scada-btn-success"
-                  onClick={onToggleOutlet}
-                  disabled={role === 'viewer' || project.outletActive}
-                >
-                  ⚡ Activer
-                </button>
-                <button
-                  className="scada-btn scada-btn-danger"
-                  onClick={onToggleOutlet}
-                  disabled={role === 'viewer' || !project.outletActive}
-                >
-                  ⏹ Arreter
-                </button>
-              </div>
-
               {/* Mode Toggle */}
               {onToggleControlMode && (
                 <div className="scada-mode-buttons">
@@ -567,6 +550,14 @@ export function MonitoringPage({
               )}
             </div>
           </div>
+
+          {/* Outlet Control with History Tabs */}
+          <OutletControl
+            project={project}
+            onToggleOutlet={onToggleOutlet}
+            role={role}
+            variant="scada"
+          />
 
         </aside>
       </div>

@@ -2012,3 +2012,250 @@
     max-width: 320px;
   }
 }
+
+/* ================================================
+   SCADA OUTLET CONTROL WITH TABS
+   ================================================ */
+
+/* Panel container */
+.scada-outlet-panel {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+/* Tabs container */
+.scada-outlet-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+/* Tab button */
+.scada-outlet-tab {
+  flex: 1;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.scada-outlet-tab:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.scada-outlet-tab.active {
+  color: var(--accent);
+  background: var(--bg-secondary);
+}
+
+.scada-outlet-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+/* Control section */
+.scada-outlet-control {
+  padding: 20px;
+}
+
+.scada-outlet-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.scada-outlet-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border);
+  transition: all 0.3s;
+}
+
+.scada-outlet-indicator.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(212, 181, 132, 0.4);
+}
+
+.scada-outlet-indicator.inactive {
+  color: var(--text-muted);
+}
+
+.scada-outlet-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.scada-outlet-state {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Outlet toggle button */
+.scada-btn-outlet {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid var(--border);
+}
+
+.scada-btn-outlet.inactive {
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+  color: var(--bg-primary);
+  border-color: var(--accent);
+}
+
+.scada-btn-outlet.inactive:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(212, 181, 132, 0.3);
+}
+
+.scada-btn-outlet.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.scada-btn-outlet.active:hover:not(:disabled) {
+  background: var(--bg-primary);
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.scada-btn-outlet:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* History section */
+.scada-outlet-history {
+  padding: 16px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.scada-history-loading,
+.scada-history-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.scada-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scada-history-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-elevated);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.scada-history-entry:hover {
+  border-color: var(--accent);
+}
+
+.scada-history-entry.on {
+  border-left: 3px solid var(--success);
+}
+
+.scada-history-entry.off {
+  border-left: 3px solid var(--error);
+}
+
+.scada-history-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.scada-history-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.scada-history-action {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scada-history-source {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(212, 181, 132, 0.15);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.scada-history-source.automatic {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3B82F6;
+}
+
+.scada-history-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.scada-history-duration {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Scrollbar for history */
+.scada-outlet-history::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scada-outlet-history::-webkit-scrollbar-track {
+  background: var(--bg-elevated);
+  border-radius: 3px;
+}
+
+.scada-outlet-history::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.scada-outlet-history::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

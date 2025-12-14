@@ -6,6 +6,7 @@ interface OutletControlProps {
   project: Project;
   onToggleOutlet: () => void;
   role: 'admin' | 'viewer' | null;
+  variant?: 'default' | 'scada';
 }
 
 interface OutletHistoryEntry {
@@ -14,10 +15,12 @@ interface OutletHistoryEntry {
   source: string;
 }
 
-export function OutletControl({ project, onToggleOutlet, role }: OutletControlProps) {
+export function OutletControl({ project, onToggleOutlet, role, variant = 'default' }: OutletControlProps) {
   const [activeTab, setActiveTab] = useState<'control' | 'history'>('control');
   const [history, setHistory] = useState<OutletHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const isScada = variant === 'scada';
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -88,37 +91,37 @@ export function OutletControl({ project, onToggleOutlet, role }: OutletControlPr
   };
 
   return (
-    <div className="panel-section outlet-control-panel">
-      <div className="outlet-tabs">
+    <div className={`panel-section outlet-control-panel ${isScada ? 'scada-outlet-panel' : ''}`}>
+      <div className={`outlet-tabs ${isScada ? 'scada-outlet-tabs' : ''}`}>
         <button
-          className={`outlet-tab ${activeTab === 'control' ? 'active' : ''}`}
+          className={`outlet-tab ${isScada ? 'scada-outlet-tab' : ''} ${activeTab === 'control' ? 'active' : ''}`}
           onClick={() => setActiveTab('control')}
         >
-          Controle de la prise
+          {isScada ? 'CONTROLE DE LA PRISE' : 'Controle de la prise'}
         </button>
         <button
-          className={`outlet-tab ${activeTab === 'history' ? 'active' : ''}`}
+          className={`outlet-tab ${isScada ? 'scada-outlet-tab' : ''} ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
         >
-          Historique
+          {isScada ? 'HISTORIQUE' : 'Historique'}
         </button>
       </div>
 
       {activeTab === 'control' ? (
-        <div className="outlet-control">
-          <div className="outlet-status">
-            <span className={`outlet-indicator ${project.outletActive ? 'active' : 'inactive'}`}>
+        <div className={`outlet-control ${isScada ? 'scada-outlet-control' : ''}`}>
+          <div className={`outlet-status ${isScada ? 'scada-outlet-status' : ''}`}>
+            <span className={`outlet-indicator ${isScada ? 'scada-outlet-indicator' : ''} ${project.outletActive ? 'active' : 'inactive'}`}>
               {project.outletActive ? '●' : '○'}
             </span>
             <div className="outlet-info">
-              <div className="outlet-label">Tapis chauffant</div>
-              <div className="outlet-state" style={{ color: project.outletActive ? '#10B981' : '#EF4444' }}>
+              <div className={`outlet-label ${isScada ? 'scada-outlet-label' : ''}`}>Tapis chauffant</div>
+              <div className={`outlet-state ${isScada ? 'scada-outlet-state' : ''}`} style={{ color: project.outletActive ? '#10B981' : '#EF4444' }}>
                 {project.outletActive ? 'Activé' : 'Désactivé'}
               </div>
             </div>
           </div>
           <button
-            className={`btn-outlet ${project.outletActive ? 'active' : 'inactive'}`}
+            className={`btn-outlet ${isScada ? 'scada-btn-outlet' : ''} ${project.outletActive ? 'active' : 'inactive'}`}
             onClick={onToggleOutlet}
             disabled={project.controlMode === 'automatic' || role === 'viewer'}
           >
@@ -126,30 +129,30 @@ export function OutletControl({ project, onToggleOutlet, role }: OutletControlPr
           </button>
         </div>
       ) : (
-        <div className="outlet-history">
+        <div className={`outlet-history ${isScada ? 'scada-outlet-history' : ''}`}>
           {loading ? (
-            <div className="history-loading">Chargement...</div>
+            <div className={`history-loading ${isScada ? 'scada-history-loading' : ''}`}>Chargement...</div>
           ) : history.length === 0 ? (
-            <div className="history-empty">Aucun historique disponible</div>
+            <div className={`history-empty ${isScada ? 'scada-history-empty' : ''}`}>Aucun historique disponible</div>
           ) : (
-            <div className="history-list">
+            <div className={`history-list ${isScada ? 'scada-history-list' : ''}`}>
               {history.map((entry, index) => (
-                <div key={entry.timestamp} className={`history-entry ${entry.state ? 'on' : 'off'}`}>
-                  <div className="history-icon">
+                <div key={entry.timestamp} className={`history-entry ${isScada ? 'scada-history-entry' : ''} ${entry.state ? 'on' : 'off'}`}>
+                  <div className={`history-icon ${isScada ? 'scada-history-icon' : ''}`}>
                     {entry.state ? '🔥' : '❄️'}
                   </div>
-                  <div className="history-details">
-                    <div className="history-action">
+                  <div className={`history-details ${isScada ? 'scada-history-details' : ''}`}>
+                    <div className={`history-action ${isScada ? 'scada-history-action' : ''}`}>
                       {entry.state ? 'Activé' : 'Désactivé'}
-                      <span className={`history-source ${entry.source}`}>
+                      <span className={`history-source ${isScada ? 'scada-history-source' : ''} ${entry.source}`}>
                         {getSourceLabel(entry.source)}
                       </span>
                     </div>
-                    <div className="history-time">
+                    <div className={`history-time ${isScada ? 'scada-history-time' : ''}`}>
                       {formatDate(entry.timestamp)} à {formatTime(entry.timestamp)}
                     </div>
                     {calculateDuration(index) && (
-                      <div className="history-duration">
+                      <div className={`history-duration ${isScada ? 'scada-history-duration' : ''}`}>
                         Durée: {calculateDuration(index)}
                       </div>
                     )}
