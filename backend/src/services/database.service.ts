@@ -195,6 +195,32 @@ class DatabaseService {
         entityId: 'switch.test_outlet_mushroom'
       });
     }
+
+    // Second set of test devices for mushroom projects (in case first set is in use)
+    const testTempSensor2 = this.getDevice('test-temp-sensor-mushroom-2');
+    const testOutlet2 = this.getDevice('test-outlet-mushroom-2');
+
+    if (!testTempSensor2) {
+      console.log('Creating test temperature sensor 2 for mushrooms...');
+      this.createDevice({
+        id: 'test-temp-sensor-mushroom-2',
+        name: '🧪 Sonde Temp Champignon 2',
+        type: 'sensor',
+        ip: '',
+        entityId: 'sensor.test_temp_mushroom_2'
+      });
+    }
+
+    if (!testOutlet2) {
+      console.log('Creating test outlet 2 for mushrooms...');
+      this.createDevice({
+        id: 'test-outlet-mushroom-2',
+        name: '🧪 Prise Test Champignon 2',
+        type: 'outlet',
+        ip: '',
+        entityId: 'switch.test_outlet_mushroom_2'
+      });
+    }
   }
 
   // Projects CRUD
