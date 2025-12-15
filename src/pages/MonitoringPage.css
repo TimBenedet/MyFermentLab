@@ -1597,16 +1597,21 @@
     grid-template-columns: 1fr;
   }
 
-  /* Keep koji header in row but make status badge smaller */
+  /* Keep koji header in row but make status badge smaller - same as sourdough */
   .scada-koji-header {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
   }
 
   .scada-koji-status {
     font-size: 11px;
     padding: 4px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .scada-koji-name {
