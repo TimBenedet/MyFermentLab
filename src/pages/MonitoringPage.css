@@ -2319,14 +2319,16 @@
   padding: 16px 20px;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  gap: 16px;
   border-bottom: 1px solid var(--border);
 }
 
 .scada-sourdough-name {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
+  margin-bottom: 4px;
 }
 
 .scada-sourdough-type {
@@ -2334,7 +2336,6 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-top: 2px;
 }
 
 .scada-sourdough-status {
@@ -2371,19 +2372,19 @@
 }
 
 .scada-sourdough-visual {
-  padding: 30px 20px;
+  padding: 30px 20px 50px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
   position: relative;
-  min-height: 280px;
+  min-height: 320px;
 }
 
 .scada-sourdough-container {
   position: relative;
   width: 180px;
-  height: 250px;
+  height: 230px;
 }
 
 /* Jar lid - positioned to overlap jar opening */
@@ -2678,12 +2679,10 @@
 
 /* Temperature display */
 .scada-sourdough-display {
-  position: absolute;
-  bottom: -15px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  margin-top: 15px;
   background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-primary) 100%);
-  padding: 12px 20px;
+  padding: 12px 24px;
   border-radius: 14px;
   border: 2px solid var(--border);
   display: flex;
