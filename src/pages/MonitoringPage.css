@@ -1542,7 +1542,7 @@
     height: auto !important;
     padding: 15px !important;
     margin: 0 !important;
-    align-items: stretch !important;
+    align-items: center !important;
     overflow: visible !important;
     gap: 10px !important;
     min-height: auto !important;
@@ -1551,7 +1551,6 @@
   /* Koji container - center the chamber */
   .scada-koji-visual .scada-koji-container {
     flex-shrink: 0;
-    align-self: center !important;
   }
 
   /* Koji display - center the temperature */
@@ -1560,7 +1559,20 @@
     display: flex;
     justify-content: center;
     margin-top: 5px;
-    align-self: center !important;
+  }
+
+  /* Koji badge - full width like sourdough */
+  .scada-koji-visual .scada-status-badge.mobile-only {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Sourdough badge - ensure full width */
+  .scada-sourdough-visual .scada-status-badge.mobile-only {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
   }
 
   /* Koji chamber card - allow height to expand on mobile */
