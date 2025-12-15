@@ -1542,24 +1542,25 @@
     height: auto !important;
     padding: 15px;
     margin: 0;
-    align-items: center;
+    align-items: stretch;
     overflow: visible;
     gap: 10px;
     min-height: auto;
   }
 
-  /* Koji container - keep chamber visualization tight */
+  /* Koji container - center the chamber */
   .scada-koji-visual .scada-koji-container {
     flex-shrink: 0;
+    align-self: center;
   }
 
-  /* Koji display - same style as sourdough display */
+  /* Koji display - center the temperature */
   .scada-koji-visual .scada-koji-display {
     position: relative;
-    width: auto;
     display: flex;
     justify-content: center;
     margin-top: 5px;
+    align-self: center;
   }
 
   /* Koji chamber card - allow height to expand on mobile */
