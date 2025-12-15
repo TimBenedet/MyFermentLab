@@ -1560,11 +1560,12 @@
     order: 2;
   }
 
-  /* Badge after temperature (same as Levain) */
+  /* Badge after temperature - full width like Levain */
   .scada-koji-visual .scada-status-badge.mobile-only {
     display: inline-flex !important;
-    margin-top: 15px;
-    width: auto;
+    justify-content: center;
+    margin-top: 20px;
+    width: 100%;
     order: 3;
   }
 
