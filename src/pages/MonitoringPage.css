@@ -1540,24 +1540,32 @@
   .scada-koji-visual {
     flex-direction: column;
     height: auto !important;
-    min-height: 280px;
     margin: 15px 0;
     align-items: center;
     overflow: visible;
   }
 
-  /* Ensure koji display and badge stack properly */
+  /* Koji container - keep chamber visualization tight */
+  .scada-koji-visual .scada-koji-container {
+    order: 0;
+  }
+
+  /* Ensure koji display below the chamber */
   .scada-koji-visual .scada-koji-display {
+    position: relative;
     width: 100%;
     display: flex;
     justify-content: center;
     margin-top: 10px;
+    order: 2;
   }
 
+  /* Badge after temperature (same as Levain) */
   .scada-koji-visual .scada-status-badge.mobile-only {
     display: inline-flex !important;
     margin-top: 15px;
     width: auto;
+    order: 3;
   }
 
   /* Koji chamber card - allow height to expand on mobile */
