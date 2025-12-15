@@ -759,9 +759,9 @@ export function MonitoringPage({
       </div>
 
       {/* Charts Section - Full Width */}
-      <div className={`scada-charts-fullwidth ${project.fermentationType === 'koji' ? 'single-chart' : ''}`}>
+      <div className={`scada-charts-fullwidth ${project.fermentationType === 'koji' || project.fermentationType === 'sourdough' ? 'single-chart' : ''}`}>
         {/* Temperature Chart */}
-        <div className={`scada-chart-card fade-in ${project.fermentationType === 'koji' ? 'full-width' : ''}`}>
+        <div className={`scada-chart-card fade-in ${project.fermentationType === 'koji' || project.fermentationType === 'sourdough' ? 'full-width' : ''}`}>
           <TemperatureChart
             data={temperatureHistory}
             targetTemperature={project.targetTemperature}
