@@ -114,6 +114,11 @@ export function MonitoringPage({
 
   const config = FERMENTATION_TYPES[project.fermentationType];
 
+  // Synchronize localTarget with project.targetTemperature when it changes
+  useEffect(() => {
+    setLocalTarget(project.targetTemperature);
+  }, [project.targetTemperature]);
+
   // Load outlet history when switching to history tab
   useEffect(() => {
     if (controlPanelTab === 'history') {
