@@ -1562,23 +1562,6 @@
     margin-top: 5px;
   }
 
-  /* Badge after temperature - exactly like Levain */
-  .scada-koji-visual .scada-status-badge.mobile-only {
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    margin: 10px 0 0 0;
-    width: 100% !important;
-    max-width: 100% !important;
-    padding: 10px 16px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 600;
-    box-sizing: border-box;
-    align-self: stretch;
-  }
-
   /* Koji chamber card - allow height to expand on mobile */
   .scada-koji-chamber-card {
     height: auto !important;
@@ -1607,36 +1590,20 @@
     grid-template-columns: 1fr;
   }
 
-  /* Keep koji header in row - same as sourdough */
+  /* Keep koji header in row - exactly same as sourdough */
   .scada-koji-header {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 0;
-    gap: 10px;
-  }
-
-  .scada-koji-header > div:first-child {
-    flex: 1;
-    min-width: 0;
   }
 
   .scada-koji-status {
-    font-size: 10px;
-    padding: 4px 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-    flex-shrink: 0;
+    font-size: 11px;
+    padding: 4px 10px;
   }
 
   .scada-koji-name {
     font-size: 16px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .scada-koji-type {
