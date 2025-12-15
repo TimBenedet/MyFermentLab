@@ -465,6 +465,17 @@ function App() {
           </button>
         )}
 
+        {/* Mobile: Hard refresh button */}
+        {currentPage === 'home' && (
+          <button
+            className="mobile-refresh-btn"
+            onClick={() => window.location.reload()}
+            aria-label="Rafraîchir"
+          >
+            ↻
+          </button>
+        )}
+
         {/* Mobile hamburger menu button */}
         {currentPage === 'home' && (
           <button

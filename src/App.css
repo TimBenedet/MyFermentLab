@@ -182,6 +182,29 @@
   margin-left: auto;
 }
 
+/* Mobile refresh button - hidden on desktop */
+.mobile-refresh-btn {
+  display: none;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.mobile-refresh-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.mobile-refresh-btn:active {
+  transform: rotate(180deg);
+}
+
 /* Desktop back button - shown in header-actions */
 .desktop-back-btn {
   display: flex;
@@ -1927,8 +1950,12 @@
     font-size: 20px;
   }
 
-  /* Show mobile menu toggle and back button */
+  /* Show mobile menu toggle, refresh button and back button */
   .mobile-menu-toggle {
+    display: block;
+  }
+
+  .mobile-refresh-btn {
     display: block;
   }
 
