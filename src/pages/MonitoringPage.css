@@ -1565,10 +1565,14 @@
 
   /* Badge after temperature - full width like Levain */
   .scada-koji-visual .scada-status-badge.mobile-only {
-    display: inline-flex !important;
+    display: flex !important;
     justify-content: center;
+    align-items: center;
     margin-top: 10px;
-    width: 100%;
+    margin-left: 20px;
+    margin-right: 20px;
+    width: calc(100% - 40px);
+    padding: 12px 20px;
     order: 2;
   }
 
