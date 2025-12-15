@@ -1528,37 +1528,76 @@
     display: none;
   }
 
-  /* Show status badge inside visualization card on mobile */
+  /* Show status badge inside visualization card on mobile - centered at bottom */
   .scada-status-badge.mobile-only {
     display: inline-flex;
     margin-top: 16px;
     align-self: center;
+    justify-content: center;
   }
 
   .scada-right-panel {
     grid-template-columns: 1fr;
   }
 
-  /* Compact koji header on mobile */
+  /* Keep koji header in row but make status badge smaller */
   .scada-koji-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .scada-koji-header .scada-koji-status {
-    align-self: flex-start;
+  .scada-koji-status {
+    font-size: 11px;
+    padding: 4px 10px;
   }
 
-  /* Compact sourdough header on mobile */
+  .scada-koji-name {
+    font-size: 16px;
+  }
+
+  .scada-koji-type {
+    font-size: 11px;
+  }
+
+  /* Keep sourdough header in row but make status badge smaller */
   .scada-sourdough-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .scada-sourdough-header .scada-sourdough-status {
-    align-self: flex-start;
+  .scada-sourdough-status {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .scada-sourdough-name {
+    font-size: 16px;
+  }
+
+  .scada-sourdough-type {
+    font-size: 11px;
+  }
+
+  /* Compact metric cards on mobile */
+  .scada-metric-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .scada-metric-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .scada-metric-label {
+    font-size: 10px;
+  }
+
+  .scada-metric-value {
+    font-size: 16px;
   }
 }
 
