@@ -1,0 +1,26 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+
+export default defineConfig({
+  plugins: [react()],
+  root: '.',
+  build: {
+    outDir: 'dist-mobile',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.mobile.html'),
+      },
+    },
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src-mobile'),
+    }
+  },
+  server: {
+    host: '0.0.0.0',
+    port: 3001
+  }
+})

@@ -1,0 +1,61 @@
+name: Build and Push Mobile Frontend
+
+on:
+  push:
+    branches: [ main, master, scada-redesign ]
+    paths:
+      - 'src-mobile/**'
+      - 'src/types.ts'
+      - 'src/services/api.service.ts'
+      - 'index.mobile.html'
+      - 'package.json'
+      - 'vite.mobile.config.ts'
+      - 'Dockerfile.mobile'
+      - 'nginx.conf'
+      - '.github/workflows/build-mobile.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/myfermentlab-mobile
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # Pour la branche main/master: tag 'latest'
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+            # Pour la branche scada-redesign: tag 'scada'
+            type=raw,value=scada,enable=${{ github.ref == 'refs/heads/scada-redesign' }}
+            # Tag avec le SHA du commit
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.mobile
+          push: true
+          no-cache: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
