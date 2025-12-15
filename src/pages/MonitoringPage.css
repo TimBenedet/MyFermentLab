@@ -1542,7 +1542,6 @@
     height: auto !important;
     padding: 15px !important;
     margin: 0 !important;
-    align-items: center !important;
     overflow: visible !important;
     gap: 10px !important;
     min-height: auto !important;
@@ -1578,29 +1577,28 @@
     transform: none !important;
   }
 
-  /* Koji badge - full width like sourdough */
-  .scada-koji-visual .scada-status-badge.mobile-only {
-    display: flex !important;
-    width: calc(100% + 30px) !important;
-    margin-left: -15px !important;
-    margin-right: -15px !important;
-    max-width: none !important;
-    box-sizing: border-box !important;
-    justify-content: center !important;
-    border-radius: 0 !important;
-    margin-bottom: 0 !important;
+  /* Both koji and sourdough visual - stretch for badge */
+  .scada-koji-visual,
+  .scada-sourdough-visual {
+    align-items: stretch !important;
   }
 
-  /* Sourdough badge - ensure full width */
+  /* Center the chamber and display elements */
+  .scada-koji-visual .scada-koji-container,
+  .scada-koji-visual .scada-koji-display,
+  .scada-sourdough-visual .scada-sourdough-container,
+  .scada-sourdough-visual .scada-sourdough-display {
+    align-self: center !important;
+  }
+
+  /* Both koji and sourdough badges - full width */
+  .scada-koji-visual .scada-status-badge.mobile-only,
   .scada-sourdough-visual .scada-status-badge.mobile-only {
     display: flex !important;
-    width: calc(100% + 30px) !important;
-    margin-left: -15px !important;
-    margin-right: -15px !important;
+    width: 100% !important;
     max-width: none !important;
     box-sizing: border-box !important;
     justify-content: center !important;
-    border-radius: 0 !important;
     margin-bottom: 0 !important;
   }
 
@@ -1637,26 +1635,19 @@
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 12px 16px !important;
-    gap: 8px !important;
   }
 
   .scada-koji-status {
-    font-size: 10px !important;
-    padding: 4px 8px !important;
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
+    font-size: 11px !important;
+    padding: 4px 10px !important;
   }
 
   .scada-koji-name {
-    font-size: 15px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    font-size: 16px !important;
   }
 
   .scada-koji-type {
-    font-size: 10px !important;
+    font-size: 11px !important;
   }
 
   /* Keep sourdough header in row but make status badge smaller */
