@@ -1541,6 +1541,19 @@
     flex-direction: column;
     height: auto;
     margin: 15px 0;
+    align-items: center;
+  }
+
+  /* Ensure koji display and badge stack properly */
+  .scada-koji-visual .scada-koji-display {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .scada-koji-visual .scada-status-badge.mobile-only {
+    display: inline-flex !important;
+    margin-top: 12px;
   }
 
   /* Sourdough visual container - ensure no height constraint */
