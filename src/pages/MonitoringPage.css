@@ -47,8 +47,9 @@
 .scada-section.mead::before { background: linear-gradient(90deg, var(--wine-color) 0%, #a855f7 50%, transparent 100%); }
 .scada-section.sourdough::before { background: linear-gradient(90deg, var(--sourdough-color) 0%, #e8c9a0 50%, transparent 100%); }
 
-/* Fixed height for mushroom section to match control panel */
-.scada-section.mushroom {
+/* Fixed height for mushroom and sourdough sections to match control panel */
+.scada-section.mushroom,
+.scada-section.sourdough {
   height: 473px;
   box-sizing: border-box;
 }
@@ -2372,29 +2373,30 @@
 }
 
 .scada-sourdough-visual {
-  padding: 30px 20px 50px;
+  padding: 20px 20px 15px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
   position: relative;
-  min-height: 320px;
+  height: calc(100% - 60px);
+  justify-content: center;
 }
 
 .scada-sourdough-container {
   position: relative;
-  width: 180px;
-  height: 230px;
+  width: 160px;
+  height: 200px;
 }
 
 /* Jar lid - positioned to overlap jar opening */
 .scada-sourdough-lid {
   position: absolute;
-  top: 20px;
+  top: 15px;
   left: 50%;
   transform: translateX(-50%);
-  width: 170px;
-  height: 45px;
+  width: 150px;
+  height: 38px;
   z-index: 10;
 }
 
@@ -2403,8 +2405,8 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 170px;
-  height: 22px;
+  width: 150px;
+  height: 18px;
   background: linear-gradient(90deg,
     #2a1808 0%,
     #4a3525 10%,
@@ -2416,12 +2418,12 @@
     #4a3525 90%,
     #2a1808 100%
   );
-  border-radius: 0 0 10px 10px;
-  border: 3px solid #1a0800;
+  border-radius: 0 0 8px 8px;
+  border: 2px solid #1a0800;
   border-top: 2px solid #6b5545;
   box-shadow:
-    0 6px 15px rgba(0, 0, 0, 0.6),
-    inset 0 -3px 8px rgba(0, 0, 0, 0.4);
+    0 4px 12px rgba(0, 0, 0, 0.6),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .scada-lid-top {
@@ -2429,8 +2431,8 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 150px;
-  height: 28px;
+  width: 130px;
+  height: 22px;
   background: linear-gradient(180deg,
     #b09585 0%,
     #9a8575 20%,
@@ -2438,25 +2440,25 @@
     #7b6555 80%,
     #5a4535 100%
   );
-  border-radius: 14px 14px 0 0;
-  border: 3px solid #3a2515;
+  border-radius: 12px 12px 0 0;
+  border: 2px solid #3a2515;
   border-bottom: none;
   box-shadow:
-    inset 0 5px 10px rgba(255, 255, 255, 0.2),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+    inset 0 4px 8px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Lid handle/knob */
 .scada-lid-top::before {
   content: '';
   position: absolute;
-  top: -8px;
+  top: -6px;
   left: 50%;
   transform: translateX(-50%);
-  width: 40px;
-  height: 12px;
+  width: 32px;
+  height: 10px;
   background: linear-gradient(180deg, #a08575 0%, #7b6555 100%);
-  border-radius: 6px 6px 0 0;
+  border-radius: 5px 5px 0 0;
   border: 2px solid #4a3525;
   border-bottom: none;
 }
@@ -2467,8 +2469,8 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 170px;
-  height: 210px;
+  width: 150px;
+  height: 175px;
 }
 
 .scada-jar-glass {
@@ -2476,8 +2478,8 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 160px;
-  height: 200px;
+  width: 140px;
+  height: 165px;
   background: linear-gradient(90deg,
     rgba(100, 140, 170, 0.15) 0%,
     rgba(150, 200, 230, 0.22) 10%,
@@ -2487,52 +2489,52 @@
     rgba(150, 200, 230, 0.22) 90%,
     rgba(100, 140, 170, 0.15) 100%
   );
-  border-radius: 10px 10px 30px 30px;
-  border: 4px solid rgba(255, 255, 255, 0.5);
-  border-top: 4px solid rgba(255, 255, 255, 0.7);
+  border-radius: 8px 8px 25px 25px;
+  border: 3px solid rgba(255, 255, 255, 0.5);
+  border-top: 3px solid rgba(255, 255, 255, 0.7);
   overflow: hidden;
   box-shadow:
-    inset 0 0 60px rgba(255, 255, 255, 0.15),
-    inset -12px 0 25px rgba(255, 255, 255, 0.15),
-    inset 12px 0 25px rgba(0, 0, 0, 0.1),
-    0 12px 35px rgba(0, 0, 0, 0.5);
+    inset 0 0 50px rgba(255, 255, 255, 0.15),
+    inset -10px 0 20px rgba(255, 255, 255, 0.15),
+    inset 10px 0 20px rgba(0, 0, 0, 0.1),
+    0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 /* Glass reflection */
 .scada-jar-glass::before {
   content: '';
   position: absolute;
-  top: 10px;
-  left: 15px;
-  width: 8px;
-  height: 60%;
+  top: 8px;
+  left: 12px;
+  width: 6px;
+  height: 55%;
   background: linear-gradient(180deg,
     rgba(255, 255, 255, 0.4) 0%,
     rgba(255, 255, 255, 0.2) 50%,
     transparent 100%
   );
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 /* Level marks on jar - more visible */
 .scada-jar-marks {
   position: absolute;
-  right: 8px;
-  top: 20px;
-  bottom: 35px;
+  right: 6px;
+  top: 15px;
+  bottom: 28px;
   z-index: 3;
-  width: 30px;
+  width: 25px;
 }
 
 .scada-jar-mark {
   position: absolute;
   right: 0;
-  width: 20px;
-  height: 3px;
+  width: 16px;
+  height: 2px;
   background: rgba(255, 255, 255, 0.5);
-  border-radius: 2px;
+  border-radius: 1px;
   box-shadow:
-    0 0 5px rgba(255, 255, 255, 0.3),
+    0 0 4px rgba(255, 255, 255, 0.3),
     0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
@@ -2540,9 +2542,9 @@
   content: '';
   position: absolute;
   right: -2px;
-  top: -4px;
-  width: 6px;
-  height: 11px;
+  top: -3px;
+  width: 5px;
+  height: 8px;
   border-right: 2px solid rgba(255, 255, 255, 0.4);
 }
 
@@ -2560,7 +2562,7 @@
     #c8bca0 75%,
     #bcb094 100%
   );
-  border-radius: 0 0 22px 22px;
+  border-radius: 0 0 20px 20px;
   transition: height 0.8s ease;
   overflow: visible;
 }
@@ -2568,16 +2570,16 @@
 /* Surface dome effect */
 .scada-starter-surface {
   position: absolute;
-  top: -12px;
-  left: 8px;
-  right: 8px;
-  height: 35px;
+  top: -10px;
+  left: 6px;
+  right: 6px;
+  height: 28px;
   overflow: visible;
 }
 
 .scada-starter-dome {
   width: 100%;
-  height: 45px;
+  height: 35px;
   background: linear-gradient(180deg,
     rgba(255, 255, 255, 0.5) 0%,
     #f8f2e8 15%,
@@ -2587,12 +2589,12 @@
   );
   border-radius: 50% 50% 40% 40% / 100% 100% 30% 30%;
   animation: sourdough-dome-breathe 5s ease-in-out infinite;
-  box-shadow: 0 -2px 8px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 -2px 6px rgba(255, 255, 255, 0.3);
 }
 
 @keyframes sourdough-dome-breathe {
   0%, 100% { transform: scaleY(1) scaleX(1); }
-  50% { transform: scaleY(1.2) scaleX(1.02); }
+  50% { transform: scaleY(1.15) scaleX(1.02); }
 }
 
 /* Starter body with texture */
@@ -2637,18 +2639,18 @@
 }
 
 /* Large bubbles */
-.scada-starter-bubble:nth-child(1) { left: 10%; bottom: 10%; width: 18px; height: 18px; animation-delay: 0s; animation-duration: 4.5s; }
-.scada-starter-bubble:nth-child(2) { left: 55%; bottom: 8%; width: 20px; height: 20px; animation-delay: 0.8s; animation-duration: 5s; }
-.scada-starter-bubble:nth-child(3) { left: 30%; bottom: 25%; width: 16px; height: 16px; animation-delay: 1.6s; animation-duration: 4s; }
+.scada-starter-bubble:nth-child(1) { left: 10%; bottom: 10%; width: 14px; height: 14px; animation-delay: 0s; animation-duration: 4.5s; }
+.scada-starter-bubble:nth-child(2) { left: 55%; bottom: 8%; width: 16px; height: 16px; animation-delay: 0.8s; animation-duration: 5s; }
+.scada-starter-bubble:nth-child(3) { left: 30%; bottom: 25%; width: 12px; height: 12px; animation-delay: 1.6s; animation-duration: 4s; }
 
 /* Medium bubbles */
-.scada-starter-bubble:nth-child(4) { left: 75%; bottom: 15%; width: 14px; height: 14px; animation-delay: 2.2s; animation-duration: 4.2s; }
-.scada-starter-bubble:nth-child(5) { left: 20%; bottom: 40%; width: 12px; height: 12px; animation-delay: 2.8s; animation-duration: 3.8s; }
-.scada-starter-bubble:nth-child(6) { left: 65%; bottom: 35%; width: 15px; height: 15px; animation-delay: 3.4s; animation-duration: 4.3s; }
+.scada-starter-bubble:nth-child(4) { left: 75%; bottom: 15%; width: 11px; height: 11px; animation-delay: 2.2s; animation-duration: 4.2s; }
+.scada-starter-bubble:nth-child(5) { left: 20%; bottom: 40%; width: 10px; height: 10px; animation-delay: 2.8s; animation-duration: 3.8s; }
+.scada-starter-bubble:nth-child(6) { left: 65%; bottom: 35%; width: 12px; height: 12px; animation-delay: 3.4s; animation-duration: 4.3s; }
 
 /* Small bubbles */
-.scada-starter-bubble:nth-child(7) { left: 42%; bottom: 50%; width: 10px; height: 10px; animation-delay: 1.2s; animation-duration: 3.5s; }
-.scada-starter-bubble:nth-child(8) { left: 85%; bottom: 30%; width: 8px; height: 8px; animation-delay: 2s; animation-duration: 3.2s; }
+.scada-starter-bubble:nth-child(7) { left: 42%; bottom: 50%; width: 8px; height: 8px; animation-delay: 1.2s; animation-duration: 3.5s; }
+.scada-starter-bubble:nth-child(8) { left: 85%; bottom: 30%; width: 7px; height: 7px; animation-delay: 2s; animation-duration: 3.2s; }
 
 @keyframes sourdough-bubble-rise {
   0% {
@@ -2656,23 +2658,23 @@
     opacity: 0;
   }
   10% {
-    transform: translateY(-3px) scale(0.9);
+    transform: translateY(-2px) scale(0.9);
     opacity: 0.8;
   }
   30% {
-    transform: translateY(-12px) scale(1);
+    transform: translateY(-8px) scale(1);
     opacity: 1;
   }
   60% {
-    transform: translateY(-25px) scale(1.05);
+    transform: translateY(-18px) scale(1.05);
     opacity: 0.9;
   }
   80% {
-    transform: translateY(-40px) scale(0.95);
+    transform: translateY(-28px) scale(0.95);
     opacity: 0.5;
   }
   100% {
-    transform: translateY(-55px) scale(0.7);
+    transform: translateY(-38px) scale(0.7);
     opacity: 0;
   }
 }
@@ -2680,10 +2682,10 @@
 /* Temperature display */
 .scada-sourdough-display {
   position: relative;
-  margin-top: 15px;
+  margin-top: 10px;
   background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-primary) 100%);
-  padding: 12px 24px;
-  border-radius: 14px;
+  padding: 10px 20px;
+  border-radius: 12px;
   border: 2px solid var(--border);
   display: flex;
   gap: 20px;
