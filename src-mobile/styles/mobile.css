@@ -1310,3 +1310,443 @@ body {
   font-weight: 600;
   color: var(--text-primary);
 }
+
+/* ================================================
+   HAMBURGER MENU
+   ================================================ */
+
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.menu-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 280px;
+  max-width: 85%;
+  height: 100%;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  animation: slideIn 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  padding-top: calc(var(--spacing-md) + var(--safe-top));
+  border-bottom: 1px solid var(--border);
+}
+
+.menu-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.menu-close {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+}
+
+.menu-close:active {
+  background: var(--bg-elevated);
+}
+
+.menu-nav {
+  flex: 1;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.menu-item:active {
+  background: var(--bg-elevated);
+}
+
+.menu-item svg {
+  color: var(--text-secondary);
+}
+
+.menu-item.danger {
+  color: var(--accent-red);
+}
+
+.menu-item.danger svg {
+  color: var(--accent-red);
+}
+
+.menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--spacing-md) 0;
+}
+
+/* ================================================
+   PROJECT ACTIONS
+   ================================================ */
+
+.project-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border);
+}
+
+.project-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.project-action-btn:active {
+  transform: scale(0.98);
+}
+
+.project-action-btn.archive:active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--accent-orange);
+  color: var(--accent-orange);
+}
+
+.project-action-btn.delete {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.project-action-btn.delete:active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+/* ================================================
+   HEALTH CHECK PAGE
+   ================================================ */
+
+.health-page {
+  padding: var(--spacing-md);
+}
+
+.health-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  gap: var(--spacing-md);
+  color: var(--text-secondary);
+}
+
+.health-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  gap: var(--spacing-md);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.health-error-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.15);
+  border-radius: 50%;
+  font-size: 28px;
+  color: var(--accent-red);
+}
+
+.health-retry-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--accent-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--bg-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.health-overall {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.health-overall.ok {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.health-overall.warning {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.health-overall.error {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.health-overall-badge {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.health-overall-badge.ok {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-green);
+}
+
+.health-overall-badge.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-orange);
+}
+
+.health-overall-badge.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-red);
+}
+
+.health-overall-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.health-overall-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.health-overall-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.health-refresh-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.health-refresh-btn:active {
+  background: var(--bg-card);
+}
+
+.health-refresh-btn.spinning svg {
+  animation: spin 0.8s linear infinite;
+}
+
+.health-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.health-card {
+  padding: var(--spacing-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.health-card.ok {
+  border-left: 3px solid var(--accent-green);
+}
+
+.health-card.warning {
+  border-left: 3px solid var(--accent-orange);
+}
+
+.health-card.error {
+  border-left: 3px solid var(--accent-red);
+}
+
+.health-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.health-card-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.health-card-icon.ok {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-green);
+}
+
+.health-card-icon.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-orange);
+}
+
+.health-card-icon.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-red);
+}
+
+.health-card-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.health-card-title h4 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.health-card-status {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.health-card-status.ok {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-green);
+}
+
+.health-card-status.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-orange);
+}
+
+.health-card-status.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-red);
+}
+
+.health-card-message {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.health-details-outlets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.health-outlet-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+.health-outlet-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.health-outlet-dot.on {
+  background: var(--accent-green);
+  box-shadow: 0 0 6px var(--accent-green);
+}
+
+.health-outlet-dot.off {
+  background: var(--text-muted);
+}
+
+.health-outlet-name {
+  color: var(--text-secondary);
+}
+
+.health-details-info {
+  display: flex;
+  gap: var(--spacing-md);
+  font-size: 12px;
+  color: var(--text-muted);
+}

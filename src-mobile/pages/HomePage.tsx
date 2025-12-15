@@ -3,11 +3,10 @@ import { Project, FERMENTATION_TYPES } from '../../src/types';
 interface HomePageProps {
   projects: Project[];
   onSelectProject: (project: Project) => void;
-  onNavigateDevices: () => void;
   onRefresh: () => void;
 }
 
-export function HomePage({ projects, onSelectProject, onNavigateDevices, onRefresh }: HomePageProps) {
+export function HomePage({ projects, onSelectProject, onRefresh }: HomePageProps) {
   const getStatusInfo = (project: Project) => {
     const diff = project.currentTemperature - project.targetTemperature;
     if (Math.abs(diff) <= 0.5) {

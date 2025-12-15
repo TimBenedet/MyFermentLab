@@ -10,6 +10,8 @@ interface MonitoringPageProps {
   onUpdateTarget: (target: number) => void;
   onToggleMode: () => void;
   onRefresh: () => void;
+  onArchive: () => void;
+  onDelete: () => void;
   role: 'admin' | 'viewer' | null;
 }
 
@@ -27,6 +29,8 @@ export function MonitoringPage({
   onUpdateTarget,
   onToggleMode,
   onRefresh,
+  onArchive,
+  onDelete,
   role
 }: MonitoringPageProps) {
   const [localTarget, setLocalTarget] = useState(project.targetTemperature);
@@ -263,6 +267,29 @@ export function MonitoringPage({
                 </div>
               </div>
             </div>
+
+            {/* Project Actions */}
+            {role === 'admin' && (
+              <div className="project-actions">
+                <button className="project-action-btn archive" onClick={onArchive}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="21 8 21 21 3 21 3 8"/>
+                    <rect x="1" y="3" width="22" height="5"/>
+                    <line x1="10" y1="12" x2="14" y2="12"/>
+                  </svg>
+                  <span>Archiver</span>
+                </button>
+                <button className="project-action-btn delete" onClick={onDelete}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                  <span>Supprimer</span>
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="history-panel">
