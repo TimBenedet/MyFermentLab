@@ -2129,6 +2129,43 @@
     padding: 4px 8px;
   }
 
+  /* Devices Page Mobile */
+  .devices-page .page-header {
+    gap: 16px;
+  }
+
+  .devices-page .page-header h1 {
+    font-size: 1.1rem;
+  }
+
+  .devices-page .page-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .devices-page .page-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .devices-page .page-actions .btn-text {
+    order: 2;
+  }
+
+  .devices-page .page-actions .btn-primary {
+    order: 1;
+    flex: 1;
+  }
+
+  .device-section {
+    padding: 16px;
+  }
+
+  .device-section h2 {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+  }
+
   .projects-grid {
     grid-template-columns: 1fr;
   }
@@ -2242,6 +2279,40 @@
   .device-details {
     flex-direction: column;
     gap: 4px;
+  }
+
+  .device-details span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .device-item {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .device-icon {
+    flex-shrink: 0;
+  }
+
+  .device-info {
+    flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 100px);
+  }
+
+  .device-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .device-item .btn-power,
+  .device-item .btn-delete {
+    flex-shrink: 0;
   }
 
   .control-mode-compact {
@@ -2480,6 +2551,50 @@
   .logout-btn {
     padding: 6px 12px;
     font-size: 0.8rem;
+  }
+
+  /* Devices Page Mobile 480px */
+  .devices-page .page-header h1 {
+    font-size: 1rem;
+  }
+
+  .device-section {
+    padding: 12px;
+  }
+
+  .device-section h2 {
+    font-size: 0.75rem;
+  }
+
+  .device-item {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .device-icon {
+    font-size: 1.2rem;
+  }
+
+  .device-info {
+    max-width: calc(100% - 90px);
+  }
+
+  .device-name {
+    font-size: 0.8rem;
+  }
+
+  .device-details {
+    font-size: 0.65rem;
+  }
+
+  .device-item .btn-power {
+    width: 36px;
+    height: 36px;
+  }
+
+  .device-item .btn-delete {
+    width: 36px;
+    height: 36px;
   }
 }
 
