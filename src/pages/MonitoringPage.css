@@ -1531,9 +1531,34 @@
   /* Show status badge inside visualization card on mobile - centered at bottom */
   .scada-status-badge.mobile-only {
     display: inline-flex;
-    margin-top: 16px;
-    align-self: center;
+    margin-top: 12px;
     justify-content: center;
+    width: 100%;
+  }
+
+  /* Koji visual container - make it column on mobile */
+  .scada-koji-visual {
+    flex-direction: column;
+    height: auto;
+    margin: 15px 0;
+  }
+
+  /* Sourdough visual container - ensure no height constraint */
+  .scada-sourdough-visual {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  /* Sourdough card - no fixed height on mobile */
+  .scada-sourdough-card {
+    height: auto;
+    max-height: none;
+  }
+
+  /* Remove fixed height on sourdough/mushroom sections on mobile */
+  .scada-section.sourdough,
+  .scada-section.mushroom {
+    height: auto;
   }
 
   .scada-right-panel {
