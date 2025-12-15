@@ -242,13 +242,13 @@ export function MonitoringPage({
 
   const handleIncreaseTemp = () => {
     if (localTarget < maxTemp) {
-      setLocalTarget(prev => Math.min(maxTemp, prev + 0.5));
+      setLocalTarget(prev => Math.round(Math.min(maxTemp, prev + 0.1) * 10) / 10);
     }
   };
 
   const handleDecreaseTemp = () => {
     if (localTarget > minTemp) {
-      setLocalTarget(prev => Math.max(minTemp, prev - 0.5));
+      setLocalTarget(prev => Math.round(Math.max(minTemp, prev - 0.1) * 10) / 10);
     }
   };
 
