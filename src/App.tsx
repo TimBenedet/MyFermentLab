@@ -1,3 +1,4 @@
+// Build trigger: 2025-12-15T20:00
 import { useState, useEffect, useMemo } from 'react';
 import { HomePage } from './pages/HomePage';
 import { CreateProjectPage } from './pages/CreateProjectPage';
