@@ -1536,37 +1536,40 @@
     width: 100%;
   }
 
-  /* Koji visual container - make it column on mobile */
+  /* Koji visual container - same layout as sourdough */
   .scada-koji-visual {
     flex-direction: column;
     height: auto !important;
-    margin: 15px 0;
+    padding: 15px 20px 20px;
+    margin: 0;
     align-items: center;
     overflow: visible;
+    gap: 10px;
   }
 
   /* Koji container - keep chamber visualization tight */
   .scada-koji-visual .scada-koji-container {
     order: 0;
+    flex-shrink: 0;
   }
 
-  /* Ensure koji display below the chamber */
+  /* Ensure koji display below the chamber - same as sourdough */
   .scada-koji-visual .scada-koji-display {
     position: relative;
-    width: 100%;
+    width: auto;
     display: flex;
     justify-content: center;
-    margin-top: 10px;
-    order: 2;
+    margin-top: 0;
+    order: 1;
   }
 
   /* Badge after temperature - full width like Levain */
   .scada-koji-visual .scada-status-badge.mobile-only {
     display: inline-flex !important;
     justify-content: center;
-    margin-top: 20px;
+    margin-top: 10px;
     width: 100%;
-    order: 3;
+    order: 2;
   }
 
   /* Koji chamber card - allow height to expand on mobile */
