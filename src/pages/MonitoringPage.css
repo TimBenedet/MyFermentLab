@@ -1538,20 +1538,20 @@
 
   /* Koji visual container - exactly same as sourdough */
   .scada-koji-visual {
-    flex-direction: column;
+    flex-direction: column !important;
     height: auto !important;
-    padding: 15px;
-    margin: 0;
-    align-items: stretch;
-    overflow: visible;
-    gap: 10px;
-    min-height: auto;
+    padding: 15px !important;
+    margin: 0 !important;
+    align-items: stretch !important;
+    overflow: visible !important;
+    gap: 10px !important;
+    min-height: auto !important;
   }
 
   /* Koji container - center the chamber */
   .scada-koji-visual .scada-koji-container {
     flex-shrink: 0;
-    align-self: center;
+    align-self: center !important;
   }
 
   /* Koji display - center the temperature */
@@ -1560,7 +1560,7 @@
     display: flex;
     justify-content: center;
     margin-top: 5px;
-    align-self: center;
+    align-self: center !important;
   }
 
   /* Koji chamber card - allow height to expand on mobile */
