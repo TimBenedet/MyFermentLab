@@ -417,6 +417,12 @@ export function MonitoringPage({
                         <div className="scada-display-label">Temp.</div>
                       </div>
                     </div>
+
+                    {/* Mobile only: Status badge inside card */}
+                    <div className={`scada-status-badge mobile-only ${status.class}`}>
+                      <span className="led"></span>
+                      Etat : {status.text}
+                    </div>
                   </div>
                 </div>
               ) : project.fermentationType === 'sourdough' ? (
@@ -476,6 +482,12 @@ export function MonitoringPage({
                         <div className="scada-display-value temp">{project.currentTemperature.toFixed(1)}°C</div>
                         <div className="scada-display-label">Temp.</div>
                       </div>
+                    </div>
+
+                    {/* Mobile only: Status badge inside card */}
+                    <div className={`scada-status-badge mobile-only ${status.class}`}>
+                      <span className="led"></span>
+                      Etat : {status.text}
                     </div>
                   </div>
                 </div>

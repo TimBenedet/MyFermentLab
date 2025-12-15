@@ -499,6 +499,11 @@
   border-color: rgba(59, 130, 246, 0.3);
 }
 
+/* Hide mobile-only elements on desktop */
+.scada-status-badge.mobile-only {
+  display: none;
+}
+
 .scada-metrics-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1518,26 +1523,42 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* Move status badge to bottom on mobile */
-  .scada-metrics-panel {
-    display: flex;
-    flex-direction: column;
+  /* Hide original status badge in metrics panel on mobile */
+  .scada-metrics-panel > .scada-status-badge {
+    display: none;
   }
 
-  .scada-status-badge {
-    order: 2;
-    margin-bottom: 0;
+  /* Show status badge inside visualization card on mobile */
+  .scada-status-badge.mobile-only {
+    display: inline-flex;
     margin-top: 16px;
-    align-self: stretch;
-    justify-content: center;
-  }
-
-  .scada-metrics-row {
-    order: 1;
+    align-self: center;
   }
 
   .scada-right-panel {
     grid-template-columns: 1fr;
+  }
+
+  /* Compact koji header on mobile */
+  .scada-koji-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .scada-koji-header .scada-koji-status {
+    align-self: flex-start;
+  }
+
+  /* Compact sourdough header on mobile */
+  .scada-sourdough-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .scada-sourdough-header .scada-sourdough-status {
+    align-self: flex-start;
   }
 }
 
