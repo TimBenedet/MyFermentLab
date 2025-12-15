@@ -22,6 +22,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [showHealthFromLogin, setShowHealthFromLogin] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // États
   const [projects, setProjects] = useState<Project[]>([]);
@@ -456,38 +457,62 @@ function App() {
           <div className="scada-logo-icon">🧪</div>
           <div className="scada-logo-text">MyFerment<span>Lab</span></div>
         </div>
-        <div className="scada-header-actions">
+
+        {/* Mobile: Back button in header when not on home */}
+        {currentPage !== 'home' && (
+          <button className="scada-header-btn mobile-back-btn" onClick={() => setCurrentPage('home')}>
+            ← Accueil
+          </button>
+        )}
+
+        {/* Mobile hamburger menu button */}
+        {currentPage === 'home' && (
+          <button
+            className="mobile-menu-toggle"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Menu"
+          >
+            <span className={`hamburger ${mobileMenuOpen ? 'open' : ''}`}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+        )}
+
+        <div className={`scada-header-actions ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           {currentPage === 'home' && (
             <>
               <div className="scada-system-status">
                 <div className="scada-status-dot"></div>
                 <span>Systèmes opérationnels</span>
               </div>
-              <button className="scada-header-btn" onClick={() => setCurrentPage('devices')}>
+              <button className="scada-header-btn" onClick={() => { setCurrentPage('devices'); setMobileMenuOpen(false); }}>
                 <span>⚙️</span>
                 Appareils
               </button>
-              <button className="scada-header-btn" onClick={() => setCurrentPage('stats')}>
+              <button className="scada-header-btn" onClick={() => { setCurrentPage('stats'); setMobileMenuOpen(false); }}>
                 <span>📊</span>
                 Statistiques
               </button>
-              <button className="scada-header-btn" onClick={() => setCurrentPage('labels')}>
+              <button className="scada-header-btn" onClick={() => { setCurrentPage('labels'); setMobileMenuOpen(false); }}>
                 <span>🏷️</span>
                 Étiquettes
               </button>
               {role === 'admin' && (
-                <button className="scada-header-btn primary" onClick={() => setCurrentPage('create-project')}>
+                <button className="scada-header-btn primary" onClick={() => { setCurrentPage('create-project'); setMobileMenuOpen(false); }}>
                   <span>+</span>
                   Nouveau projet
                 </button>
               )}
-              <button className="scada-header-btn" onClick={logout}>
+              <button className="scada-header-btn" onClick={() => { logout(); setMobileMenuOpen(false); }}>
                 Déconnexion
               </button>
             </>
           )}
+          {/* Desktop only: back button */}
           {currentPage !== 'home' && (
-            <button className="scada-header-btn" onClick={() => setCurrentPage('home')}>
+            <button className="scada-header-btn desktop-back-btn" onClick={() => setCurrentPage('home')}>
               ← Accueil
             </button>
           )}
