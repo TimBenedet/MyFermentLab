@@ -145,7 +145,6 @@
   border-radius: 10px;
   padding: 10px;
   cursor: pointer;
-  margin-left: auto;
 }
 
 .hamburger {
@@ -188,12 +187,14 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 1.2rem;
+  width: 46px;
+  height: 46px;
+  font-size: 1.3rem;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
   margin-left: auto;
+  margin-right: 8px;
 }
 
 .mobile-refresh-btn:hover {
