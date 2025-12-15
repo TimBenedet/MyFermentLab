@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Project, Device, FERMENTATION_TYPES } from '../../src/types';
 import { apiService } from '../../src/services/api.service';
+import { MobileChart } from '../components/MobileChart';
 
 interface MonitoringPageProps {
   project: Project;
@@ -29,7 +30,7 @@ export function MonitoringPage({
   role
 }: MonitoringPageProps) {
   const [localTarget, setLocalTarget] = useState(project.targetTemperature);
-  const [activeTab, setActiveTab] = useState<'control' | 'history'>('control');
+  const [activeTab, setActiveTab] = useState<'control' | 'charts' | 'history'>('control');
   const [outletHistory, setOutletHistory] = useState<OutletHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [liveTemp, setLiveTemp] = useState<number | null>(null);
@@ -186,6 +187,12 @@ export function MonitoringPage({
           Contrôle
         </button>
         <button
+          className={`tab-btn ${activeTab === 'charts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('charts')}
+        >
+          Graphiques
+        </button>
+        <button
           className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
         >
@@ -195,7 +202,14 @@ export function MonitoringPage({
 
       {/* Tab Content */}
       <div className="tab-content">
-        {activeTab === 'control' ? (
+        {activeTab === 'charts' ? (
+          <MobileChart
+            temperatureData={project.history || []}
+            densityData={project.densityHistory}
+            targetTemperature={project.targetTemperature}
+            type={project.fermentationType}
+          />
+        ) : activeTab === 'control' ? (
           <div className="control-panel">
             <h3>Température cible</h3>
             <div className="target-control">
