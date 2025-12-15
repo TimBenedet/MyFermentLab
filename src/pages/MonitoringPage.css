@@ -1548,17 +1548,34 @@
     min-height: auto !important;
   }
 
-  /* Koji container - center the chamber */
+  /* Koji container - reduce size on mobile like sourdough */
   .scada-koji-visual .scada-koji-container {
+    width: 160px !important;
+    height: 145px !important;
     flex-shrink: 0;
+  }
+
+  /* Koji lid - smaller on mobile */
+  .scada-koji-visual .scada-koji-lid {
+    width: 175px !important;
+    height: 36px !important;
+  }
+
+  /* Koji body - smaller on mobile */
+  .scada-koji-visual .scada-koji-body {
+    height: 112px !important;
   }
 
   /* Koji display - center the temperature */
   .scada-koji-visual .scada-koji-display {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    margin-top: 5px;
+    position: relative !important;
+    display: flex !important;
+    justify-content: center !important;
+    margin-top: 5px !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    transform: none !important;
   }
 
   /* Koji badge - full width like sourdough */
