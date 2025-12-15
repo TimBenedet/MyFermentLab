@@ -1580,16 +1580,20 @@
 
   /* Koji badge - full width like sourdough */
   .scada-koji-visual .scada-status-badge.mobile-only {
+    display: flex !important;
     width: 100% !important;
     max-width: none !important;
     box-sizing: border-box !important;
+    justify-content: center !important;
   }
 
   /* Sourdough badge - ensure full width */
   .scada-sourdough-visual .scada-status-badge.mobile-only {
+    display: flex !important;
     width: 100% !important;
     max-width: none !important;
     box-sizing: border-box !important;
+    justify-content: center !important;
   }
 
   /* Koji chamber card - allow height to expand on mobile */
@@ -2180,23 +2184,28 @@
 
 /* Koji Header */
 .scada-koji-header {
+  padding: 16px 20px;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
   position: relative;
   z-index: 1;
 }
 
 .scada-koji-name {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
 }
 
 .scada-koji-type {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
-  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 /* Koji Status Badge */
