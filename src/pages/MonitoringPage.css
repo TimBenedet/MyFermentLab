@@ -1515,7 +1515,25 @@
   }
 
   .scada-metrics-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Move status badge to bottom on mobile */
+  .scada-metrics-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scada-status-badge {
+    order: 2;
+    margin-bottom: 0;
+    margin-top: 16px;
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .scada-metrics-row {
+    order: 1;
   }
 
   .scada-right-panel {
