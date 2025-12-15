@@ -1,4 +1,4 @@
-export type FermentationType = 'beer' | 'koji' | 'kombucha' | 'mead' | 'cheese' | 'mushroom';
+export type FermentationType = 'beer' | 'koji' | 'kombucha' | 'mead' | 'cheese' | 'mushroom' | 'sourdough';
 
 export interface TemperatureReading {
   timestamp: number;
@@ -313,7 +313,8 @@ export const FERMENTATION_TYPES = {
   kombucha: { name: 'Kombucha', icon: '🍵', color: '#9D7EDB', minTemp: 18, maxTemp: 45 },
   mead: { name: 'Hydromel', icon: '🍯', color: '#E74856', minTemp: 18, maxTemp: 45 },
   cheese: { name: 'Fromage', icon: '🧀', color: '#E9B54D', minTemp: 18, maxTemp: 45 },
-  mushroom: { name: 'Champignon', icon: '🍄', color: '#8B4513', minTemp: 18, maxTemp: 30 }
+  mushroom: { name: 'Champignon', icon: '🍄', color: '#8B4513', minTemp: 18, maxTemp: 30 },
+  sourdough: { name: 'Levain', icon: '🍞', color: '#D4A574', minTemp: 20, maxTemp: 35 }
 } as const;
 
 // Styles de bière courants

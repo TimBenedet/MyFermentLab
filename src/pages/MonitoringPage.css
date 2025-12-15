@@ -2274,6 +2274,328 @@
 }
 
 /* ================================================
+   SCADA SOURDOUGH / LEVAIN JAR VISUALIZATION
+   ================================================ */
+
+.scada-sourdough-card {
+  flex: 0 0 280px;
+  background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-secondary) 100%);
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  overflow: hidden;
+  position: relative;
+  transition: all 0.4s ease;
+}
+
+.scada-sourdough-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #D4A574, #e8c574);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.scada-sourdough-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 40px rgba(212, 165, 116, 0.15);
+}
+
+.scada-sourdough-card:hover::before {
+  opacity: 1;
+}
+
+.scada-sourdough-card.active {
+  border-color: rgba(212, 165, 116, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 30px rgba(212, 165, 116, 0.1);
+}
+
+.scada-sourdough-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+}
+
+.scada-sourdough-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.scada-sourdough-type {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+.scada-sourdough-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(212, 165, 116, 0.1);
+  color: #D4A574;
+}
+
+.scada-sourdough-status .led {
+  width: 8px;
+  height: 8px;
+  background: #D4A574;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #D4A574;
+  animation: sourdough-led-pulse 2s ease-in-out infinite;
+}
+
+.scada-sourdough-status.active {
+  background: rgba(212, 165, 116, 0.15);
+  color: #e8c574;
+}
+
+@keyframes sourdough-led-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 10px #D4A574; }
+  50% { opacity: 0.6; box-shadow: 0 0 5px #D4A574; }
+}
+
+.scada-sourdough-visual {
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  min-height: 280px;
+}
+
+.scada-sourdough-container {
+  position: relative;
+  width: 160px;
+  height: 200px;
+}
+
+/* Jar lid */
+.scada-sourdough-lid {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 25px;
+  z-index: 3;
+}
+
+.scada-lid-rim {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 12px;
+  background: linear-gradient(90deg, #5a4535 0%, #8b7355 30%, #a08060 50%, #8b7355 70%, #5a4535 100%);
+  border-radius: 0 0 4px 4px;
+  border: 2px solid #4a3525;
+  border-top: none;
+}
+
+.scada-lid-top {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 16px;
+  background: linear-gradient(180deg, #a08060 0%, #8b7355 50%, #6b5545 100%);
+  border-radius: 8px 8px 0 0;
+  border: 2px solid #5a4535;
+  border-bottom: none;
+}
+
+/* Jar body */
+.scada-sourdough-jar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 175px;
+}
+
+.scada-jar-glass {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 165px;
+  background: linear-gradient(90deg,
+    rgba(180, 200, 220, 0.08) 0%,
+    rgba(220, 240, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(220, 240, 255, 0.15) 80%,
+    rgba(180, 200, 220, 0.08) 100%
+  );
+  border-radius: 0 0 20px 20px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top: none;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 30px rgba(255, 255, 255, 0.05),
+    0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Level marks on jar */
+.scada-jar-marks {
+  position: absolute;
+  right: 8px;
+  top: 10px;
+  bottom: 20px;
+  z-index: 2;
+}
+
+.scada-jar-mark {
+  position: absolute;
+  width: 12px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 1px;
+}
+
+/* Starter content */
+.scada-starter-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg,
+    #f0e6d6 0%,
+    #e8dcc8 15%,
+    #d4c4a8 40%,
+    #c4b498 70%,
+    #b4a488 100%
+  );
+  border-radius: 0 0 17px 17px;
+  transition: height 0.8s ease;
+  overflow: hidden;
+}
+
+/* Surface dome effect */
+.scada-starter-surface {
+  position: absolute;
+  top: -5px;
+  left: 5px;
+  right: 5px;
+  height: 25px;
+  overflow: hidden;
+}
+
+.scada-starter-dome {
+  width: 100%;
+  height: 50px;
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    #f5efe5 20%,
+    #e8dcc8 60%,
+    transparent 100%
+  );
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  animation: sourdough-dome-breathe 4s ease-in-out infinite;
+}
+
+@keyframes sourdough-dome-breathe {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.15); }
+}
+
+/* Starter body with texture */
+.scada-starter-body {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 30% 20% at 20% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 70%),
+    radial-gradient(ellipse 25% 15% at 70% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%),
+    radial-gradient(ellipse 20% 25% at 40% 70%, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+}
+
+/* Bubbles in starter */
+.scada-starter-bubbles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.scada-starter-bubble {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  animation: sourdough-bubble-rise 4s ease-in-out infinite;
+}
+
+.scada-starter-bubble:nth-child(1) { left: 15%; bottom: 20%; width: 8px; height: 8px; animation-delay: 0s; }
+.scada-starter-bubble:nth-child(2) { left: 30%; bottom: 40%; width: 6px; height: 6px; animation-delay: 0.5s; }
+.scada-starter-bubble:nth-child(3) { left: 50%; bottom: 15%; width: 10px; height: 10px; animation-delay: 1s; }
+.scada-starter-bubble:nth-child(4) { left: 65%; bottom: 35%; width: 7px; height: 7px; animation-delay: 1.5s; }
+.scada-starter-bubble:nth-child(5) { left: 80%; bottom: 25%; width: 5px; height: 5px; animation-delay: 2s; }
+.scada-starter-bubble:nth-child(6) { left: 25%; bottom: 55%; width: 6px; height: 6px; animation-delay: 2.5s; }
+.scada-starter-bubble:nth-child(7) { left: 70%; bottom: 60%; width: 8px; height: 8px; animation-delay: 3s; }
+.scada-starter-bubble:nth-child(8) { left: 45%; bottom: 45%; width: 5px; height: 5px; animation-delay: 3.5s; }
+
+@keyframes sourdough-bubble-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(-15px) scale(1.1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-30px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* Temperature display */
+.scada-sourdough-display {
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-primary) 100%);
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  display: flex;
+  gap: 20px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+  z-index: 5;
+}
+
+/* Responsive adjustments for sourdough jar */
+@media (max-width: 900px) {
+  .scada-sourdough-card {
+    flex: none;
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+/* ================================================
    SCADA OUTLET CONTROL WITH TABS
    ================================================ */
 

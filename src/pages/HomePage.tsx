@@ -91,6 +91,29 @@ const MiniWine = ({ level = 70 }: { level?: number }) => (
   </div>
 );
 
+// Mini Sourdough jar visualization for levain
+const MiniSourdough = ({ level = 60 }: { level?: number }) => (
+  <div className="mini-sourdough">
+    <div className="mini-sourdough-lid"></div>
+    <div className="mini-sourdough-jar">
+      <div className="mini-sourdough-starter" style={{ height: `${level}%` }}>
+        <div className="mini-sourdough-bubbles">
+          <div className="mini-sourdough-bubble"></div>
+          <div className="mini-sourdough-bubble"></div>
+          <div className="mini-sourdough-bubble"></div>
+          <div className="mini-sourdough-bubble"></div>
+        </div>
+        <div className="mini-sourdough-surface"></div>
+      </div>
+      <div className="mini-sourdough-marks">
+        <div className="mini-sourdough-mark"></div>
+        <div className="mini-sourdough-mark"></div>
+        <div className="mini-sourdough-mark"></div>
+      </div>
+    </div>
+  </div>
+);
+
 // Particles background component
 const ParticlesBackground = () => {
   useEffect(() => {
@@ -208,6 +231,7 @@ export function HomePage({
       case 'mead': return 'wine';
       case 'kombucha': return 'beer';
       case 'cheese': return 'koji';
+      case 'sourdough': return 'sourdough';
       default: return 'beer';
     }
   };
@@ -224,6 +248,8 @@ export function HomePage({
         return <MiniTent />;
       case 'mead':
         return <MiniWine level={70} />;
+      case 'sourdough':
+        return <MiniSourdough level={65} />;
       default:
         return <MiniTank />;
     }

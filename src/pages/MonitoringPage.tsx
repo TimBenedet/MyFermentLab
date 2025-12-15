@@ -262,6 +262,7 @@ export function MonitoringPage({
       case 'koji': return 'koji';
       case 'mushroom': return 'mushroom';
       case 'mead': return 'mead';
+      case 'sourdough': return 'sourdough';
       default: return '';
     }
   };
@@ -292,7 +293,7 @@ export function MonitoringPage({
               </div>
             </div>
 
-            <div className={project.fermentationType === 'mushroom' || project.fermentationType === 'koji' ? 'scada-chamber-layout' : 'scada-tank-layout'}>
+            <div className={project.fermentationType === 'mushroom' || project.fermentationType === 'koji' || project.fermentationType === 'sourdough' ? 'scada-chamber-layout' : 'scada-tank-layout'}>
               {/* Mushroom Grow Chamber visualization */}
               {project.fermentationType === 'mushroom' ? (
                 <div className="scada-chamber-card active">
@@ -406,6 +407,66 @@ export function MonitoringPage({
                     </div>
 
                     <div className="scada-koji-display">
+                      <div className="scada-display-item">
+                        <div className="scada-display-value temp">{project.currentTemperature.toFixed(1)}°C</div>
+                        <div className="scada-display-label">Temp.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : project.fermentationType === 'sourdough' ? (
+                /* Sourdough/Levain jar visualization */
+                <div className="scada-sourdough-card active">
+                  <div className="scada-sourdough-header">
+                    <div>
+                      <div className="scada-sourdough-name">{project.name}</div>
+                      <div className="scada-sourdough-type">{config.name}</div>
+                    </div>
+                    <div className="scada-sourdough-status active">
+                      <span className="led"></span>
+                      Fermentation active
+                    </div>
+                  </div>
+
+                  <div className="scada-sourdough-visual">
+                    <div className="scada-sourdough-container">
+                      {/* Jar lid */}
+                      <div className="scada-sourdough-lid">
+                        <div className="scada-lid-rim"></div>
+                        <div className="scada-lid-top"></div>
+                      </div>
+                      {/* Jar body */}
+                      <div className="scada-sourdough-jar">
+                        <div className="scada-jar-glass">
+                          {/* Level marks */}
+                          <div className="scada-jar-marks">
+                            <div className="scada-jar-mark" style={{ bottom: '75%' }}></div>
+                            <div className="scada-jar-mark" style={{ bottom: '50%' }}></div>
+                            <div className="scada-jar-mark" style={{ bottom: '25%' }}></div>
+                          </div>
+                          {/* Starter content */}
+                          <div className="scada-starter-content" style={{ height: `${liquidLevel}%` }}>
+                            <div className="scada-starter-surface">
+                              <div className="scada-starter-dome"></div>
+                            </div>
+                            <div className="scada-starter-body">
+                              <div className="scada-starter-bubbles">
+                                <div className="scada-starter-bubble"></div>
+                                <div className="scada-starter-bubble"></div>
+                                <div className="scada-starter-bubble"></div>
+                                <div className="scada-starter-bubble"></div>
+                                <div className="scada-starter-bubble"></div>
+                                <div className="scada-starter-bubble"></div>
+                                <div className="scada-starter-bubble"></div>
+                                <div className="scada-starter-bubble"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="scada-sourdough-display">
                       <div className="scada-display-item">
                         <div className="scada-display-value temp">{project.currentTemperature.toFixed(1)}°C</div>
                         <div className="scada-display-label">Temp.</div>
