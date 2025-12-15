@@ -1974,6 +1974,7 @@
   .scada-system-status {
     width: 100%;
     justify-content: center;
+    border-radius: 12px;
   }
 
   .scada-system-status span {
