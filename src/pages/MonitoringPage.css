@@ -2288,6 +2288,10 @@
   overflow: hidden;
   position: relative;
   transition: all 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 420px;
 }
 
 .scada-sourdough-card::before {
@@ -2373,30 +2377,32 @@
 }
 
 .scada-sourdough-visual {
-  padding: 20px 20px 15px;
+  padding: 15px 20px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   position: relative;
-  height: calc(100% - 60px);
-  justify-content: center;
+  flex: 1;
+  justify-content: space-between;
+  overflow: hidden;
 }
 
 .scada-sourdough-container {
   position: relative;
-  width: 160px;
-  height: 200px;
+  width: 150px;
+  height: 180px;
+  flex-shrink: 0;
 }
 
 /* Jar lid - positioned to overlap jar opening */
 .scada-sourdough-lid {
   position: absolute;
-  top: 15px;
+  top: 12px;
   left: 50%;
   transform: translateX(-50%);
-  width: 150px;
-  height: 38px;
+  width: 140px;
+  height: 35px;
   z-index: 10;
 }
 
@@ -2405,8 +2411,8 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 150px;
-  height: 18px;
+  width: 140px;
+  height: 16px;
   background: linear-gradient(90deg,
     #2a1808 0%,
     #4a3525 10%,
@@ -2431,8 +2437,8 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 130px;
-  height: 22px;
+  width: 120px;
+  height: 20px;
   background: linear-gradient(180deg,
     #b09585 0%,
     #9a8575 20%,
@@ -2469,8 +2475,8 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 150px;
-  height: 175px;
+  width: 140px;
+  height: 158px;
 }
 
 .scada-jar-glass {
@@ -2478,8 +2484,8 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 140px;
-  height: 165px;
+  width: 130px;
+  height: 150px;
   background: linear-gradient(90deg,
     rgba(100, 140, 170, 0.15) 0%,
     rgba(150, 200, 230, 0.22) 10%,
@@ -2682,15 +2688,16 @@
 /* Temperature display */
 .scada-sourdough-display {
   position: relative;
-  margin-top: 10px;
+  margin-top: auto;
   background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-primary) 100%);
-  padding: 10px 20px;
-  border-radius: 12px;
+  padding: 8px 18px;
+  border-radius: 10px;
   border: 2px solid var(--border);
   display: flex;
-  gap: 20px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+  gap: 16px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
   z-index: 5;
+  flex-shrink: 0;
 }
 
 /* Responsive adjustments for sourdough jar */
