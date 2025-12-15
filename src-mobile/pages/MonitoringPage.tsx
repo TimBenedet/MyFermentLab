@@ -82,12 +82,14 @@ export function MonitoringPage({
   const getStatusInfo = () => {
     const temp = liveTemp ?? project.currentTemperature;
     const diff = temp - project.targetTemperature;
-    if (Math.abs(diff) <= 0.5) {
+
+    // Le statut principal indique si le chauffage est actif ou non
+    if (project.outletActive) {
+      return { text: 'Chauffage actif', class: 'status-hot' };
+    } else if (Math.abs(diff) <= 0.5) {
       return { text: 'Stable', class: 'status-stable' };
-    } else if (diff > 0) {
-      return { text: 'Chauffage', class: 'status-hot' };
     } else {
-      return { text: 'Refroidissement', class: 'status-cold' };
+      return { text: 'En attente', class: 'status-cold' };
     }
   };
 
