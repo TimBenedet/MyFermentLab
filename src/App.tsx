@@ -276,6 +276,21 @@ function App() {
     }
   };
 
+  const handleRefreshProjectTemperature = async (projectId: string) => {
+    try {
+      const data = await apiService.getLiveTemperature(projectId);
+      // Mettre à jour la température du projet
+      setProjects(prev => prev.map(p =>
+        p.id === projectId ? { ...p, currentTemperature: data.temperature, outletActive: data.outletChanged !== undefined ? !p.outletActive : p.outletActive } : p
+      ));
+      if (selectedProjectId === projectId) {
+        setSelectedProject(prev => prev ? { ...prev, currentTemperature: data.temperature } : null);
+      }
+    } catch (err) {
+      console.error('Failed to refresh project temperature:', err);
+    }
+  };
+
   const handleUpdateProject = async (projectId: string, data: {
     name?: string;
     fermentationType?: FermentationType;
@@ -571,6 +586,7 @@ function App() {
             onDeleteProject={handleDeleteProject}
             onStartBrewing={handleStartBrewing}
             onUpdateProject={handleUpdateProject}
+            onRefreshProject={handleRefreshProjectTemperature}
             onManageDevices={() => setCurrentPage('devices')}
             onLabelGenerator={() => setCurrentPage('labels')}
             onViewStats={() => setCurrentPage('stats')}
