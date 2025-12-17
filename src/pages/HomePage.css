@@ -153,9 +153,12 @@
 .scada-project-header {
   padding: 24px 24px 0;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+
+.scada-project-header .scada-status-badge {
+  margin-left: auto;
 }
 
 .scada-project-type-icon {
@@ -187,7 +190,7 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-left: -20px;
+  flex-shrink: 0;
 }
 
 .scada-refresh-btn:hover {

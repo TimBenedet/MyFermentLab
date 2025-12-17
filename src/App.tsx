@@ -279,9 +279,9 @@ function App() {
   const handleRefreshProjectTemperature = async (projectId: string) => {
     try {
       const data = await apiService.getLiveTemperature(projectId);
-      // Mettre à jour la température du projet
+      // Mettre à jour seulement la température du projet (pas l'état de la prise)
       setProjects(prev => prev.map(p =>
-        p.id === projectId ? { ...p, currentTemperature: data.temperature, outletActive: data.outletChanged !== undefined ? !p.outletActive : p.outletActive } : p
+        p.id === projectId ? { ...p, currentTemperature: data.temperature } : p
       ));
       if (selectedProjectId === projectId) {
         setSelectedProject(prev => prev ? { ...prev, currentTemperature: data.temperature } : null);
