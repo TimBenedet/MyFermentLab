@@ -282,22 +282,24 @@ export function HomePage({
       >
         <div className="scada-project-header">
           <div className="scada-project-type-icon">{config.icon}</div>
-          {!project.archived && (
-            <button
-              className={`scada-refresh-btn ${refreshingProjectId === project.id ? 'spinning' : ''}`}
-              onClick={(e) => { e.stopPropagation(); handleRefreshProject(project.id); }}
-              disabled={refreshingProjectId === project.id}
-              title="Rafraîchir la température"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 4 23 10 17 10"/>
-                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-              </svg>
-            </button>
-          )}
-          <div className={`scada-status-badge ${status.type}`}>
-            <span className="status-led"></span>
-            {status.text}
+          <div className="scada-project-header-right">
+            {!project.archived && (
+              <button
+                className={`scada-refresh-btn ${refreshingProjectId === project.id ? 'spinning' : ''}`}
+                onClick={(e) => { e.stopPropagation(); handleRefreshProject(project.id); }}
+                disabled={refreshingProjectId === project.id}
+                title="Rafraîchir la température"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+              </button>
+            )}
+            <div className={`scada-status-badge ${status.type}`}>
+              <span className="status-led"></span>
+              {status.text}
+            </div>
           </div>
         </div>
 
