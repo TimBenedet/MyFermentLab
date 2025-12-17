@@ -116,21 +116,51 @@ class SensorPollerService {
     const project = databaseService.getProject(projectId);
     if (!project) return;
 
-    // Si l'état doit changer
-    if (project.outletActive !== shouldActivate) {
-      console.log(`[SensorPoller] Project ${project.name}: Setting outlet to ${shouldActivate ? 'ON' : 'OFF'} at ${currentTemp}°C`);
+    const device = databaseService.getDevice(outletId);
+    if (!device) return;
 
-      const device = databaseService.getDevice(outletId);
-      if (device) {
-        try {
-          await this.controlOutlet(device, shouldActivate);
-          databaseService.updateProjectOutletStatus(projectId, shouldActivate);
-          // Enregistrer le changement d'état dans l'historique avec la température
-          await influxService.writeOutletState(projectId, shouldActivate, 'automatic', currentTemp);
-        } catch (error) {
-          console.error(`[SensorPoller] Failed to control outlet for ${project.name}:`, error);
-        }
+    // Synchroniser l'état réel de la prise depuis Home Assistant
+    const actualState = await this.getOutletState(device);
+    if (actualState !== null && actualState !== project.outletActive) {
+      console.log(`[SensorPoller] Project ${project.name}: Syncing outlet state from HA: ${actualState ? 'ON' : 'OFF'}`);
+      databaseService.updateProjectOutletStatus(projectId, actualState);
+    }
+
+    // Si l'état doit changer (comparer avec l'état réel, pas celui en base)
+    const currentState = actualState !== null ? actualState : project.outletActive;
+    if (currentState !== shouldActivate) {
+      console.log(`[SensorPoller] Project ${project.name}: Setting outlet to ${shouldActivate ? 'ON' : 'OFF'} at ${currentTemp}°C (target: ${targetTemp}°C)`);
+
+      try {
+        await this.controlOutlet(device, shouldActivate);
+        databaseService.updateProjectOutletStatus(projectId, shouldActivate);
+        // Enregistrer le changement d'état dans l'historique avec la température
+        await influxService.writeOutletState(projectId, shouldActivate, 'automatic', currentTemp);
+      } catch (error) {
+        console.error(`[SensorPoller] Failed to control outlet for ${project.name}:`, error);
       }
+    }
+  }
+
+  private async getOutletState(device: { ip?: string; entityId?: string }): Promise<boolean | null> {
+    try {
+      if (device.entityId) {
+        const url = `${HOME_ASSISTANT_URL}/api/states/${device.entityId}`;
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (HOME_ASSISTANT_TOKEN) {
+          headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
+        }
+
+        const response = await fetch(url, { headers });
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        return data.state === 'on';
+      }
+      return null;
+    } catch (error) {
+      console.error(`[SensorPoller] Error getting outlet state:`, error);
+      return null;
     }
   }
 
