@@ -164,6 +164,28 @@
   gap: 8px;
 }
 
+/* Refresh Toast */
+.scada-refresh-toast {
+  position: absolute;
+  right: 24px;
+  top: 60px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--accent);
+  white-space: nowrap;
+  z-index: 10;
+  animation: toast-fade-in 0.2s ease;
+}
+
+@keyframes toast-fade-in {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .scada-project-type-icon {
   width: 56px;
   height: 56px;

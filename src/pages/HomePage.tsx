@@ -154,6 +154,7 @@ export function HomePage({
   const [editName, setEditName] = useState('');
   const [editFermentationType, setEditFermentationType] = useState<FermentationType>('beer');
   const [refreshingProjectId, setRefreshingProjectId] = useState<string | null>(null);
+  const [refreshToast, setRefreshToast] = useState<{ message: string; projectId: string } | null>(null);
   const [editSensorId, setEditSensorId] = useState('');
   const [editOutletId, setEditOutletId] = useState('');
   const [saving, setSaving] = useState(false);
@@ -172,11 +173,22 @@ export function HomePage({
       : projects;
 
   const handleRefreshProject = async (projectId: string) => {
+    // Trouver le projet et son sensor pour afficher le toast
+    const project = projects.find(p => p.id === projectId);
+    const sensor = project ? devices.find(d => d.id === project.sensorId) : null;
+    const entityId = sensor?.entityId || 'unknown';
+
     setRefreshingProjectId(projectId);
+    setRefreshToast({ message: `Refresh ${entityId}`, projectId });
+
     try {
       await onRefreshProject(projectId);
     } finally {
       setRefreshingProjectId(null);
+      // Cacher le toast après 2 secondes
+      setTimeout(() => {
+        setRefreshToast(prev => prev?.projectId === projectId ? null : prev);
+      }, 2000);
     }
   };
 
@@ -283,6 +295,11 @@ export function HomePage({
         <div className="scada-project-header">
           <div className="scada-project-type-icon">{config.icon}</div>
           <div className="scada-project-header-right">
+            {refreshToast?.projectId === project.id && (
+              <div className="scada-refresh-toast">
+                {refreshToast.message}
+              </div>
+            )}
             {!project.archived && (
               <button
                 className={`scada-refresh-btn ${refreshingProjectId === project.id ? 'spinning' : ''}`}
