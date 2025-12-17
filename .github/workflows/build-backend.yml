@@ -2,7 +2,7 @@ name: Build and Push Backend
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, scada-redesign ]
     paths:
       - 'backend/**'
       - '.github/workflows/build-backend.yml'
@@ -36,7 +36,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest
+            # Pour la branche main/master: tag 'latest'
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+            # Pour la branche scada-redesign: tag 'scada'
+            type=raw,value=scada,enable=${{ github.ref == 'refs/heads/scada-redesign' }}
+            # Tag avec le SHA du commit
             type=sha,prefix={{branch}}-
 
       - name: Build and push Docker image
