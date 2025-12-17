@@ -430,10 +430,27 @@ router.get('/:id/live-temperature', async (req: Request, res: Response) => {
       const diff = project.targetTemperature - temperature;
       const shouldActivate = Math.abs(diff) > 0.2 && diff > 0;
 
-      // Si l'état doit changer
-      if (project.outletActive !== shouldActivate) {
-        const outletDevice = databaseService.getDevice(project.outletId);
-        if (outletDevice && outletDevice.entityId) {
+      const outletDevice = databaseService.getDevice(project.outletId);
+      if (outletDevice && outletDevice.entityId) {
+        // D'abord synchroniser l'état réel de la prise depuis Home Assistant
+        let currentOutletState = project.outletActive;
+        try {
+          const outletResponse = await fetch(`${HOME_ASSISTANT_URL}/api/states/${outletDevice.entityId}`, { headers });
+          if (outletResponse.ok) {
+            const outletData = await outletResponse.json();
+            currentOutletState = outletData.state === 'on';
+            // Mettre à jour la base si l'état réel diffère
+            if (currentOutletState !== project.outletActive) {
+              console.log(`[LiveTemp] Project ${project.name}: Syncing outlet state from HA: ${currentOutletState ? 'ON' : 'OFF'}`);
+              databaseService.updateProjectOutletStatus(id, currentOutletState);
+            }
+          }
+        } catch (err) {
+          console.error(`[LiveTemp] Failed to get outlet state for ${project.name}:`, err);
+        }
+
+        // Si l'état doit changer (comparer avec l'état réel)
+        if (currentOutletState !== shouldActivate) {
           try {
             const action = shouldActivate ? 'turn_on' : 'turn_off';
             const domain = outletDevice.entityId.split('.')[0];
@@ -447,7 +464,7 @@ router.get('/:id/live-temperature', async (req: Request, res: Response) => {
             databaseService.updateProjectOutletStatus(id, shouldActivate);
             await influxService.writeOutletState(id, shouldActivate, 'automatic', temperature);
             outletChanged = true;
-            console.log(`[LiveTemp] Project ${project.name}: Setting outlet to ${shouldActivate ? 'ON' : 'OFF'} at ${temperature}°C`);
+            console.log(`[LiveTemp] Project ${project.name}: Setting outlet to ${shouldActivate ? 'ON' : 'OFF'} at ${temperature}°C (target: ${project.targetTemperature}°C)`);
           } catch (err) {
             console.error(`[LiveTemp] Failed to control outlet for ${project.name}:`, err);
           }
