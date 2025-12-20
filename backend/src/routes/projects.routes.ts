@@ -428,7 +428,7 @@ router.get('/:id/live-temperature', async (req: Request, res: Response) => {
     let outletChanged = false;
     if (project.controlMode === 'automatic' && project.outletId) {
       const diff = project.targetTemperature - temperature;
-      const shouldActivate = Math.abs(diff) > 0.2 && diff > 0;
+      const shouldActivate = Math.abs(diff) > 0.5 && diff > 0;
 
       const outletDevice = databaseService.getDevice(project.outletId);
       if (outletDevice && outletDevice.entityId) {

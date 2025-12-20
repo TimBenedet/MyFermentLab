@@ -111,7 +111,7 @@ class SensorPollerService {
 
   private async manageOutlet(projectId: string, currentTemp: number, targetTemp: number, outletId: string) {
     const diff = targetTemp - currentTemp;
-    const shouldActivate = Math.abs(diff) > 0.2 && diff > 0;
+    const shouldActivate = Math.abs(diff) > 0.5 && diff > 0;
 
     const project = databaseService.getProject(projectId);
     if (!project) return;
