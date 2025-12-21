@@ -325,6 +325,44 @@
   left: 0;
   right: 0;
   transition: height 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* Bubbles in silo */
+.scada-silo-bubbles {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+}
+
+.scada-silo-bubble {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  animation: scada-bubble-rise 4s infinite ease-in;
+}
+
+.scada-silo-bubble:nth-child(1) { left: 10%; width: 8px; height: 8px; animation-delay: 0s; animation-duration: 3.5s; }
+.scada-silo-bubble:nth-child(2) { left: 25%; width: 6px; height: 6px; animation-delay: 0.8s; animation-duration: 4s; }
+.scada-silo-bubble:nth-child(3) { left: 45%; width: 10px; height: 10px; animation-delay: 1.6s; animation-duration: 3.8s; }
+.scada-silo-bubble:nth-child(4) { left: 65%; width: 5px; height: 5px; animation-delay: 0.4s; animation-duration: 4.2s; }
+.scada-silo-bubble:nth-child(5) { left: 80%; width: 7px; height: 7px; animation-delay: 2.2s; animation-duration: 3.6s; }
+.scada-silo-bubble:nth-child(6) { left: 55%; width: 6px; height: 6px; animation-delay: 1.2s; animation-duration: 4.5s; }
+
+@keyframes scada-bubble-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-140px) scale(0.4);
+    opacity: 0;
+  }
 }
 
 .scada-silo-liquid.beer {

@@ -42,7 +42,15 @@ const MiniTank = ({ level = 70 }: { level?: number }) => (
         <div className="mini-rivet"></div>
         <div className="mini-rivet"></div>
       </div>
-      <div className="mini-silo-liquid" style={{ height: `${level}%` }}></div>
+      <div className="mini-silo-liquid" style={{ height: `${level}%` }}>
+        <div className="mini-silo-bubbles">
+          <div className="mini-silo-bubble"></div>
+          <div className="mini-silo-bubble"></div>
+          <div className="mini-silo-bubble"></div>
+          <div className="mini-silo-bubble"></div>
+          <div className="mini-silo-bubble"></div>
+        </div>
+      </div>
     </div>
     <div className="mini-silo-base"></div>
   </div>

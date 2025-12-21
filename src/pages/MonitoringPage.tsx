@@ -522,7 +522,16 @@ export function MonitoringPage({
                         <div
                           className={`scada-silo-liquid ${typeClass}`}
                           style={{ height: `${liquidLevel}%` }}
-                        ></div>
+                        >
+                          <div className="scada-silo-bubbles">
+                            <div className="scada-silo-bubble"></div>
+                            <div className="scada-silo-bubble"></div>
+                            <div className="scada-silo-bubble"></div>
+                            <div className="scada-silo-bubble"></div>
+                            <div className="scada-silo-bubble"></div>
+                            <div className="scada-silo-bubble"></div>
+                          </div>
+                        </div>
                       </div>
                       <div className="scada-silo-base"></div>
                     </div>

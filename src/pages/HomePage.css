@@ -417,6 +417,43 @@
     #b7791f 100%
   );
   transition: height 0.5s ease;
+  overflow: hidden;
+}
+
+/* Bubbles in silo */
+.mini-silo-bubbles {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+}
+
+.mini-silo-bubble {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: silo-bubble-rise 3s infinite ease-in;
+}
+
+.mini-silo-bubble:nth-child(1) { left: 15%; width: 4px; height: 4px; animation-delay: 0s; animation-duration: 2.5s; }
+.mini-silo-bubble:nth-child(2) { left: 35%; width: 3px; height: 3px; animation-delay: 0.7s; animation-duration: 3s; }
+.mini-silo-bubble:nth-child(3) { left: 55%; width: 5px; height: 5px; animation-delay: 1.4s; animation-duration: 2.8s; }
+.mini-silo-bubble:nth-child(4) { left: 75%; width: 3px; height: 3px; animation-delay: 0.3s; animation-duration: 3.2s; }
+.mini-silo-bubble:nth-child(5) { left: 45%; width: 4px; height: 4px; animation-delay: 2s; animation-duration: 2.6s; }
+
+@keyframes silo-bubble-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-50px) scale(0.5);
+    opacity: 0;
+  }
 }
 
 .mini-silo-base {
