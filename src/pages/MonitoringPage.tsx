@@ -492,7 +492,7 @@ export function MonitoringPage({
                   </div>
                 </div>
               ) : (
-                /* Tank visualization for beer/mead */
+                /* Tank visualization for beer/mead - Cylindro-conique */
                 <div className={`scada-tank-card active ${typeClass}`}>
                   <div className="scada-tank-header">
                     <div>
@@ -502,26 +502,30 @@ export function MonitoringPage({
                   </div>
 
                   <div className="scada-tank-visual">
-                    <div className="scada-tank-container">
-                      <div className="scada-tank-neck"></div>
+                    <div className="scada-tank-cylindro">
+                      <div className="scada-tank-manhole"></div>
+                      <div className="scada-tank-dome"></div>
                       <div className="scada-tank-body">
                         <div
                           className={`scada-tank-liquid ${typeClass}`}
                           style={{ height: `${liquidLevel}%` }}
                         >
-                          <div className="scada-liquid-surface">
-                            <div className="scada-wave"></div>
-                          </div>
-                          <div className="scada-foam"></div>
+                          <div className="scada-liquid-shine"></div>
                           <div className="scada-bubbles">
-                            <div className="scada-bubble"></div>
-                            <div className="scada-bubble"></div>
-                            <div className="scada-bubble"></div>
                             <div className="scada-bubble"></div>
                             <div className="scada-bubble"></div>
                             <div className="scada-bubble"></div>
                           </div>
                         </div>
+                      </div>
+                      <div className="scada-tank-cone">
+                        <div className="scada-cone-liquid" style={{ opacity: liquidLevel > 30 ? 1 : 0 }}></div>
+                      </div>
+                      <div className="scada-tank-valve"></div>
+                      <div className="scada-tank-legs">
+                        <div className="scada-leg"></div>
+                        <div className="scada-leg"></div>
+                        <div className="scada-leg"></div>
                       </div>
                     </div>
 
