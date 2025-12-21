@@ -66,6 +66,90 @@
   transition: width 0.5s ease;
 }
 
+/* Progress remaining */
+.progress-remaining {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.progress-remaining .remaining-icon {
+  font-size: 1rem;
+}
+
+.progress-remaining strong {
+  color: #c4a574;
+}
+
+/* Mini navigation */
+.steps-mini-nav {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.mini-step {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.mini-step.completed {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10B981;
+}
+
+.mini-step.current {
+  background: rgba(196, 165, 116, 0.15);
+  border-color: rgba(196, 165, 116, 0.5);
+}
+
+.mini-step.in-progress {
+  background: rgba(196, 165, 116, 0.2);
+  border-color: #c4a574;
+}
+
+.mini-step-icon {
+  font-size: 1.1rem;
+}
+
+.mini-step.pending .mini-step-icon {
+  opacity: 0.4;
+}
+
+.mini-step.completed .mini-step-icon {
+  filter: grayscale(0.3);
+}
+
+.mini-step-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #c4a574;
+  animation: mini-pulse 2s ease-in-out infinite;
+}
+
+@keyframes mini-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 0; }
+}
+
 /* Timeline */
 .brewing-timeline {
   position: relative;
@@ -78,31 +162,56 @@
   margin-bottom: 0;
 }
 
-/* Connector dots */
+/* Connector - continuous line with dots */
 .timeline-connector {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 12px 0;
+  gap: 6px;
+  padding: 10px 0;
   margin-left: 22px;
+  position: relative;
+}
+
+/* Ligne continue de fond */
+.timeline-connector::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(-50%);
 }
 
 .connector-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.15);
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .timeline-step.completed .timeline-connector .connector-dot,
 .timeline-step.completed + .timeline-step .timeline-connector.top .connector-dot {
   background: #c4a574;
+  box-shadow: 0 0 8px rgba(196, 165, 116, 0.4);
+}
+
+.timeline-step.completed .timeline-connector::before,
+.timeline-step.completed + .timeline-step .timeline-connector.top::before {
+  background: linear-gradient(180deg, #c4a574, rgba(196, 165, 116, 0.3));
 }
 
 .timeline-step.in-progress .timeline-connector.bottom .connector-dot {
   background: rgba(196, 165, 116, 0.4);
+}
+
+.timeline-step.in-progress .timeline-connector.bottom::before {
+  background: linear-gradient(180deg, rgba(196, 165, 116, 0.3), rgba(255, 255, 255, 0.08));
 }
 
 /* Step Content */
@@ -139,6 +248,10 @@
   border-color: #c4a574;
   color: #1a1f26;
   animation: pulse 2s ease-in-out infinite;
+}
+
+.step-marker.has-icon {
+  font-size: 1.3rem;
 }
 
 .timeline-step.completed .step-marker {
@@ -223,7 +336,136 @@
   line-height: 1.4;
 }
 
-/* Timer */
+/* Enhanced Timer with circular progress */
+.step-timer-enhanced {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 0;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 16px;
+  border: 1px solid rgba(196, 165, 116, 0.2);
+}
+
+.step-timer-enhanced.paused {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.05);
+}
+
+.timer-circular {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.timer-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.timer-track {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.timer-progress {
+  stroke: #c4a574;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.step-timer-enhanced.paused .timer-progress {
+  stroke: #fbbf24;
+}
+
+.timer-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-display {
+  font-size: 2.2rem;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Monaco', monospace;
+  color: #c4a574;
+  letter-spacing: 2px;
+}
+
+.step-timer-enhanced.paused .timer-display {
+  color: #fbbf24;
+}
+
+.timer-target {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 4px;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-timer-control {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e8e4df;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-timer-control:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-timer-control.pause:hover {
+  background: rgba(251, 191, 36, 0.2);
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.btn-timer-control.play {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10B981;
+  color: #10B981;
+}
+
+.btn-timer-control.play:hover {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+.btn-timer-control.skip:hover {
+  background: rgba(196, 165, 116, 0.2);
+  border-color: #c4a574;
+  color: #c4a574;
+}
+
+.timer-paused-label {
+  font-size: 0.85rem;
+  color: #fbbf24;
+  font-weight: 500;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Legacy timer (keep for backward compatibility) */
 .step-timer {
   display: flex;
   align-items: baseline;
@@ -232,18 +474,6 @@
   padding: 12px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-}
-
-.timer-display {
-  font-size: 2rem;
-  font-weight: 600;
-  font-family: 'SF Mono', 'Monaco', monospace;
-  color: #c4a574;
-}
-
-.timer-target {
-  font-size: 0.9rem;
-  color: #666;
 }
 
 /* Actions */
@@ -600,14 +830,61 @@
     font-size: 0.8rem;
   }
 
+  .progress-remaining {
+    font-size: 0.8rem;
+  }
+
+  .steps-mini-nav {
+    gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .mini-step {
+    width: 36px;
+    height: 36px;
+  }
+
+  .mini-step-icon {
+    font-size: 1rem;
+  }
+
   .brewing-timeline {
     padding: 0 8px;
+  }
+
+  .timer-circular {
+    width: 140px;
+    height: 140px;
+  }
+
+  .timer-display {
+    font-size: 1.8rem;
+  }
+
+  .btn-timer-control {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
   }
 }
 
 @media (max-width: 600px) {
   .brewing-session-page {
     padding: 0 8px 40px;
+  }
+
+  .steps-mini-nav {
+    gap: 4px;
+    padding: 8px 10px;
+  }
+
+  .mini-step {
+    width: 32px;
+    height: 32px;
+  }
+
+  .mini-step-icon {
+    font-size: 0.9rem;
   }
 
   .step-content {
@@ -618,6 +895,10 @@
     width: 36px;
     height: 36px;
     font-size: 0.9rem;
+  }
+
+  .step-marker.has-icon {
+    font-size: 1.1rem;
   }
 
   .timeline-connector {
@@ -634,8 +915,23 @@
     gap: 8px;
   }
 
+  .step-timer-enhanced {
+    padding: 16px;
+  }
+
+  .timer-circular {
+    width: 120px;
+    height: 120px;
+  }
+
   .timer-display {
     font-size: 1.5rem;
+  }
+
+  .btn-timer-control {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
   }
 
   .btn-finish-brewing {

@@ -23,6 +23,24 @@ interface BrewingSessionPageProps {
   onBack: () => void;
 }
 
+// Icônes pour chaque type d'étape
+const STEP_ICONS: Record<string, string> = {
+  'chauffe': '🔥',
+  'empatage': '🌾',
+  'filtration': '🚿',
+  'ebullition': '♨️',
+  'whirlpool': '🌀',
+  'refroidissement': '❄️',
+  'transfert': '🫗',
+  'ensemencement': '🧫',
+  'default': '⏱️'
+};
+
+// Obtenir l'icône pour une étape
+const getStepIcon = (stepId: string): string => {
+  return STEP_ICONS[stepId] || STEP_ICONS['default'];
+};
+
 // Étapes par défaut pour le brassage de bière
 const DEFAULT_BREWING_STEPS: BrewingSessionStep[] = [
   { id: 'chauffe', name: 'Chauffe de l\'eau', description: 'Chauffer l\'eau d\'empâtage', duration: 30 },
@@ -55,6 +73,9 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
   const [showAddStep, setShowAddStep] = useState(false);
   const [activeTimer, setActiveTimer] = useState<number | null>(null);
   const [timerElapsed, setTimerElapsed] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null);
 
   // États pour les événements
   const [showAddEvent, setShowAddEvent] = useState(false);
@@ -383,20 +404,123 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
       .sort((a, b) => a.timeValue - b.timeValue); // Tri croissant par temps écoulé (0 min en premier)
   };
 
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          setNotificationPermission(permission);
+        });
+      }
+    }
+  }, []);
+
+  // Wake Lock - keep screen on during active brewing
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      if ('wakeLock' in navigator && activeTimer !== null && !isPaused) {
+        try {
+          const lock = await navigator.wakeLock.request('screen');
+          setWakeLock(lock);
+          console.log('[WakeLock] Screen wake lock acquired');
+        } catch (err) {
+          console.log('[WakeLock] Failed to acquire wake lock:', err);
+        }
+      }
+    };
+
+    const releaseWakeLock = async () => {
+      if (wakeLock) {
+        await wakeLock.release();
+        setWakeLock(null);
+        console.log('[WakeLock] Screen wake lock released');
+      }
+    };
+
+    if (activeTimer !== null && !isPaused) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+
+    // Re-acquire wake lock when page becomes visible again
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && activeTimer !== null && !isPaused) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      releaseWakeLock();
+    };
+  }, [activeTimer, isPaused, wakeLock]);
+
+  // Play notification sound
+  const playNotificationSound = useCallback(() => {
+    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+    gainNode.gain.value = 0.3;
+
+    oscillator.start();
+
+    // Beep pattern
+    setTimeout(() => { gainNode.gain.value = 0; }, 200);
+    setTimeout(() => { gainNode.gain.value = 0.3; }, 300);
+    setTimeout(() => { gainNode.gain.value = 0; }, 500);
+    setTimeout(() => { gainNode.gain.value = 0.3; }, 600);
+    setTimeout(() => {
+      oscillator.stop();
+      audioContext.close();
+    }, 800);
+  }, []);
+
+  // Send notification
+  const sendNotification = useCallback((title: string, body: string) => {
+    if (notificationPermission === 'granted') {
+      new Notification(title, { body, icon: '/favicon.ico' });
+    }
+    playNotificationSound();
+  }, [notificationPermission, playNotificationSound]);
+
   // Timer effect
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
 
-    if (activeTimer !== null) {
+    if (activeTimer !== null && !isPaused) {
       interval = setInterval(() => {
-        setTimerElapsed(prev => prev + 1);
+        setTimerElapsed(prev => {
+          const newElapsed = prev + 1;
+          const currentStep = session.steps[activeTimer];
+          const targetSeconds = currentStep.duration * 60;
+
+          // Notify when step is complete
+          if (newElapsed === targetSeconds) {
+            sendNotification(
+              'Étape terminée !',
+              `${currentStep.name} est terminée. Passez à l'étape suivante.`
+            );
+          }
+
+          return newElapsed;
+        });
       }, 1000);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [activeTimer]);
+  }, [activeTimer, isPaused, session.steps, sendNotification]);
 
   // Sauvegarder la session quand elle change
   const saveSession = useCallback((newSession: BrewingSession) => {
@@ -525,6 +649,37 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
     }, 0);
   };
 
+  // Calcul du temps restant estimé (en minutes)
+  const getRemainingDuration = () => {
+    let remaining = 0;
+    session.steps.forEach((step, index) => {
+      const progress = session.stepsProgress[index];
+      if (!progress?.completedAt) {
+        if (activeTimer === index) {
+          // Étape en cours: soustraire le temps écoulé
+          const elapsedMinutes = Math.floor(timerElapsed / 60);
+          remaining += Math.max(0, step.duration - elapsedMinutes);
+        } else {
+          remaining += step.duration;
+        }
+      }
+    });
+    return remaining;
+  };
+
+  // Toggle pause
+  const togglePause = () => {
+    setIsPaused(prev => !prev);
+  };
+
+  // Skip to next step
+  const skipToNextStep = (currentIndex: number) => {
+    if (currentIndex < session.steps.length - 1) {
+      completeStep(currentIndex);
+      startStep(currentIndex + 1);
+    }
+  };
+
   // Ajouter un événement
   const addEvent = () => {
     if (!eventTitle.trim()) return;
@@ -630,7 +785,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
         </div>
       )}
 
-      {/* Barre de progression */}
+      {/* Barre de progression avec temps restant */}
       <div className="brewing-progress-bar">
         <div className="progress-info">
           <span>Progression</span>
@@ -642,6 +797,27 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
             style={{ width: `${(getCompletedDuration() / getTotalDuration()) * 100}%` }}
           />
         </div>
+        <div className="progress-remaining">
+          <span className="remaining-icon">⏱️</span>
+          <span>Temps restant estimé : <strong>{formatDuration(getRemainingDuration())}</strong></span>
+        </div>
+      </div>
+
+      {/* Mini navigation des étapes */}
+      <div className="steps-mini-nav">
+        {session.steps.map((step, index) => {
+          const status = getStepStatus(index);
+          return (
+            <div
+              key={step.id}
+              className={`mini-step ${status}`}
+              title={`${step.name} - ${formatDuration(step.duration)}`}
+            >
+              <span className="mini-step-icon">{getStepIcon(step.id)}</span>
+              {status === 'in-progress' && <span className="mini-step-pulse" />}
+            </div>
+          );
+        })}
       </div>
 
       {/* Timeline verticale */}
@@ -667,8 +843,8 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
 
               {/* Contenu de l'étape */}
               <div className="step-content">
-                <div className="step-marker">
-                  {status === 'completed' ? '✓' : index + 1}
+                <div className={`step-marker ${status === 'in-progress' ? 'has-icon' : ''}`}>
+                  {status === 'completed' ? '✓' : status === 'in-progress' ? getStepIcon(step.id) : index + 1}
                 </div>
 
                 <div className="step-info">
@@ -755,11 +931,57 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
                     </div>
                   )}
 
-                  {/* Timer actif */}
+                  {/* Timer actif avec progression circulaire */}
                   {isActive && (
-                    <div className="step-timer">
-                      <span className="timer-display">{formatTime(timerElapsed)}</span>
-                      <span className="timer-target">/ {formatDuration(step.duration)}</span>
+                    <div className={`step-timer-enhanced ${isPaused ? 'paused' : ''}`}>
+                      <div className="timer-circular">
+                        <svg className="timer-svg" viewBox="0 0 100 100">
+                          <circle
+                            className="timer-track"
+                            cx="50"
+                            cy="50"
+                            r="45"
+                            fill="none"
+                            strokeWidth="6"
+                          />
+                          <circle
+                            className="timer-progress"
+                            cx="50"
+                            cy="50"
+                            r="45"
+                            fill="none"
+                            strokeWidth="6"
+                            strokeLinecap="round"
+                            style={{
+                              strokeDasharray: 2 * Math.PI * 45,
+                              strokeDashoffset: 2 * Math.PI * 45 * (1 - Math.min(timerElapsed / (step.duration * 60), 1))
+                            }}
+                          />
+                        </svg>
+                        <div className="timer-center">
+                          <span className="timer-display">{formatTime(timerElapsed)}</span>
+                          <span className="timer-target">/ {formatDuration(step.duration)}</span>
+                        </div>
+                      </div>
+                      <div className="timer-controls">
+                        <button
+                          className={`btn-timer-control ${isPaused ? 'play' : 'pause'}`}
+                          onClick={togglePause}
+                          title={isPaused ? 'Reprendre' : 'Pause'}
+                        >
+                          {isPaused ? '▶' : '⏸'}
+                        </button>
+                        {index < session.steps.length - 1 && (
+                          <button
+                            className="btn-timer-control skip"
+                            onClick={() => skipToNextStep(index)}
+                            title="Passer à l'étape suivante"
+                          >
+                            ⏭
+                          </button>
+                        )}
+                      </div>
+                      {isPaused && <div className="timer-paused-label">En pause</div>}
                     </div>
                   )}
 
