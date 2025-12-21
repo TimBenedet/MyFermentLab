@@ -836,11 +836,10 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
 
               {/* Contenu de l'étape */}
               <div className="step-content">
-                <div className={`step-marker ${status === 'in-progress' ? 'has-icon' : ''}`}>
-                  {status === 'completed' ? '✓' : status === 'in-progress' ? getStepIcon(step.id) : index + 1}
-                </div>
-
                 <div className="step-info">
+                  <div className={`step-number ${status}`}>
+                    {status === 'completed' ? '✓' : status === 'in-progress' ? getStepIcon(step.id) : index + 1}
+                  </div>
                   <div className="step-header">
                     <h3 className="step-name">{step.name}</h3>
                     {editingStep === step.id ? (
@@ -1001,7 +1000,6 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
                   </div>
                 </div>
               </div>
-
               {/* Ligne de connexion vers le bas */}
               {index < session.steps.length - 1 && (
                 <div className="timeline-connector bottom" />
@@ -1015,8 +1013,8 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           <div className="add-step-form">
             <div className="timeline-connector top" />
             <div className="step-content add-form">
-              <div className="step-marker">+</div>
               <div className="step-info">
+                <div className="step-number pending">+</div>
                 <input
                   type="text"
                   placeholder="Nom de l'étape"

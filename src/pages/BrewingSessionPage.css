@@ -181,12 +181,11 @@
 
 /* Step Content */
 .step-content {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
+  display: block;
 }
 
-.step-marker {
+/* Step Number - maintenant dans la card */
+.step-number {
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -195,31 +194,28 @@
   justify-content: center;
   font-weight: 600;
   font-size: 1rem;
-  flex-shrink: 0;
+  margin-bottom: 12px;
   transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid rgba(255, 255, 255, 0.15);
   color: #888;
 }
 
-.timeline-step.current .step-marker {
+.step-number.current {
   background: rgba(196, 165, 116, 0.2);
   border-color: #c4a574;
   color: #c4a574;
 }
 
-.timeline-step.in-progress .step-marker {
+.step-number.in-progress {
   background: #c4a574;
   border-color: #c4a574;
   color: #1a1f26;
+  font-size: 1.3rem;
   animation: pulse 2s ease-in-out infinite;
 }
 
-.step-marker.has-icon {
-  font-size: 1.3rem;
-}
-
-.timeline-step.completed .step-marker {
+.step-number.completed {
   background: #10B981;
   border-color: #10B981;
   color: white;
@@ -549,7 +545,7 @@
   margin-top: 16px;
 }
 
-.add-step-form .step-content.add-form .step-marker {
+.add-step-form .step-number {
   background: rgba(196, 165, 116, 0.2);
   border-color: rgba(196, 165, 116, 0.5);
   color: #c4a574;
@@ -842,17 +838,13 @@
     font-size: 0.9rem;
   }
 
-  .step-content {
-    gap: 12px;
-  }
-
-  .step-marker {
+  .step-number {
     width: 36px;
     height: 36px;
     font-size: 0.9rem;
   }
 
-  .step-marker.has-icon {
+  .step-number.in-progress {
     font-size: 1.1rem;
   }
 
@@ -918,15 +910,10 @@
     padding: 0 4px;
   }
 
-  .step-content {
-    gap: 10px;
-  }
-
-  .step-marker {
+  .step-number {
     width: 32px;
     height: 32px;
     font-size: 0.8rem;
-    flex-shrink: 0;
   }
 
   .timeline-connector {
