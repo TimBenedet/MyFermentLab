@@ -169,7 +169,7 @@
   align-items: center;
   gap: 6px;
   padding: 10px 0;
-  margin-left: 22px;
+  width: 44px;
   position: relative;
 }
 
@@ -674,7 +674,7 @@
   align-items: center;
   gap: 4px;
   padding: 6px 0;
-  margin-left: 18px;
+  width: 36px;
 }
 
 .substep-dot {
@@ -902,7 +902,7 @@
   }
 
   .timeline-connector {
-    margin-left: 17px;
+    width: 36px;
   }
 
   .step-info {
@@ -975,7 +975,7 @@
   }
 
   .timeline-connector {
-    margin-left: 15px;
+    width: 32px;
     padding: 8px 0;
   }
 
@@ -1023,7 +1023,7 @@
   }
 
   .substep-connector {
-    margin-left: 16px;
+    width: 32px;
     padding: 4px 0;
   }
 
