@@ -126,15 +126,14 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
             const info = getIngredientInfo(add);
             if (info) {
               const stepDuration = step.duration || 60;
-              // add.minutes = temps restant, donc temps écoulé = durée - temps restant
-              const elapsedMin = stepDuration - add.minutes;
+              // add.minutes = temps ÉCOULÉ depuis le début (0 = dès le début)
               let timing: string;
-              if (add.minutes >= stepDuration) {
+              if (add.minutes === 0) {
                 timing = 'Dès le début';
-              } else if (add.minutes === 0) {
+              } else if (add.minutes >= stepDuration) {
                 timing = 'À la fin';
               } else {
-                timing = `${add.minutes} min avant fin`;
+                timing = `À ${add.minutes} min`;
               }
               additions.push({
                 id: `mash-add-${step.id}-${idx}`,
@@ -142,7 +141,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
                 quantity: info.quantity,
                 unit: info.unit,
                 timing,
-                timeValue: elapsedMin, // Tri par temps écoulé (croissant)
+                timeValue: add.minutes, // Tri par temps écoulé (croissant)
                 stepId: 'empatage',
                 type: add.ingredientType as 'grain' | 'hop' | 'other',
                 icon: info.icon

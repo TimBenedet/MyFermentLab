@@ -58,7 +58,9 @@
       "Bash(git rm:*)",
       "Bash(ssh-copy-id:*)",
       "Bash(kubectl get:*)",
-      "Bash(npm run build:mobile:*)"
+      "Bash(npm run build:mobile:*)",
+      "Skill(deploy)",
+      "Skill(deploy:*)"
     ],
     "deny": [],
     "ask": []

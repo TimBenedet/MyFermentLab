@@ -171,6 +171,7 @@
   padding: 10px 0;
   width: 44px;
   position: relative;
+  /* Le marker a 44px de large, donc on centre le connecteur sous le marker */
 }
 
 /* Ligne continue de fond */
@@ -675,6 +676,8 @@
   gap: 4px;
   padding: 6px 0;
   width: 36px;
+  /* Aligner avec le centre du substep-marker qui est à padding-left (14px) + marker-width/2 (18px) = 32px */
+  margin-left: 14px;
 }
 
 .substep-dot {
@@ -1025,6 +1028,7 @@
   .substep-connector {
     width: 32px;
     padding: 4px 0;
+    margin-left: 12px;
   }
 
   .substep-item {
