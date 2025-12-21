@@ -162,57 +162,21 @@
   margin-bottom: 0;
 }
 
-/* Connector - continuous line with dots */
+/* Connector - simple vertical line */
 .timeline-connector {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 0;
-  width: 44px;
-  position: relative;
-  /* Le marker a 44px de large, donc on centre le connecteur sous le marker */
-}
-
-/* Ligne continue de fond */
-.timeline-connector::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
+  height: 40px;
   width: 2px;
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateX(-50%);
-}
-
-.connector-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
   background: rgba(255, 255, 255, 0.15);
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1;
+  margin-left: 21px; /* Centre de step-marker (44px / 2 - 1px) */
 }
 
-.timeline-step.completed .timeline-connector .connector-dot,
-.timeline-step.completed + .timeline-step .timeline-connector.top .connector-dot {
+.timeline-step.completed .timeline-connector,
+.timeline-step.completed + .timeline-step .timeline-connector.top {
   background: #c4a574;
-  box-shadow: 0 0 8px rgba(196, 165, 116, 0.4);
 }
 
-.timeline-step.completed .timeline-connector::before,
-.timeline-step.completed + .timeline-step .timeline-connector.top::before {
-  background: linear-gradient(180deg, #c4a574, rgba(196, 165, 116, 0.3));
-}
-
-.timeline-step.in-progress .timeline-connector.bottom .connector-dot {
-  background: rgba(196, 165, 116, 0.4);
-}
-
-.timeline-step.in-progress .timeline-connector.bottom::before {
-  background: linear-gradient(180deg, rgba(196, 165, 116, 0.3), rgba(255, 255, 255, 0.08));
+.timeline-step.in-progress .timeline-connector.bottom {
+  background: linear-gradient(180deg, rgba(196, 165, 116, 0.5), rgba(255, 255, 255, 0.15));
 }
 
 /* Step Content */
@@ -668,28 +632,16 @@
   position: relative;
 }
 
-/* Connecteur entre sous-étapes (points) */
+/* Connecteur entre sous-étapes - simple ligne verticale */
 .substep-connector {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 0;
-  width: 36px;
-  /* Aligner avec le centre du substep-marker qui est à padding-left (14px) + marker-width/2 (18px) = 32px */
-  margin-left: 14px;
-}
-
-.substep-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
+  height: 20px;
+  width: 2px;
   background: rgba(255, 255, 255, 0.15);
-  transition: background 0.3s ease;
+  margin-left: 31px; /* padding-left (14px) + marker-width/2 (18px) - 1px */
 }
 
-.substep-connector.active .substep-dot {
-  background: rgba(196, 165, 116, 0.6);
+.substep-connector.active {
+  background: rgba(196, 165, 116, 0.5);
 }
 
 /* Sous-étape d'ajout */
@@ -905,7 +857,7 @@
   }
 
   .timeline-connector {
-    width: 36px;
+    margin-left: 17px; /* (36px / 2 - 1px) */
   }
 
   .step-info {
@@ -978,8 +930,8 @@
   }
 
   .timeline-connector {
-    width: 32px;
-    padding: 8px 0;
+    margin-left: 15px; /* (32px / 2 - 1px) */
+    height: 30px;
   }
 
   .step-info {
@@ -1026,9 +978,8 @@
   }
 
   .substep-connector {
-    width: 32px;
-    padding: 4px 0;
-    margin-left: 12px;
+    margin-left: 27px; /* padding-left (12px) + marker-width/2 (16px) - 1px */
+    height: 16px;
   }
 
   .substep-item {

@@ -178,12 +178,12 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           // add.minutes = temps restant, donc temps écoulé = durée - temps restant
           const elapsedMin = boilDuration - add.minutes;
           let timing: string;
-          if (add.minutes >= boilDuration) {
+          if (add.minutes >= boilDuration || elapsedMin <= 0) {
             timing = 'Dès le début';
           } else if (add.minutes === 0) {
             timing = 'À la fin';
           } else {
-            timing = `${add.minutes} min avant fin`;
+            timing = `Au bout de ${elapsedMin} min`;
           }
           additions.push({
             id: `boil-add-${idx}`,
@@ -211,12 +211,12 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
           const boilDuration = recipe.boilStep.duration;
           const elapsedMin = boilDuration - hop.time; // Conversion en temps écoulé pour le tri
           let timing: string;
-          if (hop.time >= boilDuration) {
+          if (hop.time >= boilDuration || elapsedMin <= 0) {
             timing = 'Dès le début';
           } else if (hop.time === 0) {
             timing = 'À la fin';
           } else {
-            timing = `${hop.time} min avant fin`;
+            timing = `Au bout de ${elapsedMin} min`;
           }
 
           additions.push({
@@ -831,13 +831,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
             <div key={step.id} className={`timeline-step ${status}`}>
               {/* Ligne de connexion vers le haut */}
               {index > 0 && (
-                <div className="timeline-connector top">
-                  <span className="connector-dot" />
-                  <span className="connector-dot" />
-                  <span className="connector-dot" />
-                  <span className="connector-dot" />
-                  <span className="connector-dot" />
-                </div>
+                <div className="timeline-connector top" />
               )}
 
               {/* Contenu de l'étape */}
@@ -902,11 +896,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
                           <div key={addition.id} className="substep-container">
                             {/* Connecteur vers le haut (sauf pour le premier) */}
                             {addIndex > 0 && (
-                              <div className={`substep-connector ${isUnlocked || isCompleted ? 'active' : ''}`}>
-                                <span className="substep-dot" />
-                                <span className="substep-dot" />
-                                <span className="substep-dot" />
-                              </div>
+                              <div className={`substep-connector ${isUnlocked || isCompleted ? 'active' : ''}`} />
                             )}
 
                             <div
@@ -1014,13 +1004,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
 
               {/* Ligne de connexion vers le bas */}
               {index < session.steps.length - 1 && (
-                <div className="timeline-connector bottom">
-                  <span className="connector-dot" />
-                  <span className="connector-dot" />
-                  <span className="connector-dot" />
-                  <span className="connector-dot" />
-                  <span className="connector-dot" />
-                </div>
+                <div className="timeline-connector bottom" />
               )}
             </div>
           );
@@ -1029,11 +1013,7 @@ export function BrewingSessionPage({ project, onUpdateSession, onFinishBrewing, 
         {/* Ajouter une étape */}
         {showAddStep ? (
           <div className="add-step-form">
-            <div className="timeline-connector top">
-              <span className="connector-dot" />
-              <span className="connector-dot" />
-              <span className="connector-dot" />
-            </div>
+            <div className="timeline-connector top" />
             <div className="step-content add-form">
               <div className="step-marker">+</div>
               <div className="step-info">
