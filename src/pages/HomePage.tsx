@@ -29,18 +29,24 @@ interface HomePageProps {
   role: 'admin' | 'viewer' | null;
 }
 
-// Mini Tank visualization for beer
-const MiniTank = ({ level = 75 }: { level?: number }) => (
-  <div className="mini-tank">
-    <div className="mini-tank-neck"></div>
+// Mini Tank visualization for beer - Cylindro-conique style
+const MiniTank = ({ level = 65 }: { level?: number }) => (
+  <div className="mini-tank-cylindro">
+    <div className="mini-tank-manhole"></div>
+    <div className="mini-tank-dome"></div>
     <div className="mini-tank-body">
       <div className="mini-tank-liquid" style={{ height: `${level}%` }}>
-        <div className="mini-bubbles">
-          <div className="mini-bubble"></div>
-          <div className="mini-bubble"></div>
-          <div className="mini-bubble"></div>
-        </div>
+        <div className="mini-liquid-shine"></div>
       </div>
+    </div>
+    <div className="mini-tank-cone">
+      <div className="mini-cone-liquid" style={{ opacity: level > 30 ? 1 : 0 }}></div>
+    </div>
+    <div className="mini-tank-valve"></div>
+    <div className="mini-tank-legs">
+      <div className="mini-leg"></div>
+      <div className="mini-leg"></div>
+      <div className="mini-leg"></div>
     </div>
   </div>
 );
