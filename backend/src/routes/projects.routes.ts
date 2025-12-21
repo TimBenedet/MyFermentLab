@@ -156,20 +156,23 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
 
     console.log('Project created, has recipe:', !!newProject?.recipe);
 
-    // Si c'est un projet de test bière, générer des données simulées
-    const isTestBeerProject = recipe?.style?.includes('Test bière') || (name?.includes('Test') && fermentationType === 'beer');
+    // Détecter si c'est un projet de test et générer les données appropriées
+    const isTestProject = name?.toLowerCase().includes('test');
+
+    // Test bière (avec densité)
+    const isTestBeerProject = recipe?.style?.includes('Test bière') || (isTestProject && fermentationType === 'beer');
     if (isTestBeerProject) {
       console.log('Test beer project detected - generating simulated data...');
       try {
         await influxService.generateTestData(projectId, targetTemperature);
-        console.log('Simulated data generated successfully');
+        console.log('Simulated beer data generated successfully');
       } catch (err) {
         console.error('Failed to generate test data:', err);
       }
     }
 
-    // Si c'est un projet de test champignon, générer des données simulées
-    const isTestMushroomProject = mushroomType?.includes('Test champignon') || (name?.includes('Test') && fermentationType === 'mushroom');
+    // Test champignon (avec humidité)
+    const isTestMushroomProject = mushroomType?.includes('Test champignon') || (isTestProject && fermentationType === 'mushroom');
     if (isTestMushroomProject) {
       console.log('Test mushroom project detected - generating simulated humidity data...');
       try {
@@ -177,6 +180,40 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
         console.log('Simulated mushroom data generated successfully');
       } catch (err) {
         console.error('Failed to generate mushroom test data:', err);
+      }
+    }
+
+    // Test koji (avec humidité - similaire aux champignons)
+    if (isTestProject && fermentationType === 'koji') {
+      console.log('Test koji project detected - generating simulated data...');
+      try {
+        await influxService.generateMushroomTestData(projectId, targetTemperature, targetHumidity || 80);
+        console.log('Simulated koji data generated successfully');
+      } catch (err) {
+        console.error('Failed to generate koji test data:', err);
+      }
+    }
+
+    // Test fromage (avec humidité)
+    if (isTestProject && fermentationType === 'cheese') {
+      console.log('Test cheese project detected - generating simulated data...');
+      try {
+        await influxService.generateMushroomTestData(projectId, targetTemperature, targetHumidity || 85);
+        console.log('Simulated cheese data generated successfully');
+      } catch (err) {
+        console.error('Failed to generate cheese test data:', err);
+      }
+    }
+
+    // Test kombucha, hydromel, levain (température seulement)
+    const tempOnlyTypes = ['kombucha', 'mead', 'sourdough'];
+    if (isTestProject && tempOnlyTypes.includes(fermentationType)) {
+      console.log(`Test ${fermentationType} project detected - generating simulated temperature data...`);
+      try {
+        await influxService.generateTestData(projectId, targetTemperature);
+        console.log(`Simulated ${fermentationType} data generated successfully`);
+      } catch (err) {
+        console.error(`Failed to generate ${fermentationType} test data:`, err);
       }
     }
 

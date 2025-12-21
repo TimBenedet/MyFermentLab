@@ -349,6 +349,67 @@ export const MUSHROOM_TYPES = [
   'Autre'
 ] as const;
 
+// Types de Koji
+export const KOJI_TYPES = [
+  '🧪 Test koji (données auto)',
+  'Koji blanc (Aspergillus oryzae)',
+  'Koji noir (Aspergillus luchuensis)',
+  'Shio Koji',
+  'Amazake',
+  'Miso',
+  'Sake',
+  'Shoyu',
+  'Autre'
+] as const;
+
+// Types de Kombucha
+export const KOMBUCHA_TYPES = [
+  '🧪 Test kombucha (données auto)',
+  'Kombucha classique',
+  'Jun (miel)',
+  'Kombucha aux fruits',
+  'Kombucha au gingembre',
+  'Water Kefir',
+  'Autre'
+] as const;
+
+// Types d'Hydromel
+export const MEAD_TYPES = [
+  '🧪 Test hydromel (données auto)',
+  'Hydromel traditionnel',
+  'Melomel (fruits)',
+  'Metheglin (épices)',
+  'Cyser (pomme)',
+  'Pyment (raisin)',
+  'Bochet (miel caramélisé)',
+  'Autre'
+] as const;
+
+// Types de Fromage
+export const CHEESE_TYPES = [
+  '🧪 Test fromage (données auto)',
+  'Fromage frais',
+  'Pâte molle (Camembert, Brie)',
+  'Pâte pressée (Tomme, Cantal)',
+  'Pâte persillée (Bleu)',
+  'Fromage de chèvre',
+  'Ricotta',
+  'Mozzarella',
+  'Autre'
+] as const;
+
+// Types de Levain
+export const SOURDOUGH_TYPES = [
+  '🧪 Test levain (données auto)',
+  'Levain blé',
+  'Levain seigle',
+  'Levain épeautre',
+  'Levain sans gluten',
+  'Levain liquide',
+  'Levain dur',
+  'Autre'
+] as const;
+
 // Recette de test pour validation rapide
 export const TEST_BEER_RECIPE: Omit<BrewingRecipe, 'id' | 'createdAt'> = {
   name: 'Test Pale Ale',

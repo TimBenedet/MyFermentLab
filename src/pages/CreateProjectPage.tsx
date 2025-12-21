@@ -4,6 +4,11 @@ import {
   FERMENTATION_TYPES,
   BEER_STYLES,
   MUSHROOM_TYPES,
+  KOJI_TYPES,
+  KOMBUCHA_TYPES,
+  MEAD_TYPES,
+  CHEESE_TYPES,
+  SOURDOUGH_TYPES,
   FERMENTERS,
   Device,
   BrewingRecipe,
@@ -60,6 +65,11 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
   const [humiditySensorId, setHumiditySensorId] = useState('');
   const [targetHumidity, setTargetHumidity] = useState(85);
   const [mushroomType, setMushroomType] = useState('');
+  const [kojiType, setKojiType] = useState('');
+  const [kombuchaType, setKombuchaType] = useState('');
+  const [meadType, setMeadType] = useState('');
+  const [cheeseType, setCheeseType] = useState('');
+  const [sourdoughType, setSourdoughType] = useState('');
   const [controlMode, setControlMode] = useState<'manual' | 'automatic'>('automatic');
 
   // État pour la recette (uniquement pour la bière)
@@ -268,6 +278,35 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
     return projectData;
   };
 
+  // Auto-sélectionner les appareils de test pour un type de fermentation
+  const autoSelectTestDevices = (type: string) => {
+    const testSensorId = `test-temp-sensor-${type}`;
+    const testOutletId = `test-outlet-${type}`;
+    const testHumiditySensorId = `test-humidity-sensor-${type}`;
+
+    // Sélectionner la sonde de test si disponible
+    const testSensor = sensors.find(s => s.id === testSensorId);
+    if (testSensor) {
+      setSensorId(testSensorId);
+    }
+
+    // Sélectionner la prise de test si disponible
+    const testOutlet = outlets.find(o => o.id === testOutletId);
+    if (testOutlet) {
+      setOutletId(testOutletId);
+    }
+
+    // Sélectionner la sonde d'humidité de test si disponible (pour champignon, koji, fromage)
+    if (['mushroom', 'koji', 'cheese'].includes(type)) {
+      // Pour mushroom, l'id est différent (test-humidity-sensor-1)
+      const humidityId = type === 'mushroom' ? 'test-humidity-sensor-1' : testHumiditySensorId;
+      const testHumiditySensor = humiditySensors.find(s => s.id === humidityId);
+      if (testHumiditySensor) {
+        setHumiditySensorId(humidityId);
+      }
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (canSubmit) {
@@ -342,7 +381,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                     };
                     setRecipe(testRecipe);
                     setName('Test Pale Ale');
-                    // La température cible sera calculée automatiquement depuis fermentationSteps[0].temperature
+                    autoSelectTestDevices('beer');
                   } else {
                     updateRecipe({ style: selectedStyle });
                   }
@@ -365,15 +404,132 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                 onChange={(e) => {
                   const selectedType = e.target.value;
                   setMushroomType(selectedType);
-                  // Si c'est le type de test, générer des données de test
                   if (selectedType === '🧪 Test champignon (données auto)') {
                     setName('Test Pleurote');
                     setTargetHumidity(90);
+                    autoSelectTestDevices('mushroom');
                   }
                 }}
               >
                 <option value="">Sélectionner un type</option>
                 {MUSHROOM_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {fermentationType === 'koji' && (
+            <div className="form-group">
+              <label className="form-label">Type de Koji</label>
+              <select
+                className="form-select"
+                value={kojiType}
+                onChange={(e) => {
+                  const selectedType = e.target.value;
+                  setKojiType(selectedType);
+                  if (selectedType === '🧪 Test koji (données auto)') {
+                    setName('Test Koji');
+                    setTargetHumidity(80);
+                    autoSelectTestDevices('koji');
+                  }
+                }}
+              >
+                <option value="">Sélectionner un type</option>
+                {KOJI_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {fermentationType === 'kombucha' && (
+            <div className="form-group">
+              <label className="form-label">Type de Kombucha</label>
+              <select
+                className="form-select"
+                value={kombuchaType}
+                onChange={(e) => {
+                  const selectedType = e.target.value;
+                  setKombuchaType(selectedType);
+                  if (selectedType === '🧪 Test kombucha (données auto)') {
+                    setName('Test Kombucha');
+                    autoSelectTestDevices('kombucha');
+                  }
+                }}
+              >
+                <option value="">Sélectionner un type</option>
+                {KOMBUCHA_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {fermentationType === 'mead' && (
+            <div className="form-group">
+              <label className="form-label">Type d'Hydromel</label>
+              <select
+                className="form-select"
+                value={meadType}
+                onChange={(e) => {
+                  const selectedType = e.target.value;
+                  setMeadType(selectedType);
+                  if (selectedType === '🧪 Test hydromel (données auto)') {
+                    setName('Test Hydromel');
+                    autoSelectTestDevices('mead');
+                  }
+                }}
+              >
+                <option value="">Sélectionner un type</option>
+                {MEAD_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {fermentationType === 'cheese' && (
+            <div className="form-group">
+              <label className="form-label">Type de Fromage</label>
+              <select
+                className="form-select"
+                value={cheeseType}
+                onChange={(e) => {
+                  const selectedType = e.target.value;
+                  setCheeseType(selectedType);
+                  if (selectedType === '🧪 Test fromage (données auto)') {
+                    setName('Test Fromage');
+                    setTargetHumidity(85);
+                    autoSelectTestDevices('cheese');
+                  }
+                }}
+              >
+                <option value="">Sélectionner un type</option>
+                {CHEESE_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {fermentationType === 'sourdough' && (
+            <div className="form-group">
+              <label className="form-label">Type de Levain</label>
+              <select
+                className="form-select"
+                value={sourdoughType}
+                onChange={(e) => {
+                  const selectedType = e.target.value;
+                  setSourdoughType(selectedType);
+                  if (selectedType === '🧪 Test levain (données auto)') {
+                    setName('Test Levain');
+                    autoSelectTestDevices('sourdough');
+                  }
+                }}
+              >
+                <option value="">Sélectionner un type</option>
+                {SOURDOUGH_TYPES.map(type => (
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>

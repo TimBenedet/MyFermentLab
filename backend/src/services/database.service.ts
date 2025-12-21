@@ -146,80 +146,46 @@ class DatabaseService {
   }
 
   private initTestDevices() {
-    // Vérifier si les sondes de test existent déjà
-    const testHumiditySensor1 = this.getDevice('test-humidity-sensor-1');
-    const testHumiditySensor2 = this.getDevice('test-humidity-sensor-2');
-    const testTempSensor = this.getDevice('test-temp-sensor-mushroom');
-    const testOutlet = this.getDevice('test-outlet-mushroom');
+    // Définir tous les appareils de test pour chaque type de fermentation
+    const testDevices = [
+      // Bière
+      { id: 'test-temp-sensor-beer', name: '🧪 Sonde Temp Bière', type: 'sensor', entityId: 'sensor.test_temp_beer' },
+      { id: 'test-outlet-beer', name: '🧪 Prise Test Bière', type: 'outlet', entityId: 'switch.test_outlet_beer' },
+      // Champignon
+      { id: 'test-temp-sensor-mushroom', name: '🧪 Sonde Temp Champignon', type: 'sensor', entityId: 'sensor.test_temp_mushroom' },
+      { id: 'test-outlet-mushroom', name: '🧪 Prise Test Champignon', type: 'outlet', entityId: 'switch.test_outlet_mushroom' },
+      { id: 'test-humidity-sensor-1', name: '🧪 Sonde Humidité Champignon', type: 'humidity_sensor', entityId: 'sensor.test_humidity_mushroom' },
+      // Koji
+      { id: 'test-temp-sensor-koji', name: '🧪 Sonde Temp Koji', type: 'sensor', entityId: 'sensor.test_temp_koji' },
+      { id: 'test-outlet-koji', name: '🧪 Prise Test Koji', type: 'outlet', entityId: 'switch.test_outlet_koji' },
+      { id: 'test-humidity-sensor-koji', name: '🧪 Sonde Humidité Koji', type: 'humidity_sensor', entityId: 'sensor.test_humidity_koji' },
+      // Kombucha
+      { id: 'test-temp-sensor-kombucha', name: '🧪 Sonde Temp Kombucha', type: 'sensor', entityId: 'sensor.test_temp_kombucha' },
+      { id: 'test-outlet-kombucha', name: '🧪 Prise Test Kombucha', type: 'outlet', entityId: 'switch.test_outlet_kombucha' },
+      // Hydromel
+      { id: 'test-temp-sensor-mead', name: '🧪 Sonde Temp Hydromel', type: 'sensor', entityId: 'sensor.test_temp_mead' },
+      { id: 'test-outlet-mead', name: '🧪 Prise Test Hydromel', type: 'outlet', entityId: 'switch.test_outlet_mead' },
+      // Fromage
+      { id: 'test-temp-sensor-cheese', name: '🧪 Sonde Temp Fromage', type: 'sensor', entityId: 'sensor.test_temp_cheese' },
+      { id: 'test-outlet-cheese', name: '🧪 Prise Test Fromage', type: 'outlet', entityId: 'switch.test_outlet_cheese' },
+      { id: 'test-humidity-sensor-cheese', name: '🧪 Sonde Humidité Fromage', type: 'humidity_sensor', entityId: 'sensor.test_humidity_cheese' },
+      // Levain
+      { id: 'test-temp-sensor-sourdough', name: '🧪 Sonde Temp Levain', type: 'sensor', entityId: 'sensor.test_temp_sourdough' },
+      { id: 'test-outlet-sourdough', name: '🧪 Prise Test Levain', type: 'outlet', entityId: 'switch.test_outlet_sourdough' },
+    ];
 
-    if (!testHumiditySensor1) {
-      console.log('Creating test humidity sensor 1...');
-      this.createDevice({
-        id: 'test-humidity-sensor-1',
-        name: '🧪 Sonde Humidité Test 1',
-        type: 'humidity_sensor',
-        ip: '',
-        entityId: 'sensor.test_humidity_1'
-      });
-    }
-
-    if (!testHumiditySensor2) {
-      console.log('Creating test humidity sensor 2...');
-      this.createDevice({
-        id: 'test-humidity-sensor-2',
-        name: '🧪 Sonde Humidité Test 2',
-        type: 'humidity_sensor',
-        ip: '',
-        entityId: 'sensor.test_humidity_2'
-      });
-    }
-
-    if (!testTempSensor) {
-      console.log('Creating test temperature sensor for mushrooms...');
-      this.createDevice({
-        id: 'test-temp-sensor-mushroom',
-        name: '🧪 Sonde Temp Champignon',
-        type: 'sensor',
-        ip: '',
-        entityId: 'sensor.test_temp_mushroom'
-      });
-    }
-
-    if (!testOutlet) {
-      console.log('Creating test outlet for mushrooms...');
-      this.createDevice({
-        id: 'test-outlet-mushroom',
-        name: '🧪 Prise Test Champignon',
-        type: 'outlet',
-        ip: '',
-        entityId: 'switch.test_outlet_mushroom'
-      });
-    }
-
-    // Second set of test devices for mushroom projects (in case first set is in use)
-    const testTempSensor2 = this.getDevice('test-temp-sensor-mushroom-2');
-    const testOutlet2 = this.getDevice('test-outlet-mushroom-2');
-
-    if (!testTempSensor2) {
-      console.log('Creating test temperature sensor 2 for mushrooms...');
-      this.createDevice({
-        id: 'test-temp-sensor-mushroom-2',
-        name: '🧪 Sonde Temp Champignon 2',
-        type: 'sensor',
-        ip: '',
-        entityId: 'sensor.test_temp_mushroom_2'
-      });
-    }
-
-    if (!testOutlet2) {
-      console.log('Creating test outlet 2 for mushrooms...');
-      this.createDevice({
-        id: 'test-outlet-mushroom-2',
-        name: '🧪 Prise Test Champignon 2',
-        type: 'outlet',
-        ip: '',
-        entityId: 'switch.test_outlet_mushroom_2'
-      });
+    // Créer les appareils s'ils n'existent pas
+    for (const device of testDevices) {
+      if (!this.getDevice(device.id)) {
+        console.log(`Creating test device: ${device.name}...`);
+        this.createDevice({
+          id: device.id,
+          name: device.name,
+          type: device.type as 'sensor' | 'outlet' | 'humidity_sensor',
+          ip: '',
+          entityId: device.entityId
+        });
+      }
     }
   }
 
