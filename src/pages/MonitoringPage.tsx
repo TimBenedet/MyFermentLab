@@ -7,6 +7,25 @@ import { TemperatureAlert } from '../components/TemperatureAlert';
 import { apiService } from '../services/api.service';
 import './MonitoringPage.css';
 
+// Sensor frozen detection - 10 minutes without temperature change
+const SENSOR_FROZEN_THRESHOLD = 10 * 60 * 1000; // 10 minutes in ms
+
+const isSensorFrozen = (project: Project): boolean => {
+  if (project.archived) return false;
+  if (!project.lastTemperatureUpdate) return false;
+
+  const timeSinceLastChange = Date.now() - project.lastTemperatureUpdate;
+  return timeSinceLastChange > SENSOR_FROZEN_THRESHOLD;
+};
+
+const getSensorFrozenDuration = (project: Project): string => {
+  if (!project.lastTemperatureUpdate) return '';
+  const minutes = Math.floor((Date.now() - project.lastTemperatureUpdate) / 60000);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h${minutes % 60}min`;
+};
+
 interface OutletHistoryEntry {
   timestamp: number;
   state: boolean;
@@ -698,6 +717,14 @@ export function MonitoringPage({
                     +
                   </button>
                 </div>
+
+                {/* Sensor Frozen Alert */}
+                {isSensorFrozen(project) && (
+                  <div className="scada-sensor-frozen-alert">
+                    <span className="frozen-icon">⚠️</span>
+                    <span className="frozen-text">Sonde figée depuis {getSensorFrozenDuration(project)}</span>
+                  </div>
+                )}
 
                 {/* Outlet Control */}
                 <div className="scada-outlet-section">

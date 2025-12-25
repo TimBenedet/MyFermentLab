@@ -29,6 +29,25 @@ interface HomePageProps {
   role: 'admin' | 'viewer' | null;
 }
 
+// Sensor frozen detection - 10 minutes without temperature change
+const SENSOR_FROZEN_THRESHOLD = 10 * 60 * 1000; // 10 minutes in ms
+
+const isSensorFrozen = (project: Project): boolean => {
+  if (project.archived) return false;
+  if (!project.lastTemperatureUpdate) return false;
+
+  const timeSinceLastChange = Date.now() - project.lastTemperatureUpdate;
+  return timeSinceLastChange > SENSOR_FROZEN_THRESHOLD;
+};
+
+const getSensorFrozenDuration = (project: Project): string => {
+  if (!project.lastTemperatureUpdate) return '';
+  const minutes = Math.floor((Date.now() - project.lastTemperatureUpdate) / 60000);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h${minutes % 60}min`;
+};
+
 // Mini Tank visualization for beer - Silo industriel style
 const MiniTank = ({ level = 70 }: { level?: number }) => (
   <div className="mini-silo">
@@ -362,6 +381,13 @@ export function HomePage({
               <div className="scada-metric-label">Écart</div>
             </div>
           </div>
+
+          {isSensorFrozen(project) && (
+            <div className="scada-sensor-frozen-alert">
+              <span className="frozen-icon">⚠️</span>
+              <span className="frozen-text">Sonde figée depuis {getSensorFrozenDuration(project)}</span>
+            </div>
+          )}
         </div>
 
         <div className="scada-project-footer">

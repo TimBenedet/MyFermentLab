@@ -767,6 +767,37 @@
   border-color: rgba(245, 158, 11, 0.3);
 }
 
+/* Sensor Frozen Alert */
+.scada-sensor-frozen-alert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin: 12px 0;
+  background: rgba(255, 152, 0, 0.15);
+  border: 1px solid rgba(255, 152, 0, 0.4);
+  border-radius: 8px;
+  animation: pulse-warning 2s infinite;
+}
+
+.scada-sensor-frozen-alert .frozen-icon {
+  font-size: 16px;
+}
+
+.scada-sensor-frozen-alert .frozen-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ff9800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+@keyframes pulse-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 /* Outlet Section in Control Tab */
 .scada-outlet-section {
   margin-top: 8px;

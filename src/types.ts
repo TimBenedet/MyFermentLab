@@ -305,6 +305,10 @@ export interface Project {
 
   // Session de brassage (jour de brassage)
   brewingSession?: BrewingSession;
+
+  // Sensor health tracking
+  lastTemperatureUpdate?: number;
+  lastTemperatureValue?: number;
 }
 
 export const FERMENTATION_TYPES = {

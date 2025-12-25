@@ -22,6 +22,9 @@ export interface Project {
   targetHumidity?: number;
   currentHumidity?: number;
   mushroomType?: string;
+  // Sensor health tracking
+  lastTemperatureUpdate?: number;
+  lastTemperatureValue?: number;
 }
 
 export interface Device {
@@ -138,6 +141,21 @@ class DatabaseService {
         console.log('Migration completed successfully');
       }
 
+      // Sensor health tracking columns
+      const hasLastTemperatureUpdate = columns.some(col => col.name === 'last_temperature_update');
+      if (!hasLastTemperatureUpdate) {
+        console.log('Adding last_temperature_update column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN last_temperature_update INTEGER");
+        console.log('Migration completed successfully');
+      }
+
+      const hasLastTemperatureValue = columns.some(col => col.name === 'last_temperature_value');
+      if (!hasLastTemperatureValue) {
+        console.log('Adding last_temperature_value column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN last_temperature_value REAL");
+        console.log('Migration completed successfully');
+      }
+
       // Ajouter des sondes de test pour les champignons si elles n'existent pas
       this.initTestDevices();
     } catch (error) {
@@ -211,7 +229,9 @@ class DatabaseService {
       humiditySensorId: row.humidity_sensor_id || undefined,
       targetHumidity: row.target_humidity || undefined,
       currentHumidity: row.current_humidity || undefined,
-      mushroomType: row.mushroom_type || undefined
+      mushroomType: row.mushroom_type || undefined,
+      lastTemperatureUpdate: row.last_temperature_update || undefined,
+      lastTemperatureValue: row.last_temperature_value || undefined
     }));
   }
 
@@ -238,7 +258,9 @@ class DatabaseService {
       humiditySensorId: row.humidity_sensor_id || undefined,
       targetHumidity: row.target_humidity || undefined,
       currentHumidity: row.current_humidity || undefined,
-      mushroomType: row.mushroom_type || undefined
+      mushroomType: row.mushroom_type || undefined,
+      lastTemperatureUpdate: row.last_temperature_update || undefined,
+      lastTemperatureValue: row.last_temperature_value || undefined
     };
   }
 
@@ -269,8 +291,26 @@ class DatabaseService {
   }
 
   updateProjectTemperature(id: string, temperature: number) {
-    const stmt = this.db.prepare('UPDATE projects SET current_temperature = ? WHERE id = ?');
-    stmt.run(temperature, id);
+    // Get current project to check if temperature actually changed
+    const project = this.getProject(id);
+    const now = Date.now();
+
+    if (project) {
+      // Only update lastTemperatureUpdate if the value actually changed
+      const valueChanged = project.lastTemperatureValue !== temperature;
+
+      if (valueChanged) {
+        const stmt = this.db.prepare('UPDATE projects SET current_temperature = ?, last_temperature_update = ?, last_temperature_value = ? WHERE id = ?');
+        stmt.run(temperature, now, temperature, id);
+      } else {
+        // Value unchanged, just update current_temperature (don't update the "last change" timestamp)
+        const stmt = this.db.prepare('UPDATE projects SET current_temperature = ? WHERE id = ?');
+        stmt.run(temperature, id);
+      }
+    } else {
+      const stmt = this.db.prepare('UPDATE projects SET current_temperature = ?, last_temperature_update = ?, last_temperature_value = ? WHERE id = ?');
+      stmt.run(temperature, now, temperature, id);
+    }
   }
 
   updateProjectTarget(id: string, targetTemperature: number) {
