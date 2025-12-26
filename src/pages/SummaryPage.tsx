@@ -333,14 +333,6 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
         <span class="label">Maximum</span>
         <span class="value">${stats.temperature.max}°C</span>
       </div>
-      <div class="stat-card">
-        <span class="label">Écart-type</span>
-        <span class="value">±${stats.temperature.stdDeviation}°C</span>
-      </div>
-      <div class="stat-card">
-        <span class="label">Points</span>
-        <span class="value">${stats.dataPoints}</span>
-      </div>
     </div>
   </div>
 
@@ -397,10 +389,6 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
       <div class="stat-card">
         <span class="label">Maximum</span>
         <span class="value" style="color:#3B82F6">${stats.humidity.max}%</span>
-      </div>
-      <div class="stat-card">
-        <span class="label">Écart-type</span>
-        <span class="value" style="color:#3B82F6">±${stats.humidity.stdDeviation}%</span>
       </div>
     </div>
   </div>
@@ -667,14 +655,6 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
             <span className="stat-label">Maximum</span>
             <span className="stat-value">{stats.temperature.max}°C</span>
           </div>
-          <div className="stat-card">
-            <span className="stat-label">Écart-type</span>
-            <span className="stat-value">±{stats.temperature.stdDeviation}°C</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-label">Points de données</span>
-            <span className="stat-value">{stats.dataPoints}</span>
-          </div>
         </div>
       </section>
 
@@ -849,10 +829,6 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
               <div className="stat-card">
                 <span className="stat-label">Maximum</span>
                 <span className="stat-value" style={{ color: '#3B82F6' }}>{stats.humidity.max}%</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-label">Écart-type</span>
-                <span className="stat-value" style={{ color: '#3B82F6' }}>±{stats.humidity.stdDeviation}%</span>
               </div>
             </div>
           </section>
