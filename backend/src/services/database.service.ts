@@ -291,26 +291,11 @@ class DatabaseService {
   }
 
   updateProjectTemperature(id: string, temperature: number) {
-    // Get current project to check if temperature actually changed
-    const project = this.getProject(id);
+    // Update lastTemperatureUpdate every time we receive data from the sensor
+    // This allows us to detect when a sensor stops transmitting entirely
     const now = Date.now();
-
-    if (project) {
-      // Only update lastTemperatureUpdate if the value actually changed
-      const valueChanged = project.lastTemperatureValue !== temperature;
-
-      if (valueChanged) {
-        const stmt = this.db.prepare('UPDATE projects SET current_temperature = ?, last_temperature_update = ?, last_temperature_value = ? WHERE id = ?');
-        stmt.run(temperature, now, temperature, id);
-      } else {
-        // Value unchanged, just update current_temperature (don't update the "last change" timestamp)
-        const stmt = this.db.prepare('UPDATE projects SET current_temperature = ? WHERE id = ?');
-        stmt.run(temperature, id);
-      }
-    } else {
-      const stmt = this.db.prepare('UPDATE projects SET current_temperature = ?, last_temperature_update = ?, last_temperature_value = ? WHERE id = ?');
-      stmt.run(temperature, now, temperature, id);
-    }
+    const stmt = this.db.prepare('UPDATE projects SET current_temperature = ?, last_temperature_update = ?, last_temperature_value = ? WHERE id = ?');
+    stmt.run(temperature, now, temperature, id);
   }
 
   updateProjectTarget(id: string, targetTemperature: number) {
