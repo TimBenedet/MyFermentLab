@@ -234,12 +234,16 @@ export function MonitoringPage({
     return null;
   }, [project.currentHumidity, humidityHistoryData]);
 
-  const diff = project.targetTemperature - project.currentTemperature;
+  // Écart = température actuelle - cible
+  // Positif = trop chaud, Négatif = trop froid
+  const diff = project.currentTemperature - project.targetTemperature;
 
   const getStatus = () => {
     if (Math.abs(diff) < 0.5) return { text: 'Stable', class: '' };
-    if (diff > 0) return { text: 'Chauffage', class: 'heating' };
-    return { text: 'Refroidissement', class: 'cooling' };
+    // diff > 0 = trop chaud = besoin de refroidissement
+    if (diff > 0) return { text: 'Refroidissement', class: 'cooling' };
+    // diff < 0 = trop froid = besoin de chauffage
+    return { text: 'Chauffage', class: 'heating' };
   };
 
   const status = getStatus();

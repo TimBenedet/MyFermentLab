@@ -259,7 +259,8 @@ export function HomePage({
     if (project.archived) return { text: 'Archivé', type: 'archived' as const };
     if (project.brewingSession && !project.brewingSession.completedAt) return { text: 'En brassage', type: 'brewing' as const };
 
-    const diff = project.targetTemperature - project.currentTemperature;
+    // Écart = température actuelle - cible (positif = trop chaud, négatif = trop froid)
+    const diff = project.currentTemperature - project.targetTemperature;
     if (Math.abs(diff) < 0.5) return { text: 'Stable', type: 'active' as const };
     if (project.outletActive) return { text: 'Chauffage', type: 'heating' as const };
     return { text: 'Inactif', type: 'inactive' as const };
@@ -314,7 +315,8 @@ export function HomePage({
     const status = getProjectStatus(project);
     const duration = getProjectDuration(project);
     const typeClass = getTypeClass(project.fermentationType);
-    const diff = project.targetTemperature - project.currentTemperature;
+    // Écart = température actuelle - cible (positif = trop chaud, négatif = trop froid)
+    const diff = project.currentTemperature - project.targetTemperature;
 
     return (
       <div
