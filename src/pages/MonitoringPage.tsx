@@ -818,9 +818,9 @@ export function MonitoringPage({
       </div>
 
       {/* Charts Section - Full Width */}
-      <div className={`scada-charts-fullwidth ${project.fermentationType === 'koji' || project.fermentationType === 'sourdough' ? 'single-chart' : ''}`}>
+      <div className={`scada-charts-fullwidth ${project.fermentationType === 'sourdough' ? 'single-chart' : ''}`}>
         {/* Temperature Chart */}
-        <div className={`scada-chart-card fade-in ${project.fermentationType === 'koji' || project.fermentationType === 'sourdough' ? 'full-width' : ''}`}>
+        <div className={`scada-chart-card fade-in ${project.fermentationType === 'sourdough' ? 'full-width' : ''}`}>
           <TemperatureChart
             data={temperatureHistory}
             targetTemperature={project.targetTemperature}
@@ -840,8 +840,8 @@ export function MonitoringPage({
           </div>
         )}
 
-        {/* Humidity Chart for mushrooms */}
-        {project.fermentationType === 'mushroom' && (
+        {/* Humidity Chart for mushrooms and koji */}
+        {(project.fermentationType === 'mushroom' || project.fermentationType === 'koji') && (
           <div className="scada-chart-card fade-in">
             <HumidityChart
               data={humidityHistoryData}

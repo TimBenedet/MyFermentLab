@@ -298,6 +298,11 @@ class DatabaseService {
     stmt.run(temperature, now, temperature, id);
   }
 
+  updateProjectHumidity(id: string, humidity: number) {
+    const stmt = this.db.prepare('UPDATE projects SET current_humidity = ? WHERE id = ?');
+    stmt.run(humidity, id);
+  }
+
   updateProjectTarget(id: string, targetTemperature: number) {
     const stmt = this.db.prepare('UPDATE projects SET target_temperature = ? WHERE id = ?');
     stmt.run(targetTemperature, id);

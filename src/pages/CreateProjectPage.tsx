@@ -110,8 +110,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
     return calculateBrewingMetrics(recipe, efficiency / 100);
   }, [recipe, efficiency, fermentationType, showRecipe]);
 
-  const canSubmit = name.trim() && sensorId && outletId &&
-    (fermentationType !== 'mushroom' || humiditySensorId);
+  const canSubmit = name.trim() && sensorId && outletId;
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -268,11 +267,16 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
       recipe: finalRecipe
     };
 
-    // Ajouter les champs spécifiques aux champignons
+    // Ajouter les champs spécifiques aux champignons et koji
     if (fermentationType === 'mushroom') {
-      projectData.humiditySensorId = humiditySensorId;
+      projectData.humiditySensorId = humiditySensorId || undefined;
       projectData.targetHumidity = targetHumidity;
       projectData.mushroomType = mushroomType;
+    }
+
+    if (fermentationType === 'koji') {
+      projectData.humiditySensorId = humiditySensorId || undefined;
+      projectData.targetHumidity = targetHumidity;
     }
 
     return projectData;
@@ -610,7 +614,8 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
             </div>
           </div>
 
-          {fermentationType === 'mushroom' && (
+          {/* Sonde d'humidité pour champignons et koji */}
+          {(fermentationType === 'mushroom' || fermentationType === 'koji') && (
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="humidity-sensor" className="form-label">
@@ -626,9 +631,8 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                     className="form-select"
                     value={humiditySensorId}
                     onChange={(e) => setHumiditySensorId(e.target.value)}
-                    required
                   >
-                    <option value="">Sélectionner une sonde</option>
+                    <option value="">Sélectionner une sonde (optionnel)</option>
                     {humiditySensors.map(sensor => (
                       <option key={sensor.id} value={sensor.id}>
                         {sensor.name}

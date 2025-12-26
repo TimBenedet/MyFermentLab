@@ -112,10 +112,7 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Vérifier les champs requis pour les champignons
-    if (fermentationType === 'mushroom' && !humiditySensorId) {
-      return res.status(400).json({ error: 'Humidity sensor is required for mushroom projects' });
-    }
+    // Note: humiditySensorId est optionnel pour tous les types de projets
 
     // Vérifier que les devices ne sont pas déjà utilisés par un projet actif
     if (databaseService.isDeviceInUse(sensorId)) {

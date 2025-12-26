@@ -67,6 +67,23 @@ class SensorPollerService {
               await this.manageOutlet(project.id, temperature, project.targetTemperature, project.outletId);
             }
           }
+
+          // Poll humidity sensor if configured
+          if (project.humiditySensorId) {
+            const humidityDevice = databaseService.getDevice(project.humiditySensorId);
+            if (humidityDevice && humidityDevice.entityId) {
+              const humidity = await this.getSensorValue(humidityDevice.entityId);
+              if (humidity !== null) {
+                console.log(`[SensorPoller] ${project.name}: ${humidity}% humidity`);
+
+                // Enregistrer dans InfluxDB
+                await influxService.writeHumidity(project.id, humidity);
+
+                // Mettre à jour l'humidité actuelle dans SQLite
+                databaseService.updateProjectHumidity(project.id, humidity);
+              }
+            }
+          }
         } catch (error) {
           console.error(`[SensorPoller] Error polling sensor for project ${project.name}:`, error);
         }
@@ -77,6 +94,10 @@ class SensorPollerService {
   }
 
   private async getSensorTemperature(entityId: string): Promise<number | null> {
+    return this.getSensorValue(entityId);
+  }
+
+  private async getSensorValue(entityId: string): Promise<number | null> {
     try {
       const url = `${HOME_ASSISTANT_URL}/api/states/${entityId}`;
       const headers: HeadersInit = {
@@ -95,14 +116,14 @@ class SensorPollerService {
       }
 
       const data: HomeAssistantState = await response.json();
-      const temperature = parseFloat(data.state);
+      const value = parseFloat(data.state);
 
-      if (isNaN(temperature)) {
-        console.warn(`[SensorPoller] Invalid temperature value for ${entityId}: ${data.state}`);
+      if (isNaN(value)) {
+        console.warn(`[SensorPoller] Invalid value for ${entityId}: ${data.state}`);
         return null;
       }
 
-      return temperature;
+      return value;
     } catch (error) {
       console.error(`[SensorPoller] Error fetching sensor ${entityId}:`, error);
       return null;
