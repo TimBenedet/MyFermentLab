@@ -229,10 +229,6 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
         <span class="label">Température cible</span>
         <span class="value">${project.targetTemperature}°C</span>
       </div>
-      <div class="grid-item">
-        <span class="label">Mode</span>
-        <span class="value">${project.controlMode === 'automatic' ? 'Automatique' : 'Manuel'}</span>
-      </div>
     </div>
   </div>
 
@@ -514,12 +510,6 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
           <div className="info-item">
             <span className="info-label">Température cible</span>
             <span className="info-value">{project.targetTemperature}°C</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Mode de contrôle</span>
-            <span className="info-value">
-              {project.controlMode === 'automatic' ? 'Automatique' : 'Manuel'}
-            </span>
           </div>
         </div>
       </section>
