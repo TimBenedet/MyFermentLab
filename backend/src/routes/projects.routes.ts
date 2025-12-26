@@ -32,9 +32,9 @@ router.get('/:id', async (req: Request, res: Response) => {
     const temperatureHistory = await influxService.getTemperatureHistory(id, start);
     const densityHistory = await influxService.getDensityHistory(id, start);
 
-    // Récupérer l'historique d'humidité pour les projets champignon
+    // Récupérer l'historique d'humidité pour les projets champignon et koji
     let humidityHistory: any[] = [];
-    if (project.fermentationType === 'mushroom') {
+    if (project.fermentationType === 'mushroom' || project.fermentationType === 'koji') {
       humidityHistory = await influxService.getHumidityHistory(id, start);
     }
 
@@ -74,9 +74,9 @@ router.get('/:id/stats', requireAuth, async (req: Request, res: Response) => {
     const temperatureHistory = await influxService.getTemperatureHistory(id, `-${daysSinceCreation}d`);
     const densityHistory = await influxService.getDensityHistory(id, `-${daysSinceCreation}d`);
 
-    // Récupérer l'historique d'humidité pour les projets champignon
+    // Récupérer l'historique d'humidité pour les projets champignon et koji
     let humidityHistory: any[] = [];
-    if (project.fermentationType === 'mushroom') {
+    if (project.fermentationType === 'mushroom' || project.fermentationType === 'koji') {
       humidityHistory = await influxService.getHumidityHistory(id, `-${daysSinceCreation}d`);
     }
 

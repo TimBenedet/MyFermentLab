@@ -382,6 +382,30 @@ export function SummaryPage({ projectId, onBack }: SummaryPageProps) {
   </div>
   ` : ''}
 
+  ${stats.humidity && humidityChartData.length > 0 ? `
+  <div class="section">
+    <h2>💧 Statistiques d'humidité</h2>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="label">Moyenne</span>
+        <span class="value" style="color:#3B82F6">${stats.humidity.average}%</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Minimum</span>
+        <span class="value" style="color:#3B82F6">${stats.humidity.min}%</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Maximum</span>
+        <span class="value" style="color:#3B82F6">${stats.humidity.max}%</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Écart-type</span>
+        <span class="value" style="color:#3B82F6">±${stats.humidity.stdDeviation}%</span>
+      </div>
+    </div>
+  </div>
+  ` : ''}
+
   ${brewingSession ? `
   <div class="section">
     <h2>🍺 Journal de brassage</h2>
