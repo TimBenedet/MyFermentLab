@@ -63,7 +63,18 @@ export function calculateTotalWaterNeeded(recipe: BrewingRecipe): number {
 
 /**
  * Calcule les points de gravité à partir des grains
- * Formule: OG = 1 + (points * efficiency / volume)
+ * Formule standard: OG = 1 + (PPG * kg * 2.205 * efficiency) / (volume_L * 0.264)
+ * Simplifié: OG = 1 + (points_par_kg * kg * efficiency) / volume_L
+ *
+ * PPG typiques (Points Per Pound per Gallon):
+ * - Malt de base (Pale, Pilsner): 36-38 PPG
+ * - Malt Munich: 35-37 PPG
+ * - Malt Crystal: 33-35 PPG
+ * - Flocons d'avoine: 32-33 PPG
+ * - Malt Chocolat: 28-30 PPG
+ *
+ * Conversion PPG -> points métriques: PPG * 8.345 = points par kg par litre
+ * Ex: 37 PPG * 8.345 = ~309 points/kg/L
  */
 export function calculateOriginalGravity(
   recipe: BrewingRecipe,
@@ -72,10 +83,14 @@ export function calculateOriginalGravity(
   const finalVolume = calculateFinalVolume(recipe);
   if (finalVolume <= 0) return 1.0;
 
-  // Points de gravité potentiels par kg (moyenne ~37 points/kg/L pour malt de base)
+  // Points de gravité potentiels par kg (PPG * 8.345 pour conversion métrique)
+  // potential stocké = PPG, on le convertit en points métriques
   const totalPoints = recipe.grains.reduce((sum, grain) => {
-    const potential = grain.potential || 37; // Points par kg pour 1L
-    return sum + (grain.quantity * potential);
+    // Si potential est défini et < 50, c'est un PPG qu'on convertit
+    // Sinon on utilise une valeur par défaut de 37 PPG (malt de base)
+    const ppg = grain.potential && grain.potential < 50 ? grain.potential : 37;
+    const metricPoints = ppg * 8.345; // Conversion PPG -> points/kg/L
+    return sum + (grain.quantity * metricPoints);
   }, 0);
 
   const gravityPoints = (totalPoints * efficiency) / finalVolume;
