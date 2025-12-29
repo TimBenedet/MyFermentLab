@@ -588,6 +588,7 @@ function App() {
             onStartBrewing={handleStartBrewing}
             onUpdateProject={handleUpdateProject}
             onRefreshProject={handleRefreshProjectTemperature}
+            onRefreshData={loadInitialData}
             onManageDevices={() => setCurrentPage('devices')}
             onLabelGenerator={() => setCurrentPage('labels')}
             onViewStats={() => setCurrentPage('stats')}

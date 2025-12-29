@@ -23,6 +23,7 @@ interface HomePageProps {
   onStartBrewing: (projectId: string) => void;
   onUpdateProject: (projectId: string, data: { name?: string; fermentationType?: FermentationType; sensorId?: string; outletId?: string }) => Promise<void>;
   onRefreshProject: (projectId: string) => Promise<void>;
+  onRefreshData: () => Promise<void>;
   onManageDevices: () => void;
   onLabelGenerator: () => void;
   onViewStats: () => void;
@@ -177,6 +178,7 @@ export function HomePage({
   onStartBrewing,
   onUpdateProject,
   onRefreshProject,
+  onRefreshData,
   role
 }: HomePageProps) {
   const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'all'>('active');
@@ -190,14 +192,14 @@ export function HomePage({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Hard refresh automatique toutes les minutes (uniquement sur la page d'accueil)
+  // Rafraîchissement automatique des données toutes les minutes
   useEffect(() => {
     const REFRESH_INTERVAL = 60 * 1000; // 1 minute
     const interval = setInterval(() => {
-      window.location.reload();
+      onRefreshData();
     }, REFRESH_INTERVAL);
     return () => clearInterval(interval);
-  }, []);
+  }, [onRefreshData]);
 
   const sensors = devices.filter(d => d.type === 'sensor');
   const outlets = devices.filter(d => d.type === 'outlet');
