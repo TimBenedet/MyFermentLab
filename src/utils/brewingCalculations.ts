@@ -62,16 +62,74 @@ export function calculateTotalWaterNeeded(recipe: BrewingRecipe): number {
 }
 
 /**
+ * Détermine le PPG (Points Per Pound per Gallon) selon le type de grain
+ * Basé sur le nom du grain (détection par mots-clés)
+ */
+function getGrainPPG(grainName: string): number {
+  const name = grainName.toLowerCase();
+
+  // Malts torréfiés foncés (faible rendement)
+  if (name.includes('black') || name.includes('noir') || name.includes('roast')) {
+    return 25;
+  }
+
+  // Malt chocolat
+  if (name.includes('chocolat') || name.includes('chocolate')) {
+    return 29;
+  }
+
+  // Malts caramel/crystal
+  if (name.includes('crystal') || name.includes('caramel') || name.includes('cara')) {
+    return 34;
+  }
+
+  // Flocons (avoine, blé, orge)
+  if (name.includes('flocon') || name.includes('flaked') || name.includes('avoine') || name.includes('oat')) {
+    return 32;
+  }
+
+  // Malt de blé
+  if (name.includes('wheat') || name.includes('blé') || name.includes('froment')) {
+    return 36;
+  }
+
+  // Malt Munich
+  if (name.includes('munich') || name.includes('münch')) {
+    return 36;
+  }
+
+  // Malt Vienna
+  if (name.includes('vienna') || name.includes('vienne')) {
+    return 36;
+  }
+
+  // Sucres (très haut rendement, 100% fermentescibles)
+  if (name.includes('sucre') || name.includes('sugar') || name.includes('dextrose') || name.includes('miel') || name.includes('honey')) {
+    return 46;
+  }
+
+  // Extraits de malt
+  if (name.includes('extrait') || name.includes('extract') || name.includes('dme') || name.includes('lme')) {
+    return 44;
+  }
+
+  // Malt de base par défaut (Pale, Pilsner, Maris Otter, etc.)
+  return 37;
+}
+
+/**
  * Calcule les points de gravité à partir des grains
  * Formule standard: OG = 1 + (PPG * kg * 2.205 * efficiency) / (volume_L * 0.264)
  * Simplifié: OG = 1 + (points_par_kg * kg * efficiency) / volume_L
  *
  * PPG typiques (Points Per Pound per Gallon):
  * - Malt de base (Pale, Pilsner): 36-38 PPG
- * - Malt Munich: 35-37 PPG
- * - Malt Crystal: 33-35 PPG
+ * - Malt Munich/Vienna: 35-37 PPG
+ * - Malt Crystal/Caramel: 33-35 PPG
  * - Flocons d'avoine: 32-33 PPG
  * - Malt Chocolat: 28-30 PPG
+ * - Malt Black/Roasted: 24-26 PPG
+ * - Sucres/Extraits: 44-46 PPG
  *
  * Conversion PPG -> points métriques: PPG * 8.345 = points par kg par litre
  * Ex: 37 PPG * 8.345 = ~309 points/kg/L
@@ -84,11 +142,12 @@ export function calculateOriginalGravity(
   if (finalVolume <= 0) return 1.0;
 
   // Points de gravité potentiels par kg (PPG * 8.345 pour conversion métrique)
-  // potential stocké = PPG, on le convertit en points métriques
   const totalPoints = recipe.grains.reduce((sum, grain) => {
-    // Si potential est défini et < 50, c'est un PPG qu'on convertit
-    // Sinon on utilise une valeur par défaut de 37 PPG (malt de base)
-    const ppg = grain.potential && grain.potential < 50 ? grain.potential : 37;
+    // Si potential est défini explicitement et valide (< 50 = PPG), l'utiliser
+    // Sinon détecter le PPG selon le nom du grain
+    const ppg = grain.potential && grain.potential > 0 && grain.potential < 50
+      ? grain.potential
+      : getGrainPPG(grain.name);
     const metricPoints = ppg * 8.345; // Conversion PPG -> points/kg/L
     return sum + (grain.quantity * metricPoints);
   }, 0);
