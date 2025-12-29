@@ -514,20 +514,41 @@ export function calculateIBU(recipe: BrewingRecipe): number {
 
 /**
  * Calcule la couleur en EBC
- * Formule: EBC = 2.939 * MCU^0.6859
- * MCU = (grain_kg * grain_EBC) / volume_L
+ *
+ * La formule Morey utilise des MCU (Malt Color Units) en système américain:
+ * - MCU = (grain_lbs * grain_Lovibond) / volume_gallons
+ * - SRM = 1.4922 * MCU^0.6859
+ * - EBC = SRM * 1.97
+ *
+ * Conversions:
+ * - Lovibond ≈ (EBC + 1.2) / 2.0 (ou EBC / 1.97 pour simplifier)
+ * - 1 kg = 2.205 lbs
+ * - 1 L = 0.264 gallons
  */
 export function calculateColorEBC(recipe: BrewingRecipe): number {
   const finalVolume = calculateFinalVolume(recipe);
   if (finalVolume <= 0) return 0;
 
-  const mcu = recipe.grains.reduce((sum, grain) => {
-    const grainColor = grain.color || 5; // EBC par défaut pour malt pâle
-    return sum + (grain.quantity * grainColor);
-  }, 0) / finalVolume;
+  // Convertir en unités américaines pour la formule Morey
+  const volumeGallons = finalVolume * 0.264;
 
-  // Formule Morey adaptée pour EBC
-  return Math.round(2.939 * Math.pow(mcu, 0.6859));
+  // Calculer MCU en unités américaines
+  const mcu = recipe.grains.reduce((sum, grain) => {
+    const grainColorEBC = grain.color || 5; // EBC par défaut pour malt pâle
+    // Convertir EBC en Lovibond: Lovibond ≈ (EBC + 1.2) / 2.0
+    const grainColorLovibond = (grainColorEBC + 1.2) / 2.0;
+    // Convertir kg en lbs
+    const grainLbs = grain.quantity * 2.205;
+    return sum + (grainLbs * grainColorLovibond);
+  }, 0) / volumeGallons;
+
+  // Formule Morey pour calculer SRM
+  const srm = 1.4922 * Math.pow(mcu, 0.6859);
+
+  // Convertir SRM en EBC
+  const ebc = srm * 1.97;
+
+  return Math.round(ebc);
 }
 
 /**
