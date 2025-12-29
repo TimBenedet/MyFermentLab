@@ -24,7 +24,9 @@ import {
   ADDITION_TIMING_LABELS,
   ADDITION_STEP_LABELS,
   StepIngredientAddition,
-  TEST_BEER_RECIPE
+  TEST_BEER_RECIPE,
+  WaterProfile,
+  WaterProfileStyle
 } from '../types';
 import {
   calculateBrewingMetrics,
@@ -35,6 +37,15 @@ import {
   generateId,
   getColorForEBC
 } from '../utils/brewingCalculations';
+import {
+  WATER_STYLE_PROFILES,
+  WATER_STYLE_LABELS,
+  calculateSaltAdditions,
+  calculateSO4ClRatio,
+  getRatioDescription,
+  createEmptyWaterProfile,
+  needsDilution
+} from '../utils/waterCalculations';
 import { IngredientAutocomplete } from '../components/IngredientAutocomplete';
 import './CreateProjectPage.css';
 
@@ -85,11 +96,19 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
     hops: false,
     yeasts: false,
     water: false,
+    waterProfile: false,
     others: false,
     mash: false,
     boil: false,
     fermentation: false
   });
+
+  // États pour le profil d'eau
+  const [waterSource, setWaterSource] = useState<'api' | 'manual'>('api');
+  const [waterInseeCode, setWaterInseeCode] = useState('');
+  const [waterLoading, setWaterLoading] = useState(false);
+  const [waterError, setWaterError] = useState<string | null>(null);
+  const [waterCityName, setWaterCityName] = useState<string | null>(null);
 
   // Redirect to home if viewer tries to access this page
   useEffect(() => {
@@ -194,6 +213,78 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
   const removeOther = (id: string) => {
     updateRecipe({ others: recipe.others.filter(o => o.id !== id) });
   };
+
+  // Handlers pour le profil d'eau
+  const fetchWaterProfile = async () => {
+    if (!waterInseeCode || waterInseeCode.length !== 5) {
+      setWaterError('Le code INSEE doit contenir 5 chiffres');
+      return;
+    }
+
+    setWaterLoading(true);
+    setWaterError(null);
+    setWaterCityName(null);
+
+    try {
+      const response = await fetch(`/api/water/profile/${waterInseeCode}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setWaterError(data.message || 'Erreur lors de la récupération du profil');
+        return;
+      }
+
+      // Mettre à jour le profil d'eau source dans la recette
+      const sourceWater: WaterProfile = {
+        name: data.name || data.commune,
+        calcium: data.calcium,
+        magnesium: data.magnesium,
+        sodium: data.sodium,
+        chloride: data.chloride,
+        sulfate: data.sulfate,
+        bicarbonate: data.bicarbonate,
+        ph: data.ph
+      };
+
+      updateRecipe({ sourceWater });
+      setWaterCityName(data.name || data.commune);
+    } catch (err) {
+      setWaterError('Impossible de contacter le serveur');
+    } finally {
+      setWaterLoading(false);
+    }
+  };
+
+  const updateSourceWater = (updates: Partial<WaterProfile>) => {
+    const currentSource = recipe.sourceWater || createEmptyWaterProfile();
+    updateRecipe({
+      sourceWater: { ...currentSource, ...updates }
+    });
+  };
+
+  const updateTargetWaterStyle = (style: WaterProfileStyle | '') => {
+    updateRecipe({
+      targetWaterStyle: style || undefined
+    });
+  };
+
+  // Calcul des corrections de sels
+  const saltAdditions = useMemo(() => {
+    if (!recipe.sourceWater || !recipe.targetWaterStyle) return [];
+    const targetProfile = WATER_STYLE_PROFILES[recipe.targetWaterStyle];
+    if (!targetProfile) return [];
+
+    const totalWater = recipe.waters.reduce((sum, w) => sum + w.quantity, 0) || recipe.batchSize || 20;
+    return calculateSaltAdditions(recipe.sourceWater, targetProfile, totalWater);
+  }, [recipe.sourceWater, recipe.targetWaterStyle, recipe.waters, recipe.batchSize]);
+
+  // Vérifier si une dilution est recommandée
+  const dilutionRecommended = useMemo(() => {
+    if (!recipe.sourceWater || !recipe.targetWaterStyle) return false;
+    const targetProfile = WATER_STYLE_PROFILES[recipe.targetWaterStyle];
+    if (!targetProfile) return false;
+    return needsDilution(recipe.sourceWater, targetProfile);
+  }, [recipe.sourceWater, recipe.targetWaterStyle]);
 
   const addMashStep = () => {
     updateRecipe({
@@ -856,6 +947,229 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                       <button type="button" className="btn-add" onClick={addWater}>
                         + Ajouter de l'eau
                       </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Profil d'eau (chimie) */}
+                <div className="form-section accordion-section">
+                  <button
+                    type="button"
+                    className={`accordion-header ${openSections.waterProfile ? 'open' : ''}`}
+                    onClick={() => toggleSection('waterProfile')}
+                  >
+                    <span>Profil d'eau {recipe.sourceWater ? `(${recipe.sourceWater.name})` : ''}</span>
+                    <span className="accordion-icon">{openSections.waterProfile ? '−' : '+'}</span>
+                  </button>
+                  {openSections.waterProfile && (
+                    <div className="accordion-content water-profile-section">
+                      {/* Sélection de la source */}
+                      <div className="water-source-toggle">
+                        <label className="radio-label">
+                          <input
+                            type="radio"
+                            name="waterSource"
+                            value="api"
+                            checked={waterSource === 'api'}
+                            onChange={() => setWaterSource('api')}
+                          />
+                          Rechercher par code INSEE
+                        </label>
+                        <label className="radio-label">
+                          <input
+                            type="radio"
+                            name="waterSource"
+                            value="manual"
+                            checked={waterSource === 'manual'}
+                            onChange={() => setWaterSource('manual')}
+                          />
+                          Saisie manuelle
+                        </label>
+                      </div>
+
+                      {/* Recherche par code INSEE */}
+                      {waterSource === 'api' && (
+                        <div className="water-api-search">
+                          <div className="search-row">
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Code INSEE (ex: 59178)"
+                              value={waterInseeCode}
+                              onChange={(e) => setWaterInseeCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                              maxLength={5}
+                            />
+                            <button
+                              type="button"
+                              className="btn-search"
+                              onClick={fetchWaterProfile}
+                              disabled={waterLoading || waterInseeCode.length !== 5}
+                            >
+                              {waterLoading ? '...' : 'Rechercher'}
+                            </button>
+                          </div>
+                          {waterError && <div className="water-error">{waterError}</div>}
+                          {waterCityName && <div className="water-city">Ville : {waterCityName}</div>}
+                        </div>
+                      )}
+
+                      {/* Saisie manuelle */}
+                      {waterSource === 'manual' && (
+                        <div className="water-manual-input">
+                          <div className="water-minerals-grid">
+                            <div className="mineral-input">
+                              <label>Ca</label>
+                              <input
+                                type="number"
+                                className="form-input small"
+                                value={recipe.sourceWater?.calcium || ''}
+                                onChange={(e) => updateSourceWater({ calcium: Number(e.target.value), name: 'Manuel' })}
+                                min="0"
+                              />
+                              <span className="unit">mg/L</span>
+                            </div>
+                            <div className="mineral-input">
+                              <label>Mg</label>
+                              <input
+                                type="number"
+                                className="form-input small"
+                                value={recipe.sourceWater?.magnesium || ''}
+                                onChange={(e) => updateSourceWater({ magnesium: Number(e.target.value), name: 'Manuel' })}
+                                min="0"
+                              />
+                              <span className="unit">mg/L</span>
+                            </div>
+                            <div className="mineral-input">
+                              <label>Na</label>
+                              <input
+                                type="number"
+                                className="form-input small"
+                                value={recipe.sourceWater?.sodium || ''}
+                                onChange={(e) => updateSourceWater({ sodium: Number(e.target.value), name: 'Manuel' })}
+                                min="0"
+                              />
+                              <span className="unit">mg/L</span>
+                            </div>
+                            <div className="mineral-input">
+                              <label>Cl</label>
+                              <input
+                                type="number"
+                                className="form-input small"
+                                value={recipe.sourceWater?.chloride || ''}
+                                onChange={(e) => updateSourceWater({ chloride: Number(e.target.value), name: 'Manuel' })}
+                                min="0"
+                              />
+                              <span className="unit">mg/L</span>
+                            </div>
+                            <div className="mineral-input">
+                              <label>SO4</label>
+                              <input
+                                type="number"
+                                className="form-input small"
+                                value={recipe.sourceWater?.sulfate || ''}
+                                onChange={(e) => updateSourceWater({ sulfate: Number(e.target.value), name: 'Manuel' })}
+                                min="0"
+                              />
+                              <span className="unit">mg/L</span>
+                            </div>
+                            <div className="mineral-input">
+                              <label>HCO3</label>
+                              <input
+                                type="number"
+                                className="form-input small"
+                                value={recipe.sourceWater?.bicarbonate || ''}
+                                onChange={(e) => updateSourceWater({ bicarbonate: Number(e.target.value), name: 'Manuel' })}
+                                min="0"
+                              />
+                              <span className="unit">mg/L</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Affichage du profil source actuel */}
+                      {recipe.sourceWater && (
+                        <div className="water-profile-display">
+                          <h4>Eau source</h4>
+                          <div className="profile-minerals">
+                            <span>Ca: {recipe.sourceWater.calcium}</span>
+                            <span>Mg: {recipe.sourceWater.magnesium}</span>
+                            <span>Na: {recipe.sourceWater.sodium}</span>
+                            <span>Cl: {recipe.sourceWater.chloride}</span>
+                            <span>SO4: {recipe.sourceWater.sulfate}</span>
+                            <span>HCO3: {recipe.sourceWater.bicarbonate}</span>
+                          </div>
+                          <div className="profile-ratio">
+                            Ratio SO4/Cl : {calculateSO4ClRatio(recipe.sourceWater) || 'N/A'} - {getRatioDescription(calculateSO4ClRatio(recipe.sourceWater))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sélection du style cible */}
+                      <div className="water-target-style">
+                        <label className="form-label">Style de bière cible</label>
+                        <select
+                          className="form-select"
+                          value={recipe.targetWaterStyle || ''}
+                          onChange={(e) => updateTargetWaterStyle(e.target.value as WaterProfileStyle | '')}
+                        >
+                          <option value="">-- Sélectionner un style --</option>
+                          {(Object.keys(WATER_STYLE_LABELS) as WaterProfileStyle[]).map(style => (
+                            <option key={style} value={style}>
+                              {WATER_STYLE_LABELS[style]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Affichage du profil cible */}
+                      {recipe.targetWaterStyle && WATER_STYLE_PROFILES[recipe.targetWaterStyle] && (
+                        <div className="water-profile-display target">
+                          <h4>Profil cible : {WATER_STYLE_PROFILES[recipe.targetWaterStyle].name}</h4>
+                          <p className="profile-description">{WATER_STYLE_PROFILES[recipe.targetWaterStyle].description}</p>
+                          <div className="profile-minerals">
+                            <span>Ca: {WATER_STYLE_PROFILES[recipe.targetWaterStyle].calcium}</span>
+                            <span>Mg: {WATER_STYLE_PROFILES[recipe.targetWaterStyle].magnesium}</span>
+                            <span>Na: {WATER_STYLE_PROFILES[recipe.targetWaterStyle].sodium}</span>
+                            <span>Cl: {WATER_STYLE_PROFILES[recipe.targetWaterStyle].chloride}</span>
+                            <span>SO4: {WATER_STYLE_PROFILES[recipe.targetWaterStyle].sulfate}</span>
+                            <span>HCO3: {WATER_STYLE_PROFILES[recipe.targetWaterStyle].bicarbonate}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Avertissement dilution */}
+                      {dilutionRecommended && (
+                        <div className="water-warning">
+                          Votre eau source est plus minéralisée que le profil cible.
+                          Envisagez de diluer avec de l'eau osmosée (RO) ou distillée.
+                        </div>
+                      )}
+
+                      {/* Corrections recommandées */}
+                      {saltAdditions.length > 0 && (
+                        <div className="water-corrections">
+                          <h4>Corrections recommandées</h4>
+                          <p className="corrections-volume">
+                            Pour {recipe.waters.reduce((sum, w) => sum + w.quantity, 0) || recipe.batchSize || 20} L d'eau :
+                          </p>
+                          <div className="salt-additions-list">
+                            {saltAdditions.map((salt, index) => (
+                              <div key={index} className="salt-addition-row">
+                                <span className="salt-name">{salt.name}</span>
+                                <span className="salt-amount">{salt.amount} g</span>
+                                <span className="salt-rate">({salt.perLiter} g/L)</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {recipe.sourceWater && recipe.targetWaterStyle && saltAdditions.length === 0 && !dilutionRecommended && (
+                        <div className="water-info">
+                          Votre eau source est proche du profil cible. Aucune correction majeure nécessaire.
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

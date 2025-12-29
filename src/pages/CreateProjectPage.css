@@ -703,3 +703,291 @@
     order: 2;
   }
 }
+
+/* ========================================
+   WATER PROFILE SECTION
+   ======================================== */
+
+.water-profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Source toggle (API vs Manual) */
+.water-source-toggle {
+  display: flex;
+  gap: 24px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.water-source-toggle .radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.water-source-toggle .radio-label input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+/* API Search */
+.water-api-search {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.water-api-search .search-row {
+  display: flex;
+  gap: 12px;
+}
+
+.water-api-search .form-input {
+  flex: 1;
+  max-width: 200px;
+}
+
+.btn-search {
+  padding: 10px 20px;
+  background: var(--accent);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-search:hover:not(:disabled) {
+  background: var(--accent-light);
+  transform: translateY(-1px);
+}
+
+.btn-search:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.water-error {
+  color: var(--error);
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid var(--error);
+}
+
+.water-city {
+  color: var(--success);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Manual Input Grid */
+.water-manual-input {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+
+.water-minerals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.mineral-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mineral-input label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 35px;
+}
+
+.mineral-input .form-input.small {
+  width: 70px;
+}
+
+.mineral-input .unit {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Water Profile Display */
+.water-profile-display {
+  padding: 16px;
+  background: rgba(196, 165, 116, 0.08);
+  border: 1px solid rgba(196, 165, 116, 0.2);
+  border-radius: 10px;
+}
+
+.water-profile-display.target {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.water-profile-display h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.water-profile-display.target h4 {
+  color: #3B82F6;
+}
+
+.water-profile-display .profile-description {
+  margin: 0 0 12px 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.profile-minerals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.profile-minerals span {
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.profile-ratio {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Water Target Style Select */
+.water-target-style {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.water-target-style .form-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Warnings and Info */
+.water-warning {
+  padding: 12px 16px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  color: #F59E0B;
+  font-size: 0.85rem;
+}
+
+.water-info {
+  padding: 12px 16px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: var(--success);
+  font-size: 0.85rem;
+}
+
+/* Salt Corrections */
+.water-corrections {
+  padding: 16px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 10px;
+}
+
+.water-corrections h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #8B5CF6;
+}
+
+.water-corrections .corrections-volume {
+  margin: 0 0 12px 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.salt-additions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.salt-addition-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.salt-name {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.salt-amount {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #8B5CF6;
+  min-width: 60px;
+  text-align: right;
+}
+
+.salt-rate {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  min-width: 70px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .water-source-toggle {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .water-api-search .search-row {
+    flex-direction: column;
+  }
+
+  .water-api-search .form-input {
+    max-width: 100%;
+  }
+
+  .water-minerals-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .salt-addition-row {
+    flex-wrap: wrap;
+  }
+
+  .salt-name {
+    flex: 1 1 100%;
+  }
+}

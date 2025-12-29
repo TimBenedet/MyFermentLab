@@ -101,6 +101,35 @@ export interface WaterAddition {
   notes?: string;
 }
 
+// Profil chimique de l'eau (minéraux en mg/L)
+export interface WaterProfile {
+  name: string;           // Nom de la source (ville ou profil cible)
+  calcium: number;        // Ca
+  magnesium: number;      // Mg
+  sodium: number;         // Na
+  chloride: number;       // Cl
+  sulfate: number;        // SO4
+  bicarbonate: number;    // HCO3
+  ph?: number;            // pH de l'eau
+}
+
+// Correction de sel à ajouter
+export interface SaltAddition {
+  name: string;           // "Gypse (CaSO4)", "Chlorure de calcium", etc.
+  amount: number;         // Quantité totale en grammes
+  perLiter: number;       // g/L
+}
+
+// Profils d'eau cibles par style de bière
+export type WaterProfileStyle =
+  | 'pilsner'      // Plzen - eau très douce
+  | 'ipa'          // Burton - sulfatée, houblonnée
+  | 'stout'        // Dublin - alcaline, ronde
+  | 'lager'        // Munich - modérée
+  | 'amber'        // London - équilibrée
+  | 'belgian'      // Bruxelles - légèrement minéralisée
+  | 'balanced';    // Profil polyvalent
+
 // Timing pour les ajouts d'ingrédients
 export type AdditionTiming = 'start' | 'during' | 'end';
 export type AdditionStep = 'mash' | 'boil' | 'fermentation' | 'packaging';
@@ -196,6 +225,10 @@ export interface BrewingRecipe {
   estimatedABV?: number; // % alcool estimé
   estimatedIBU?: number; // Amertume estimée
   estimatedColor?: number; // Couleur EBC estimée
+
+  // Profil d'eau
+  sourceWater?: WaterProfile;           // Eau de la ville/source
+  targetWaterStyle?: WaterProfileStyle; // Style de profil cible
 
   // Métadonnées
   createdAt: number;

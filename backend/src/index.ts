@@ -4,6 +4,7 @@ import cors from 'cors';
 import projectsRouter from './routes/projects.routes.js';
 import devicesRouter from './routes/devices.routes.js';
 import authRouter from './routes/auth.routes.js';
+import waterRouter from './routes/water.routes.js';
 import { sensorPollerService } from './services/sensor-poller.service.js';
 import { healthCheckService } from './services/health-check.service.js';
 
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/devices', devicesRouter);
+app.use('/api/water', waterRouter);
 
 // Simple health check
 app.get('/health', (req, res) => {
