@@ -190,6 +190,15 @@ export function HomePage({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Hard refresh automatique toutes les minutes (uniquement sur la page d'accueil)
+  useEffect(() => {
+    const REFRESH_INTERVAL = 60 * 1000; // 1 minute
+    const interval = setInterval(() => {
+      window.location.reload();
+    }, REFRESH_INTERVAL);
+    return () => clearInterval(interval);
+  }, []);
+
   const sensors = devices.filter(d => d.type === 'sensor');
   const outlets = devices.filter(d => d.type === 'outlet');
 

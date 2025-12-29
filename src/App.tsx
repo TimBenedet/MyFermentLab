@@ -95,14 +95,6 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Hard refresh automatique toutes les minutes
-  useEffect(() => {
-    const REFRESH_INTERVAL = 60 * 1000; // 1 minute
-    const interval = setInterval(() => {
-      window.location.reload();
-    }, REFRESH_INTERVAL);
-    return () => clearInterval(interval);
-  }, []);
 
   const loadInitialData = async () => {
     try {
