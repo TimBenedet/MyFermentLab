@@ -64,56 +64,361 @@ export function calculateTotalWaterNeeded(recipe: BrewingRecipe): number {
 /**
  * Détermine le PPG (Points Per Pound per Gallon) selon le type de grain
  * Basé sur le nom du grain (détection par mots-clés)
+ *
+ * Sources: BrewUnited Grain Database, Brewer's Friend, Brew Dudes
+ * PPG = Points que 1 livre de grain apporte à 1 gallon d'eau
  */
 function getGrainPPG(grainName: string): number {
   const name = grainName.toLowerCase();
 
-  // Malts torréfiés foncés (faible rendement)
-  if (name.includes('black') || name.includes('noir') || name.includes('roast')) {
+  // ============================================
+  // SUCRES & EXTRAITS (rendement très élevé)
+  // ============================================
+
+  // Sucres purs (100% fermentescibles)
+  if (name.includes('sucre') || name.includes('sugar') || name.includes('dextrose') ||
+      name.includes('glucose') || name.includes('candi') || name.includes('candy')) {
+    return 46;
+  }
+
+  // Miel / Honey
+  if (name.includes('miel') || name.includes('honey')) {
+    return 35;
+  }
+
+  // Sirop d'érable / Maple syrup
+  if (name.includes('érable') || name.includes('maple')) {
+    return 30;
+  }
+
+  // Mélasse / Molasses
+  if (name.includes('mélasse') || name.includes('molasse') || name.includes('treacle')) {
+    return 36;
+  }
+
+  // Extrait de malt sec (DME)
+  if (name.includes('dme') || name.includes('extrait sec') || name.includes('dry extract') ||
+      name.includes('dry malt')) {
+    return 44;
+  }
+
+  // Extrait de malt liquide (LME)
+  if (name.includes('lme') || name.includes('extrait liquide') || name.includes('liquid extract') ||
+      name.includes('liquid malt') || name.includes('extrait') || name.includes('extract')) {
+    return 37;
+  }
+
+  // ============================================
+  // MALTS TORRÉFIÉS FONCÉS (faible rendement)
+  // ============================================
+
+  // Black Patent / Noir
+  if (name.includes('black patent') || name.includes('patent')) {
     return 25;
   }
 
-  // Malt chocolat
+  // Roasted Barley / Orge torréfié
+  if (name.includes('roasted barley') || name.includes('orge torréfié') || name.includes('roast barley')) {
+    return 25;
+  }
+
+  // Carafa (Weyermann) - Special
+  if (name.includes('carafa special') || name.includes('carafa iii') || name.includes('carafa 3')) {
+    return 27;
+  }
+
+  if (name.includes('carafa')) {
+    return 26;
+  }
+
+  // Black Malt / Malt noir générique
+  if (name.includes('black') || name.includes('noir')) {
+    return 25;
+  }
+
+  // Roasted / Torréfié générique
+  if (name.includes('roast') || name.includes('torréfié')) {
+    return 25;
+  }
+
+  // ============================================
+  // MALTS CHOCOLAT & CAFÉ (rendement moyen-bas)
+  // ============================================
+
+  // Chocolate Malt / Chocolat
   if (name.includes('chocolat') || name.includes('chocolate')) {
     return 29;
   }
 
-  // Malts caramel/crystal
+  // Coffee Malt / Café
+  if (name.includes('coffee') || name.includes('café') || name.includes('cafe')) {
+    return 29;
+  }
+
+  // Pale Chocolate
+  if (name.includes('pale chocolate') || name.includes('chocolat pâle')) {
+    return 31;
+  }
+
+  // ============================================
+  // MALTS CARAMEL / CRYSTAL (rendement moyen)
+  // ============================================
+
+  // Special B (Belgique) - très foncé
+  if (name.includes('special b') || name.includes('spécial b')) {
+    return 31;
+  }
+
+  // Caramel/Crystal très foncé (120L+)
+  if ((name.includes('crystal') || name.includes('caramel')) &&
+      (name.includes('120') || name.includes('150') || name.includes('180'))) {
+    return 33;
+  }
+
+  // Caramel/Crystal moyen (40-80L)
+  if ((name.includes('crystal') || name.includes('caramel')) &&
+      (name.includes('40') || name.includes('60') || name.includes('80'))) {
+    return 34;
+  }
+
+  // Caramel/Crystal clair (10-30L)
+  if ((name.includes('crystal') || name.includes('caramel')) &&
+      (name.includes('10') || name.includes('15') || name.includes('20') || name.includes('30'))) {
+    return 35;
+  }
+
+  // CaraPils / CaraFoam / Dextrin
+  if (name.includes('carapils') || name.includes('carafoam') || name.includes('dextrin')) {
+    return 33;
+  }
+
+  // CaraMunich / CaraVienna / CaraAroma
+  if (name.includes('caramunich') || name.includes('caravienne') || name.includes('caravienna') ||
+      name.includes('caraaroma') || name.includes('cara aroma')) {
+    return 34;
+  }
+
+  // CaraRed / CaraRuby / CaraAmber
+  if (name.includes('carared') || name.includes('cararuby') || name.includes('caraamber') ||
+      name.includes('cara red') || name.includes('cara ruby') || name.includes('cara amber')) {
+    return 34;
+  }
+
+  // Crystal / Caramel générique
   if (name.includes('crystal') || name.includes('caramel') || name.includes('cara')) {
     return 34;
   }
 
-  // Flocons (avoine, blé, orge)
-  if (name.includes('flocon') || name.includes('flaked') || name.includes('avoine') || name.includes('oat')) {
+  // ============================================
+  // MALTS SPÉCIAUX (rendement variable)
+  // ============================================
+
+  // Biscuit / Biscotte
+  if (name.includes('biscuit') || name.includes('biscotte')) {
+    return 35;
+  }
+
+  // Victory / Victoire
+  if (name.includes('victory') || name.includes('victoire')) {
+    return 34;
+  }
+
+  // Aromatic / Aromatique
+  if (name.includes('aromatic') || name.includes('aromatique')) {
+    return 36;
+  }
+
+  // Melanoidin / Mélanoidine
+  if (name.includes('melanoidin') || name.includes('mélanoidine') || name.includes('melanoiden')) {
+    return 36;
+  }
+
+  // Honey Malt / Malt miel
+  if (name.includes('honey malt') || name.includes('malt miel') || name.includes('gambrinus honey')) {
+    return 37;
+  }
+
+  // Brown Malt / Malt brun
+  if (name.includes('brown') || name.includes('brun')) {
     return 32;
   }
 
-  // Malt de blé
-  if (name.includes('wheat') || name.includes('blé') || name.includes('froment')) {
+  // Amber Malt / Malt ambré
+  if (name.includes('amber') || name.includes('ambré')) {
+    return 35;
+  }
+
+  // Acidulated Malt / Sauermalz
+  if (name.includes('acidulated') || name.includes('acide') || name.includes('sauer')) {
+    return 27;
+  }
+
+  // Smoked / Fumé (Rauch)
+  if (name.includes('smoked') || name.includes('fumé') || name.includes('rauch')) {
+    return 37;
+  }
+
+  // Peated / Tourbé
+  if (name.includes('peated') || name.includes('tourbé') || name.includes('peat')) {
+    return 34;
+  }
+
+  // ============================================
+  // FLOCONS & ADJUNCTS (rendement variable)
+  // ============================================
+
+  // Flocons d'avoine / Flaked Oats
+  if (name.includes('flocon') && (name.includes('avoine') || name.includes('oat'))) {
+    return 32;
+  }
+
+  if (name.includes('flaked oat') || name.includes('oat flake') || name.includes('rolled oat')) {
+    return 32;
+  }
+
+  // Avoine générique
+  if (name.includes('avoine') || name.includes('oat')) {
+    return 32;
+  }
+
+  // Flocons de blé / Flaked Wheat
+  if ((name.includes('flocon') || name.includes('flaked')) && (name.includes('blé') || name.includes('wheat'))) {
+    return 35;
+  }
+
+  // Flocons d'orge / Flaked Barley
+  if ((name.includes('flocon') || name.includes('flaked')) && (name.includes('orge') || name.includes('barley'))) {
+    return 32;
+  }
+
+  // Flocons de maïs / Flaked Corn (Maize)
+  if ((name.includes('flocon') || name.includes('flaked')) && (name.includes('maïs') || name.includes('corn') || name.includes('maize'))) {
+    return 37;
+  }
+
+  // Flocons de riz / Flaked Rice
+  if ((name.includes('flocon') || name.includes('flaked')) && (name.includes('riz') || name.includes('rice'))) {
+    return 32;
+  }
+
+  // Flocons de seigle / Flaked Rye
+  if ((name.includes('flocon') || name.includes('flaked')) && (name.includes('seigle') || name.includes('rye'))) {
     return 36;
   }
 
-  // Malt Munich
+  // Flocons génériques
+  if (name.includes('flocon') || name.includes('flaked') || name.includes('flake')) {
+    return 33;
+  }
+
+  // Maïs / Corn / Grits
+  if (name.includes('maïs') || name.includes('corn') || name.includes('grits')) {
+    return 37;
+  }
+
+  // Riz / Rice
+  if (name.includes('riz') || name.includes('rice')) {
+    return 32;
+  }
+
+  // ============================================
+  // MALTS DE BLÉ (rendement élevé)
+  // ============================================
+
+  // Blé torréfié / Roasted Wheat
+  if ((name.includes('blé') || name.includes('wheat')) && (name.includes('torréfié') || name.includes('roast'))) {
+    return 25;
+  }
+
+  // Blé chocolat / Chocolate Wheat
+  if ((name.includes('blé') || name.includes('wheat')) && (name.includes('chocolat') || name.includes('chocolate'))) {
+    return 29;
+  }
+
+  // Blé / Wheat générique
+  if (name.includes('wheat') || name.includes('blé') || name.includes('froment') || name.includes('weizen')) {
+    return 38;
+  }
+
+  // ============================================
+  // MALTS DE SEIGLE (rendement élevé)
+  // ============================================
+
+  // Seigle caramel / Caramel Rye
+  if ((name.includes('seigle') || name.includes('rye')) && (name.includes('caramel') || name.includes('crystal'))) {
+    return 33;
+  }
+
+  // Seigle chocolat / Chocolate Rye
+  if ((name.includes('seigle') || name.includes('rye')) && (name.includes('chocolat') || name.includes('chocolate'))) {
+    return 29;
+  }
+
+  // Seigle / Rye générique
+  if (name.includes('seigle') || name.includes('rye') || name.includes('roggen')) {
+    return 37;
+  }
+
+  // ============================================
+  // MALTS DE BASE (rendement standard-élevé)
+  // ============================================
+
+  // Maris Otter (UK - premium)
+  if (name.includes('maris otter') || name.includes('maris-otter')) {
+    return 38;
+  }
+
+  // Golden Promise (UK - premium)
+  if (name.includes('golden promise')) {
+    return 37;
+  }
+
+  // Munich II / Munich Dark
+  if (name.includes('munich ii') || name.includes('munich 2') || name.includes('munich dark') ||
+      name.includes('munich foncé')) {
+    return 35;
+  }
+
+  // Munich
   if (name.includes('munich') || name.includes('münch')) {
-    return 36;
+    return 37;
   }
 
-  // Malt Vienna
+  // Vienna / Vienne
   if (name.includes('vienna') || name.includes('vienne')) {
     return 36;
   }
 
-  // Sucres (très haut rendement, 100% fermentescibles)
-  if (name.includes('sucre') || name.includes('sugar') || name.includes('dextrose') || name.includes('miel') || name.includes('honey')) {
-    return 46;
+  // Pilsner / Pils
+  if (name.includes('pilsner') || name.includes('pils')) {
+    return 37;
   }
 
-  // Extraits de malt
-  if (name.includes('extrait') || name.includes('extract') || name.includes('dme') || name.includes('lme')) {
-    return 44;
+  // Pale Ale
+  if (name.includes('pale ale')) {
+    return 37;
   }
 
-  // Malt de base par défaut (Pale, Pilsner, Maris Otter, etc.)
+  // 2-Row / Two Row
+  if (name.includes('2-row') || name.includes('2 row') || name.includes('two row')) {
+    return 36;
+  }
+
+  // 6-Row / Six Row
+  if (name.includes('6-row') || name.includes('6 row') || name.includes('six row')) {
+    return 35;
+  }
+
+  // Pale / Pâle générique
+  if (name.includes('pale') || name.includes('pâle')) {
+    return 37;
+  }
+
+  // ============================================
+  // MALT DE BASE PAR DÉFAUT
+  // ============================================
+
+  // Si aucune correspondance, utiliser 37 PPG (malt de base standard)
   return 37;
 }
 
