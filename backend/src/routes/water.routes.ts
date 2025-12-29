@@ -263,12 +263,12 @@ router.get('/search', async (req: Request, res: Response) => {
           const communes = data.Communes || [];
 
           return communes
-            .filter((c: { commune: string }) =>
-              c.commune.toLowerCase().includes(query)
+            .filter((c: { nom: string }) =>
+              c.nom && c.nom.toLowerCase().includes(query)
             )
-            .map((c: { insee: string; commune: string }) => ({
+            .map((c: { insee: string; nom: string }) => ({
               insee: c.insee,
-              commune: c.commune,
+              commune: c.nom,
               departement: dept
             }));
         } catch {

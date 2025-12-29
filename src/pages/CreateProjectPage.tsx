@@ -239,16 +239,17 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
         return;
       }
 
-      // Mettre à jour le profil d'eau source dans la recette
+      // Mettre à jour le profil d'eau source dans la recette (arrondi à 1 décimale)
+      const round1 = (n: number) => Math.round(n * 10) / 10;
       const sourceWater: WaterProfile = {
         name: data.name || data.commune,
-        calcium: data.calcium,
-        magnesium: data.magnesium,
-        sodium: data.sodium,
-        chloride: data.chloride,
-        sulfate: data.sulfate,
-        bicarbonate: data.bicarbonate,
-        ph: data.ph
+        calcium: round1(data.calcium || 0),
+        magnesium: round1(data.magnesium || 0),
+        sodium: round1(data.sodium || 0),
+        chloride: round1(data.chloride || 0),
+        sulfate: round1(data.sulfate || 0),
+        bicarbonate: round1(data.bicarbonate || 0),
+        ph: data.ph ? round1(data.ph) : undefined
       };
 
       updateRecipe({ sourceWater });
