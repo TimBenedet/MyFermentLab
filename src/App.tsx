@@ -17,12 +17,55 @@ import './App.css';
 
 type Page = 'home' | 'create-project' | 'monitoring' | 'brewing-session' | 'devices' | 'summary' | 'labels' | 'stats';
 
+// Clés localStorage pour la persistance de navigation
+const NAV_STORAGE_KEY = 'myfermentlab_nav_state';
+
+interface NavState {
+  currentPage: Page;
+  selectedProjectId: string | null;
+}
+
+// Fonction pour lire l'état de navigation depuis localStorage
+const getStoredNavState = (): NavState => {
+  try {
+    const saved = localStorage.getItem(NAV_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved) as NavState;
+      const validPages: Page[] = ['home', 'create-project', 'monitoring', 'brewing-session', 'devices', 'summary', 'labels', 'stats'];
+      if (validPages.includes(parsed.currentPage)) {
+        console.log('[Nav] Restored state:', parsed);
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('[Nav] Failed to restore navigation state:', e);
+  }
+  return { currentPage: 'home', selectedProjectId: null };
+};
+
 function App() {
   const { isAuthenticated, role, logout } = useAuth();
-  const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+  // Utiliser une fonction d'initialisation lazy pour éviter les problèmes de timing
+  const [currentPage, setCurrentPage] = useState<Page>(() => getStoredNavState().currentPage);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(() => getStoredNavState().selectedProjectId);
+  const [navInitialized, setNavInitialized] = useState(false);
   const [showHealthFromLogin, setShowHealthFromLogin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Marquer la navigation comme initialisée après le premier rendu
+  useEffect(() => {
+    setNavInitialized(true);
+  }, []);
+
+  // Sauvegarder l'état de navigation seulement après l'initialisation
+  useEffect(() => {
+    if (navInitialized) {
+      const navState: NavState = { currentPage, selectedProjectId };
+      console.log('[Nav] Saving state:', navState);
+      localStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(navState));
+    }
+  }, [currentPage, selectedProjectId, navInitialized]);
 
   // États
   const [projects, setProjects] = useState<Project[]>([]);
@@ -38,6 +81,19 @@ function App() {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  // Vérifier que le projet restauré existe toujours après le chargement initial
+  useEffect(() => {
+    if (!loading && selectedProjectId && projects.length > 0) {
+      const projectExists = projects.some(p => p.id === selectedProjectId);
+      if (!projectExists) {
+        // Le projet n'existe plus, revenir à l'accueil
+        console.log('Restored project no longer exists, navigating to home');
+        setSelectedProjectId(null);
+        setCurrentPage('home');
+      }
+    }
+  }, [loading, projects, selectedProjectId]);
 
   // Charger le projet sélectionné avec son historique
   useEffect(() => {
