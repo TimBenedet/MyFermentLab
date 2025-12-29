@@ -5,6 +5,7 @@ import { DensityChart } from '../components/DensityChart';
 import { HumidityChart } from '../components/HumidityChart';
 import { TemperatureAlert } from '../components/TemperatureAlert';
 import { apiService } from '../services/api.service';
+import { getColorForEBC, calculateColorEBC } from '../utils/brewingCalculations';
 import './MonitoringPage.css';
 
 // Sensor frozen detection - 10 minutes without temperature change
@@ -297,6 +298,15 @@ export function MonitoringPage({
 
   const typeClass = getTypeClass();
 
+  // Calculate beer color from recipe EBC
+  const getBeerColor = useMemo(() => {
+    if (project.recipe && project.fermentationType === 'beer') {
+      const colorEBC = calculateColorEBC(project.recipe);
+      return getColorForEBC(colorEBC);
+    }
+    return undefined;
+  }, [project.recipe, project.fermentationType]);
+
   return (
     <div className="scada-monitoring-page">
       {/* Temperature Alert */}
@@ -543,8 +553,11 @@ export function MonitoringPage({
                           <div className="scada-rivet"></div>
                         </div>
                         <div
-                          className={`scada-silo-liquid ${typeClass}`}
-                          style={{ height: `${liquidLevel}%` }}
+                          className={`scada-silo-liquid ${getBeerColor ? '' : typeClass}`}
+                          style={getBeerColor ? {
+                            height: `${liquidLevel}%`,
+                            background: `linear-gradient(180deg, ${getBeerColor} 0%, ${getBeerColor}dd 50%, ${getBeerColor}aa 100%)`
+                          } : { height: `${liquidLevel}%` }}
                         >
                           <div className="scada-silo-bubbles">
                             <div className="scada-silo-bubble"></div>
