@@ -105,7 +105,11 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
 
   // États pour le profil d'eau
   const [waterSource, setWaterSource] = useState<'api' | 'manual'>('api');
+  const [waterSearchMode, setWaterSearchMode] = useState<'insee' | 'city'>('city');
   const [waterInseeCode, setWaterInseeCode] = useState('');
+  const [waterCitySearch, setWaterCitySearch] = useState('');
+  const [waterSearchResults, setWaterSearchResults] = useState<Array<{ insee: string; commune: string; departement: string }>>([]);
+  const [waterSearching, setWaterSearching] = useState(false);
   const [waterLoading, setWaterLoading] = useState(false);
   const [waterError, setWaterError] = useState<string | null>(null);
   const [waterCityName, setWaterCityName] = useState<string | null>(null);
@@ -215,8 +219,9 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
   };
 
   // Handlers pour le profil d'eau
-  const fetchWaterProfile = async () => {
-    if (!waterInseeCode || waterInseeCode.length !== 5) {
+  const fetchWaterProfile = async (codeInsee?: string) => {
+    const code = codeInsee || waterInseeCode;
+    if (!code || code.length !== 5) {
       setWaterError('Le code INSEE doit contenir 5 chiffres');
       return;
     }
@@ -226,7 +231,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
     setWaterCityName(null);
 
     try {
-      const response = await fetch(`/api/water/profile/${waterInseeCode}`);
+      const response = await fetch(`/api/water/profile/${code}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -248,11 +253,49 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
 
       updateRecipe({ sourceWater });
       setWaterCityName(data.name || data.commune);
+      setWaterSearchResults([]);
     } catch (err) {
       setWaterError('Impossible de contacter le serveur');
     } finally {
       setWaterLoading(false);
     }
+  };
+
+  // Recherche de villes par nom
+  const searchCities = async (query: string) => {
+    if (query.length < 2) {
+      setWaterSearchResults([]);
+      return;
+    }
+
+    setWaterSearching(true);
+    setWaterError(null);
+
+    try {
+      const response = await fetch(`/api/water/search?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setWaterError(data.message || 'Erreur lors de la recherche');
+        setWaterSearchResults([]);
+        return;
+      }
+
+      setWaterSearchResults(data);
+    } catch (err) {
+      setWaterError('Impossible de contacter le serveur');
+      setWaterSearchResults([]);
+    } finally {
+      setWaterSearching(false);
+    }
+  };
+
+  // Sélection d'une ville dans les résultats
+  const selectCity = (result: { insee: string; commune: string; departement: string }) => {
+    setWaterInseeCode(result.insee);
+    setWaterCitySearch(result.commune);
+    setWaterSearchResults([]);
+    fetchWaterProfile(result.insee);
   };
 
   const updateSourceWater = (updates: Partial<WaterProfile>) => {
@@ -973,7 +1016,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                             checked={waterSource === 'api'}
                             onChange={() => setWaterSource('api')}
                           />
-                          Rechercher par code INSEE
+                          Rechercher une ville
                         </label>
                         <label className="radio-label">
                           <input
@@ -987,27 +1030,83 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                         </label>
                       </div>
 
-                      {/* Recherche par code INSEE */}
+                      {/* Recherche par ville ou code INSEE */}
                       {waterSource === 'api' && (
                         <div className="water-api-search">
-                          <div className="search-row">
-                            <input
-                              type="text"
-                              className="form-input"
-                              placeholder="Code INSEE (ex: 59178)"
-                              value={waterInseeCode}
-                              onChange={(e) => setWaterInseeCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                              maxLength={5}
-                            />
+                          {/* Toggle entre nom de ville et code INSEE */}
+                          <div className="water-search-mode-toggle">
                             <button
                               type="button"
-                              className="btn-search"
-                              onClick={fetchWaterProfile}
-                              disabled={waterLoading || waterInseeCode.length !== 5}
+                              className={`mode-btn ${waterSearchMode === 'city' ? 'active' : ''}`}
+                              onClick={() => setWaterSearchMode('city')}
                             >
-                              {waterLoading ? '...' : 'Rechercher'}
+                              Par nom
+                            </button>
+                            <button
+                              type="button"
+                              className={`mode-btn ${waterSearchMode === 'insee' ? 'active' : ''}`}
+                              onClick={() => setWaterSearchMode('insee')}
+                            >
+                              Par code INSEE
                             </button>
                           </div>
+
+                          {/* Recherche par nom de ville */}
+                          {waterSearchMode === 'city' && (
+                            <div className="city-search-container">
+                              <div className="search-row">
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  placeholder="Nom de la ville (ex: Douai)"
+                                  value={waterCitySearch}
+                                  onChange={(e) => {
+                                    setWaterCitySearch(e.target.value);
+                                    searchCities(e.target.value);
+                                  }}
+                                />
+                                {waterSearching && <span className="search-spinner">...</span>}
+                              </div>
+                              {waterSearchResults.length > 0 && (
+                                <div className="city-search-results">
+                                  {waterSearchResults.map((result) => (
+                                    <button
+                                      key={result.insee}
+                                      type="button"
+                                      className="city-result-item"
+                                      onClick={() => selectCity(result)}
+                                    >
+                                      <span className="city-name">{result.commune}</span>
+                                      <span className="city-info">({result.departement}) - {result.insee}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Recherche par code INSEE */}
+                          {waterSearchMode === 'insee' && (
+                            <div className="search-row">
+                              <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Code INSEE (ex: 59178)"
+                                value={waterInseeCode}
+                                onChange={(e) => setWaterInseeCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                                maxLength={5}
+                              />
+                              <button
+                                type="button"
+                                className="btn-search"
+                                onClick={() => fetchWaterProfile()}
+                                disabled={waterLoading || waterInseeCode.length !== 5}
+                              >
+                                {waterLoading ? '...' : 'Rechercher'}
+                              </button>
+                            </div>
+                          )}
+
                           {waterError && <div className="water-error">{waterError}</div>}
                           {waterCityName && <div className="water-city">Ville : {waterCityName}</div>}
                         </div>

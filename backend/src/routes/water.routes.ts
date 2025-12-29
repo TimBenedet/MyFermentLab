@@ -212,4 +212,98 @@ router.get('/styles', (req: Request, res: Response) => {
   res.json(styles);
 });
 
+/**
+ * GET /api/water/search?q=douai
+ * Recherche une commune par nom (retourne les communes correspondantes)
+ */
+router.get('/search', async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string || '').trim().toLowerCase();
+
+    if (!query || query.length < 2) {
+      return res.status(400).json({
+        error: 'Requête invalide',
+        message: 'Le terme de recherche doit contenir au moins 2 caractères'
+      });
+    }
+
+    // Liste des départements français (métropole + DOM-TOM)
+    const departements = [
+      '01', '02', '03', '04', '05', '06', '07', '08', '09', '10',
+      '11', '12', '13', '14', '15', '16', '17', '18', '19', '21',
+      '22', '23', '24', '25', '26', '27', '28', '29', '2A', '2B',
+      '30', '31', '32', '33', '34', '35', '36', '37', '38', '39',
+      '40', '41', '42', '43', '44', '45', '46', '47', '48', '49',
+      '50', '51', '52', '53', '54', '55', '56', '57', '58', '59',
+      '60', '61', '62', '63', '64', '65', '66', '67', '68', '69',
+      '70', '71', '72', '73', '74', '75', '76', '77', '78', '79',
+      '80', '81', '82', '83', '84', '85', '86', '87', '88', '89',
+      '90', '91', '92', '93', '94', '95', '97'
+    ];
+
+    const results: Array<{ insee: string; commune: string; departement: string }> = [];
+
+    // Recherche parallèle dans tous les départements (par lots pour éviter surcharge)
+    const batchSize = 10;
+    for (let i = 0; i < departements.length && results.length < 20; i += batchSize) {
+      const batch = departements.slice(i, i + batchSize);
+
+      const promises = batch.map(async (dept) => {
+        try {
+          const response = await fetch(`${WATER_API_BASE_URL}/communes/${dept}`, {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'MyFermentLab/1.0'
+            }
+          });
+
+          if (!response.ok) return [];
+
+          const data = await response.json();
+          const communes = data.Communes || [];
+
+          return communes
+            .filter((c: { commune: string }) =>
+              c.commune.toLowerCase().includes(query)
+            )
+            .map((c: { insee: string; commune: string }) => ({
+              insee: c.insee,
+              commune: c.commune,
+              departement: dept
+            }));
+        } catch {
+          return [];
+        }
+      });
+
+      const batchResults = await Promise.all(promises);
+      batchResults.flat().forEach(r => {
+        if (results.length < 20) {
+          results.push(r);
+        }
+      });
+
+      // Arrêter dès qu'on a assez de résultats
+      if (results.length >= 20) break;
+    }
+
+    // Trier par pertinence (commence par > contient)
+    results.sort((a, b) => {
+      const aStarts = a.commune.toLowerCase().startsWith(query);
+      const bStarts = b.commune.toLowerCase().startsWith(query);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      return a.commune.localeCompare(b.commune);
+    });
+
+    res.json(results);
+  } catch (error) {
+    console.error('[Water API] Error searching communes:', error);
+    res.status(500).json({
+      error: 'Erreur serveur',
+      message: 'Erreur lors de la recherche de communes'
+    });
+  }
+});
+
 export default router;
