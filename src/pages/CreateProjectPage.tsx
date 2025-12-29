@@ -892,7 +892,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                             value={grain.quantity || ''}
                             onChange={(e) => updateGrain(grain.id, { quantity: Number(e.target.value) })}
                             min="0"
-                            step="0.1"
+                            step="0.01"
                           />
                           <span className="unit">kg</span>
                           <input
@@ -1100,7 +1100,7 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
                               value={other.quantity || ''}
                               onChange={(e) => updateOther(other.id, { quantity: Number(e.target.value) })}
                               min="0"
-                              step="0.1"
+                              step="0.01"
                             />
                             <select
                               className="form-select small"
