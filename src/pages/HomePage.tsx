@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Project, Device, FermentationType, FERMENTATION_TYPES } from '../types';
+import { getColorForEBC, calculateColorEBC } from '../utils/brewingCalculations';
 import './HomePage.css';
 
 // Gear Icon SVG
@@ -50,31 +51,39 @@ const getSensorFrozenDuration = (project: Project): string => {
 };
 
 // Mini Tank visualization for beer - Silo industriel style
-const MiniTank = ({ level = 70 }: { level?: number }) => (
-  <div className="mini-silo">
-    <div className="mini-silo-roof">
-      <div className="mini-silo-cap"></div>
-    </div>
-    <div className="mini-silo-body">
-      <div className="mini-silo-rivets">
-        <div className="mini-rivet"></div>
-        <div className="mini-rivet"></div>
-        <div className="mini-rivet"></div>
-        <div className="mini-rivet"></div>
+const MiniTank = ({ level = 70, beerColor }: { level?: number; beerColor?: string }) => {
+  // Génère un dégradé basé sur la couleur de la bière
+  const liquidStyle = beerColor ? {
+    height: `${level}%`,
+    background: `linear-gradient(180deg, ${beerColor} 0%, ${beerColor}dd 50%, ${beerColor}aa 100%)`
+  } : { height: `${level}%` };
+
+  return (
+    <div className="mini-silo">
+      <div className="mini-silo-roof">
+        <div className="mini-silo-cap"></div>
       </div>
-      <div className="mini-silo-liquid" style={{ height: `${level}%` }}>
-        <div className="mini-silo-bubbles">
-          <div className="mini-silo-bubble"></div>
-          <div className="mini-silo-bubble"></div>
-          <div className="mini-silo-bubble"></div>
-          <div className="mini-silo-bubble"></div>
-          <div className="mini-silo-bubble"></div>
+      <div className="mini-silo-body">
+        <div className="mini-silo-rivets">
+          <div className="mini-rivet"></div>
+          <div className="mini-rivet"></div>
+          <div className="mini-rivet"></div>
+          <div className="mini-rivet"></div>
+        </div>
+        <div className={`mini-silo-liquid${beerColor ? '' : ' default'}`} style={liquidStyle}>
+          <div className="mini-silo-bubbles">
+            <div className="mini-silo-bubble"></div>
+            <div className="mini-silo-bubble"></div>
+            <div className="mini-silo-bubble"></div>
+            <div className="mini-silo-bubble"></div>
+            <div className="mini-silo-bubble"></div>
+          </div>
         </div>
       </div>
+      <div className="mini-silo-base"></div>
     </div>
-    <div className="mini-silo-base"></div>
-  </div>
-);
+  );
+};
 
 // Mini Chamber visualization for koji
 const MiniChamber = ({ growth = 50 }: { growth?: number }) => (
@@ -303,8 +312,18 @@ export function HomePage({
   };
 
   const renderMiniVisualization = (project: Project) => {
+    // Calculer la couleur EBC si une recette existe
+    const getBeerColor = () => {
+      if (project.recipe && project.fermentationType === 'beer') {
+        const colorEBC = calculateColorEBC(project.recipe);
+        return getColorForEBC(colorEBC);
+      }
+      return undefined;
+    };
+
     switch (project.fermentationType) {
       case 'beer':
+        return <MiniTank level={75} beerColor={getBeerColor()} />;
       case 'kombucha':
         return <MiniTank level={75} />;
       case 'koji':

@@ -411,13 +411,17 @@
   bottom: 0;
   left: 0;
   right: 0;
+  transition: height 0.5s ease;
+  overflow: hidden;
+}
+
+/* Couleur par défaut quand pas de recette EBC */
+.mini-silo-liquid.default {
   background: linear-gradient(180deg,
     #f6e05e 0%,
     #d69e2e 50%,
     #b7791f 100%
   );
-  transition: height 0.5s ease;
-  overflow: hidden;
 }
 
 /* Bubbles in silo */
