@@ -79,6 +79,7 @@ function App() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // DateTime pour le header SCADA
   const [datetime, setDatetime] = useState('');
@@ -404,9 +405,8 @@ function App() {
       const message = refreshedSensors.length === 1
         ? `Sonde ${refreshedSensors[0]} actualisee`
         : `Sondes ${refreshedSensors.join(' et ')} actualisees`;
-      // Utiliser setError temporairement pour afficher le message (style info)
-      setError(message);
-      setTimeout(() => setError(null), 3000);
+      setSuccessMessage(message);
+      setTimeout(() => setSuccessMessage(null), 3000);
     } else if (hasError) {
       setError('Impossible de recuperer les donnees depuis Home Assistant');
       setTimeout(() => setError(null), 3000);
@@ -701,6 +701,32 @@ function App() {
           {error}
           <button
             onClick={() => setError(null)}
+            style={{
+              marginLeft: '10px',
+              background: 'transparent',
+              border: '1px solid white',
+              color: 'white',
+              padding: '2px 8px',
+              borderRadius: '2px',
+              cursor: 'pointer'
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {successMessage && currentPage !== 'home' && (
+        <div style={{
+          padding: '10px',
+          background: '#22C55E',
+          color: 'white',
+          borderRadius: '4px',
+          marginBottom: '10px'
+        }}>
+          {successMessage}
+          <button
+            onClick={() => setSuccessMessage(null)}
             style={{
               marginLeft: '10px',
               background: 'transparent',
