@@ -213,16 +213,17 @@ export function MonitoringPage({
     return [];
   }, [project.densityHistory, project.fermentationType]);
 
-  // Use mock data for humidity if no real data available (for mushroom/koji demo)
+  // Use mock data for humidity if no real data available (for projects with humidity sensor)
   const humidityHistoryData = useMemo(() => {
     if (project.humidityHistory && project.humidityHistory.length > 0) {
       return project.humidityHistory;
     }
-    if (project.fermentationType === 'mushroom' || project.fermentationType === 'koji') {
+    // Generate mock data for projects with humidity sensor configured
+    if (project.humiditySensorId) {
       return generateMockHumidityData(project.targetHumidity || 85, 7);
     }
     return [];
-  }, [project.humidityHistory, project.fermentationType, project.targetHumidity]);
+  }, [project.humidityHistory, project.humiditySensorId, project.targetHumidity]);
 
   // Get current humidity (real or from mock data)
   const currentHumidity = useMemo(() => {
@@ -623,8 +624,8 @@ export function MonitoringPage({
                     </div>
                   </div>
 
-                  {/* Humidity for mushrooms */}
-                  {project.fermentationType === 'mushroom' && (
+                  {/* Humidity for projects with humidity sensor */}
+                  {project.humiditySensorId && (
                     <>
                       <div className="scada-metric-card">
                         <div className="scada-metric-icon">💧</div>
@@ -853,8 +854,8 @@ export function MonitoringPage({
           </div>
         )}
 
-        {/* Humidity Chart for mushrooms and koji */}
-        {(project.fermentationType === 'mushroom' || project.fermentationType === 'koji') && (
+        {/* Humidity Chart for projects with humidity sensor */}
+        {project.humiditySensorId && (
           <div className="scada-chart-card fade-in">
             <HumidityChart
               data={humidityHistoryData}

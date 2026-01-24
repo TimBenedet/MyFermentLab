@@ -267,16 +267,15 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
       recipe: finalRecipe
     };
 
-    // Ajouter les champs spécifiques aux champignons et koji
-    if (fermentationType === 'mushroom') {
-      projectData.humiditySensorId = humiditySensorId || undefined;
+    // Ajouter les champs d'humidité si une sonde est sélectionnée
+    if (humiditySensorId) {
+      projectData.humiditySensorId = humiditySensorId;
       projectData.targetHumidity = targetHumidity;
-      projectData.mushroomType = mushroomType;
     }
 
-    if (fermentationType === 'koji') {
-      projectData.humiditySensorId = humiditySensorId || undefined;
-      projectData.targetHumidity = targetHumidity;
+    // Ajouter les champs spécifiques aux champignons
+    if (fermentationType === 'mushroom') {
+      projectData.mushroomType = mushroomType;
     }
 
     return projectData;
@@ -614,8 +613,8 @@ export function CreateProjectPage({ devices, usedDeviceIds, onCreateProject, onC
             </div>
           </div>
 
-          {/* Sonde d'humidité pour champignons et koji */}
-          {(fermentationType === 'mushroom' || fermentationType === 'koji') && (
+          {/* Sonde d'humidité (disponible pour tous les types de projets) */}
+          {humiditySensors.length > 0 && (
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="humidity-sensor" className="form-label">
