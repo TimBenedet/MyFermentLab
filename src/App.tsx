@@ -17,6 +17,12 @@ import './App.css';
 
 type Page = 'home' | 'create-project' | 'monitoring' | 'brewing-session' | 'devices' | 'summary' | 'labels' | 'stats';
 
+// Fonction pour détecter si un sensorId est une sonde de test
+const isTestSensor = (sensorId: string | undefined): boolean => {
+  if (!sensorId) return false;
+  return sensorId.startsWith('test-');
+};
+
 // Clés localStorage pour la persistance de navigation
 const NAV_STORAGE_KEY = 'myfermentlab_nav_state';
 
@@ -105,8 +111,14 @@ function App() {
   // Rafraîchir la température toutes les 5 secondes si on est sur la page de monitoring
   // Utilise getLiveTemperature pour récupérer directement depuis Home Assistant
   // ce qui permet aussi de déclencher le contrôle automatique de la prise côté backend
+  // Note: Ne pas rafraîchir si c'est une sonde de test (pas de capteur réel dans Home Assistant)
   useEffect(() => {
-    if (currentPage === 'monitoring' && selectedProjectId) {
+    if (currentPage === 'monitoring' && selectedProjectId && selectedProject) {
+      // Ne pas rafraîchir automatiquement si c'est une sonde de test
+      if (isTestSensor(selectedProject.sensorId)) {
+        return;
+      }
+
       const refreshTemperature = async () => {
         try {
           const data = await apiService.getLiveTemperature(selectedProjectId);
@@ -131,7 +143,7 @@ function App() {
 
       return () => clearInterval(interval);
     }
-  }, [currentPage, selectedProjectId]);
+  }, [currentPage, selectedProjectId, selectedProject?.sensorId]);
 
   // Mettre à jour la date/heure pour le header SCADA
   useEffect(() => {
@@ -333,7 +345,15 @@ function App() {
   };
 
   const handleRefreshTemperature = async () => {
-    if (!selectedProjectId) return;
+    if (!selectedProjectId || !selectedProject) return;
+
+    // Si c'est une sonde de test, afficher un message informatif
+    if (isTestSensor(selectedProject.sensorId)) {
+      setError('Rafraichissement impossible : sonde de test utilisee (pas de capteur reel dans Home Assistant)');
+      // Effacer le message après 3 secondes
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
 
     try {
       const data = await apiService.getLiveTemperature(selectedProjectId);
@@ -344,11 +364,18 @@ function App() {
       ));
     } catch (err) {
       console.error('Failed to refresh temperature:', err);
-      setError('Impossible de récupérer la température depuis Home Assistant');
+      setError('Impossible de recuperer la temperature depuis Home Assistant');
     }
   };
 
   const handleRefreshProjectTemperature = async (projectId: string) => {
+    // Trouver le projet pour vérifier si c'est une sonde de test
+    const project = projects.find(p => p.id === projectId);
+    if (!project || isTestSensor(project.sensorId)) {
+      // Ne pas essayer de rafraîchir les sondes de test
+      return;
+    }
+
     try {
       const data = await apiService.getLiveTemperature(projectId);
       // Mettre à jour seulement la température du projet (pas l'état de la prise)
