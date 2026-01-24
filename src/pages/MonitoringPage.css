@@ -767,6 +767,93 @@
   border-color: rgba(245, 158, 11, 0.3);
 }
 
+/* Control Type Selector (Temperature / Humidity) */
+.scada-control-type-selector {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.scada-control-type-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scada-control-type-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+}
+
+.scada-control-type-btn.active {
+  background: rgba(212, 181, 132, 0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(212, 181, 132, 0.3);
+}
+
+.scada-control-type-btn.active:last-child {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #3B82F6;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Humidity Gauge Styles */
+.scada-circular-gauge.humidity .scada-gauge-progress {
+  stroke: url(#humidityGradient) !important;
+}
+
+.scada-gauge-progress.humidity {
+  stroke: #3B82F6 !important;
+}
+
+.scada-gauge-temp.humidity {
+  color: #60A5FA;
+}
+
+.scada-btn-primary.humidity {
+  background: linear-gradient(135deg, #3B82F6, #60A5FA) !important;
+}
+
+/* Humidity Info Section */
+.scada-humidity-info {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.scada-humidity-current {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.scada-humidity-current .label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scada-humidity-current .value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #60A5FA;
+}
+
 /* Sensor Frozen Alert */
 .scada-sensor-frozen-alert {
   display: flex;

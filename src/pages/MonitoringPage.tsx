@@ -135,17 +135,27 @@ export function MonitoringPage({
   role
 }: MonitoringPageProps) {
   const [localTarget, setLocalTarget] = useState(project.targetTemperature);
+  const [localHumidityTarget, setLocalHumidityTarget] = useState(project.targetHumidity ?? 85);
   const [controlPanelTab, setControlPanelTab] = useState<'control' | 'history'>('control');
+  const [controlType, setControlType] = useState<'temperature' | 'humidity'>('temperature');
   const [outletHistory, setOutletHistory] = useState<OutletHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const config = FERMENTATION_TYPES[project.fermentationType];
+  const hasHumiditySensor = !!project.humiditySensorId;
 
   // Synchronize localTarget with project.targetTemperature when it changes
   useEffect(() => {
     setLocalTarget(project.targetTemperature);
   }, [project.targetTemperature]);
+
+  // Synchronize localHumidityTarget with project.targetHumidity when it changes
+  useEffect(() => {
+    if (project.targetHumidity !== undefined) {
+      setLocalHumidityTarget(project.targetHumidity);
+    }
+  }, [project.targetHumidity]);
 
   // Load outlet history when switching to history tab
   useEffect(() => {
@@ -293,6 +303,29 @@ export function MonitoringPage({
   const handleApplyTemp = () => {
     onUpdateTarget(localTarget);
   };
+
+  // Humidity control functions
+  const handleIncreaseHumidity = () => {
+    if (localHumidityTarget < 100) {
+      setLocalHumidityTarget(prev => Math.min(100, prev + 1));
+    }
+  };
+
+  const handleDecreaseHumidity = () => {
+    if (localHumidityTarget > 0) {
+      setLocalHumidityTarget(prev => Math.max(0, prev - 1));
+    }
+  };
+
+  const handleApplyHumidity = async () => {
+    if (onUpdateProject) {
+      await onUpdateProject({ targetHumidity: localHumidityTarget });
+    }
+  };
+
+  // Humidity gauge calculations
+  const humidityProgress = localHumidityTarget / 100;
+  const humidityStrokeDashoffset = circumference - (humidityProgress * circumference);
 
   const getTypeClass = () => {
     switch (project.fermentationType) {
@@ -674,7 +707,7 @@ export function MonitoringPage({
                 className={`scada-panel-tab ${controlPanelTab === 'control' ? 'active' : ''}`}
                 onClick={() => setControlPanelTab('control')}
               >
-                Controle Temperature
+                Controle {controlType === 'temperature' ? 'Temperature' : 'Humidite'}
               </button>
               <button
                 className={`scada-panel-tab ${controlPanelTab === 'history' ? 'active' : ''}`}
@@ -685,8 +718,28 @@ export function MonitoringPage({
             </div>
 
             {controlPanelTab === 'control' ? (
-              /* Temperature Control Content */
+              /* Control Content */
               <div className="scada-control-body">
+                {/* Control Type Selector (only if humidity sensor is configured) */}
+                {hasHumiditySensor && (
+                  <div className="scada-control-type-selector">
+                    <button
+                      className={`scada-control-type-btn ${controlType === 'temperature' ? 'active' : ''}`}
+                      onClick={() => setControlType('temperature')}
+                      title="Controle Temperature"
+                    >
+                      🌡️
+                    </button>
+                    <button
+                      className={`scada-control-type-btn ${controlType === 'humidity' ? 'active' : ''}`}
+                      onClick={() => setControlType('humidity')}
+                      title="Controle Humidite"
+                    >
+                      💧
+                    </button>
+                  </div>
+                )}
+
                 {/* Mode Badge */}
                 <div className="scada-mode-badge-container">
                   <span className={`scada-control-mode ${project.controlMode === 'manual' ? 'manual' : ''}`}>
@@ -694,106 +747,191 @@ export function MonitoringPage({
                   </span>
                 </div>
 
-                {/* Circular Gauge */}
-                <div className="scada-circular-gauge">
-                  <svg className="scada-gauge-svg" viewBox="0 0 180 180">
-                    <defs>
-                      <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#a08050"/>
-                        <stop offset="100%" stopColor="#d4b584"/>
-                      </linearGradient>
-                    </defs>
-                    <circle className="scada-gauge-track" cx="90" cy="90" r="80"/>
-                    <circle
-                      className="scada-gauge-progress"
-                      cx="90"
-                      cy="90"
-                      r="80"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={strokeDashoffset}
-                    />
-                  </svg>
-                  <div className="scada-gauge-center">
-                    <div className="scada-gauge-temp">
-                      <span>{localTarget}</span>
-                      <span className="unit">°C</span>
-                    </div>
-                    <div className="scada-gauge-label">Cible</div>
-                  </div>
-                </div>
-
-                <div className="scada-control-row">
-                  <button
-                    className="scada-btn scada-btn-adjust"
-                    onClick={handleDecreaseTemp}
-                    disabled={role === 'viewer'}
-                  >
-                    −
-                  </button>
-                  <button
-                    className="scada-btn scada-btn-primary"
-                    onClick={handleApplyTemp}
-                    disabled={role === 'viewer'}
-                  >
-                    Appliquer
-                  </button>
-                  <button
-                    className="scada-btn scada-btn-adjust"
-                    onClick={handleIncreaseTemp}
-                    disabled={role === 'viewer'}
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Sensor Frozen Alert */}
-                {isSensorFrozen(project) && (
-                  <div className="scada-sensor-frozen-alert">
-                    <span className="frozen-icon">⚠️</span>
-                    <span className="frozen-text">Sonde figée depuis {getSensorFrozenDuration(project)}</span>
-                  </div>
-                )}
-
-                {/* Outlet Control */}
-                <div className="scada-outlet-section">
-                  <div className="scada-outlet-status">
-                    <span className={`scada-outlet-indicator ${project.outletActive ? 'active' : 'inactive'}`}>
-                      {project.outletActive ? '●' : '○'}
-                    </span>
-                    <div className="scada-outlet-info">
-                      <div className="scada-outlet-label">Tapis chauffant</div>
-                      <div className="scada-outlet-state" style={{ color: project.outletActive ? '#10B981' : '#EF4444' }}>
-                        {project.outletActive ? 'Activé' : 'Désactivé'}
+                {controlType === 'temperature' ? (
+                  <>
+                    {/* Circular Gauge - Temperature */}
+                    <div className="scada-circular-gauge">
+                      <svg className="scada-gauge-svg" viewBox="0 0 180 180">
+                        <defs>
+                          <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#a08050"/>
+                            <stop offset="100%" stopColor="#d4b584"/>
+                          </linearGradient>
+                        </defs>
+                        <circle className="scada-gauge-track" cx="90" cy="90" r="80"/>
+                        <circle
+                          className="scada-gauge-progress"
+                          cx="90"
+                          cy="90"
+                          r="80"
+                          strokeDasharray={circumference}
+                          strokeDashoffset={strokeDashoffset}
+                        />
+                      </svg>
+                      <div className="scada-gauge-center">
+                        <div className="scada-gauge-temp">
+                          <span>{localTarget}</span>
+                          <span className="unit">°C</span>
+                        </div>
+                        <div className="scada-gauge-label">Cible</div>
                       </div>
                     </div>
-                  </div>
-                  <button
-                    className={`scada-btn-outlet ${project.outletActive ? 'active' : 'inactive'}`}
-                    onClick={onToggleOutlet}
-                    disabled={project.controlMode === 'automatic' || role === 'viewer'}
-                  >
-                    {project.outletActive ? 'Désactiver' : 'Activer'}
-                  </button>
-                </div>
 
-                {/* Mode Toggle */}
-                {onToggleControlMode && (
-                  <div className="scada-mode-buttons">
-                    <button
-                      className={`scada-btn-mode ${project.controlMode === 'automatic' ? 'active' : ''}`}
-                      onClick={onToggleControlMode}
-                      disabled={role === 'viewer'}
-                    >
-                      ⚙ Auto
-                    </button>
-                    <button
-                      className={`scada-btn-mode ${project.controlMode === 'manual' ? 'active' : ''}`}
-                      onClick={onToggleControlMode}
-                      disabled={role === 'viewer'}
-                    >
-                      ✋ Manuel
-                    </button>
-                  </div>
+                    <div className="scada-control-row">
+                      <button
+                        className="scada-btn scada-btn-adjust"
+                        onClick={handleDecreaseTemp}
+                        disabled={role === 'viewer'}
+                      >
+                        −
+                      </button>
+                      <button
+                        className="scada-btn scada-btn-primary"
+                        onClick={handleApplyTemp}
+                        disabled={role === 'viewer'}
+                      >
+                        Appliquer
+                      </button>
+                      <button
+                        className="scada-btn scada-btn-adjust"
+                        onClick={handleIncreaseTemp}
+                        disabled={role === 'viewer'}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* Sensor Frozen Alert */}
+                    {isSensorFrozen(project) && (
+                      <div className="scada-sensor-frozen-alert">
+                        <span className="frozen-icon">⚠️</span>
+                        <span className="frozen-text">Sonde figée depuis {getSensorFrozenDuration(project)}</span>
+                      </div>
+                    )}
+
+                    {/* Outlet Control - Temperature */}
+                    <div className="scada-outlet-section">
+                      <div className="scada-outlet-status">
+                        <span className={`scada-outlet-indicator ${project.outletActive ? 'active' : 'inactive'}`}>
+                          {project.outletActive ? '●' : '○'}
+                        </span>
+                        <div className="scada-outlet-info">
+                          <div className="scada-outlet-label">Tapis chauffant</div>
+                          <div className="scada-outlet-state" style={{ color: project.outletActive ? '#10B981' : '#EF4444' }}>
+                            {project.outletActive ? 'Activé' : 'Désactivé'}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        className={`scada-btn-outlet ${project.outletActive ? 'active' : 'inactive'}`}
+                        onClick={onToggleOutlet}
+                        disabled={project.controlMode === 'automatic' || role === 'viewer'}
+                      >
+                        {project.outletActive ? 'Désactiver' : 'Activer'}
+                      </button>
+                    </div>
+
+                    {/* Mode Toggle */}
+                    {onToggleControlMode && (
+                      <div className="scada-mode-buttons">
+                        <button
+                          className={`scada-btn-mode ${project.controlMode === 'automatic' ? 'active' : ''}`}
+                          onClick={onToggleControlMode}
+                          disabled={role === 'viewer'}
+                        >
+                          ⚙ Auto
+                        </button>
+                        <button
+                          className={`scada-btn-mode ${project.controlMode === 'manual' ? 'active' : ''}`}
+                          onClick={onToggleControlMode}
+                          disabled={role === 'viewer'}
+                        >
+                          ✋ Manuel
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Circular Gauge - Humidity */}
+                    <div className="scada-circular-gauge humidity">
+                      <svg className="scada-gauge-svg" viewBox="0 0 180 180">
+                        <defs>
+                          <linearGradient id="humidityGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#3B82F6"/>
+                            <stop offset="100%" stopColor="#60A5FA"/>
+                          </linearGradient>
+                        </defs>
+                        <circle className="scada-gauge-track" cx="90" cy="90" r="80"/>
+                        <circle
+                          className="scada-gauge-progress humidity"
+                          cx="90"
+                          cy="90"
+                          r="80"
+                          strokeDasharray={circumference}
+                          strokeDashoffset={humidityStrokeDashoffset}
+                        />
+                      </svg>
+                      <div className="scada-gauge-center">
+                        <div className="scada-gauge-temp humidity">
+                          <span>{localHumidityTarget}</span>
+                          <span className="unit">%</span>
+                        </div>
+                        <div className="scada-gauge-label">Cible</div>
+                      </div>
+                    </div>
+
+                    <div className="scada-control-row">
+                      <button
+                        className="scada-btn scada-btn-adjust"
+                        onClick={handleDecreaseHumidity}
+                        disabled={role === 'viewer'}
+                      >
+                        −
+                      </button>
+                      <button
+                        className="scada-btn scada-btn-primary humidity"
+                        onClick={handleApplyHumidity}
+                        disabled={role === 'viewer'}
+                      >
+                        Appliquer
+                      </button>
+                      <button
+                        className="scada-btn scada-btn-adjust"
+                        onClick={handleIncreaseHumidity}
+                        disabled={role === 'viewer'}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* Humidity Info */}
+                    <div className="scada-humidity-info">
+                      <div className="scada-humidity-current">
+                        <span className="label">Humidite actuelle</span>
+                        <span className="value">{currentHumidity?.toFixed(1) ?? '--'}%</span>
+                      </div>
+                    </div>
+
+                    {/* Humidifier Control (placeholder for future) */}
+                    <div className="scada-outlet-section">
+                      <div className="scada-outlet-status">
+                        <span className="scada-outlet-indicator inactive">○</span>
+                        <div className="scada-outlet-info">
+                          <div className="scada-outlet-label">Humidificateur</div>
+                          <div className="scada-outlet-state" style={{ color: '#888' }}>
+                            Non configuré
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        className="scada-btn-outlet inactive"
+                        disabled={true}
+                      >
+                        Activer
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             ) : (
