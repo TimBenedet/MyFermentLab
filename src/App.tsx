@@ -347,24 +347,69 @@ function App() {
   const handleRefreshTemperature = async () => {
     if (!selectedProjectId || !selectedProject) return;
 
-    // Si c'est une sonde de test, afficher un message informatif
-    if (isTestSensor(selectedProject.sensorId)) {
-      setError('Rafraichissement impossible : sonde de test utilisee (pas de capteur reel dans Home Assistant)');
-      // Effacer le message après 3 secondes
+    const tempIsTest = isTestSensor(selectedProject.sensorId);
+    const hasHumiditySensor = !!selectedProject.humiditySensorId;
+    const humidityIsTest = isTestSensor(selectedProject.humiditySensorId);
+
+    // Trouver les noms des sondes pour le message
+    const tempDevice = devices.find(d => d.id === selectedProject.sensorId);
+    const humidityDevice = devices.find(d => d.id === selectedProject.humiditySensorId);
+    const tempName = tempDevice?.name || 'Temperature';
+    const humidityName = humidityDevice?.name || 'Humidite';
+
+    // Si toutes les sondes sont des tests, afficher un message informatif
+    if (tempIsTest && (!hasHumiditySensor || humidityIsTest)) {
+      setError('Rafraichissement impossible : sonde(s) de test utilisee(s) (pas de capteur reel dans Home Assistant)');
       setTimeout(() => setError(null), 3000);
       return;
     }
 
-    try {
-      const data = await apiService.getLiveTemperature(selectedProjectId);
-      // Mettre à jour la température dans le projet sélectionné
-      setSelectedProject(prev => prev ? { ...prev, currentTemperature: data.temperature } : null);
-      setProjects(prev => prev.map(p =>
-        p.id === selectedProjectId ? { ...p, currentTemperature: data.temperature } : p
-      ));
-    } catch (err) {
-      console.error('Failed to refresh temperature:', err);
-      setError('Impossible de recuperer la temperature depuis Home Assistant');
+    const refreshedSensors: string[] = [];
+    let hasError = false;
+
+    // Rafraîchir la température si ce n'est pas une sonde de test
+    if (!tempIsTest) {
+      try {
+        const data = await apiService.getLiveTemperature(selectedProjectId);
+        setSelectedProject(prev => prev ? { ...prev, currentTemperature: data.temperature } : null);
+        setProjects(prev => prev.map(p =>
+          p.id === selectedProjectId ? { ...p, currentTemperature: data.temperature } : p
+        ));
+        refreshedSensors.push(`temperature (${tempName})`);
+      } catch (err) {
+        console.error('Failed to refresh temperature:', err);
+        hasError = true;
+      }
+    }
+
+    // Rafraîchir l'humidité si configurée et pas une sonde de test
+    if (hasHumiditySensor && !humidityIsTest) {
+      try {
+        const data = await apiService.getLiveHumidity(selectedProjectId);
+        if (data && data.humidity !== undefined) {
+          setSelectedProject(prev => prev ? { ...prev, currentHumidity: data.humidity } : null);
+          setProjects(prev => prev.map(p =>
+            p.id === selectedProjectId ? { ...p, currentHumidity: data.humidity } : p
+          ));
+          refreshedSensors.push(`humidite (${humidityName})`);
+        }
+      } catch (err) {
+        console.error('Failed to refresh humidity:', err);
+        hasError = true;
+      }
+    }
+
+    // Afficher le message de résultat
+    if (refreshedSensors.length > 0) {
+      const message = refreshedSensors.length === 1
+        ? `Sonde ${refreshedSensors[0]} actualisee`
+        : `Sondes ${refreshedSensors.join(' et ')} actualisees`;
+      // Utiliser setError temporairement pour afficher le message (style info)
+      setError(message);
+      setTimeout(() => setError(null), 3000);
+    } else if (hasError) {
+      setError('Impossible de recuperer les donnees depuis Home Assistant');
+      setTimeout(() => setError(null), 3000);
     }
   };
 

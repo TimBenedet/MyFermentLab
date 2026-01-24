@@ -519,6 +519,67 @@ router.get('/:id/live-temperature', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/projects/:id/live-humidity - Récupérer l'humidité en temps réel depuis Home Assistant
+router.get('/:id/live-humidity', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = databaseService.getProject(id);
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (!project.humiditySensorId) {
+      return res.status(400).json({ error: 'No humidity sensor configured for this project' });
+    }
+
+    const device = databaseService.getDevice(project.humiditySensorId);
+    if (!device || !device.entityId) {
+      return res.status(400).json({ error: 'Humidity sensor not found or has no entityId' });
+    }
+
+    // Récupérer l'humidité depuis Home Assistant
+    const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
+    const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
+    };
+    if (HOME_ASSISTANT_TOKEN) {
+      headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
+    }
+
+    const haResponse = await fetch(`${HOME_ASSISTANT_URL}/api/states/${device.entityId}`, { headers });
+
+    if (!haResponse.ok) {
+      throw new Error(`Home Assistant API returned ${haResponse.status}`);
+    }
+
+    const haData = await haResponse.json();
+    const humidity = parseFloat(haData.state);
+
+    if (isNaN(humidity)) {
+      return res.status(500).json({ error: 'Invalid humidity value from sensor' });
+    }
+
+    // Mettre à jour l'humidité dans la base de données
+    databaseService.updateProjectHumidity(id, humidity);
+
+    // Enregistrer dans InfluxDB
+    await influxService.writeHumidity(id, humidity);
+
+    res.json({
+      humidity,
+      timestamp: Date.now(),
+      entityId: device.entityId,
+      sensorName: device.name
+    });
+  } catch (error) {
+    console.error('Error fetching live humidity:', error);
+    res.status(500).json({ error: 'Failed to fetch humidity from Home Assistant' });
+  }
+});
+
 // PUT /api/projects/:id/control-mode - Basculer le mode de contrôle
 router.put('/:id/control-mode', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
