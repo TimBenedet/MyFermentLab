@@ -629,7 +629,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req: Request, res: Respo
 router.patch('/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { brewingSession, recipe, name, fermentationType, sensorId, outletId } = req.body;
+    const { brewingSession, recipe, name, fermentationType, sensorId, outletId, humiditySensorId, targetHumidity } = req.body;
 
     const project = databaseService.getProject(id);
     if (!project) {
@@ -667,6 +667,19 @@ router.patch('/:id', requireAuth, requireAdmin, async (req: Request, res: Respon
       }
 
       databaseService.updateProjectDevices(id, newSensorId, newOutletId);
+    }
+
+    // Mise à jour de la sonde d'humidité et de l'humidité cible
+    if (humiditySensorId !== undefined || targetHumidity !== undefined) {
+      const newHumiditySensorId = humiditySensorId ?? project.humiditySensorId;
+      const newTargetHumidity = targetHumidity ?? project.targetHumidity;
+
+      // Vérifier que la sonde d'humidité n'est pas utilisée par un autre projet
+      if (newHumiditySensorId && newHumiditySensorId !== project.humiditySensorId && databaseService.isDeviceInUse(newHumiditySensorId, id)) {
+        return res.status(400).json({ error: 'Cette sonde d\'humidité est déjà utilisée par un autre projet actif' });
+      }
+
+      databaseService.updateProjectHumiditySettings(id, newHumiditySensorId, newTargetHumidity);
     }
 
     const updatedProject = databaseService.getProject(id);

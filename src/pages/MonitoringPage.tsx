@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Project, FERMENTATION_TYPES, TemperatureReading, DensityReading, HumidityReading } from '../types';
+import { Project, Device, FERMENTATION_TYPES, TemperatureReading, DensityReading, HumidityReading } from '../types';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { DensityChart } from '../components/DensityChart';
 import { HumidityChart } from '../components/HumidityChart';
 import { TemperatureAlert } from '../components/TemperatureAlert';
+import { ProjectSettingsModal } from '../components/ProjectSettingsModal';
 import { apiService } from '../services/api.service';
 import { getColorForEBC, calculateColorEBC } from '../utils/brewingCalculations';
 import './MonitoringPage.css';
@@ -108,29 +109,36 @@ function generateMockHumidityData(targetHumidity: number = 85, days: number = 7)
 
 interface MonitoringPageProps {
   project: Project;
+  devices: Device[];
+  usedDeviceIds: string[];
   onUpdateTarget: (temp: number) => void;
   onToggleOutlet: () => void;
   onAddDensity: (density: number, timestamp: number) => void;
   onAddHumidity?: (humidity: number, timestamp: number) => void;
   onToggleControlMode?: () => void;
   onRefreshTemperature?: () => void;
+  onUpdateProject?: (data: { humiditySensorId?: string; targetHumidity?: number }) => Promise<void>;
   role: 'admin' | 'viewer' | null;
 }
 
 export function MonitoringPage({
   project,
+  devices,
+  usedDeviceIds,
   onUpdateTarget,
   onToggleOutlet,
   onAddDensity,
   onAddHumidity,
   onToggleControlMode,
   onRefreshTemperature,
+  onUpdateProject,
   role
 }: MonitoringPageProps) {
   const [localTarget, setLocalTarget] = useState(project.targetTemperature);
   const [controlPanelTab, setControlPanelTab] = useState<'control' | 'history'>('control');
   const [outletHistory, setOutletHistory] = useState<OutletHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const config = FERMENTATION_TYPES[project.fermentationType];
 
@@ -326,9 +334,11 @@ export function MonitoringPage({
                     &#8635;
                   </button>
                 )}
-                <button className="scada-btn-icon" title="Parametres">
-                  &#9881;
-                </button>
+                {role === 'admin' && onUpdateProject && (
+                  <button className="scada-btn-icon" title="Parametres" onClick={() => setShowSettingsModal(true)}>
+                    &#9881;
+                  </button>
+                )}
               </div>
             </div>
 
@@ -866,6 +876,17 @@ export function MonitoringPage({
           </div>
         )}
       </div>
+
+      {/* Settings Modal */}
+      {showSettingsModal && onUpdateProject && (
+        <ProjectSettingsModal
+          project={project}
+          devices={devices}
+          usedDeviceIds={usedDeviceIds}
+          onSave={onUpdateProject}
+          onClose={() => setShowSettingsModal(false)}
+        />
+      )}
     </div>
   );
 }

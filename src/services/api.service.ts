@@ -259,6 +259,8 @@ class ApiService {
     fermentationType?: FermentationType;
     sensorId?: string;
     outletId?: string;
+    humiditySensorId?: string;
+    targetHumidity?: number;
   }): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
       method: 'PATCH',

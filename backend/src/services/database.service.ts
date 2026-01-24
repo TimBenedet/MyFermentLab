@@ -342,6 +342,11 @@ class DatabaseService {
     stmt.run(name, fermentationType, id);
   }
 
+  updateProjectHumiditySettings(id: string, humiditySensorId: string | undefined, targetHumidity: number | undefined) {
+    const stmt = this.db.prepare('UPDATE projects SET humidity_sensor_id = ?, target_humidity = ? WHERE id = ?');
+    stmt.run(humiditySensorId || null, targetHumidity || null, id);
+  }
+
   archiveProject(id: string) {
     const stmt = this.db.prepare('UPDATE projects SET archived = 1, archived_at = ? WHERE id = ?');
     stmt.run(Date.now(), id);

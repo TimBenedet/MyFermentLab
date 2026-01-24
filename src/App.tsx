@@ -302,6 +302,21 @@ function App() {
     }
   };
 
+  const handleUpdateProjectSettings = async (data: { humiditySensorId?: string; targetHumidity?: number }) => {
+    if (!selectedProjectId) return;
+
+    try {
+      const updatedProject = await apiService.updateProject(selectedProjectId, data);
+      setSelectedProject(prev => prev ? { ...prev, ...updatedProject } : null);
+      setProjects(prev => prev.map(p =>
+        p.id === selectedProjectId ? { ...p, ...updatedProject } : p
+      ));
+    } catch (err) {
+      console.error('Failed to update project settings:', err);
+      throw err;
+    }
+  };
+
   const handleToggleControlMode = async () => {
     if (!selectedProjectId) return;
 
@@ -665,12 +680,15 @@ function App() {
         {currentPage === 'monitoring' && selectedProject && (
           <MonitoringPage
             project={selectedProject}
+            devices={devices}
+            usedDeviceIds={usedDeviceIds}
             onUpdateTarget={handleUpdateTarget}
             onToggleOutlet={handleToggleOutlet}
             onAddDensity={handleAddDensity}
             onAddHumidity={handleAddHumidity}
             onToggleControlMode={handleToggleControlMode}
             onRefreshTemperature={handleRefreshTemperature}
+            onUpdateProject={handleUpdateProjectSettings}
             role={role}
           />
         )}
