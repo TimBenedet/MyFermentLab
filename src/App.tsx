@@ -146,6 +146,38 @@ function App() {
     }
   }, [currentPage, selectedProjectId, selectedProject?.sensorId]);
 
+  // Rafraîchir l'humidité toutes les 5 secondes si une sonde d'humidité est configurée
+  useEffect(() => {
+    if (currentPage === 'monitoring' && selectedProjectId && selectedProject) {
+      // Vérifier si une sonde d'humidité est configurée et n'est pas une sonde de test
+      const hasHumiditySensor = !!selectedProject.humiditySensorId;
+      const humidityIsTest = isTestSensor(selectedProject.humiditySensorId);
+
+      if (!hasHumiditySensor || humidityIsTest) {
+        return;
+      }
+
+      const refreshHumidity = async () => {
+        try {
+          const data = await apiService.getLiveHumidity(selectedProjectId);
+          setSelectedProject(prev => prev ? {
+            ...prev,
+            currentHumidity: data.humidity
+          } : null);
+          setProjects(prev => prev.map(p =>
+            p.id === selectedProjectId ? { ...p, currentHumidity: data.humidity } : p
+          ));
+        } catch (err) {
+          console.error('Failed to refresh humidity:', err);
+        }
+      };
+
+      const interval = setInterval(refreshHumidity, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [currentPage, selectedProjectId, selectedProject?.humiditySensorId]);
+
   // Mettre à jour la date/heure pour le header SCADA
   useEffect(() => {
     const updateDateTime = () => {
