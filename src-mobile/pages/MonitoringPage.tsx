@@ -34,16 +34,26 @@ export function MonitoringPage({
   role
 }: MonitoringPageProps) {
   const [localTarget, setLocalTarget] = useState(project.targetTemperature);
+  const [localHumidityTarget, setLocalHumidityTarget] = useState(project.targetHumidity ?? 85);
   const [activeTab, setActiveTab] = useState<'control' | 'charts' | 'history'>('control');
+  const [controlType, setControlType] = useState<'temperature' | 'humidity'>('temperature');
   const [outletHistory, setOutletHistory] = useState<OutletHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [liveTemp, setLiveTemp] = useState<number | null>(null);
+  const [liveHumidity, setLiveHumidity] = useState<number | null>(null);
 
   const config = FERMENTATION_TYPES[project.fermentationType];
+  const hasHumiditySensor = !!project.humiditySensorId;
 
   useEffect(() => {
     setLocalTarget(project.targetTemperature);
   }, [project.targetTemperature]);
+
+  useEffect(() => {
+    if (project.targetHumidity !== undefined) {
+      setLocalHumidityTarget(project.targetHumidity);
+    }
+  }, [project.targetHumidity]);
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -66,6 +76,24 @@ export function MonitoringPage({
     const interval = setInterval(fetchLive, 10000);
     return () => clearInterval(interval);
   }, [project.id]);
+
+  // Live humidity polling
+  useEffect(() => {
+    if (!hasHumiditySensor) return;
+
+    const fetchLive = async () => {
+      try {
+        const data = await apiService.getLiveHumidity(project.id);
+        setLiveHumidity(data.humidity);
+      } catch (error) {
+        console.error('Failed to fetch live humidity:', error);
+      }
+    };
+
+    fetchLive();
+    const interval = setInterval(fetchLive, 10000);
+    return () => clearInterval(interval);
+  }, [project.id, hasHumiditySensor]);
 
   const loadHistory = async () => {
     setHistoryLoading(true);
@@ -125,6 +153,21 @@ export function MonitoringPage({
   const handleApplyTarget = () => {
     if (localTarget !== project.targetTemperature) {
       onUpdateTarget(localTarget);
+    }
+  };
+
+  const handleHumidityChange = (delta: number) => {
+    const newTarget = Math.max(0, Math.min(100, localHumidityTarget + delta));
+    setLocalHumidityTarget(newTarget);
+  };
+
+  const handleApplyHumidity = async () => {
+    if (localHumidityTarget !== project.targetHumidity) {
+      try {
+        await apiService.updateProject(project.id, { targetHumidity: localHumidityTarget });
+      } catch (error) {
+        console.error('Failed to update humidity target:', error);
+      }
     }
   };
 
@@ -217,57 +260,139 @@ export function MonitoringPage({
           />
         ) : activeTab === 'control' ? (
           <div className="control-panel">
-            <h3>Température cible</h3>
-            <div className="target-control">
-              <button
-                className="target-btn minus"
-                onClick={() => handleTargetChange(-0.5)}
-                disabled={role !== 'admin'}
-              >
-                −
-              </button>
-              <div className="target-display">
-                <span className="target-value">{localTarget}</span>
-                <span className="target-unit">°C</span>
+            {/* Control Type Selector */}
+            {hasHumiditySensor && (
+              <div className="control-type-selector">
+                <button
+                  className={`control-type-btn ${controlType === 'temperature' ? 'active' : ''}`}
+                  onClick={() => setControlType('temperature')}
+                >
+                  🌡️
+                </button>
+                <button
+                  className={`control-type-btn ${controlType === 'humidity' ? 'active' : ''}`}
+                  onClick={() => setControlType('humidity')}
+                >
+                  💧
+                </button>
               </div>
-              <button
-                className="target-btn plus"
-                onClick={() => handleTargetChange(0.5)}
-                disabled={role !== 'admin'}
-              >
-                +
-              </button>
-            </div>
-            {localTarget !== project.targetTemperature && (
-              <button
-                className="apply-btn"
-                onClick={handleApplyTarget}
-                disabled={role !== 'admin'}
-              >
-                Appliquer
-              </button>
+            )}
+
+            <h3>{controlType === 'temperature' ? 'Température cible' : 'Humidité cible'}</h3>
+
+            {controlType === 'temperature' ? (
+              <>
+                <div className="target-control">
+                  <button
+                    className="target-btn minus"
+                    onClick={() => handleTargetChange(-0.5)}
+                    disabled={role !== 'admin'}
+                  >
+                    −
+                  </button>
+                  <div className="target-display">
+                    <span className="target-value">{localTarget}</span>
+                    <span className="target-unit">°C</span>
+                  </div>
+                  <button
+                    className="target-btn plus"
+                    onClick={() => handleTargetChange(0.5)}
+                    disabled={role !== 'admin'}
+                  >
+                    +
+                  </button>
+                </div>
+                {localTarget !== project.targetTemperature && (
+                  <button
+                    className="apply-btn"
+                    onClick={handleApplyTarget}
+                    disabled={role !== 'admin'}
+                  >
+                    Appliquer
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="target-control">
+                  <button
+                    className="target-btn minus"
+                    onClick={() => handleHumidityChange(-1)}
+                    disabled={role !== 'admin'}
+                  >
+                    −
+                  </button>
+                  <div className="target-display">
+                    <span className="target-value">{localHumidityTarget}</span>
+                    <span className="target-unit">%</span>
+                  </div>
+                  <button
+                    className="target-btn plus"
+                    onClick={() => handleHumidityChange(1)}
+                    disabled={role !== 'admin'}
+                  >
+                    +
+                  </button>
+                </div>
+                {localHumidityTarget !== project.targetHumidity && (
+                  <button
+                    className="apply-btn humidity"
+                    onClick={handleApplyHumidity}
+                    disabled={role !== 'admin'}
+                  >
+                    Appliquer
+                  </button>
+                )}
+              </>
             )}
 
             {/* Info Cards */}
             <div className="info-cards">
-              <div className="info-card">
-                <div className="info-icon">📊</div>
-                <div className="info-content">
-                  <span className="info-label">Écart</span>
-                  <span className={`info-value ${Math.abs(tempDiff) <= 0.5 ? 'good' : 'warning'}`}>
-                    {tempDiff > 0 ? '+' : ''}{tempDiff.toFixed(1)}°C
-                  </span>
-                </div>
-              </div>
-              <div className="info-card">
-                <div className="info-icon">⚡</div>
-                <div className="info-content">
-                  <span className="info-label">Chauffage</span>
-                  <span className={`info-value ${project.outletActive ? 'active' : ''}`}>
-                    {project.outletActive ? 'Actif' : 'Inactif'}
-                  </span>
-                </div>
-              </div>
+              {controlType === 'temperature' ? (
+                <>
+                  <div className="info-card">
+                    <div className="info-icon">📊</div>
+                    <div className="info-content">
+                      <span className="info-label">Écart</span>
+                      <span className={`info-value ${Math.abs(tempDiff) <= 0.5 ? 'good' : 'warning'}`}>
+                        {tempDiff > 0 ? '+' : ''}{tempDiff.toFixed(1)}°C
+                      </span>
+                    </div>
+                  </div>
+                  <div className="info-card">
+                    <div className="info-icon">⚡</div>
+                    <div className="info-content">
+                      <span className="info-label">Chauffage</span>
+                      <span className={`info-value ${project.outletActive ? 'active' : ''}`}>
+                        {project.outletActive ? 'Actif' : 'Inactif'}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="info-card">
+                    <div className="info-icon">💧</div>
+                    <div className="info-content">
+                      <span className="info-label">Humidité actuelle</span>
+                      <span className="info-value">
+                        {liveHumidity?.toFixed(1) ?? project.currentHumidity?.toFixed(1) ?? '--'}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="info-card">
+                    <div className="info-icon">📊</div>
+                    <div className="info-content">
+                      <span className="info-label">Écart</span>
+                      <span className="info-value">
+                        {liveHumidity || project.currentHumidity ?
+                          `${((liveHumidity ?? project.currentHumidity ?? 0) - localHumidityTarget).toFixed(1)}%` :
+                          '--'}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Project Actions */}

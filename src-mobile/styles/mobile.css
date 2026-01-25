@@ -861,6 +861,43 @@ body {
 }
 
 /* Control Panel */
+.control-type-selector {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: var(--spacing-md);
+}
+
+.control-type-btn {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-type-btn:active {
+  transform: scale(0.95);
+}
+
+.control-type-btn.active {
+  border-color: var(--accent-primary);
+  background: rgba(212, 165, 116, 0.15);
+  box-shadow: 0 0 12px rgba(212, 165, 116, 0.3);
+}
+
+.control-type-btn.active:last-child {
+  border-color: var(--accent-blue);
+  background: rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+
 .control-panel h3 {
   font-size: 14px;
   color: var(--text-secondary);
@@ -937,6 +974,14 @@ body {
 .apply-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.apply-btn.humidity {
+  background: var(--accent-blue);
+}
+
+.apply-btn.humidity:active {
+  background: #60A5FA;
 }
 
 /* Info Cards */
