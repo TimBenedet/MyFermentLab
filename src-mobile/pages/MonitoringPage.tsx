@@ -347,53 +347,28 @@ export function MonitoringPage({
             )}
 
             {/* Info Cards */}
-            <div className="info-cards">
-              {controlType === 'temperature' ? (
-                <>
-                  <div className="info-card">
-                    <div className="info-icon">📊</div>
-                    <div className="info-content">
-                      <span className="info-label">Écart</span>
-                      <span className={`info-value ${Math.abs(tempDiff) <= 0.5 ? 'good' : 'warning'}`}>
-                        {tempDiff > 0 ? '+' : ''}{tempDiff.toFixed(1)}°C
-                      </span>
-                    </div>
+            {controlType === 'temperature' && (
+              <div className="info-cards">
+                <div className="info-card">
+                  <div className="info-icon">📊</div>
+                  <div className="info-content">
+                    <span className="info-label">Écart</span>
+                    <span className={`info-value ${Math.abs(tempDiff) <= 0.5 ? 'good' : 'warning'}`}>
+                      {tempDiff > 0 ? '+' : ''}{tempDiff.toFixed(1)}°C
+                    </span>
                   </div>
-                  <div className="info-card">
-                    <div className="info-icon">⚡</div>
-                    <div className="info-content">
-                      <span className="info-label">Chauffage</span>
-                      <span className={`info-value ${project.outletActive ? 'active' : ''}`}>
-                        {project.outletActive ? 'Actif' : 'Inactif'}
-                      </span>
-                    </div>
+                </div>
+                <div className="info-card">
+                  <div className="info-icon">⚡</div>
+                  <div className="info-content">
+                    <span className="info-label">Chauffage</span>
+                    <span className={`info-value ${project.outletActive ? 'active' : ''}`}>
+                      {project.outletActive ? 'Actif' : 'Inactif'}
+                    </span>
                   </div>
-                </>
-              ) : (
-                <>
-                  <div className="info-card">
-                    <div className="info-icon">💧</div>
-                    <div className="info-content">
-                      <span className="info-label">Humidité actuelle</span>
-                      <span className="info-value">
-                        {liveHumidity?.toFixed(1) ?? project.currentHumidity?.toFixed(1) ?? '--'}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="info-card">
-                    <div className="info-icon">📊</div>
-                    <div className="info-content">
-                      <span className="info-label">Écart</span>
-                      <span className="info-value">
-                        {liveHumidity || project.currentHumidity ?
-                          `${((liveHumidity ?? project.currentHumidity ?? 0) - localHumidityTarget).toFixed(1)}%` :
-                          '--'}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+                </div>
+              </div>
+            )}
 
             {/* Project Actions */}
             {role === 'admin' && (
