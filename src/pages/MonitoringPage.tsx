@@ -905,14 +905,6 @@ export function MonitoringPage({
                       </button>
                     </div>
 
-                    {/* Humidity Info */}
-                    <div className="scada-humidity-info">
-                      <div className="scada-humidity-current">
-                        <span className="label">Humidite actuelle</span>
-                        <span className="value">{currentHumidity?.toFixed(1) ?? '--'}%</span>
-                      </div>
-                    </div>
-
                     {/* Humidifier Control (placeholder for future) */}
                     <div className="scada-outlet-section">
                       <div className="scada-outlet-status">
