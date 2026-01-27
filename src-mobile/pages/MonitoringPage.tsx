@@ -185,22 +185,45 @@ export function MonitoringPage({
         </div>
       </div>
 
-      {/* Main Temperature Display */}
-      <div className="temp-hero">
-        <div className="temp-ring" style={{ '--progress': Math.min(100, Math.max(0, ((currentTemp - config.minTemp) / (config.maxTemp - config.minTemp)) * 100)) + '%' } as React.CSSProperties}>
-          <div className="temp-ring-inner">
-            <span className="temp-current">{currentTemp.toFixed(1)}</span>
-            <span className="temp-unit">°C</span>
+      {/* Main Gauges Display */}
+      <div className={`gauges-hero ${hasHumiditySensor ? 'dual' : ''}`}>
+        {/* Temperature Gauge */}
+        <div className="gauge-container">
+          <div className="temp-ring" style={{ '--progress': Math.min(100, Math.max(0, ((currentTemp - config.minTemp) / (config.maxTemp - config.minTemp)) * 100)) + '%' } as React.CSSProperties}>
+            <div className="temp-ring-inner">
+              <span className="temp-current">{currentTemp.toFixed(1)}</span>
+              <span className="temp-unit">°C</span>
+            </div>
+          </div>
+          <div className="temp-meta">
+            <div className={`temp-diff ${tempDiff > 0 ? 'hot' : tempDiff < 0 ? 'cold' : 'stable'}`}>
+              {tempDiff > 0 ? '+' : ''}{tempDiff.toFixed(1)}°C
+            </div>
+            <div className="temp-target-display">
+              Cible: {project.targetTemperature}°C
+            </div>
           </div>
         </div>
-        <div className="temp-meta">
-          <div className={`temp-diff ${tempDiff > 0 ? 'hot' : tempDiff < 0 ? 'cold' : 'stable'}`}>
-            {tempDiff > 0 ? '+' : ''}{tempDiff.toFixed(1)}°C
+
+        {/* Humidity Gauge */}
+        {hasHumiditySensor && (
+          <div className="gauge-container humidity">
+            <div className="humidity-ring" style={{ '--progress': Math.min(100, Math.max(0, (liveHumidity ?? project.currentHumidity ?? 0))) + '%' } as React.CSSProperties}>
+              <div className="humidity-ring-inner">
+                <span className="humidity-current">{(liveHumidity ?? project.currentHumidity ?? 0).toFixed(0)}</span>
+                <span className="humidity-unit">%</span>
+              </div>
+            </div>
+            <div className="humidity-meta">
+              <div className={`humidity-diff ${((liveHumidity ?? project.currentHumidity ?? 0) - localHumidityTarget) > 0 ? 'high' : ((liveHumidity ?? project.currentHumidity ?? 0) - localHumidityTarget) < 0 ? 'low' : 'stable'}`}>
+                {((liveHumidity ?? project.currentHumidity ?? 0) - localHumidityTarget) > 0 ? '+' : ''}{((liveHumidity ?? project.currentHumidity ?? 0) - localHumidityTarget).toFixed(0)}%
+              </div>
+              <div className="humidity-target-display">
+                Cible: {localHumidityTarget}%
+              </div>
+            </div>
           </div>
-          <div className="temp-target-display">
-            Cible: {project.targetTemperature}°C
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Quick Actions */}

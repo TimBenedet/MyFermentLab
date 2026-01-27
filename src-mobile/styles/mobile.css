@@ -682,14 +682,59 @@ body {
   50% { opacity: 0.5; }
 }
 
-/* Temperature Hero */
-.temp-hero {
+/* Gauges Hero - Container for temperature and humidity */
+.gauges-hero {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: var(--spacing-lg);
 }
 
+.gauges-hero.dual {
+  flex-direction: row;
+  justify-content: center;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.gauge-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gauges-hero.dual .gauge-container {
+  flex: 1;
+  max-width: 50%;
+}
+
+.gauges-hero.dual .temp-ring,
+.gauges-hero.dual .humidity-ring {
+  width: 140px;
+  height: 140px;
+}
+
+.gauges-hero.dual .temp-current,
+.gauges-hero.dual .humidity-current {
+  font-size: 32px;
+}
+
+.gauges-hero.dual .temp-unit,
+.gauges-hero.dual .humidity-unit {
+  font-size: 16px;
+}
+
+.gauges-hero.dual .temp-diff,
+.gauges-hero.dual .humidity-diff {
+  font-size: 14px;
+}
+
+.gauges-hero.dual .temp-target-display,
+.gauges-hero.dual .humidity-target-display {
+  font-size: 12px;
+}
+
+/* Temperature Ring */
 .temp-ring {
   width: 200px;
   height: 200px;
@@ -767,6 +812,89 @@ body {
 }
 
 .temp-target-display {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Humidity Ring */
+.humidity-ring {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--accent-blue) 0%,
+    var(--accent-blue) var(--progress, 50%),
+    var(--bg-elevated) var(--progress, 50%),
+    var(--bg-elevated) 100%
+  );
+  padding: 12px;
+  position: relative;
+}
+
+.humidity-ring::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  background: var(--bg-primary);
+  border-radius: 50%;
+}
+
+.humidity-ring-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+
+.humidity-current {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent-blue);
+}
+
+.humidity-ring-inner .humidity-unit {
+  font-size: 24px;
+  color: var(--text-secondary);
+}
+
+.humidity-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+}
+
+.humidity-diff {
+  font-size: 18px;
+  font-weight: 600;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+}
+
+.humidity-diff.stable {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--status-stable);
+}
+
+.humidity-diff.high {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
+
+.humidity-diff.low {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--status-hot);
+}
+
+.humidity-target-display {
   font-size: 14px;
   color: var(--text-secondary);
 }
