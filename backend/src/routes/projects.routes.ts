@@ -28,7 +28,13 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     // Récupérer l'historique depuis InfluxDB
-    const start = req.query.start as string || '-30d';
+    // Par défaut, utiliser la date de création du projet pour avoir toutes les données depuis le début
+    let start = req.query.start as string;
+    if (!start) {
+      // Convertir createdAt en timestamp ISO pour InfluxDB
+      const createdAtDate = new Date(project.createdAt);
+      start = createdAtDate.toISOString();
+    }
     const temperatureHistory = await influxService.getTemperatureHistory(id, start);
     const densityHistory = await influxService.getDensityHistory(id, start);
 
