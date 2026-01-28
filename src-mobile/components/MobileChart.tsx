@@ -1,23 +1,26 @@
 import { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceLine, Tooltip } from 'recharts';
-import { TemperatureReading, DensityReading, FermentationType, FERMENTATION_TYPES } from '../../src/types';
+import { TemperatureReading, DensityReading, HumidityReading, FermentationType, FERMENTATION_TYPES } from '../../src/types';
 
 interface MobileChartProps {
   temperatureData: TemperatureReading[];
   densityData?: DensityReading[];
+  humidityData?: HumidityReading[];
   targetTemperature: number;
+  targetHumidity?: number;
   type: FermentationType;
 }
 
 type TimePeriod = '6h' | '24h' | '7d';
-type ChartType = 'temperature' | 'density';
+type ChartType = 'temperature' | 'density' | 'humidity';
 
-export function MobileChart({ temperatureData, densityData, targetTemperature, type }: MobileChartProps) {
+export function MobileChart({ temperatureData, densityData, humidityData, targetTemperature, targetHumidity, type }: MobileChartProps) {
   const config = FERMENTATION_TYPES[type];
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('24h');
   const [chartType, setChartType] = useState<ChartType>('temperature');
 
   const hasDensityData = densityData && densityData.length > 0;
+  const hasHumidityData = humidityData && humidityData.length > 0;
 
   const formatTime = (timestamp: number, isLongPeriod: boolean) => {
     const date = new Date(timestamp);
@@ -69,6 +72,27 @@ export function MobileChart({ temperatureData, densityData, targetTemperature, t
     return densityData.filter(reading => reading.timestamp >= cutoff);
   }, [densityData, timePeriod]);
 
+  const filteredHumidityData = useMemo(() => {
+    if (!humidityData || humidityData.length === 0) return [];
+
+    const now = Date.now();
+    let cutoff = now;
+
+    switch (timePeriod) {
+      case '6h':
+        cutoff = now - 6 * 60 * 60 * 1000;
+        break;
+      case '24h':
+        cutoff = now - 24 * 60 * 60 * 1000;
+        break;
+      case '7d':
+        cutoff = now - 7 * 24 * 60 * 60 * 1000;
+        break;
+    }
+
+    return humidityData.filter(reading => reading.timestamp >= cutoff);
+  }, [humidityData, timePeriod]);
+
   const isLongPeriod = timePeriod === '7d';
 
   const tempChartData = filteredTempData.map(reading => ({
@@ -83,8 +107,17 @@ export function MobileChart({ temperatureData, densityData, targetTemperature, t
     timestamp: reading.timestamp
   }));
 
-  const currentData = chartType === 'temperature' ? tempChartData : densityChartData;
-  const currentFilteredData = chartType === 'temperature' ? filteredTempData : filteredDensityData;
+  const humidityChartData = filteredHumidityData.map(reading => ({
+    time: formatTime(reading.timestamp, isLongPeriod),
+    value: reading.humidity,
+    timestamp: reading.timestamp
+  }));
+
+  const currentData = chartType === 'temperature'
+    ? tempChartData
+    : chartType === 'density'
+      ? densityChartData
+      : humidityChartData;
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -102,9 +135,16 @@ export function MobileChart({ temperatureData, densityData, targetTemperature, t
         max: Math.max(...values).toFixed(3),
         avg: (values.reduce((a, b) => a + b, 0) / values.length).toFixed(3)
       };
+    } else if (chartType === 'humidity' && filteredHumidityData.length > 0) {
+      const values = filteredHumidityData.map(d => d.humidity);
+      return {
+        min: Math.min(...values).toFixed(1) + '%',
+        max: Math.max(...values).toFixed(1) + '%',
+        avg: (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1) + '%'
+      };
     }
     return { min: '—', max: '—', avg: '—' };
-  }, [chartType, filteredTempData, filteredDensityData]);
+  }, [chartType, filteredTempData, filteredDensityData, filteredHumidityData]);
 
   if (temperatureData.length === 0) {
     return (
@@ -118,20 +158,30 @@ export function MobileChart({ temperatureData, densityData, targetTemperature, t
   return (
     <div className="mobile-chart">
       {/* Chart Type Selector */}
-      {hasDensityData && (
+      {(hasDensityData || hasHumidityData) && (
         <div className="chart-type-selector">
           <button
             className={`chart-type-btn ${chartType === 'temperature' ? 'active' : ''}`}
             onClick={() => setChartType('temperature')}
           >
-            🌡️ Température
+            🌡️ Temp
           </button>
-          <button
-            className={`chart-type-btn ${chartType === 'density' ? 'active' : ''}`}
-            onClick={() => setChartType('density')}
-          >
-            📏 Densité
-          </button>
+          {hasHumidityData && (
+            <button
+              className={`chart-type-btn ${chartType === 'humidity' ? 'active' : ''}`}
+              onClick={() => setChartType('humidity')}
+            >
+              💧 Humid
+            </button>
+          )}
+          {hasDensityData && (
+            <button
+              className={`chart-type-btn ${chartType === 'density' ? 'active' : ''}`}
+              onClick={() => setChartType('density')}
+            >
+              📏 Densité
+            </button>
+          )}
         </div>
       )}
 
@@ -180,7 +230,9 @@ export function MobileChart({ temperatureData, densityData, targetTemperature, t
                 axisLine={{ stroke: '#333' }}
                 domain={chartType === 'temperature'
                   ? [config.minTemp - 2, config.maxTemp + 2]
-                  : ['auto', 'auto']
+                  : chartType === 'humidity'
+                    ? [0, 100]
+                    : ['auto', 'auto']
                 }
               />
               <Tooltip
@@ -192,14 +244,26 @@ export function MobileChart({ temperatureData, densityData, targetTemperature, t
                 }}
                 labelStyle={{ color: '#888' }}
                 formatter={(value: number) => [
-                  chartType === 'temperature' ? `${value.toFixed(1)}°C` : value.toFixed(3),
-                  chartType === 'temperature' ? 'Temp' : 'Densité'
+                  chartType === 'temperature'
+                    ? `${value.toFixed(1)}°C`
+                    : chartType === 'humidity'
+                      ? `${value.toFixed(1)}%`
+                      : value.toFixed(3),
+                  chartType === 'temperature' ? 'Temp' : chartType === 'humidity' ? 'Humid' : 'Densité'
                 ]}
               />
               {chartType === 'temperature' && (
                 <ReferenceLine
                   y={targetTemperature}
                   stroke={config.color}
+                  strokeDasharray="5 5"
+                  strokeWidth={1}
+                />
+              )}
+              {chartType === 'humidity' && targetHumidity && (
+                <ReferenceLine
+                  y={targetHumidity}
+                  stroke="#3b82f6"
                   strokeDasharray="5 5"
                   strokeWidth={1}
                 />

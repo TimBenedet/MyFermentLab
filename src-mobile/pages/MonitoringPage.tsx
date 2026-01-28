@@ -278,7 +278,9 @@ export function MonitoringPage({
           <MobileChart
             temperatureData={project.history || []}
             densityData={project.densityHistory}
+            humidityData={project.humidityHistory}
             targetTemperature={project.targetTemperature}
+            targetHumidity={project.targetHumidity}
             type={project.fermentationType}
           />
         ) : activeTab === 'control' ? (
