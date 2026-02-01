@@ -461,8 +461,10 @@ router.get('/:id/live-temperature', async (req: Request, res: Response) => {
     // Mettre à jour la température dans la base de données
     databaseService.updateProjectTemperature(id, temperature);
 
-    // Enregistrer dans InfluxDB
-    await influxService.writeTemperature(id, temperature);
+    // Enregistrer dans InfluxDB seulement si le projet n'est pas archivé
+    if (!project.archived) {
+      await influxService.writeTemperature(id, temperature);
+    }
 
     // Gérer le contrôle automatique de la prise (seulement si mode automatique)
     let outletChanged = false;
@@ -571,8 +573,10 @@ router.get('/:id/live-humidity', async (req: Request, res: Response) => {
     // Mettre à jour l'humidité dans la base de données
     databaseService.updateProjectHumidity(id, humidity);
 
-    // Enregistrer dans InfluxDB
-    await influxService.writeHumidity(id, humidity);
+    // Enregistrer dans InfluxDB seulement si le projet n'est pas archivé
+    if (!project.archived) {
+      await influxService.writeHumidity(id, humidity);
+    }
 
     res.json({
       humidity,

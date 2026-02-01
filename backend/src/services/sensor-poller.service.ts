@@ -44,6 +44,9 @@ class SensorPollerService {
       console.log(`[SensorPoller] Polling ${projects.length} projects...`);
 
       for (const project of projects) {
+        // Ne pas enregistrer les données des projets archivés
+        if (project.archived) continue;
+
         const device = databaseService.getDevice(project.sensorId);
         console.log(`[SensorPoller] Project: ${project.name}, sensorId: ${project.sensorId}, device: ${JSON.stringify(device)}`);
         if (!device || !device.entityId) {
