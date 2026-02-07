@@ -1,6 +1,7 @@
 import { createContext, useContext, useReducer, useCallback, useEffect, type ReactNode } from 'react'
-import type { AppState, AppAction, BrewProject, Recipe, ArchivedProject } from '../types/brewing'
-import { DEFAULT_RECIPE, createFermenter, createFermenterForProject, createProject, resetFermenterCounter } from '../simulation/constants'
+import type { AppState, AppAction, BrewProject, Recipe, ArchivedProject, ProjectType } from '../types/brewing'
+import type { BackendProject } from '../types/backend'
+import { DEFAULT_RECIPE, createFermenter, createFermenterForProject, createProject, resetFermenterCounter, generateId } from '../simulation/constants'
 import { simulateFermenter, evaluateAlarms } from '../simulation/fermenterSim'
 import { simulateGravity } from '../simulation/gravitySim'
 
@@ -423,6 +424,75 @@ function appReducer(state: AppState, action: AppAction): AppState {
       }
     }
 
+    // === Import backend projects (live mode) ===
+    case 'IMPORT_BACKEND_PROJECTS': {
+      const newProjects: BrewProject[] = []
+      const newFermenters: typeof state.fermenters = []
+
+      for (const bp of action.backendProjects) {
+        // Skip if already imported
+        if (state.projects.some(p => p.backendProjectId === bp.id)) continue
+
+        const projectType = bp.fermentationType as ProjectType
+        const needsHumidity = projectType === 'koji' || projectType === 'mushroom'
+
+        // Build minimal recipe for fermenter creation
+        const miniRecipe: Recipe = {
+          id: generateId('recipe-'),
+          projectType,
+          name: bp.name,
+          style: bp.fermentationType,
+          batchSize: projectType === 'koji' ? 2 : projectType === 'mushroom' ? 5 : 25,
+          og: 1.000,
+          fg: 1.000,
+          abv: 0,
+          ibu: 0,
+          srm: projectType === 'koji' ? 2 : projectType === 'mushroom' ? 0 : 10,
+          ingredients: [],
+          steps: [{ id: 'step-1', description: 'Fermentation', day: 1, done: false, targetTemp: bp.targetTemperature }],
+        }
+
+        // Create fermenter with live data
+        const fermenter = createFermenterForProject(miniRecipe, bp.name)
+        fermenter.setpoint = bp.targetTemperature
+        fermenter.temperature = bp.currentTemperature
+        fermenter.relayOn = bp.outletActive
+        if (fermenter.pid) fermenter.pid.setpoint = bp.targetTemperature
+        if (needsHumidity) {
+          fermenter.humidity = bp.currentHumidity ?? undefined
+          fermenter.humiditySetpoint = bp.targetHumidity ?? (projectType === 'koji' ? 85 : 90)
+          if (fermenter.humidityPid) fermenter.humidityPid.setpoint = bp.targetHumidity ?? (projectType === 'koji' ? 85 : 90)
+        }
+
+        // Create project linked to backend
+        const project = createProject(miniRecipe, bp.name)
+        project.phase = 'fermenting'
+        project.fermentationStartedAt = bp.createdAt ?? Date.now()
+        project.brewCompletedAt = bp.createdAt ?? Date.now()
+        project.fermenterId = fermenter.id
+        project.backendProjectId = bp.id
+        project.sensorId = bp.sensorId
+        project.outletId = bp.outletId
+        project.humiditySensorId = bp.humiditySensorId ?? null
+        if (needsHumidity) {
+          project.targetHumidity = bp.targetHumidity ?? undefined
+          project.currentHumidity = bp.currentHumidity ?? undefined
+        }
+
+        newProjects.push(project)
+        newFermenters.push(fermenter)
+      }
+
+      if (newProjects.length === 0) return state
+
+      return {
+        ...state,
+        projects: [...state.projects, ...newProjects],
+        fermenters: [...state.fermenters, ...newFermenters],
+        isRunning: true,
+      }
+    }
+
     // === Humidity Controls ===
     case 'SET_HUMIDITY_SETPOINT':
       return {
@@ -576,6 +646,8 @@ export function useBrewingActions() {
     // Live mode
     syncLiveData: useCallback((fId: string, temperature: number, relayOn: boolean, humidity?: number, humidityRelayOn?: boolean) =>
       dispatch({ type: 'SYNC_LIVE_DATA', fermenterId: fId, temperature, relayOn, humidity, humidityRelayOn }), [dispatch]),
+    importBackendProjects: useCallback((backendProjects: BackendProject[]) =>
+      dispatch({ type: 'IMPORT_BACKEND_PROJECTS', backendProjects }), [dispatch]),
     // Humidity
     setHumiditySetpoint: useCallback((fId: string, value: number) => dispatch({ type: 'SET_HUMIDITY_SETPOINT', fermenterId: fId, value }), [dispatch]),
     setHumidityPidMode: useCallback((fId: string, mode: 'auto' | 'manual' | 'off') => dispatch({ type: 'SET_HUMIDITY_PID_MODE', fermenterId: fId, mode }), [dispatch]),

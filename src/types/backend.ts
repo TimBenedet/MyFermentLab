@@ -17,6 +17,7 @@ export interface BackendProject {
   outletActive: boolean
   controlMode: string
   archived: boolean
+  createdAt?: number
   humiditySensorId?: string | null
   targetHumidity?: number | null
   currentHumidity?: number | null

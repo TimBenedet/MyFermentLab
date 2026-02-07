@@ -1,3 +1,5 @@
+import type { BackendProject } from './backend'
+
 // === Project Types ===
 export type ProjectType = 'beer' | 'mead' | 'koji' | 'mushroom'
 
@@ -258,6 +260,7 @@ export type AppAction =
   | { type: 'START_FERMENTATION'; recipe: Recipe; projectName: string }
   // Live mode sync
   | { type: 'SYNC_LIVE_DATA'; fermenterId: string; temperature: number; relayOn: boolean; humidity?: number; humidityRelayOn?: boolean }
+  | { type: 'IMPORT_BACKEND_PROJECTS'; backendProjects: BackendProject[] }
   // Alarms
   | { type: 'ACK_ALARM'; alarmId: string }
   | { type: 'ACK_ALL_ALARMS' }
