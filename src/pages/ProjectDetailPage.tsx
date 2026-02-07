@@ -103,6 +103,23 @@ export function ProjectDetailPage() {
                   <Cpu size={9} /> SIM
                 </span>
               )}
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium bg-scada-card text-scada-text-secondary border border-scada-border shrink-0">
+                <Calendar size={9} /> J{daysSinceStart}
+              </span>
+              {needsHumidity ? (
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium bg-scada-cold/10 text-scada-cold border border-scada-cold/20 shrink-0">
+                  <Droplet size={9} /> {(project.currentHumidity ?? 0).toFixed(0)}%
+                </span>
+              ) : (
+                <>
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium bg-scada-card text-scada-text-secondary border border-scada-border shrink-0">
+                    <Droplets size={9} /> {project.currentGravity.toFixed(3)}
+                  </span>
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium bg-scada-accent/10 text-scada-accent border border-scada-accent/20 shrink-0">
+                    {progressPct.toFixed(0)}%
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
@@ -134,40 +151,6 @@ export function ProjectDetailPage() {
               </button>
             )}
           </div>
-        </div>
-
-        {/* Quick stats — separate row on mobile */}
-        <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto pl-11 sm:pl-0">
-          <div className="text-right shrink-0">
-            <div className="text-[9px] text-scada-text-muted uppercase">Jour</div>
-            <div className="flex items-center gap-1">
-              <Calendar size={11} className="text-scada-text-secondary" />
-              <span className="font-mono text-sm font-bold text-white">J{daysSinceStart}</span>
-            </div>
-          </div>
-          {needsHumidity ? (
-            <div className="text-right shrink-0">
-              <div className="text-[9px] text-scada-text-muted uppercase">Humidité</div>
-              <div className="flex items-center gap-1">
-                <Droplet size={11} className="text-scada-cold" />
-                <span className="font-mono text-sm font-bold text-white">{(project.currentHumidity ?? 0).toFixed(0)}%</span>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="text-right shrink-0">
-                <div className="text-[9px] text-scada-text-muted uppercase">Densité</div>
-                <div className="flex items-center gap-1">
-                  <Droplets size={11} className="text-scada-cold" />
-                  <span className="font-mono text-sm font-bold text-white">{project.currentGravity.toFixed(3)}</span>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-[9px] text-scada-text-muted uppercase">Atténuation</div>
-                <span className="font-mono text-sm font-bold text-scada-accent">{progressPct.toFixed(0)}%</span>
-              </div>
-            </>
-          )}
         </div>
       </div>
 
