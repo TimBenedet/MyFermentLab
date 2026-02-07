@@ -89,14 +89,17 @@ export function Header() {
           )}
 
           {/* Connection mode badge */}
-          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium uppercase tracking-wider ${
-            isLive
-              ? 'bg-scada-accent/10 text-scada-accent border border-scada-accent/20'
-              : 'bg-scada-text-muted/10 text-scada-text-muted border border-scada-text-muted/20'
-          }`}>
+          <button
+            onClick={() => { if (!isLive) navigate('/login') }}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium uppercase tracking-wider transition-colors ${
+              isLive
+                ? 'bg-scada-accent/10 text-scada-accent border border-scada-accent/20'
+                : 'bg-scada-text-muted/10 text-scada-text-muted border border-scada-text-muted/20 hover:bg-scada-accent/10 hover:text-scada-accent hover:border-scada-accent/20 cursor-pointer'
+            }`}
+          >
             {isLive ? <Wifi size={10} /> : <Cpu size={10} />}
             {isLive ? 'Live' : 'Sim'}
-          </div>
+          </button>
 
           {state.isRunning && (
             <div className="flex items-center gap-1">
