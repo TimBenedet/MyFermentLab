@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    /* Safe area for notched phones */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #12121a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a3a;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3a4a;
+  }
+}
+
+@layer components {
+  .scada-card {
+    @apply bg-scada-card border border-scada-border rounded-lg p-4;
+  }
+
+  .scada-label {
+    @apply text-[10px] uppercase tracking-[1.5px] text-scada-text-secondary font-medium;
+  }
+
+  .scada-value {
+    @apply font-mono text-2xl font-bold text-white;
+  }
+
+  .scada-unit {
+    @apply text-sm text-scada-text-secondary ml-1;
+  }
+
+  .scada-btn {
+    @apply px-3 py-1.5 rounded text-xs font-medium uppercase tracking-wider transition-all duration-200 border;
+  }
+
+  .scada-btn-primary {
+    @apply scada-btn bg-scada-accent/20 text-scada-accent border-scada-accent/40 hover:bg-scada-accent/30;
+  }
+
+  .scada-btn-danger {
+    @apply scada-btn bg-scada-danger/20 text-scada-danger border-scada-danger/40 hover:bg-scada-danger/30;
+  }
+
+  .scada-btn-neutral {
+    @apply scada-btn bg-scada-card text-scada-text-secondary border-scada-border hover:bg-scada-card-hover hover:text-white;
+  }
+}
+
+/* SVG pipe flow animation */
+.pipe-flow {
+  stroke-dasharray: 8 6;
+  animation: flow-dash 0.8s linear infinite;
+}
+
+.pipe-flow-reverse {
+  stroke-dasharray: 8 6;
+  animation: flow-dash 0.8s linear infinite reverse;
+}
+
+@keyframes flow-dash {
+  from { stroke-dashoffset: 14; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* Bubble animation for fermentation/boiling */
+.bubble {
+  animation: bubble-float var(--duration, 3s) ease-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes bubble-float {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(calc(var(--rise, -40px) * 0.5)) translateX(calc(var(--drift, 3px))) scale(0.8);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(var(--rise, -40px)) translateX(calc(var(--drift, 3px) * -1)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* Heating element glow */
+.heating-active {
+  filter: drop-shadow(0 0 6px rgba(255, 71, 87, 0.9));
+  animation: heat-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes heat-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 71, 87, 0.6)); }
+  50% { filter: drop-shadow(0 0 12px rgba(255, 71, 87, 1)); }
+}
+
+/* Cooling jacket glow */
+.cooling-active {
+  filter: drop-shadow(0 0 6px rgba(74, 158, 255, 0.9));
+  animation: cool-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes cool-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(74, 158, 255, 0.6)); }
+  50% { filter: drop-shadow(0 0 12px rgba(74, 158, 255, 1)); }
+}
