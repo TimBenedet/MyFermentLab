@@ -210,7 +210,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         recipeSnapshot: {
           id: proj.recipeId, projectType: proj.projectType, name: proj.recipeName, style: proj.style,
           batchSize: proj.batchSize, og: proj.og, fg: proj.fg,
-          abv: proj.abv, ibu: 0, srm: proj.srm, ingredients: [], steps: [],
+          abv: proj.abv, ibu: 0, srm: proj.srm, ingredients: proj.ingredients, steps: proj.steps,
         },
         style: proj.style,
         batchSize: proj.batchSize,

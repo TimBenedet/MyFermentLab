@@ -5,8 +5,11 @@ import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { useConnection } from '../context/ConnectionContext'
 import { fetchDevices } from '../api/devices'
 import { createBackendProject } from '../api/projects'
+import { generateId, BEER_TEMPLATES, MEAD_TEMPLATES, KOJI_TEMPLATES, MUSHROOM_TEMPLATES } from '../simulation/constants'
+import { IngredientEditor } from '../components/project/IngredientEditor'
+import { StepEditor } from '../components/project/StepEditor'
 import type { BackendDevice } from '../types/backend'
-import type { Recipe, ProjectType } from '../types/brewing'
+import type { Recipe, RecipeIngredient, RecipeStep, ProjectType } from '../types/brewing'
 import { SelectField } from '../components/project/DeviceSelectModal'
 
 const TYPE_LABELS: Record<ProjectType, string> = {
@@ -14,6 +17,15 @@ const TYPE_LABELS: Record<ProjectType, string> = {
   mead: 'Hydromel',
   koji: 'Koji',
   mushroom: 'Champignons',
+}
+
+function getTemplatesForType(type: ProjectType) {
+  switch (type) {
+    case 'beer': return BEER_TEMPLATES
+    case 'mead': return MEAD_TEMPLATES
+    case 'koji': return KOJI_TEMPLATES
+    case 'mushroom': return MUSHROOM_TEMPLATES
+  }
 }
 
 export function CreateProjectPage() {
@@ -27,6 +39,22 @@ export function CreateProjectPage() {
   const [projectType, setProjectType] = useState<ProjectType>('beer')
   const [projectName, setProjectName] = useState('')
   const [targetTemp, setTargetTemp] = useState(19)
+  const [selectedTemplate, setSelectedTemplate] = useState('')
+
+  // Recipe scalars
+  const [og, setOg] = useState(1.000)
+  const [fg, setFg] = useState(1.000)
+  const [abv, setAbv] = useState(0)
+  const [ibu, setIbu] = useState(0)
+  const [srm, setSrm] = useState(0)
+  const [batchSize, setBatchSize] = useState(25)
+  const [style, setStyle] = useState('')
+
+  // Recipe details
+  const [ingredients, setIngredients] = useState<RecipeIngredient[]>([])
+  const [steps, setSteps] = useState<RecipeStep[]>([
+    { id: 'step-1', description: 'Fermentation', day: 1, done: false, targetTemp },
+  ])
 
   // Device state (live mode only)
   const [devices, setDevices] = useState<BackendDevice[]>([])
@@ -38,6 +66,16 @@ export function CreateProjectPage() {
   const [creating, setCreating] = useState(false)
 
   const needsHumidity = projectType === 'koji' || projectType === 'mushroom'
+  const isBeerLike = projectType === 'beer' || projectType === 'mead'
+
+  // Reset template when project type changes
+  useEffect(() => {
+    setSelectedTemplate('')
+    setBatchSize(projectType === 'koji' ? 2 : projectType === 'mushroom' ? 5 : 25)
+    if (!isBeerLike) {
+      setOg(1.000); setFg(1.000); setAbv(0); setIbu(0); setSrm(0)
+    }
+  }, [projectType, isBeerLike])
 
   // Load devices in live mode
   useEffect(() => {
@@ -53,22 +91,33 @@ export function CreateProjectPage() {
   const humiditySensors = devices.filter(d => d.type === 'humidity_sensor')
   const outlets = devices.filter(d => d.type === 'outlet')
 
-  const getRecipe = (): Recipe => {
-    return {
-      id: `temp-${Date.now()}`,
-      projectType,
-      name: projectName || TYPE_LABELS[projectType],
-      style: TYPE_LABELS[projectType],
-      batchSize: projectType === 'koji' ? 2 : projectType === 'mushroom' ? 5 : 25,
-      og: 1.000,
-      fg: 1.000,
-      abv: 0,
-      ibu: 0,
-      srm: 0,
-      ingredients: [],
-      steps: [{ id: 'step-1', description: 'Fermentation', day: 1, done: false, targetTemp }],
-    }
+  const applyTemplate = (templateName: string) => {
+    setSelectedTemplate(templateName)
+    if (!templateName) return
+    const templates = getTemplatesForType(projectType)
+    const tpl = templates.find(t => t.name === templateName)
+    if (!tpl) return
+
+    if (!projectName) setProjectName(tpl.name)
+    setStyle(tpl.style)
+    setBatchSize(tpl.batchSize)
+    setOg(tpl.og); setFg(tpl.fg); setAbv(tpl.abv)
+    setIbu(tpl.ibu); setSrm(tpl.srm)
+    setTargetTemp(tpl.steps[0]?.targetTemp ?? targetTemp)
+    setIngredients(tpl.ingredients.map(i => ({ ...i, id: generateId('ing-') })))
+    setSteps(tpl.steps.map(s => ({ ...s, id: generateId('step-') })))
   }
+
+  const getRecipe = (): Recipe => ({
+    id: `temp-${Date.now()}`,
+    projectType,
+    name: projectName || TYPE_LABELS[projectType],
+    style: style || TYPE_LABELS[projectType],
+    batchSize,
+    og, fg, abv, ibu, srm,
+    ingredients,
+    steps,
+  })
 
   const handleCreate = async () => {
     setCreating(true)
@@ -76,13 +125,8 @@ export function CreateProjectPage() {
       const recipe = getRecipe()
       const name = projectName.trim() || `${recipe.name} - ${new Date().toLocaleDateString('fr-FR')}`
 
-      // Create local project + fermenter
       startFermentation(recipe, name)
 
-      // Find the just-created project (last one added)
-      // We need to wait for state update, so we get it after dispatch
-      // The project ID is predictable from createProject: generateId('proj-')
-      // But we can't reliably get it here. Instead, we'll find it by name after a tick.
       if (isLive && sensorId) {
         try {
           const bp = await createBackendProject({
@@ -94,8 +138,6 @@ export function CreateProjectPage() {
             humiditySensorId: needsHumidity ? humiditySensorId : null,
             targetHumidity: needsHumidity ? (projectType === 'koji' ? 85 : 90) : undefined,
           })
-          // Find the project we just created (most recent with matching name)
-          // We use setTimeout to let the state update propagate
           setTimeout(() => {
             const proj = state.projects.find(p => p.name === name && p.phase === 'fermenting')
             if (proj) {
@@ -117,6 +159,7 @@ export function CreateProjectPage() {
   }
 
   const canCreate = projectName.trim().length > 0
+  const templates = getTemplatesForType(projectType)
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
@@ -127,10 +170,11 @@ export function CreateProjectPage() {
         </button>
         <div>
           <h2 className="text-sm font-bold text-white">Nouveau projet</h2>
-          <p className="text-[10px] text-scada-text-muted">Lancer une fermentation directement</p>
+          <p className="text-[10px] text-scada-text-muted">Lancer une fermentation</p>
         </div>
       </div>
 
+      {/* Project type + name + template */}
       <div className="scada-card space-y-3">
         <div className="scada-label">Projet</div>
 
@@ -154,6 +198,23 @@ export function CreateProjectPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Template selector */}
+        <div>
+          <label className="block text-[9px] text-scada-text-muted uppercase tracking-wider mb-1">
+            Modele (optionnel)
+          </label>
+          <select
+            value={selectedTemplate}
+            onChange={e => applyTemplate(e.target.value)}
+            className="w-full px-3 py-2 bg-scada-bg rounded-lg border border-scada-border text-sm text-white focus:outline-none focus:border-scada-accent/50 appearance-none"
+          >
+            <option value="">-- Projet vide --</option>
+            {templates.map(t => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </select>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -183,6 +244,79 @@ export function CreateProjectPage() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Recipe parameters */}
+      <div className="scada-card space-y-3">
+        <div className="scada-label">Parametres</div>
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <div>
+            <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">Style</label>
+            <input
+              type="text"
+              value={style}
+              onChange={e => setStyle(e.target.value)}
+              placeholder={TYPE_LABELS[projectType]}
+              className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white placeholder:text-scada-text-muted focus:outline-none focus:border-scada-accent/50"
+            />
+          </div>
+          <div>
+            <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">Volume ({needsHumidity ? 'kg' : 'L'})</label>
+            <input
+              type="number"
+              value={batchSize}
+              onChange={e => setBatchSize(+e.target.value)}
+              className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50"
+              step={1}
+            />
+          </div>
+          {isBeerLike && (
+            <>
+              <div>
+                <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">OG</label>
+                <input type="number" value={og} onChange={e => setOg(+e.target.value)} step={0.001} min={1}
+                  className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50" />
+              </div>
+              <div>
+                <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">FG</label>
+                <input type="number" value={fg} onChange={e => setFg(+e.target.value)} step={0.001} min={1}
+                  className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50" />
+              </div>
+              <div>
+                <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">ABV %</label>
+                <input type="number" value={abv} onChange={e => setAbv(+e.target.value)} step={0.1}
+                  className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50" />
+              </div>
+              <div>
+                <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">IBU</label>
+                <input type="number" value={ibu} onChange={e => setIbu(+e.target.value)} step={1}
+                  className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50" />
+              </div>
+              <div>
+                <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">SRM</label>
+                <input type="number" value={srm} onChange={e => setSrm(+e.target.value)} step={1}
+                  className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50" />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Ingredients */}
+      <div className="scada-card">
+        <IngredientEditor
+          ingredients={ingredients}
+          onChange={setIngredients}
+          projectType={projectType}
+        />
+      </div>
+
+      {/* Steps */}
+      <div className="scada-card">
+        <StepEditor
+          steps={steps}
+          onChange={setSteps}
+        />
       </div>
 
       {/* Device selection (live mode only) */}

@@ -121,6 +121,8 @@ export function createProject(recipe: Recipe, projectName: string): BrewProject 
     batchSize: recipe.batchSize,
     srm: recipe.srm,
     abv: recipe.abv,
+    ingredients: recipe.ingredients.map(i => ({ ...i })),
+    steps: recipe.steps.map(s => ({ ...s })),
     ...(needsHumidity && {
       humidityHistory: [],
       currentHumidity: 40,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, Droplets, Droplet, Archive, Trash2, Wifi, Cpu } from 'lucide-react'
+import { ArrowLeft, Calendar, Droplets, Droplet, Archive, Trash2, Wifi, Cpu, ChevronDown, ChevronRight } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { useConnection } from '../context/ConnectionContext'
 import { fetchBackendProject } from '../api/projects'
@@ -11,6 +11,8 @@ import { TemperatureChart } from '../components/charts/TemperatureChart'
 import { GravityChart } from '../components/charts/GravityChart'
 import { HumidityChart } from '../components/charts/HumidityChart'
 import { ProjectControls } from '../components/project/ProjectControls'
+import { IngredientEditor } from '../components/project/IngredientEditor'
+import { StepEditor } from '../components/project/StepEditor'
 
 import { srmToColor } from '../simulation/constants'
 
@@ -18,9 +20,10 @@ export function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const navigate = useNavigate()
   const { state } = useBrewing()
-  const { archiveProject, deleteProject, syncLiveData } = useBrewingActions()
+  const { archiveProject, deleteProject, syncLiveData, updateProject } = useBrewingActions()
   const { mode } = useConnection()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [recipeOpen, setRecipeOpen] = useState(false)
 
   const project = state.projects.find(p => p.id === projectId)
   const fermenter = project?.fermenterId
@@ -228,6 +231,67 @@ export function ProjectDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Recipe section — collapsible */}
+      <div className="scada-card">
+        <button
+          onClick={() => setRecipeOpen(!recipeOpen)}
+          className="flex items-center gap-2 w-full text-left"
+        >
+          {recipeOpen ? <ChevronDown size={14} className="text-scada-text-muted" /> : <ChevronRight size={14} className="text-scada-text-muted" />}
+          <span className="scada-label">Recette</span>
+          <span className="text-[9px] text-scada-text-muted ml-auto">
+            {project.ingredients.length} ing. · {project.steps.length} etapes
+          </span>
+        </button>
+
+        {recipeOpen && (
+          <div className="mt-3 space-y-4">
+            {/* Recipe scalars */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <div className="bg-scada-bg rounded-lg p-2 text-center">
+                <div className="text-[8px] text-scada-text-muted uppercase">Style</div>
+                <div className="text-[10px] text-white font-medium mt-0.5 truncate">{project.style}</div>
+              </div>
+              <div className="bg-scada-bg rounded-lg p-2 text-center">
+                <div className="text-[8px] text-scada-text-muted uppercase">Volume</div>
+                <div className="font-mono text-xs font-bold text-white mt-0.5">{project.batchSize}{needsHumidity ? 'kg' : 'L'}</div>
+              </div>
+              {!needsHumidity && (
+                <>
+                  <div className="bg-scada-bg rounded-lg p-2 text-center">
+                    <div className="text-[8px] text-scada-text-muted uppercase">OG</div>
+                    <div className="font-mono text-xs font-bold text-white mt-0.5">{project.og.toFixed(3)}</div>
+                  </div>
+                  <div className="bg-scada-bg rounded-lg p-2 text-center">
+                    <div className="text-[8px] text-scada-text-muted uppercase">FG</div>
+                    <div className="font-mono text-xs font-bold text-white mt-0.5">{project.fg.toFixed(3)}</div>
+                  </div>
+                  <div className="bg-scada-bg rounded-lg p-2 text-center">
+                    <div className="text-[8px] text-scada-text-muted uppercase">ABV</div>
+                    <div className="font-mono text-xs font-bold text-white mt-0.5">{project.abv}%</div>
+                  </div>
+                  <div className="bg-scada-bg rounded-lg p-2 text-center">
+                    <div className="text-[8px] text-scada-text-muted uppercase">SRM</div>
+                    <div className="font-mono text-xs font-bold text-white mt-0.5">{project.srm}</div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <IngredientEditor
+              ingredients={project.ingredients}
+              onChange={(ingredients) => updateProject(project.id, { ingredients })}
+              projectType={project.projectType}
+            />
+
+            <StepEditor
+              steps={project.steps}
+              onChange={(steps) => updateProject(project.id, { steps })}
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

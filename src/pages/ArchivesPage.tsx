@@ -44,6 +44,10 @@ function exportArchivePDF(archive: ArchivedProject) {
     .map(i => `<tr><td>${i.name}</td><td>${i.type}</td><td>${i.quantity} ${i.unit}</td><td>${i.addAt}</td></tr>`)
     .join('')
 
+  const stepsHtml = recipe.steps
+    .map(s => `<tr><td>${s.done ? '&#10003;' : ''}</td><td>J${s.day}</td><td>${s.description}</td><td>${s.durationMinutes ? s.durationMinutes + ' min' : ''}</td><td>${s.targetTemp ? s.targetTemp + '°C' : ''}</td></tr>`)
+    .join('')
+
   const metricsHtml = needsHumidity
     ? `<div class="metrics">
         <div class="metric"><div class="metric-label">Type</div><div class="metric-value">${archive.projectType === 'koji' ? 'Koji' : 'Champignons'}</div></div>
@@ -106,6 +110,12 @@ ${metricsHtml}
 <table>
   <thead><tr><th>Nom</th><th>Type</th><th>Quantité</th><th>Ajout</th></tr></thead>
   <tbody>${ingredientsHtml || '<tr><td colspan="4">Aucun ingrédient enregistré</td></tr>'}</tbody>
+</table>
+
+<h2>Étapes</h2>
+<table>
+  <thead><tr><th></th><th>Jour</th><th>Description</th><th>Durée</th><th>Temp.</th></tr></thead>
+  <tbody>${stepsHtml || '<tr><td colspan="5">Aucune étape enregistrée</td></tr>'}</tbody>
 </table>
 
 ${historyHtml}
@@ -330,6 +340,26 @@ function ArchiveReport({ archive }: { archive: ArchivedProject }) {
           ))}
         </div>
       </div>
+
+      {/* Steps */}
+      {recipe.steps.length > 0 && (
+        <div>
+          <div className="text-[10px] text-scada-text-secondary uppercase tracking-wider font-medium mb-2">Étapes</div>
+          <div className="space-y-1">
+            {[...recipe.steps].sort((a, b) => a.day - b.day).map(step => (
+              <div key={step.id} className="flex items-center gap-2 p-2 bg-scada-bg rounded text-[10px]">
+                <span className={`w-4 text-center ${step.done ? 'text-scada-accent' : 'text-scada-text-muted'}`}>
+                  {step.done ? '✓' : '○'}
+                </span>
+                <span className="text-scada-text-muted font-mono shrink-0">J{step.day}</span>
+                <span className={`flex-1 ${step.done ? 'text-scada-text-muted line-through' : 'text-white'}`}>{step.description}</span>
+                {step.durationMinutes && <span className="text-scada-text-muted shrink-0">{step.durationMinutes}min</span>}
+                {step.targetTemp && <span className="text-scada-accent font-mono shrink-0">{step.targetTemp}°C</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Gravity History (beer/mead) */}
       {!needsHumidity && archive.gravityHistory.length > 0 && (

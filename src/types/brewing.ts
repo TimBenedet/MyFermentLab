@@ -132,6 +132,10 @@ export interface BrewProject {
   batchSize: number
   srm: number
   abv: number
+
+  // Recipe details
+  ingredients: RecipeIngredient[]
+  steps: RecipeStep[]
 }
 
 // === Archive ===
