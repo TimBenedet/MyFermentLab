@@ -24,6 +24,7 @@ export function ProjectDetailPage() {
   const { mode } = useConnection()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [recipeOpen, setRecipeOpen] = useState(false)
+  const [chartTab, setChartTab] = useState<'temp' | 'humidity'>('temp')
 
   const project = state.projects.find(p => p.id === projectId)
   const fermenter = project?.fermenterId
@@ -199,10 +200,56 @@ export function ProjectDetailPage() {
             </div>
           </div>
 
-          {/* Row 1 Right: Temperature chart */}
-          <div className="lg:col-span-8 lg:row-start-1">
-            <TemperatureChart fermenterId={fermenter.id} className="h-full" />
-          </div>
+          {/* Row 1 Right: Charts — tabbed on mobile for koji/mushroom */}
+          {needsHumidity ? (
+            <>
+              {/* Mobile: single card with tabs */}
+              <div className="lg:hidden lg:col-span-8">
+                <div className="scada-card flex flex-col">
+                  <div className="flex items-center gap-1 mb-3">
+                    <button
+                      onClick={() => setChartTab('temp')}
+                      className={`px-3 py-1.5 text-[10px] rounded uppercase tracking-wider transition-colors ${
+                        chartTab === 'temp'
+                          ? 'bg-scada-accent/20 text-scada-accent border border-scada-accent/40'
+                          : 'text-scada-text-muted hover:text-scada-text-secondary border border-transparent'
+                      }`}
+                    >
+                      Température
+                    </button>
+                    <button
+                      onClick={() => setChartTab('humidity')}
+                      className={`px-3 py-1.5 text-[10px] rounded uppercase tracking-wider transition-colors ${
+                        chartTab === 'humidity'
+                          ? 'bg-scada-cold/20 text-scada-cold border border-scada-cold/40'
+                          : 'text-scada-text-muted hover:text-scada-text-secondary border border-transparent'
+                      }`}
+                    >
+                      Humidité
+                    </button>
+                  </div>
+                  {chartTab === 'temp' ? (
+                    <TemperatureChart fermenterId={fermenter.id} className="!p-0 !bg-transparent !border-0 !shadow-none" />
+                  ) : (
+                    <HumidityChart
+                      humidityHistory={project.humidityHistory ?? []}
+                      targetHumidity={project.targetHumidity ?? 85}
+                      className="!p-0 !bg-transparent !border-0 !shadow-none"
+                      projectId={project.id}
+                    />
+                  )}
+                </div>
+              </div>
+              {/* Desktop: separate cards in 2×2 grid */}
+              <div className="hidden lg:block lg:col-span-8 lg:row-start-1">
+                <TemperatureChart fermenterId={fermenter.id} className="h-full" />
+              </div>
+            </>
+          ) : (
+            <div className="lg:col-span-8 lg:row-start-1">
+              <TemperatureChart fermenterId={fermenter.id} className="h-full" />
+            </div>
+          )}
 
           {/* Row 2 Left: Controls */}
           <div className="lg:col-span-4 lg:row-start-2">
@@ -210,15 +257,17 @@ export function ProjectDetailPage() {
           </div>
 
           {/* Row 2 Right: Humidity or Gravity chart */}
-          <div className="lg:col-span-8 lg:row-start-2">
-            {needsHumidity ? (
+          {needsHumidity ? (
+            <div className="hidden lg:block lg:col-span-8 lg:row-start-2">
               <HumidityChart
                 humidityHistory={project.humidityHistory ?? []}
                 targetHumidity={project.targetHumidity ?? 85}
                 className="h-full"
                 projectId={project.id}
               />
-            ) : (
+            </div>
+          ) : (
+            <div className="lg:col-span-8 lg:row-start-2">
               <GravityChart
                 gravityHistory={project.gravityHistory}
                 og={project.og}
@@ -227,8 +276,8 @@ export function ProjectDetailPage() {
                 className="h-full"
                 projectId={project.id}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
