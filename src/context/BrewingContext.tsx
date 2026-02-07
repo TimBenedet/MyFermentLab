@@ -380,6 +380,31 @@ function appReducer(state: AppState, action: AppAction): AppState {
       }
     }
 
+    // === Live Mode Sync ===
+    case 'SYNC_LIVE_DATA': {
+      return {
+        ...state,
+        fermenters: state.fermenters.map(f => {
+          if (f.id !== action.fermenterId) return f
+          const updated = { ...f, temperature: action.temperature, relayOn: action.relayOn }
+          if (action.humidity !== undefined) updated.humidity = action.humidity
+          if (action.humidityRelayOn !== undefined) updated.humidityRelayOn = action.humidityRelayOn
+          // Append to history
+          const time = state.totalElapsedSeconds
+          updated.temperatureHistory = [...f.temperatureHistory, {
+            time, temp: action.temperature, setpoint: f.setpoint, relayOn: action.relayOn,
+          }].slice(-500)
+          if (action.humidity !== undefined && f.humidityHistory) {
+            updated.humidityHistory = [...f.humidityHistory, {
+              time, humidity: action.humidity, setpoint: f.humiditySetpoint ?? 85, relayOn: action.humidityRelayOn ?? false,
+            }].slice(-500)
+          }
+          return updated
+        }),
+        totalElapsedSeconds: state.totalElapsedSeconds + 10, // 10s poll interval
+      }
+    }
+
     // === Humidity Controls ===
     case 'SET_HUMIDITY_SETPOINT':
       return {
@@ -528,6 +553,9 @@ export function useBrewingActions() {
     cancelBrew: useCallback(() => dispatch({ type: 'CANCEL_BREW' }), [dispatch]),
     // Gravity
     addGravityReading: useCallback((projectId: string, gravity: number) => dispatch({ type: 'ADD_GRAVITY_READING', projectId, gravity }), [dispatch]),
+    // Live mode
+    syncLiveData: useCallback((fId: string, temperature: number, relayOn: boolean, humidity?: number, humidityRelayOn?: boolean) =>
+      dispatch({ type: 'SYNC_LIVE_DATA', fermenterId: fId, temperature, relayOn, humidity, humidityRelayOn }), [dispatch]),
     // Humidity
     setHumiditySetpoint: useCallback((fId: string, value: number) => dispatch({ type: 'SET_HUMIDITY_SETPOINT', fermenterId: fId, value }), [dispatch]),
     setHumidityPidMode: useCallback((fId: string, mode: 'auto' | 'manual' | 'off') => dispatch({ type: 'SET_HUMIDITY_PID_MODE', fermenterId: fId, mode }), [dispatch]),

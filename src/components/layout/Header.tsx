@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
-import { Wifi, WifiOff, Home, BookOpen, Archive, Menu, X } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { Wifi, Home, BookOpen, Archive, Menu, X, Cpu, Radio, LogOut } from 'lucide-react'
 import { FermentLogo } from './FermentLogo'
 import { useBrewing } from '../../context/BrewingContext'
+import { useConnection } from '../../context/ConnectionContext'
 
 export function Header() {
   const { state } = useBrewing()
+  const { mode, role, logout } = useConnection()
+  const navigate = useNavigate()
   const [clock, setClock] = useState(new Date())
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -27,6 +30,14 @@ export function Header() {
         ? 'bg-scada-accent/15 text-scada-accent border border-scada-accent/30'
         : 'text-scada-text-secondary hover:text-white hover:bg-scada-card'
     }`
+
+  const isLive = mode === 'live'
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+    setMenuOpen(false)
+  }
 
   return (
     <>
@@ -54,6 +65,12 @@ export function Header() {
             <Archive size={14} />
             Archives
           </NavLink>
+          {role === 'admin' && (
+            <NavLink to="/devices" className={navLinkClass}>
+              <Radio size={14} />
+              Devices
+            </NavLink>
+          )}
         </nav>
 
         {/* Right: Status + Clock + Mobile menu button */}
@@ -71,20 +88,32 @@ export function Header() {
             </span>
           )}
 
-          <div className="flex items-center gap-1">
-            {state.isRunning ? (
-              <Wifi size={12} className="text-scada-accent" />
-            ) : (
-              <WifiOff size={12} className="text-scada-text-muted" />
-            )}
-            <span className={`text-[9px] ${state.isRunning ? 'text-scada-accent' : 'text-scada-text-muted'}`}>
-              {state.isRunning ? 'LIVE' : 'IDLE'}
-            </span>
+          {/* Connection mode badge */}
+          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium uppercase tracking-wider ${
+            isLive
+              ? 'bg-scada-accent/10 text-scada-accent border border-scada-accent/20'
+              : 'bg-scada-text-muted/10 text-scada-text-muted border border-scada-text-muted/20'
+          }`}>
+            {isLive ? <Wifi size={10} /> : <Cpu size={10} />}
+            {isLive ? 'Live' : 'Sim'}
           </div>
+
+          {state.isRunning && (
+            <div className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-scada-accent animate-pulse" />
+              <span className="text-[9px] text-scada-accent">RUN</span>
+            </div>
+          )}
 
           <span className="font-mono text-xs text-scada-text-secondary tabular-nums hidden sm:inline">
             {clock.toLocaleTimeString('fr-FR')}
           </span>
+
+          {isLive && (
+            <button onClick={handleLogout} className="hidden md:flex items-center gap-1 text-[10px] text-scada-text-muted hover:text-scada-danger transition-colors">
+              <LogOut size={12} />
+            </button>
+          )}
 
           {/* Mobile hamburger */}
           <button
@@ -111,10 +140,24 @@ export function Header() {
             <Archive size={16} />
             Archives
           </NavLink>
-          <div className="flex items-center gap-3 px-4 py-2 text-[10px] text-scada-text-muted">
-            <span className="font-mono">{clock.toLocaleTimeString('fr-FR')}</span>
-            {state.fermenters.length > 0 && (
-              <span>{state.fermenters.length} cuve{state.fermenters.length > 1 ? 's' : ''} active{state.fermenters.length > 1 ? 's' : ''}</span>
+          {role === 'admin' && (
+            <NavLink to="/devices" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>
+              <Radio size={16} />
+              Devices
+            </NavLink>
+          )}
+          <div className="flex items-center justify-between px-4 py-2 text-[10px] text-scada-text-muted">
+            <div className="flex items-center gap-3">
+              <span className="font-mono">{clock.toLocaleTimeString('fr-FR')}</span>
+              {state.fermenters.length > 0 && (
+                <span>{state.fermenters.length} cuve{state.fermenters.length > 1 ? 's' : ''} active{state.fermenters.length > 1 ? 's' : ''}</span>
+              )}
+            </div>
+            {isLive && (
+              <button onClick={handleLogout} className="flex items-center gap-1 text-scada-text-muted hover:text-scada-danger transition-colors">
+                <LogOut size={12} />
+                Deconnexion
+              </button>
             )}
           </div>
         </div>

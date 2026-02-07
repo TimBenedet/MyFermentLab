@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, Droplets, Droplet, Archive, Trash2 } from 'lucide-react'
+import { ArrowLeft, Calendar, Droplets, Droplet, Archive, Trash2, Wifi, Cpu } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
+import { useConnection } from '../context/ConnectionContext'
+import { fetchBackendProject } from '../api/projects'
 import { VesselSVG } from '../components/vessels/VesselSVG'
 import { KojiTraySVG } from '../components/vessels/KojiTraySVG'
 import { MushroomBagSVG } from '../components/vessels/MushroomBagSVG'
@@ -16,13 +18,37 @@ export function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const navigate = useNavigate()
   const { state } = useBrewing()
-  const { archiveProject, deleteProject } = useBrewingActions()
+  const { archiveProject, deleteProject, syncLiveData } = useBrewingActions()
+  const { mode } = useConnection()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const project = state.projects.find(p => p.id === projectId)
   const fermenter = project?.fermenterId
     ? state.fermenters.find(f => f.id === project.fermenterId)
     : undefined
+
+  const isLive = mode === 'live' && !!project?.backendProjectId
+
+  // Live data polling
+  useEffect(() => {
+    if (!isLive || !project?.backendProjectId || !project.fermenterId) return
+    let active = true
+    const poll = async () => {
+      try {
+        const bp = await fetchBackendProject(project.backendProjectId!)
+        if (!active) return
+        syncLiveData(
+          project.fermenterId!,
+          bp.current_temperature,
+          bp.outlet_active,
+          bp.current_humidity ?? undefined,
+        )
+      } catch { /* ignore poll errors */ }
+    }
+    poll()
+    const interval = setInterval(poll, 10000)
+    return () => { active = false; clearInterval(interval) }
+  }, [isLive, project?.backendProjectId, project?.fermenterId, syncLiveData])
 
   if (!project) {
     return (
@@ -68,6 +94,15 @@ export function ProjectDetailPage() {
               }`}>
                 {project.phase === 'fermenting' ? 'Fermentation' : project.phase === 'complete' ? 'Terminé' : project.phase}
               </span>
+              {isLive ? (
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium bg-scada-accent/10 text-scada-accent border border-scada-accent/20 shrink-0">
+                  <Wifi size={9} /> LIVE
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium bg-scada-text-muted/10 text-scada-text-muted border border-scada-text-muted/20 shrink-0">
+                  <Cpu size={9} /> SIM
+                </span>
+              )}
             </div>
           </div>
 
@@ -185,7 +220,7 @@ export function ProjectDetailPage() {
 
           {/* Row 2 Left: Controls */}
           <div className="lg:col-span-4 lg:row-start-2">
-            <ProjectControls fermenterId={fermenter.id} />
+            <ProjectControls fermenterId={fermenter.id} backendProjectId={project.backendProjectId} />
           </div>
 
           {/* Row 2 Right: Humidity or Gravity chart */}

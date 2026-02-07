@@ -1,17 +1,37 @@
 import { useState } from 'react'
 import { Minus, Plus, Thermometer, Droplet } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../../context/BrewingContext'
+import { useConnection } from '../../context/ConnectionContext'
+import { updateTargetTemperature, toggleOutlet, setControlMode } from '../../api/projects'
 import { RelayIndicator } from '../fermenter/RelayIndicator'
 
 interface Props {
   fermenterId: string
+  backendProjectId?: number
 }
 
 type Tab = 'temp' | 'humidity'
 
-export function ProjectControls({ fermenterId }: Props) {
+export function ProjectControls({ fermenterId, backendProjectId }: Props) {
   const { state } = useBrewing()
   const { setSetpoint, setPidMode, toggleRelay, setHumiditySetpoint, setHumidityPidMode, toggleHumidityRelay } = useBrewingActions()
+  const { mode, role } = useConnection()
+  const isLive = mode === 'live' && !!backendProjectId
+  const isViewer = role === 'viewer'
+
+  // Wrap actions to also call API in live mode
+  const handleSetSetpoint = (fId: string, value: number) => {
+    setSetpoint(fId, value)
+    if (isLive) updateTargetTemperature(backendProjectId!, value).catch(() => {})
+  }
+  const handleToggleRelay = (fId: string) => {
+    toggleRelay(fId)
+    if (isLive) toggleOutlet(backendProjectId!).catch(() => {})
+  }
+  const handleSetPidMode = (fId: string, pidMode: 'auto' | 'manual' | 'off') => {
+    setPidMode(fId, pidMode)
+    if (isLive) setControlMode(backendProjectId!, pidMode).catch(() => {})
+  }
 
   const fermenter = state.fermenters.find(f => f.id === fermenterId)
   if (!fermenter) return null
@@ -24,20 +44,22 @@ export function ProjectControls({ fermenterId }: Props) {
         <ControlsWithTabs
           fermenterId={fermenterId}
           fermenter={fermenter}
-          setSetpoint={setSetpoint}
-          setPidMode={setPidMode}
-          toggleRelay={toggleRelay}
+          setSetpoint={handleSetSetpoint}
+          setPidMode={handleSetPidMode}
+          toggleRelay={handleToggleRelay}
           setHumiditySetpoint={setHumiditySetpoint}
           setHumidityPidMode={setHumidityPidMode}
           toggleHumidityRelay={toggleHumidityRelay}
+          disabled={isViewer}
         />
       ) : (
         <TemperaturePanel
           fermenterId={fermenterId}
           fermenter={fermenter}
-          setSetpoint={setSetpoint}
-          setPidMode={setPidMode}
-          toggleRelay={toggleRelay}
+          setSetpoint={handleSetSetpoint}
+          setPidMode={handleSetPidMode}
+          toggleRelay={handleToggleRelay}
+          disabled={isViewer}
         />
       )}
     </div>
@@ -45,7 +67,7 @@ export function ProjectControls({ fermenterId }: Props) {
 }
 
 /* Temperature-only panel (beer/mead) */
-function TemperaturePanel({ fermenterId, fermenter, setSetpoint, setPidMode, toggleRelay }: any) {
+function TemperaturePanel({ fermenterId, fermenter, setSetpoint, setPidMode, toggleRelay, disabled }: any) {
   const deviation = fermenter.temperature - fermenter.setpoint
 
   return (
@@ -69,13 +91,13 @@ function TemperaturePanel({ fermenterId, fermenter, setSetpoint, setPidMode, tog
       <div>
         <div className="text-[9px] text-scada-text-muted uppercase tracking-wider mb-2">Consigne</div>
         <div className="flex items-center justify-center gap-3">
-          <button onClick={() => setSetpoint(fermenterId, fermenter.setpoint - 0.5)} className="scada-btn-neutral p-2">
+          <button onClick={() => setSetpoint(fermenterId, fermenter.setpoint - 0.5)} className="scada-btn-neutral p-2" disabled={disabled}>
             <Minus size={14} />
           </button>
           <span className="font-mono text-lg font-bold text-white w-16 text-center">
             {fermenter.setpoint.toFixed(1)}°
           </span>
-          <button onClick={() => setSetpoint(fermenterId, fermenter.setpoint + 0.5)} className="scada-btn-neutral p-2">
+          <button onClick={() => setSetpoint(fermenterId, fermenter.setpoint + 0.5)} className="scada-btn-neutral p-2" disabled={disabled}>
             <Plus size={14} />
           </button>
         </div>
@@ -88,6 +110,7 @@ function TemperaturePanel({ fermenterId, fermenter, setSetpoint, setPidMode, tog
             <button
               key={mode}
               onClick={() => setPidMode(fermenterId, mode)}
+              disabled={disabled}
               className={`flex-1 px-2 py-2.5 sm:py-1.5 text-[11px] sm:text-[10px] rounded uppercase font-medium transition-colors ${
                 fermenter.pid.mode === mode
                   ? mode === 'auto' ? 'bg-scada-accent/20 text-scada-accent border border-scada-accent/40'
@@ -109,7 +132,7 @@ function TemperaturePanel({ fermenterId, fermenter, setSetpoint, setPidMode, tog
             PID output: {fermenter.pid.output.toFixed(0)}%
           </div>
         </div>
-        <button onClick={() => toggleRelay(fermenterId)} disabled={fermenter.pid.mode === 'auto'}>
+        <button onClick={() => toggleRelay(fermenterId)} disabled={disabled || fermenter.pid.mode === 'auto'}>
           <RelayIndicator on={fermenter.relayOn} size="md" />
         </button>
       </div>
@@ -118,7 +141,7 @@ function TemperaturePanel({ fermenterId, fermenter, setSetpoint, setPidMode, tog
 }
 
 /* Tabbed panel for koji/mushroom (temperature + humidity) */
-function ControlsWithTabs({ fermenterId, fermenter, setSetpoint, setPidMode, toggleRelay, setHumiditySetpoint, setHumidityPidMode, toggleHumidityRelay }: any) {
+function ControlsWithTabs({ fermenterId, fermenter, setSetpoint, setPidMode, toggleRelay, setHumiditySetpoint, setHumidityPidMode, toggleHumidityRelay, disabled }: any) {
   const [tab, setTab] = useState<Tab>('temp')
 
   const deviation = fermenter.temperature - fermenter.setpoint

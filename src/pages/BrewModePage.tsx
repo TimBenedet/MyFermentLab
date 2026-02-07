@@ -2,16 +2,21 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Play, X, ChefHat, CheckCircle2 } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
+import { useConnection } from '../context/ConnectionContext'
+import { createBackendProject } from '../api/projects'
 import { BrewStepList } from '../components/brew/BrewStepList'
+import { DeviceSelectModal } from '../components/project/DeviceSelectModal'
 
 export function BrewModePage() {
   const { recipeId } = useParams<{ recipeId: string }>()
   const navigate = useNavigate()
   const { state } = useBrewing()
-  const { startBrew, tickBrewTimer, completeBrew, cancelBrew } = useBrewingActions()
+  const { startBrew, tickBrewTimer, completeBrew, cancelBrew, updateProject } = useBrewingActions()
+  const { mode } = useConnection()
 
   const [projectName, setProjectName] = useState('')
   const [showNameDialog, setShowNameDialog] = useState(true)
+  const [showDeviceModal, setShowDeviceModal] = useState(false)
 
   const recipe = state.recipes.find(r => r.id === recipeId)
   const activeBrew = state.activeBrew
@@ -51,12 +56,51 @@ export function BrewModePage() {
   }
 
   const handleCompleteBrew = () => {
+    if (mode === 'live') {
+      // Show device selection modal in live mode
+      setShowDeviceModal(true)
+    } else {
+      completeBrew()
+      navigate('/')
+    }
+  }
+
+  const handleDeviceConfirm = async (sensorId: number | null, outletId: number | null, humiditySensorId: number | null) => {
     completeBrew()
+    // Find the just-created project
+    const project = state.projects.find(p => p.id === activeBrew?.projectId)
+    if (project && sensorId) {
+      try {
+        const bp = await createBackendProject({
+          name: project.name,
+          fermentation_type: recipe.projectType,
+          sensor_id: sensorId,
+          outlet_id: outletId,
+          target_temperature: recipe.steps.find(s => s.targetTemp)?.targetTemp ?? 19,
+          humidity_sensor_id: humiditySensorId,
+          target_humidity: recipe.projectType === 'koji' ? 85 : recipe.projectType === 'mushroom' ? 90 : undefined,
+        })
+        // Link backend project to local project
+        updateProject(project.id, {
+          backendProjectId: bp.id,
+          sensorId,
+          outletId,
+          humiditySensorId,
+        })
+      } catch { /* backend project creation failed, continue in sim mode */ }
+    }
+    setShowDeviceModal(false)
+    navigate('/')
+  }
+
+  const handleDeviceSkip = () => {
+    completeBrew()
+    setShowDeviceModal(false)
     navigate('/')
   }
 
   const handleCancelBrew = () => {
-    if (window.confirm('Annuler le brassage ? Le projet sera supprimé.')) {
+    if (window.confirm('Annuler le brassage ? Le projet sera supprime.')) {
       cancelBrew()
       navigate('/recipes')
     }
@@ -159,8 +203,8 @@ export function BrewModePage() {
           <div className="flex items-center gap-3">
             <CheckCircle2 size={24} className="text-scada-accent" />
             <div className="flex-1">
-              <p className="text-sm font-bold text-white">Brassage terminé !</p>
-              <p className="text-[10px] text-scada-text-secondary">Le moût va être transféré en fermenteur.</p>
+              <p className="text-sm font-bold text-white">Brassage termine !</p>
+              <p className="text-[10px] text-scada-text-secondary">Le mout va etre transfere en fermenteur.</p>
             </div>
             <button onClick={handleCompleteBrew} className="scada-btn-primary flex items-center gap-2">
               <Play size={14} />
@@ -168,6 +212,16 @@ export function BrewModePage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Device selection modal (live mode) */}
+      {showDeviceModal && (
+        <DeviceSelectModal
+          projectType={recipe.projectType}
+          onConfirm={handleDeviceConfirm}
+          onSkip={handleDeviceSkip}
+          onClose={() => setShowDeviceModal(false)}
+        />
       )}
     </div>
   )

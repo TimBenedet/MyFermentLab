@@ -112,6 +112,12 @@ export interface BrewProject {
   phase: ProjectPhase
   createdAt: number
 
+  // Backend link (live mode)
+  backendProjectId?: number
+  sensorId?: number | null
+  outletId?: number | null
+  humiditySensorId?: number | null
+
   // Brewing phase
   brewSteps: BrewStepState[]
   brewStartedAt?: number
@@ -248,6 +254,8 @@ export type AppAction =
   | { type: 'SET_HUMIDITY_PID_MODE'; fermenterId: string; mode: 'auto' | 'manual' | 'off' }
   | { type: 'TOGGLE_HUMIDITY_RELAY'; fermenterId: string }
   | { type: 'ADD_HUMIDITY_READING'; projectId: string; humidity: number }
+  // Live mode sync
+  | { type: 'SYNC_LIVE_DATA'; fermenterId: string; temperature: number; relayOn: boolean; humidity?: number; humidityRelayOn?: boolean }
   // Alarms
   | { type: 'ACK_ALARM'; alarmId: string }
   | { type: 'ACK_ALL_ALARMS' }
