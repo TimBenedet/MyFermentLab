@@ -110,7 +110,7 @@ function TemperaturePanel({ fermenterId, fermenter, setSetpoint, setPidMode, tog
           </div>
         </div>
         <button onClick={() => toggleRelay(fermenterId)} disabled={fermenter.pid.mode === 'auto'}>
-          <RelayIndicator on={fermenter.relayOn} size={32} />
+          <RelayIndicator on={fermenter.relayOn} size="md" />
         </button>
       </div>
     </>
@@ -216,7 +216,7 @@ function ControlsWithTabs({ fermenterId, fermenter, setSetpoint, setPidMode, tog
               </div>
             </div>
             <button onClick={() => toggleRelay(fermenterId)} disabled={fermenter.pid.mode === 'auto'}>
-              <RelayIndicator on={fermenter.relayOn} size={32} />
+              <RelayIndicator on={fermenter.relayOn} size="md" />
             </button>
           </div>
         </>
@@ -290,7 +290,7 @@ function ControlsWithTabs({ fermenterId, fermenter, setSetpoint, setPidMode, tog
               </div>
             </div>
             <button onClick={() => toggleHumidityRelay(fermenterId)} disabled={fermenter.humidityPid.mode === 'auto'}>
-              <RelayIndicator on={fermenter.humidityRelayOn ?? false} size={32} />
+              <RelayIndicator on={fermenter.humidityRelayOn ?? false} size="md" />
             </button>
           </div>
         </>

@@ -172,7 +172,7 @@ function ArchiveReport({ archive }: { archive: ArchivedProject }) {
     if (!archive.humidityHistory || archive.humidityHistory.length === 0) return []
     const step = Math.max(1, Math.floor(archive.humidityHistory.length / 200))
     return archive.humidityHistory
-      .filter((_, i) => i % step === 0 || i === archive.humidityHistory.length - 1)
+      .filter((_, i) => i % step === 0 || i === archive.humidityHistory!.length - 1)
       .map(p => ({
         day: p.time / 86400,
         humidity: Number(p.humidity.toFixed(1)),
