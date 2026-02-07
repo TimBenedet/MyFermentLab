@@ -229,12 +229,12 @@ export function ProjectDetailPage() {
                     </button>
                   </div>
                   {chartTab === 'temp' ? (
-                    <TemperatureChart fermenterId={fermenter.id} className="!p-0 !bg-transparent !border-0 !shadow-none" />
+                    <TemperatureChart fermenterId={fermenter.id} className="!p-0 !bg-transparent !border-0 !shadow-none h-[240px]" />
                   ) : (
                     <HumidityChart
                       humidityHistory={project.humidityHistory ?? []}
                       targetHumidity={project.targetHumidity ?? 85}
-                      className="!p-0 !bg-transparent !border-0 !shadow-none"
+                      className="!p-0 !bg-transparent !border-0 !shadow-none h-[240px]"
                       projectId={project.id}
                     />
                   )}
