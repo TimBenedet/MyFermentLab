@@ -186,26 +186,27 @@ function DeviceCard({ device, onEdit, onDelete, onToggle, isAdmin }: {
   const isSensor = device.type === 'sensor' || device.type === 'humidity_sensor'
 
   return (
-    <div className="scada-card flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${
+    <div className="scada-card flex items-center justify-between gap-2">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className={`p-2 rounded-lg shrink-0 ${
           device.type === 'humidity_sensor' ? 'bg-scada-cold/10 text-scada-cold'
             : isSensor ? 'bg-scada-accent/10 text-scada-accent'
             : 'bg-scada-warning/10 text-scada-warning'
         }`}>
           {device.type === 'humidity_sensor' ? <Droplet size={16} /> : isSensor ? <Thermometer size={16} /> : <Power size={16} />}
         </div>
-        <div>
-          <div className="text-sm font-medium text-white">{device.name}</div>
-          <div className="flex items-center gap-2 text-[10px] text-scada-text-muted">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-white truncate">{device.name}</div>
+          <div className="text-[10px] text-scada-text-muted truncate">
             {device.entityId && <span>{device.entityId}</span>}
+            {device.entityId && device.ip && <span> · </span>}
             {device.ip && <span>{device.ip}</span>}
             {!device.entityId && !device.ip && <span className="italic">Non configure</span>}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
         {onToggle && (
           <button onClick={onToggle} className="scada-btn-neutral p-2" title="Toggle">
             <Power size={14} />
