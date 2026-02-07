@@ -82,9 +82,8 @@ export function ProjectDetailPage() {
             <ArrowLeft size={14} />
           </button>
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-bold text-white truncate">{project.name}</h2>
-            <div className="flex items-center gap-2 sm:gap-3 mt-0.5 flex-wrap">
-              <span className="text-[10px] text-scada-text-muted truncate">{project.recipeName} - {project.style}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-sm font-bold text-white truncate">{project.name}</h2>
               <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium shrink-0 ${
                 project.phase === 'fermenting'
                   ? 'bg-scada-accent/15 text-scada-accent border border-scada-accent/30'
@@ -121,6 +120,7 @@ export function ProjectDetailPage() {
                 </>
               )}
             </div>
+            <p className="text-[10px] text-scada-text-muted truncate mt-0.5">{project.recipeName} - {project.style}</p>
           </div>
 
           {/* Archive / Delete — always visible */}
