@@ -380,6 +380,24 @@ function appReducer(state: AppState, action: AppAction): AppState {
       }
     }
 
+    // === Direct fermentation (skip brew mode) ===
+    case 'START_FERMENTATION': {
+      const project = createProject(action.recipe, action.projectName)
+      project.phase = 'fermenting'
+      project.fermentationStartedAt = Date.now()
+      project.brewCompletedAt = Date.now()
+
+      const fermenter = createFermenterForProject(action.recipe, action.projectName)
+      project.fermenterId = fermenter.id
+
+      return {
+        ...state,
+        projects: [...state.projects, project],
+        fermenters: [...state.fermenters, fermenter],
+        isRunning: true,
+      }
+    }
+
     // === Live Mode Sync ===
     case 'SYNC_LIVE_DATA': {
       return {
@@ -551,6 +569,8 @@ export function useBrewingActions() {
     tickBrewTimer: useCallback((dt: number) => dispatch({ type: 'TICK_BREW_TIMER', dt }), [dispatch]),
     completeBrew: useCallback(() => dispatch({ type: 'COMPLETE_BREW' }), [dispatch]),
     cancelBrew: useCallback(() => dispatch({ type: 'CANCEL_BREW' }), [dispatch]),
+    // Direct fermentation
+    startFermentation: useCallback((recipe: Recipe, projectName: string) => dispatch({ type: 'START_FERMENTATION', recipe, projectName }), [dispatch]),
     // Gravity
     addGravityReading: useCallback((projectId: string, gravity: number) => dispatch({ type: 'ADD_GRAVITY_READING', projectId, gravity }), [dispatch]),
     // Live mode

@@ -21,13 +21,21 @@ export function HomePage() {
         <p className="text-sm text-scada-text-secondary text-center max-w-md">
           Créez une recette et lancez un brassage pour commencer à suivre vos fermentations.
         </p>
-        <Link
-          to="/recipes"
-          className="scada-btn-primary flex items-center gap-2 mt-2"
-        >
-          <Plus size={14} />
-          Créer une recette
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            to="/create"
+            className="scada-btn-primary flex items-center gap-2 mt-2"
+          >
+            <Plus size={14} />
+            Nouveau projet
+          </Link>
+          <Link
+            to="/recipes"
+            className="flex items-center gap-2 mt-2 scada-btn-neutral px-4 py-2 text-sm"
+          >
+            Créer une recette
+          </Link>
+        </div>
       </div>
     )
   }
@@ -37,6 +45,17 @@ export function HomePage() {
       {/* Watermark */}
       <div className="pointer-events-none fixed left-0 right-0 bottom-0 top-[45px] flex items-center justify-center overflow-hidden z-0">
         <FermentLogo size={560} className="text-white opacity-[0.02] max-w-[90vw]" full />
+      </div>
+
+      {/* Quick action */}
+      <div className="flex justify-end">
+        <Link
+          to="/create"
+          className="scada-btn-primary flex items-center gap-1.5"
+        >
+          <Plus size={14} />
+          Nouveau projet
+        </Link>
       </div>
 
       {/* Active brewing */}

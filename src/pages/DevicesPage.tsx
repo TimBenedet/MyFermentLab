@@ -30,6 +30,7 @@ export function DevicesPage() {
   }, [mode, loadDevices])
 
   const sensors = devices.filter(d => d.type === 'sensor')
+  const humiditySensors = devices.filter(d => d.type === 'humidity_sensor')
   const outlets = devices.filter(d => d.type === 'outlet')
 
   if (mode !== 'live') {
@@ -104,6 +105,29 @@ export function DevicesPage() {
             )}
           </div>
 
+          {/* Humidity Sensors */}
+          <div>
+            <div className="scada-label mb-2 flex items-center gap-1.5">
+              <Droplet size={12} />
+              Sondes humidite ({humiditySensors.length})
+            </div>
+            {humiditySensors.length === 0 ? (
+              <div className="scada-card text-center py-6 text-sm text-scada-text-muted">Aucune sonde humidite</div>
+            ) : (
+              <div className="space-y-2">
+                {humiditySensors.map(d => (
+                  <DeviceCard
+                    key={d.id}
+                    device={d}
+                    onEdit={() => { setEditingDevice(d); setShowForm(true) }}
+                    onDelete={async () => { await deleteDevice(d.id); loadDevices() }}
+                    isAdmin={role === 'admin'}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Outlets */}
           <div>
             <div className="scada-label mb-2 flex items-center gap-1.5">
@@ -159,20 +183,24 @@ function DeviceCard({ device, onEdit, onDelete, onToggle, isAdmin }: {
   onToggle?: () => void
   isAdmin: boolean
 }) {
-  const isSensor = device.type === 'sensor'
+  const isSensor = device.type === 'sensor' || device.type === 'humidity_sensor'
 
   return (
     <div className="scada-card flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${isSensor ? 'bg-scada-accent/10 text-scada-accent' : 'bg-scada-warning/10 text-scada-warning'}`}>
-          {isSensor ? <Thermometer size={16} /> : <Power size={16} />}
+        <div className={`p-2 rounded-lg ${
+          device.type === 'humidity_sensor' ? 'bg-scada-cold/10 text-scada-cold'
+            : isSensor ? 'bg-scada-accent/10 text-scada-accent'
+            : 'bg-scada-warning/10 text-scada-warning'
+        }`}>
+          {device.type === 'humidity_sensor' ? <Droplet size={16} /> : isSensor ? <Thermometer size={16} /> : <Power size={16} />}
         </div>
         <div>
           <div className="text-sm font-medium text-white">{device.name}</div>
           <div className="flex items-center gap-2 text-[10px] text-scada-text-muted">
-            {device.entity_id && <span>{device.entity_id}</span>}
+            {device.entityId && <span>{device.entityId}</span>}
             {device.ip && <span>{device.ip}</span>}
-            {!device.entity_id && !device.ip && <span className="italic">Non configure</span>}
+            {!device.entityId && !device.ip && <span className="italic">Non configure</span>}
           </div>
         </div>
       </div>
@@ -206,9 +234,9 @@ function DeviceFormModal({ device, onClose, onSave }: {
   onSave: (data: Omit<BackendDevice, 'id'>) => Promise<void>
 }) {
   const [name, setName] = useState(device?.name || '')
-  const [type, setType] = useState<'sensor' | 'outlet'>(device?.type || 'sensor')
+  const [type, setType] = useState<BackendDevice['type']>(device?.type || 'sensor')
   const [ip, setIp] = useState(device?.ip || '')
-  const [entityId, setEntityId] = useState(device?.entity_id || '')
+  const [entityId, setEntityId] = useState(device?.entityId || '')
   const [saving, setSaving] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,7 +247,7 @@ function DeviceFormModal({ device, onClose, onSave }: {
         name,
         type,
         ip: ip || undefined,
-        entity_id: entityId || undefined,
+        entityId: entityId || undefined,
       })
     } finally {
       setSaving(false)
@@ -253,7 +281,7 @@ function DeviceFormModal({ device, onClose, onSave }: {
           <div>
             <label className="text-[10px] text-scada-text-muted uppercase tracking-wider block mb-1">Type</label>
             <div className="flex gap-2">
-              {(['sensor', 'outlet'] as const).map(t => (
+              {(['sensor', 'humidity_sensor', 'outlet'] as const).map(t => (
                 <button
                   key={t}
                   type="button"
@@ -262,11 +290,13 @@ function DeviceFormModal({ device, onClose, onSave }: {
                     type === t
                       ? t === 'sensor'
                         ? 'bg-scada-accent/15 text-scada-accent border-scada-accent/40'
+                        : t === 'humidity_sensor'
+                        ? 'bg-scada-cold/15 text-scada-cold border-scada-cold/40'
                         : 'bg-scada-warning/15 text-scada-warning border-scada-warning/40'
                       : 'border-scada-border text-scada-text-muted hover:text-white'
                   }`}
                 >
-                  {t === 'sensor' ? 'Capteur' : 'Prise'}
+                  {t === 'sensor' ? 'Temp.' : t === 'humidity_sensor' ? 'Humidite' : 'Prise'}
                 </button>
               ))}
             </div>

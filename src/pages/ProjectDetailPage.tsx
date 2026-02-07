@@ -39,9 +39,9 @@ export function ProjectDetailPage() {
         if (!active) return
         syncLiveData(
           project.fermenterId!,
-          bp.current_temperature,
-          bp.outlet_active,
-          bp.current_humidity ?? undefined,
+          bp.currentTemperature,
+          bp.outletActive,
+          bp.currentHumidity ?? undefined,
         )
       } catch { /* ignore poll errors */ }
     }

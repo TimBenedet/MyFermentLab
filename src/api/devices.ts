@@ -9,18 +9,18 @@ export async function createDevice(device: Omit<BackendDevice, 'id'>): Promise<B
   return apiPost<BackendDevice>('/devices', device)
 }
 
-export async function updateDevice(id: number, device: Partial<BackendDevice>): Promise<BackendDevice> {
+export async function updateDevice(id: string, device: Partial<BackendDevice>): Promise<BackendDevice> {
   return apiPut<BackendDevice>(`/devices/${id}`, device)
 }
 
-export async function deleteDevice(id: number): Promise<void> {
+export async function deleteDevice(id: string): Promise<void> {
   return apiDelete(`/devices/${id}`)
 }
 
-export async function toggleDevice(id: number): Promise<{ active: boolean }> {
+export async function toggleDevice(id: string): Promise<{ active: boolean }> {
   return apiPost<{ active: boolean }>(`/devices/${id}/toggle`)
 }
 
-export async function getDeviceState(id: number): Promise<{ state: string; attributes?: Record<string, unknown> }> {
+export async function getDeviceState(id: string): Promise<{ state: string; attributes?: Record<string, unknown> }> {
   return apiGet(`/devices/${id}/state`)
 }

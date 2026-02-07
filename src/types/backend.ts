@@ -1,28 +1,25 @@
 export interface BackendDevice {
-  id: number
+  id: string
   name: string
-  type: 'sensor' | 'outlet'
+  type: 'sensor' | 'outlet' | 'humidity_sensor'
   ip?: string
-  entity_id?: string
+  entityId?: string
 }
 
 export interface BackendProject {
-  id: number
+  id: string
   name: string
-  fermentation_type: string
-  sensor_id: number | null
-  outlet_id: number | null
-  target_temperature: number
-  current_temperature: number
-  outlet_active: boolean
-  control_mode: string
+  fermentationType: string
+  sensorId: string | null
+  outletId: string | null
+  targetTemperature: number
+  currentTemperature: number
+  outletActive: boolean
+  controlMode: string
   archived: boolean
-  brewing_session?: string | null
-  recipe?: string | null
-  humidity_sensor_id?: number | null
-  target_humidity?: number | null
-  current_humidity?: number | null
-  mushroom_type?: string | null
+  humiditySensorId?: string | null
+  targetHumidity?: number | null
+  currentHumidity?: number | null
 }
 
 export interface AuthResponse {

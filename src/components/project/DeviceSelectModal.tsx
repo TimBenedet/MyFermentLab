@@ -5,7 +5,7 @@ import type { BackendDevice } from '../../types/backend'
 
 interface Props {
   projectType: string
-  onConfirm: (sensorId: number | null, outletId: number | null, humiditySensorId: number | null) => void
+  onConfirm: (sensorId: string | null, outletId: string | null, humiditySensorId: string | null) => void
   onSkip: () => void
   onClose: () => void
 }
@@ -13,9 +13,9 @@ interface Props {
 export function DeviceSelectModal({ projectType, onConfirm, onSkip, onClose }: Props) {
   const [devices, setDevices] = useState<BackendDevice[]>([])
   const [loading, setLoading] = useState(true)
-  const [sensorId, setSensorId] = useState<number | null>(null)
-  const [outletId, setOutletId] = useState<number | null>(null)
-  const [humiditySensorId, setHumiditySensorId] = useState<number | null>(null)
+  const [sensorId, setSensorId] = useState<string | null>(null)
+  const [outletId, setOutletId] = useState<string | null>(null)
+  const [humiditySensorId, setHumiditySensorId] = useState<string | null>(null)
 
   const needsHumidity = projectType === 'koji' || projectType === 'mushroom'
 
@@ -27,6 +27,7 @@ export function DeviceSelectModal({ projectType, onConfirm, onSkip, onClose }: P
   }, [])
 
   const sensors = devices.filter(d => d.type === 'sensor')
+  const humiditySensors = devices.filter(d => d.type === 'humidity_sensor')
   const outlets = devices.filter(d => d.type === 'outlet')
 
   return (
@@ -63,7 +64,7 @@ export function DeviceSelectModal({ projectType, onConfirm, onSkip, onClose }: P
                 label="Sonde humidite"
                 value={humiditySensorId}
                 onChange={setHumiditySensorId}
-                options={sensors.filter(s => s.id !== sensorId)}
+                options={humiditySensors}
                 color="scada-cold"
               />
             )}
@@ -101,11 +102,11 @@ export function DeviceSelectModal({ projectType, onConfirm, onSkip, onClose }: P
   )
 }
 
-function SelectField({ icon, label, value, onChange, options, color }: {
+export function SelectField({ icon, label, value, onChange, options, color }: {
   icon: React.ReactNode
   label: string
-  value: number | null
-  onChange: (v: number | null) => void
+  value: string | null
+  onChange: (v: string | null) => void
   options: BackendDevice[]
   color: string
 }) {
@@ -117,13 +118,13 @@ function SelectField({ icon, label, value, onChange, options, color }: {
       </label>
       <select
         value={value ?? ''}
-        onChange={e => onChange(e.target.value ? Number(e.target.value) : null)}
+        onChange={e => onChange(e.target.value || null)}
         className="w-full px-3 py-2 bg-scada-bg rounded-lg border border-scada-border text-sm text-white focus:outline-none focus:border-scada-accent/50 appearance-none"
       >
         <option value="">-- Aucun --</option>
         {options.map(d => (
           <option key={d.id} value={d.id}>
-            {d.name} {d.entity_id ? `(${d.entity_id})` : d.ip ? `(${d.ip})` : ''}
+            {d.name} {d.entityId ? `(${d.entityId})` : d.ip ? `(${d.ip})` : ''}
           </option>
         ))}
       </select>

@@ -65,7 +65,7 @@ export function BrewModePage() {
     }
   }
 
-  const handleDeviceConfirm = async (sensorId: number | null, outletId: number | null, humiditySensorId: number | null) => {
+  const handleDeviceConfirm = async (sensorId: string | null, outletId: string | null, humiditySensorId: string | null) => {
     completeBrew()
     // Find the just-created project
     const project = state.projects.find(p => p.id === activeBrew?.projectId)
@@ -73,12 +73,12 @@ export function BrewModePage() {
       try {
         const bp = await createBackendProject({
           name: project.name,
-          fermentation_type: recipe.projectType,
-          sensor_id: sensorId,
-          outlet_id: outletId,
-          target_temperature: recipe.steps.find(s => s.targetTemp)?.targetTemp ?? 19,
-          humidity_sensor_id: humiditySensorId,
-          target_humidity: recipe.projectType === 'koji' ? 85 : recipe.projectType === 'mushroom' ? 90 : undefined,
+          fermentationType: recipe.projectType,
+          sensorId,
+          outletId,
+          targetTemperature: recipe.steps.find(s => s.targetTemp)?.targetTemp ?? 19,
+          humiditySensorId,
+          targetHumidity: recipe.projectType === 'koji' ? 85 : recipe.projectType === 'mushroom' ? 90 : undefined,
         })
         // Link backend project to local project
         updateProject(project.id, {

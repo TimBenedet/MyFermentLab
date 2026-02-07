@@ -7,7 +7,7 @@ import { RelayIndicator } from '../fermenter/RelayIndicator'
 
 interface Props {
   fermenterId: string
-  backendProjectId?: number
+  backendProjectId?: string
 }
 
 type Tab = 'temp' | 'humidity'
