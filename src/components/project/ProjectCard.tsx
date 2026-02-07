@@ -52,11 +52,9 @@ export function ProjectCard({ project }: Props) {
         <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium shrink-0 ${
           project.phase === 'fermenting'
             ? 'bg-scada-accent/15 text-scada-accent'
-            : project.phase === 'brewing'
-            ? 'bg-scada-warning/15 text-scada-warning'
             : 'bg-scada-text-muted/15 text-scada-text-muted'
         }`}>
-          {project.phase === 'fermenting' ? 'Fermentation' : project.phase === 'brewing' ? 'Brassage' : 'Terminé'}
+          {project.phase === 'fermenting' ? 'Fermentation' : 'Terminé'}
         </span>
       </div>
 

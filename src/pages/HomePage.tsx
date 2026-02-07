@@ -9,7 +9,6 @@ export function HomePage() {
 
   const fermenting = state.projects.filter(p => p.phase === 'fermenting')
   const completed = state.projects.filter(p => p.phase === 'complete' || p.phase === 'conditioning')
-  const brewing = state.projects.filter(p => p.phase === 'brewing')
 
   if (state.projects.length === 0) {
     return (
@@ -19,23 +18,15 @@ export function HomePage() {
         </div>
         <h2 className="text-lg font-bold text-white">Aucun projet en cours</h2>
         <p className="text-sm text-scada-text-secondary text-center max-w-md">
-          Créez une recette et lancez un brassage pour commencer à suivre vos fermentations.
+          Créez un nouveau projet pour commencer à suivre vos fermentations.
         </p>
-        <div className="flex gap-3">
-          <Link
-            to="/create"
-            className="scada-btn-primary flex items-center gap-2 mt-2"
-          >
-            <Plus size={14} />
-            Nouveau projet
-          </Link>
-          <Link
-            to="/recipes"
-            className="flex items-center gap-2 mt-2 scada-btn-neutral px-4 py-2 text-sm"
-          >
-            Créer une recette
-          </Link>
-        </div>
+        <Link
+          to="/create"
+          className="scada-btn-primary flex items-center gap-2 mt-2"
+        >
+          <Plus size={14} />
+          Nouveau projet
+        </Link>
       </div>
     )
   }
@@ -57,20 +48,6 @@ export function HomePage() {
           Nouveau projet
         </Link>
       </div>
-
-      {/* Active brewing */}
-      {brewing.length > 0 && (
-        <section>
-          <h2 className="scada-label mb-3 text-scada-warning">
-            Brassage en cours ({brewing.length})
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {brewing.map(p => (
-              <ProjectCard key={p.id} project={p} />
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Fermenting */}
       {fermenting.length > 0 && (

@@ -24,7 +24,6 @@ export function CreateProjectPage() {
   const isLive = mode === 'live'
 
   // Form state
-  const [recipeId, setRecipeId] = useState<string | ''>('')
   const [projectType, setProjectType] = useState<ProjectType>('beer')
   const [projectName, setProjectName] = useState('')
   const [targetTemp, setTargetTemp] = useState(19)
@@ -38,17 +37,7 @@ export function CreateProjectPage() {
 
   const [creating, setCreating] = useState(false)
 
-  const selectedRecipe = recipeId ? state.recipes.find(r => r.id === recipeId) : null
   const needsHumidity = projectType === 'koji' || projectType === 'mushroom'
-
-  // Sync projectType from selected recipe
-  useEffect(() => {
-    if (selectedRecipe) {
-      setProjectType(selectedRecipe.projectType)
-      const temp = selectedRecipe.steps.find(s => s.targetTemp)?.targetTemp
-      if (temp) setTargetTemp(temp)
-    }
-  }, [selectedRecipe])
 
   // Load devices in live mode
   useEffect(() => {
@@ -64,9 +53,7 @@ export function CreateProjectPage() {
   const humiditySensors = devices.filter(d => d.type === 'humidity_sensor')
   const outlets = devices.filter(d => d.type === 'outlet')
 
-  // Build a minimal recipe for non-recipe projects (koji/mushroom)
   const getRecipe = (): Recipe => {
-    if (selectedRecipe) return selectedRecipe
     return {
       id: `temp-${Date.now()}`,
       projectType,
@@ -129,7 +116,7 @@ export function CreateProjectPage() {
     }
   }
 
-  const canCreate = projectName.trim() || selectedRecipe
+  const canCreate = projectName.trim().length > 0
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
@@ -144,51 +131,30 @@ export function CreateProjectPage() {
         </div>
       </div>
 
-      {/* Recipe or type selection */}
       <div className="scada-card space-y-3">
-        <div className="scada-label">Recette</div>
+        <div className="scada-label">Projet</div>
 
         <div>
           <label className="block text-[9px] text-scada-text-muted uppercase tracking-wider mb-1">
-            Recette existante (optionnel)
+            Type de projet
           </label>
-          <select
-            value={recipeId}
-            onChange={e => setRecipeId(e.target.value)}
-            className="w-full px-3 py-2 bg-scada-bg rounded-lg border border-scada-border text-sm text-white focus:outline-none focus:border-scada-accent/50 appearance-none"
-          >
-            <option value="">-- Sans recette --</option>
-            {state.recipes.map(r => (
-              <option key={r.id} value={r.id}>
-                {r.name} ({TYPE_LABELS[r.projectType]}) - {r.style}
-              </option>
+          <div className="flex gap-1.5">
+            {(['beer', 'mead', 'koji', 'mushroom'] as ProjectType[]).map(t => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setProjectType(t)}
+                className={`flex-1 px-2 py-2 text-[10px] rounded-lg border font-medium transition-colors ${
+                  projectType === t
+                    ? 'bg-scada-accent/15 text-scada-accent border-scada-accent/40'
+                    : 'border-scada-border text-scada-text-muted hover:text-white'
+                }`}
+              >
+                {TYPE_LABELS[t]}
+              </button>
             ))}
-          </select>
-        </div>
-
-        {!selectedRecipe && (
-          <div>
-            <label className="block text-[9px] text-scada-text-muted uppercase tracking-wider mb-1">
-              Type de projet
-            </label>
-            <div className="flex gap-1.5">
-              {(['beer', 'mead', 'koji', 'mushroom'] as ProjectType[]).map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setProjectType(t)}
-                  className={`flex-1 px-2 py-2 text-[10px] rounded-lg border font-medium transition-colors ${
-                    projectType === t
-                      ? 'bg-scada-accent/15 text-scada-accent border-scada-accent/40'
-                      : 'border-scada-border text-scada-text-muted hover:text-white'
-                  }`}
-                >
-                  {TYPE_LABELS[t]}
-                </button>
-              ))}
-            </div>
           </div>
-        )}
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2 sm:col-span-1">
@@ -199,7 +165,7 @@ export function CreateProjectPage() {
               type="text"
               value={projectName}
               onChange={e => setProjectName(e.target.value)}
-              placeholder={selectedRecipe ? `${selectedRecipe.name} - ${new Date().toLocaleDateString('fr-FR')}` : 'Mon projet...'}
+              placeholder="Mon projet..."
               className="w-full px-3 py-2 bg-scada-bg rounded-lg border border-scada-border text-sm text-white placeholder:text-scada-text-muted focus:outline-none focus:border-scada-accent/50"
               autoFocus
             />

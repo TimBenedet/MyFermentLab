@@ -95,15 +95,7 @@ export interface GravityDataPoint {
   temperature: number  // temp at measurement time
 }
 
-// === Brew Mode ===
-export interface BrewStepState {
-  stepId: string
-  status: 'pending' | 'active' | 'completed' | 'skipped'
-  startedAt?: number
-  elapsedSeconds: number
-}
-
-export type ProjectPhase = 'brewing' | 'fermenting' | 'conditioning' | 'complete'
+export type ProjectPhase = 'fermenting' | 'conditioning' | 'complete'
 
 export interface BrewProject {
   id: string
@@ -119,11 +111,6 @@ export interface BrewProject {
   sensorId?: string | null
   outletId?: string | null
   humiditySensorId?: string | null
-
-  // Brewing phase
-  brewSteps: BrewStepState[]
-  brewStartedAt?: number
-  brewCompletedAt?: number
 
   // Fermentation phase
   fermenterId?: string
@@ -163,11 +150,6 @@ export interface ArchivedProject {
   batchSize: number
   srm: number
 
-  // Brew data
-  brewStartedAt?: number
-  brewCompletedAt?: number
-  brewSteps: BrewStepState[]
-
   // Fermentation data
   fermentationStartedAt?: number
   totalFermentationDays: number
@@ -185,14 +167,6 @@ export interface ArchivedProject {
   finalHumidity?: number
 }
 
-export interface ActiveBrew {
-  recipeId: string
-  projectId: string
-  currentStepIndex: number
-  steps: BrewStepState[]
-  timerRunning: boolean
-}
-
 // === Alarms ===
 export interface Alarm {
   id: string
@@ -207,7 +181,6 @@ export interface Alarm {
 // === App State ===
 export interface AppState {
   fermenters: Fermenter[]
-  recipes: Recipe[]
   projects: BrewProject[]
   archivedProjects: ArchivedProject[]
   alarms: Alarm[]
@@ -215,7 +188,6 @@ export interface AppState {
   speed: number        // simulation speed multiplier
   totalElapsedSeconds: number
   ambientTemp: number  // simulated ambient temperature
-  activeBrew?: ActiveBrew
 }
 
 // === Actions ===
@@ -233,22 +205,11 @@ export type AppAction =
   | { type: 'SET_SETPOINT'; fermenterId: string; value: number }
   | { type: 'SET_PID_MODE'; fermenterId: string; mode: 'auto' | 'manual' | 'off' }
   | { type: 'TOGGLE_RELAY'; fermenterId: string }
-  // Recipe library
-  | { type: 'SAVE_RECIPE'; recipe: Recipe }
-  | { type: 'DELETE_RECIPE'; recipeId: string }
-  | { type: 'UPDATE_RECIPE'; recipe: Recipe }
   // Project lifecycle
   | { type: 'CREATE_PROJECT'; project: BrewProject }
   | { type: 'UPDATE_PROJECT'; projectId: string; updates: Partial<BrewProject> }
   | { type: 'DELETE_PROJECT'; projectId: string }
   | { type: 'ARCHIVE_PROJECT'; projectId: string }
-  // Brew mode
-  | { type: 'START_BREW'; recipeId: string; projectName: string }
-  | { type: 'ADVANCE_BREW_STEP' }
-  | { type: 'SKIP_BREW_STEP' }
-  | { type: 'TICK_BREW_TIMER'; dt: number }
-  | { type: 'COMPLETE_BREW' }
-  | { type: 'CANCEL_BREW' }
   // Gravity
   | { type: 'ADD_GRAVITY_READING'; projectId: string; gravity: number }
   // Humidity
@@ -256,7 +217,7 @@ export type AppAction =
   | { type: 'SET_HUMIDITY_PID_MODE'; fermenterId: string; mode: 'auto' | 'manual' | 'off' }
   | { type: 'TOGGLE_HUMIDITY_RELAY'; fermenterId: string }
   | { type: 'ADD_HUMIDITY_READING'; projectId: string; humidity: number }
-  // Direct fermentation (skip brew mode)
+  // Fermentation
   | { type: 'START_FERMENTATION'; recipe: Recipe; projectName: string }
   // Live mode sync
   | { type: 'SYNC_LIVE_DATA'; fermenterId: string; temperature: number; relayOn: boolean; humidity?: number; humidityRelayOn?: boolean }

@@ -1,7 +1,7 @@
 import { createContext, useContext, useReducer, useCallback, useEffect, type ReactNode } from 'react'
 import type { AppState, AppAction, BrewProject, Recipe, ArchivedProject, ProjectType } from '../types/brewing'
 import type { BackendProject } from '../types/backend'
-import { DEFAULT_RECIPE, createFermenter, createFermenterForProject, createProject, resetFermenterCounter, generateId } from '../simulation/constants'
+import { createFermenter, createFermenterForProject, createProject, resetFermenterCounter, generateId } from '../simulation/constants'
 import { simulateFermenter, evaluateAlarms } from '../simulation/fermenterSim'
 import { simulateGravity } from '../simulation/gravitySim'
 
@@ -9,13 +9,6 @@ function createInitialState(): AppState {
   resetFermenterCounter()
   return {
     fermenters: [],
-    recipes: [
-      {
-        ...DEFAULT_RECIPE,
-        ingredients: DEFAULT_RECIPE.ingredients.map(i => ({ ...i })),
-        steps: DEFAULT_RECIPE.steps.map(s => ({ ...s })),
-      },
-    ],
     projects: [],
     archivedProjects: [],
     alarms: [],
@@ -23,7 +16,6 @@ function createInitialState(): AppState {
     speed: 1,
     totalElapsedSeconds: 0,
     ambientTemp: 20,
-    activeBrew: undefined,
   }
 }
 
@@ -167,19 +159,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ),
       }
 
-    // === Recipe Library ===
-    case 'SAVE_RECIPE':
-      return { ...state, recipes: [...state.recipes, action.recipe] }
-
-    case 'DELETE_RECIPE':
-      return { ...state, recipes: state.recipes.filter(r => r.id !== action.recipeId) }
-
-    case 'UPDATE_RECIPE':
-      return {
-        ...state,
-        recipes: state.recipes.map(r => r.id === action.recipe.id ? action.recipe : r),
-      }
-
     // === Project Lifecycle ===
     case 'CREATE_PROJECT':
       return { ...state, projects: [...state.projects, action.project] }
@@ -208,7 +187,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
       const proj = state.projects.find(p => p.id === action.projectId)
       if (!proj) return state
 
-      const recipe = state.recipes.find(r => r.id === proj.recipeId)
       const fermenter = proj.fermenterId
         ? state.fermenters.find(f => f.id === proj.fermenterId)
         : undefined
@@ -229,7 +207,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         recipeName: proj.recipeName,
         createdAt: proj.createdAt,
         archivedAt: Date.now(),
-        recipeSnapshot: recipe ?? {
+        recipeSnapshot: {
           id: proj.recipeId, projectType: proj.projectType, name: proj.recipeName, style: proj.style,
           batchSize: proj.batchSize, og: proj.og, fg: proj.fg,
           abv: proj.abv, ibu: 0, srm: proj.srm, ingredients: [], steps: [],
@@ -237,9 +215,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         style: proj.style,
         batchSize: proj.batchSize,
         srm: proj.srm,
-        brewStartedAt: proj.brewStartedAt,
-        brewCompletedAt: proj.brewCompletedAt,
-        brewSteps: proj.brewSteps,
         fermentationStartedAt: proj.fermentationStartedAt,
         totalFermentationDays: fermentationDays,
         temperatureHistory: fermenter?.temperatureHistory ?? [],
@@ -248,7 +223,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         fg: proj.fg,
         finalGravity: lastGravity,
         actualAbv: Math.round((proj.og - lastGravity) * 131.25 * 10) / 10,
-        // Humidity data (koji/mushroom)
         humidityHistory: proj.humidityHistory,
         finalHumidity: fermenter?.humidity,
       }
@@ -264,129 +238,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
       }
     }
 
-    // === Brew Mode ===
-    case 'START_BREW': {
-      const recipe = state.recipes.find(r => r.id === action.recipeId)
-      if (!recipe) return state
-      const project = createProject(recipe, action.projectName)
-      const brewSteps = project.brewSteps.map((s, i) => ({
-        ...s,
-        status: i === 0 ? 'active' as const : 'pending' as const,
-        startedAt: i === 0 ? Date.now() : undefined,
-      }))
-      return {
-        ...state,
-        projects: [...state.projects, project],
-        activeBrew: {
-          recipeId: recipe.id,
-          projectId: project.id,
-          currentStepIndex: 0,
-          steps: brewSteps,
-          timerRunning: true,
-        },
-      }
-    }
-
-    case 'TICK_BREW_TIMER': {
-      if (!state.activeBrew || !state.activeBrew.timerRunning) return state
-      const brew = state.activeBrew
-      const steps = brew.steps.map((s, i) =>
-        i === brew.currentStepIndex && s.status === 'active'
-          ? { ...s, elapsedSeconds: s.elapsedSeconds + action.dt }
-          : s
-      )
-      return { ...state, activeBrew: { ...brew, steps } }
-    }
-
-    case 'ADVANCE_BREW_STEP': {
-      if (!state.activeBrew) return state
-      const brew = state.activeBrew
-      const nextIndex = brew.currentStepIndex + 1
-      const isLastStep = nextIndex >= brew.steps.length
-      const steps = brew.steps.map((s, i) => {
-        if (i === brew.currentStepIndex) return { ...s, status: 'completed' as const }
-        if (i === nextIndex) return { ...s, status: 'active' as const, startedAt: Date.now() }
-        return s
-      })
-      return {
-        ...state,
-        activeBrew: {
-          ...brew,
-          steps,
-          currentStepIndex: isLastStep ? brew.currentStepIndex : nextIndex,
-        },
-      }
-    }
-
-    case 'SKIP_BREW_STEP': {
-      if (!state.activeBrew) return state
-      const brew = state.activeBrew
-      const nextIndex = brew.currentStepIndex + 1
-      const isLastStep = nextIndex >= brew.steps.length
-      const steps = brew.steps.map((s, i) => {
-        if (i === brew.currentStepIndex) return { ...s, status: 'skipped' as const }
-        if (i === nextIndex) return { ...s, status: 'active' as const, startedAt: Date.now() }
-        return s
-      })
-      return {
-        ...state,
-        activeBrew: {
-          ...brew,
-          steps,
-          currentStepIndex: isLastStep ? brew.currentStepIndex : nextIndex,
-        },
-      }
-    }
-
-    case 'COMPLETE_BREW': {
-      if (!state.activeBrew) return state
-      const brew = state.activeBrew
-      const recipe = state.recipes.find(r => r.id === brew.recipeId)
-      if (!recipe) return state
-
-      const project = state.projects.find(p => p.id === brew.projectId)
-      if (!project) return state
-
-      const newFermenter = createFermenterForProject(recipe, project.name)
-
-      return {
-        ...state,
-        fermenters: [...state.fermenters, newFermenter],
-        projects: state.projects.map(p =>
-          p.id === brew.projectId
-            ? {
-                ...p,
-                phase: 'fermenting' as const,
-                fermenterId: newFermenter.id,
-                fermentationStartedAt: Date.now(),
-                brewCompletedAt: Date.now(),
-                brewSteps: brew.steps.map(s => ({
-                  ...s,
-                  status: s.status === 'active' ? 'completed' as const : s.status,
-                })),
-              }
-            : p
-        ),
-        activeBrew: undefined,
-        isRunning: true,
-      }
-    }
-
-    case 'CANCEL_BREW': {
-      if (!state.activeBrew) return state
-      return {
-        ...state,
-        projects: state.projects.filter(p => p.id !== state.activeBrew!.projectId),
-        activeBrew: undefined,
-      }
-    }
-
-    // === Direct fermentation (skip brew mode) ===
+    // === Fermentation ===
     case 'START_FERMENTATION': {
       const project = createProject(action.recipe, action.projectName)
       project.phase = 'fermenting'
       project.fermentationStartedAt = Date.now()
-      project.brewCompletedAt = Date.now()
 
       const fermenter = createFermenterForProject(action.recipe, action.projectName)
       project.fermenterId = fermenter.id
@@ -468,7 +324,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         const project = createProject(miniRecipe, bp.name)
         project.phase = 'fermenting'
         project.fermentationStartedAt = bp.createdAt ?? Date.now()
-        project.brewCompletedAt = bp.createdAt ?? Date.now()
         project.fermenterId = fermenter.id
         project.backendProjectId = bp.id
         project.sensorId = bp.sensorId
@@ -623,23 +478,12 @@ export function useBrewingActions() {
     setSetpoint: useCallback((fId: string, value: number) => dispatch({ type: 'SET_SETPOINT', fermenterId: fId, value }), [dispatch]),
     setPidMode: useCallback((fId: string, mode: 'auto' | 'manual' | 'off') => dispatch({ type: 'SET_PID_MODE', fermenterId: fId, mode }), [dispatch]),
     toggleRelay: useCallback((fId: string) => dispatch({ type: 'TOGGLE_RELAY', fermenterId: fId }), [dispatch]),
-    // Recipe library
-    saveRecipe: useCallback((recipe: Recipe) => dispatch({ type: 'SAVE_RECIPE', recipe }), [dispatch]),
-    deleteRecipe: useCallback((id: string) => dispatch({ type: 'DELETE_RECIPE', recipeId: id }), [dispatch]),
-    updateRecipe: useCallback((recipe: Recipe) => dispatch({ type: 'UPDATE_RECIPE', recipe }), [dispatch]),
     // Project lifecycle
     createProjectAction: useCallback((project: BrewProject) => dispatch({ type: 'CREATE_PROJECT', project }), [dispatch]),
     updateProject: useCallback((id: string, updates: Partial<BrewProject>) => dispatch({ type: 'UPDATE_PROJECT', projectId: id, updates }), [dispatch]),
     deleteProject: useCallback((id: string) => dispatch({ type: 'DELETE_PROJECT', projectId: id }), [dispatch]),
     archiveProject: useCallback((id: string) => dispatch({ type: 'ARCHIVE_PROJECT', projectId: id }), [dispatch]),
-    // Brew mode
-    startBrew: useCallback((recipeId: string, projectName: string) => dispatch({ type: 'START_BREW', recipeId, projectName }), [dispatch]),
-    advanceBrewStep: useCallback(() => dispatch({ type: 'ADVANCE_BREW_STEP' }), [dispatch]),
-    skipBrewStep: useCallback(() => dispatch({ type: 'SKIP_BREW_STEP' }), [dispatch]),
-    tickBrewTimer: useCallback((dt: number) => dispatch({ type: 'TICK_BREW_TIMER', dt }), [dispatch]),
-    completeBrew: useCallback(() => dispatch({ type: 'COMPLETE_BREW' }), [dispatch]),
-    cancelBrew: useCallback(() => dispatch({ type: 'CANCEL_BREW' }), [dispatch]),
-    // Direct fermentation
+    // Fermentation
     startFermentation: useCallback((recipe: Recipe, projectName: string) => dispatch({ type: 'START_FERMENTATION', recipe, projectName }), [dispatch]),
     // Gravity
     addGravityReading: useCallback((projectId: string, gravity: number) => dispatch({ type: 'ADD_GRAVITY_READING', projectId, gravity }), [dispatch]),

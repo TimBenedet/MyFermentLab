@@ -1,4 +1,4 @@
-import type { Recipe, Fermenter, PIDState, BrewProject, BrewStepState, HumidityDataPoint } from '../types/brewing'
+import type { Recipe, Fermenter, PIDState, BrewProject, HumidityDataPoint } from '../types/brewing'
 
 // === PID Configuration ===
 export const PID_CONFIG = {
@@ -103,14 +103,6 @@ export function resetFermenterCounter() {
 
 // === Project Factory ===
 export function createProject(recipe: Recipe, projectName: string): BrewProject {
-  const brewSteps: BrewStepState[] = recipe.steps
-    .filter(s => s.day === 0)
-    .map(s => ({
-      stepId: s.id,
-      status: 'pending' as const,
-      elapsedSeconds: 0,
-    }))
-
   const needsHumidity = recipe.projectType === 'koji' || recipe.projectType === 'mushroom'
 
   return {
@@ -119,10 +111,8 @@ export function createProject(recipe: Recipe, projectName: string): BrewProject 
     projectType: recipe.projectType,
     recipeId: recipe.id,
     recipeName: recipe.name,
-    phase: 'brewing',
+    phase: 'fermenting',
     createdAt: Date.now(),
-    brewSteps,
-    brewStartedAt: Date.now(),
     gravityHistory: [],
     currentGravity: recipe.og,
     og: recipe.og,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Wifi, Home, BookOpen, Archive, Menu, X, Cpu, Radio, LogOut } from 'lucide-react'
+import { Wifi, Home, Archive, Menu, X, Cpu, Radio, LogOut } from 'lucide-react'
 import { FermentLogo } from './FermentLogo'
 import { useBrewing } from '../../context/BrewingContext'
 import { useConnection } from '../../context/ConnectionContext'
@@ -56,10 +56,6 @@ export function Header() {
           <NavLink to="/" className={navLinkClass} end>
             <Home size={14} />
             Accueil
-          </NavLink>
-          <NavLink to="/recipes" className={navLinkClass}>
-            <BookOpen size={14} />
-            Recettes
           </NavLink>
           <NavLink to="/archives" className={navLinkClass}>
             <Archive size={14} />
@@ -134,10 +130,6 @@ export function Header() {
           <NavLink to="/" className={mobileNavLinkClass} end onClick={() => setMenuOpen(false)}>
             <Home size={16} />
             Accueil
-          </NavLink>
-          <NavLink to="/recipes" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>
-            <BookOpen size={16} />
-            Recettes
           </NavLink>
           <NavLink to="/archives" className={mobileNavLinkClass} onClick={() => setMenuOpen(false)}>
             <Archive size={16} />
