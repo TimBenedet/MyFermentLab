@@ -13,13 +13,6 @@ function formatDate(ts: number): string {
   return new Date(ts).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h > 0) return `${h}h${m.toString().padStart(2, '0')}`
-  return `${m} min`
-}
-
 function exportArchivePDF(archive: ArchivedProject) {
   const recipe = archive.recipeSnapshot
   const needsHumidity = archive.projectType === 'koji' || archive.projectType === 'mushroom'
@@ -46,17 +39,6 @@ function exportArchivePDF(archive: ArchivedProject) {
         return `Min: ${Math.min(...temps).toFixed(1)}°C / Max: ${Math.max(...temps).toFixed(1)}°C / Moy: ${(temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1)}°C`
       })()
     : 'Aucune donnée'
-
-  const brewStepsHtml = archive.brewSteps
-    .map(s => {
-      const step = recipe.steps.find(rs => rs.id === s.stepId)
-      return `<tr>
-        <td>${step?.description ?? s.stepId}</td>
-        <td>${s.status === 'completed' ? 'Terminé' : s.status === 'skipped' ? 'Passé' : s.status}</td>
-        <td>${s.elapsedSeconds > 0 ? formatDuration(s.elapsedSeconds) : '-'}</td>
-      </tr>`
-    })
-    .join('')
 
   const ingredientsHtml = recipe.ingredients
     .map(i => `<tr><td>${i.name}</td><td>${i.type}</td><td>${i.quantity} ${i.unit}</td><td>${i.addAt}</td></tr>`)
@@ -126,12 +108,6 @@ ${metricsHtml}
   <tbody>${ingredientsHtml || '<tr><td colspan="4">Aucun ingrédient enregistré</td></tr>'}</tbody>
 </table>
 
-<h2>Étapes de brassage</h2>
-<table>
-  <thead><tr><th>Étape</th><th>Statut</th><th>Durée</th></tr></thead>
-  <tbody>${brewStepsHtml || '<tr><td colspan="3">Aucune étape enregistrée</td></tr>'}</tbody>
-</table>
-
 ${historyHtml}
 
 <h2>Dates clés</h2>
@@ -139,8 +115,6 @@ ${historyHtml}
   <thead><tr><th>Événement</th><th>Date</th></tr></thead>
   <tbody>
     <tr><td>Création du projet</td><td>${formatDate(archive.createdAt)}</td></tr>
-    ${archive.brewStartedAt ? `<tr><td>Début du brassage</td><td>${formatDate(archive.brewStartedAt)}</td></tr>` : ''}
-    ${archive.brewCompletedAt ? `<tr><td>Fin du brassage</td><td>${formatDate(archive.brewCompletedAt)}</td></tr>` : ''}
     ${archive.fermentationStartedAt ? `<tr><td>Début fermentation</td><td>${formatDate(archive.fermentationStartedAt)}</td></tr>` : ''}
     <tr><td>Archivage</td><td>${formatDate(archive.archivedAt)}</td></tr>
   </tbody>
@@ -212,12 +186,6 @@ function ArchiveReport({ archive }: { archive: ArchivedProject }) {
           <div className="text-[8px] text-scada-text-muted uppercase">Créé</div>
           <div className="text-[10px] text-white font-mono mt-0.5">{formatDate(archive.createdAt)}</div>
         </div>
-        {archive.brewStartedAt && (
-          <div className="bg-scada-bg rounded-lg p-2 text-center">
-            <div className="text-[8px] text-scada-text-muted uppercase">Brassé</div>
-            <div className="text-[10px] text-white font-mono mt-0.5">{formatDate(archive.brewStartedAt)}</div>
-          </div>
-        )}
         {archive.fermentationStartedAt && (
           <div className="bg-scada-bg rounded-lg p-2 text-center">
             <div className="text-[8px] text-scada-text-muted uppercase">Fermenté</div>
@@ -362,35 +330,6 @@ function ArchiveReport({ archive }: { archive: ArchivedProject }) {
           ))}
         </div>
       </div>
-
-      {/* Brew Steps */}
-      {archive.brewSteps.length > 0 && (
-        <div>
-          <div className="text-[10px] text-scada-text-secondary uppercase tracking-wider font-medium mb-2">Étapes de brassage</div>
-          <div className="space-y-1">
-            {archive.brewSteps.map(bs => {
-              const step = recipe.steps.find(s => s.id === bs.stepId)
-              return (
-                <div key={bs.stepId} className="flex items-center justify-between p-2 bg-scada-bg rounded text-[10px]">
-                  <span className="text-white">{step?.description ?? bs.stepId}</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-medium ${
-                      bs.status === 'completed' ? 'bg-scada-accent/15 text-scada-accent'
-                      : bs.status === 'skipped' ? 'bg-scada-text-muted/15 text-scada-text-muted'
-                      : 'bg-scada-warning/15 text-scada-warning'
-                    }`}>
-                      {bs.status === 'completed' ? 'Terminé' : bs.status === 'skipped' ? 'Passé' : bs.status}
-                    </span>
-                    {bs.elapsedSeconds > 0 && (
-                      <span className="font-mono text-scada-text-muted">{formatDuration(bs.elapsedSeconds)}</span>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Gravity History (beer/mead) */}
       {!needsHumidity && archive.gravityHistory.length > 0 && (
