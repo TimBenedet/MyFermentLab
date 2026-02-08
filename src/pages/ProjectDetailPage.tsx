@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, Droplets, Droplet, Archive, Trash2, Wifi, Cpu, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { useConnection } from '../context/ConnectionContext'
-import { fetchBackendProject, fetchLiveTemperature, archiveBackendProject } from '../api/projects'
+import { fetchBackendProject, fetchLiveTemperature, archiveBackendProject, deleteBackendProject } from '../api/projects'
 import { VesselSVG } from '../components/vessels/VesselSVG'
 import { KojiTraySVG } from '../components/vessels/KojiTraySVG'
 import { MushroomBagSVG } from '../components/vessels/MushroomBagSVG'
@@ -159,7 +159,7 @@ export function ProjectDetailPage() {
             ) : (
               <button
                 onClick={() => {
-                  if (project.backendProjectId) archiveBackendProject(project.backendProjectId).catch(() => {})
+                  if (project.backendProjectId) deleteBackendProject(project.backendProjectId).catch(() => {})
                   deleteProject(project.id)
                   navigate('/')
                 }}

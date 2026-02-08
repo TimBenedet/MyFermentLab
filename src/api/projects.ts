@@ -77,9 +77,9 @@ export async function fetchProjectHistory(id: string): Promise<{
 }
 
 export async function archiveBackendProject(id: string): Promise<void> {
-  await apiPost(`/projects/${id}/archive`)
+  await apiPut(`/projects/${id}/archive`)
 }
 
 export async function unarchiveBackendProject(id: string): Promise<void> {
-  await apiPost(`/projects/${id}/unarchive`)
+  await apiPut(`/projects/${id}/unarchive`)
 }
