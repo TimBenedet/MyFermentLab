@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, Droplets, Droplet, Archive, Trash2, Wifi, Cpu, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { useConnection } from '../context/ConnectionContext'
-import { fetchBackendProject, fetchLiveTemperature } from '../api/projects'
+import { fetchBackendProject, fetchLiveTemperature, archiveBackendProject } from '../api/projects'
 import { VesselSVG } from '../components/vessels/VesselSVG'
 import { KojiTraySVG } from '../components/vessels/KojiTraySVG'
 import { MushroomBagSVG } from '../components/vessels/MushroomBagSVG'
@@ -137,7 +137,11 @@ export function ProjectDetailPage() {
               </button>
             )}
             <button
-              onClick={() => { archiveProject(project.id); navigate('/archives') }}
+              onClick={() => {
+                if (project.backendProjectId) archiveBackendProject(project.backendProjectId).catch(() => {})
+                archiveProject(project.id)
+                navigate('/archives')
+              }}
               className="flex items-center gap-1 px-2 py-1.5 text-[9px] rounded-lg text-scada-accent bg-scada-accent/10 border border-scada-accent/20 hover:bg-scada-accent/20 transition-colors"
               title="Archiver le projet"
             >
@@ -154,7 +158,11 @@ export function ProjectDetailPage() {
               </button>
             ) : (
               <button
-                onClick={() => { deleteProject(project.id); navigate('/') }}
+                onClick={() => {
+                  if (project.backendProjectId) archiveBackendProject(project.backendProjectId).catch(() => {})
+                  deleteProject(project.id)
+                  navigate('/')
+                }}
                 className="flex items-center gap-1 px-2 py-1.5 text-[9px] rounded-lg text-white bg-scada-danger/80 hover:bg-scada-danger transition-colors"
               >
                 <Trash2 size={12} />
