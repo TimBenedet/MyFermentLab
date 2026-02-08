@@ -1,27 +1,5 @@
 import type { Recipe, Fermenter, PIDState, BrewProject, HumidityDataPoint } from '../types/brewing'
 
-// === PID Configuration ===
-export const PID_CONFIG = {
-  Kp: 8.0,
-  Ki: 0.3,
-  Kd: 2.0,
-  outputMin: 0,
-  outputMax: 100,
-  integralMax: 40,
-}
-
-// Hysteresis band for relay control (°C)
-export const HYSTERESIS = {
-  on: -0.3,   // turn ON when temp < setpoint - 0.3
-  off: 0.3,   // turn OFF when temp > setpoint + 0.3
-}
-
-// === Alarm Thresholds ===
-export const ALARM_THRESHOLDS = {
-  tempWarning: 1.5,
-  tempCritical: 3.0,
-}
-
 // === Default PID state ===
 export const DEFAULT_PID: PIDState = {
   setpoint: 19,
@@ -45,27 +23,6 @@ export const FERMENTER_COLORS = [
 ]
 
 let fermenterCounter = 0
-
-export function createFermenter(name: string): Fermenter {
-  fermenterCounter++
-  const colorIdx = (fermenterCounter - 1) % FERMENTER_COLORS.length
-  return {
-    id: `F${fermenterCounter}`,
-    name,
-    volume: 25,
-    yeastStrain: 'US-05',
-    og: 1.052,
-    fg: 1.012,
-    startDate: Date.now(),
-    temperature: 20 + (Math.random() - 0.5) * 2,
-    setpoint: 19,
-    relayOn: false,
-    pid: { ...DEFAULT_PID },
-    temperatureHistory: [],
-    level: 75,
-    color: FERMENTER_COLORS[colorIdx],
-  }
-}
 
 export function createFermenterForProject(recipe: Recipe, projectName: string): Fermenter {
   fermenterCounter++
@@ -95,10 +52,6 @@ export function createFermenterForProject(recipe: Recipe, projectName: string): 
       humidityHistory: [] as HumidityDataPoint[],
     }),
   }
-}
-
-export function resetFermenterCounter() {
-  fermenterCounter = 0
 }
 
 // === Project Factory ===

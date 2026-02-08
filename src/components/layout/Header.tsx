@@ -78,12 +78,6 @@ export function Header() {
             </div>
           )}
 
-          {state.speed > 1 && (
-            <span className="text-[10px] font-mono text-scada-accent px-1.5 py-0.5 rounded bg-scada-accent/10 border border-scada-accent/20">
-              {state.speed}x
-            </span>
-          )}
-
           {/* Connection mode badge */}
           <button
             onClick={() => { if (!isLive) navigate('/login') }}
@@ -96,13 +90,6 @@ export function Header() {
             {isLive ? <Wifi size={10} /> : <Cpu size={10} />}
             {isLive ? 'Live' : 'Sim'}
           </button>
-
-          {state.isRunning && (
-            <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-scada-accent animate-pulse" />
-              <span className="text-[9px] text-scada-accent">RUN</span>
-            </div>
-          )}
 
           <span className="font-mono text-xs text-scada-text-secondary tabular-nums hidden sm:inline">
             {clock.toLocaleTimeString('fr-FR')}

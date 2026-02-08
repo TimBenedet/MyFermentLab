@@ -1,131 +1,20 @@
-import { createContext, useContext, useReducer, useCallback, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useReducer, useCallback, type ReactNode } from 'react'
 import type { AppState, AppAction, BrewProject, Recipe, ArchivedProject, ProjectType } from '../types/brewing'
 import type { BackendProject } from '../types/backend'
-import { createFermenter, createFermenterForProject, createProject, resetFermenterCounter, generateId } from '../simulation/constants'
-import { simulateFermenter, evaluateAlarms } from '../simulation/fermenterSim'
-import { simulateGravity } from '../simulation/gravitySim'
+import { createFermenterForProject, createProject, generateId } from '../simulation/constants'
 
 function createInitialState(): AppState {
-  resetFermenterCounter()
   return {
     fermenters: [],
     projects: [],
     archivedProjects: [],
     alarms: [],
-    isRunning: false,
-    speed: 1,
-    totalElapsedSeconds: 0,
-    ambientTemp: 20,
   }
 }
 
 function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
-    case 'TICK': {
-      if (!state.isRunning || state.fermenters.length === 0) return state
-
-      const effectiveDt = action.dt * state.speed
-      const totalElapsed = state.totalElapsedSeconds + effectiveDt
-
-      // Identify fermenters linked to live backend projects — skip simulation for those
-      const liveFermenterIds = new Set(
-        state.projects
-          .filter(p => p.backendProjectId && p.fermenterId)
-          .map(p => p.fermenterId!)
-      )
-
-      const fermenters = state.fermenters.map(f =>
-        liveFermenterIds.has(f.id) ? f : simulateFermenter(f, state.ambientTemp, effectiveDt, totalElapsed)
-      )
-
-      // Auto-record gravity for fermenting projects
-      let projects = state.projects
-      for (const proj of projects) {
-        if (proj.phase === 'fermenting' && proj.fermenterId && proj.fermentationStartedAt) {
-          const fermElapsed = totalElapsed - (proj.fermentationStartedAt - state.totalElapsedSeconds + totalElapsed - effectiveDt)
-          // Use project-relative elapsed time based on gravity history
-          const projElapsedSeconds = proj.gravityHistory.length > 0
-            ? proj.gravityHistory[proj.gravityHistory.length - 1].time + effectiveDt
-            : effectiveDt
-
-          const lastGravity = proj.gravityHistory[proj.gravityHistory.length - 1]
-          if (!lastGravity || projElapsedSeconds - lastGravity.time > 300) {
-            const fermenter = fermenters.find(f => f.id === proj.fermenterId)
-            const gravity = simulateGravity(
-              { og: proj.og, fg: proj.fg, fermentationDays: 14 },
-              projElapsedSeconds
-            )
-            projects = projects.map(p =>
-              p.id === proj.id
-                ? {
-                    ...p,
-                    currentGravity: gravity,
-                    gravityHistory: [...p.gravityHistory, {
-                      time: projElapsedSeconds,
-                      gravity,
-                      temperature: fermenter?.temperature ?? 20,
-                    }].slice(-1000), // cap at 1000 points
-                  }
-                : p
-            )
-          }
-        }
-      }
-
-      // Auto-record humidity for koji/mushroom fermenting projects
-      for (const proj of projects) {
-        if (
-          proj.phase === 'fermenting' &&
-          proj.fermenterId &&
-          (proj.projectType === 'koji' || proj.projectType === 'mushroom')
-        ) {
-          const fermenter = fermenters.find(f => f.id === proj.fermenterId)
-          if (fermenter?.humidity !== undefined) {
-            const hHistory = proj.humidityHistory ?? []
-            const lastH = hHistory[hHistory.length - 1]
-            const projElapsed = hHistory.length > 0
-              ? hHistory[hHistory.length - 1].time + effectiveDt
-              : effectiveDt
-            if (!lastH || projElapsed - lastH.time > 300) {
-              projects = projects.map(p =>
-                p.id === proj.id
-                  ? {
-                      ...p,
-                      currentHumidity: fermenter.humidity,
-                      humidityHistory: [...hHistory, {
-                        time: projElapsed,
-                        humidity: fermenter.humidity!,
-                        setpoint: fermenter.humiditySetpoint ?? 85,
-                        relayOn: fermenter.humidityRelayOn ?? false,
-                      }].slice(-1000),
-                    }
-                  : p
-              )
-            }
-          }
-        }
-      }
-
-      const newState: AppState = { ...state, fermenters, projects, totalElapsedSeconds: totalElapsed }
-      return { ...newState, alarms: evaluateAlarms(newState) }
-    }
-
-    case 'START':
-      return { ...state, isRunning: true }
-
-    case 'STOP':
-      return { ...state, isRunning: false }
-
-    case 'RESET':
-      return createInitialState()
-
-    case 'SET_SPEED':
-      return { ...state, speed: action.speed }
-
     // === Fermenter Management ===
-    case 'ADD_FERMENTER':
-      return { ...state, fermenters: [...state.fermenters, createFermenter(action.name)] }
-
     case 'REMOVE_FERMENTER':
       return { ...state, fermenters: state.fermenters.filter(f => f.id !== action.id) }
 
@@ -183,7 +72,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         projects: state.projects.filter(p => p.id !== action.projectId),
-        // Also remove the associated fermenter
         fermenters: delProject?.fermenterId
           ? state.fermenters.filter(f => f.id !== delProject.fermenterId)
           : state.fermenters,
@@ -238,7 +126,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         projects: state.projects.filter(p => p.id !== action.projectId),
         archivedProjects: [...state.archivedProjects, archived],
-        // Remove the associated fermenter
         fermenters: proj.fermenterId
           ? state.fermenters.filter(f => f.id !== proj.fermenterId)
           : state.fermenters,
@@ -258,7 +145,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         projects: [...state.projects, project],
         fermenters: [...state.fermenters, fermenter],
-        isRunning: true,
       }
     }
 
@@ -299,13 +185,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
       const newFermenters: typeof state.fermenters = []
 
       for (const bp of action.backendProjects) {
-        // Skip if already imported
         if (state.projects.some(p => p.backendProjectId === bp.id)) continue
 
         const projectType = bp.fermentationType as ProjectType
         const needsHumidity = projectType === 'koji' || projectType === 'mushroom'
 
-        // Build minimal recipe for fermenter creation
         const miniRecipe: Recipe = {
           id: generateId('recipe-'),
           projectType,
@@ -321,7 +205,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
           steps: [{ id: 'step-1', description: 'Fermentation', day: 1, done: false, targetTemp: bp.targetTemperature }],
         }
 
-        // Create fermenter with live data
         const fermenter = createFermenterForProject(miniRecipe, bp.name)
         fermenter.setpoint = bp.targetTemperature
         fermenter.temperature = bp.currentTemperature
@@ -333,7 +216,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
           if (fermenter.humidityPid) fermenter.humidityPid.setpoint = bp.targetHumidity ?? (projectType === 'koji' ? 85 : 90)
         }
 
-        // Create project linked to backend
         const project = createProject(miniRecipe, bp.name)
         project.phase = 'fermenting'
         project.fermentationStartedAt = bp.createdAt ?? Date.now()
@@ -357,7 +239,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         projects: [...state.projects, ...newProjects],
         fermenters: [...state.fermenters, ...newFermenters],
-        isRunning: true,
       }
     }
 
@@ -401,7 +282,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 ...p,
                 currentHumidity: action.humidity,
                 humidityHistory: [...(p.humidityHistory ?? []), {
-                  time: state.totalElapsedSeconds,
+                  time: Date.now() / 1000,
                   humidity: action.humidity,
                   setpoint: p.targetHumidity ?? 85,
                   relayOn: state.fermenters.find(f => f.id === p.fermenterId)?.humidityRelayOn ?? false,
@@ -421,7 +302,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 ...p,
                 currentGravity: action.gravity,
                 gravityHistory: [...p.gravityHistory, {
-                  time: state.totalElapsedSeconds,
+                  time: Date.now() / 1000,
                   gravity: action.gravity,
                   temperature: state.fermenters.find(f => f.id === p.fermenterId)?.temperature ?? 20,
                 }],
@@ -457,13 +338,6 @@ const BrewingContext = createContext<ContextValue | null>(null)
 export function BrewingProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, undefined, createInitialState)
 
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      dispatch({ type: 'TICK', dt: 1 })
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
-
   return (
     <BrewingContext.Provider value={{ state, dispatch }}>
       {children}
@@ -481,11 +355,6 @@ export function useBrewingActions() {
   const { dispatch } = useBrewing()
 
   return {
-    start: useCallback(() => dispatch({ type: 'START' }), [dispatch]),
-    stop: useCallback(() => dispatch({ type: 'STOP' }), [dispatch]),
-    reset: useCallback(() => dispatch({ type: 'RESET' }), [dispatch]),
-    setSpeed: useCallback((speed: number) => dispatch({ type: 'SET_SPEED', speed }), [dispatch]),
-    addFermenter: useCallback((name: string) => dispatch({ type: 'ADD_FERMENTER', name }), [dispatch]),
     removeFermenter: useCallback((id: string) => dispatch({ type: 'REMOVE_FERMENTER', id }), [dispatch]),
     renameFermenter: useCallback((id: string, name: string) => dispatch({ type: 'RENAME_FERMENTER', id, name }), [dispatch]),
     setSetpoint: useCallback((fId: string, value: number) => dispatch({ type: 'SET_SETPOINT', fermenterId: fId, value }), [dispatch]),

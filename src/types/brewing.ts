@@ -188,21 +188,11 @@ export interface AppState {
   projects: BrewProject[]
   archivedProjects: ArchivedProject[]
   alarms: Alarm[]
-  isRunning: boolean
-  speed: number        // simulation speed multiplier
-  totalElapsedSeconds: number
-  ambientTemp: number  // simulated ambient temperature
 }
 
 // === Actions ===
 export type AppAction =
-  | { type: 'TICK'; dt: number }
-  | { type: 'START' }
-  | { type: 'STOP' }
-  | { type: 'RESET' }
-  | { type: 'SET_SPEED'; speed: number }
   // Fermenter management
-  | { type: 'ADD_FERMENTER'; name: string }
   | { type: 'REMOVE_FERMENTER'; id: string }
   | { type: 'RENAME_FERMENTER'; id: string; name: string }
   // Fermenter controls
