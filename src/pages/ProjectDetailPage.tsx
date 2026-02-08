@@ -236,25 +236,26 @@ export function ProjectDetailPage() {
                     </button>
                   </div>
                   {chartTab === 'temp' ? (
-                    <TemperatureChart fermenterId={fermenter.id} className="!p-0 !bg-transparent !border-0 !shadow-none h-[240px]" />
+                    <TemperatureChart fermenterId={fermenter.id} backendProjectId={project.backendProjectId} className="!p-0 !bg-transparent !border-0 !shadow-none h-[240px]" />
                   ) : (
                     <HumidityChart
                       humidityHistory={project.humidityHistory ?? []}
                       targetHumidity={project.targetHumidity ?? 85}
                       className="!p-0 !bg-transparent !border-0 !shadow-none h-[240px]"
                       projectId={project.id}
+                      backendProjectId={project.backendProjectId}
                     />
                   )}
                 </div>
               </div>
               {/* Desktop: separate cards in 2×2 grid */}
               <div className="hidden lg:block lg:col-span-8 lg:row-start-1">
-                <TemperatureChart fermenterId={fermenter.id} className="h-full" />
+                <TemperatureChart fermenterId={fermenter.id} backendProjectId={project.backendProjectId} className="h-full" />
               </div>
             </>
           ) : (
             <div className="lg:col-span-8 lg:row-start-1">
-              <TemperatureChart fermenterId={fermenter.id} className="h-full" />
+              <TemperatureChart fermenterId={fermenter.id} backendProjectId={project.backendProjectId} className="h-full" />
             </div>
           )}
 
@@ -271,6 +272,7 @@ export function ProjectDetailPage() {
                 targetHumidity={project.targetHumidity ?? 85}
                 className="h-full"
                 projectId={project.id}
+                backendProjectId={project.backendProjectId}
               />
             </div>
           ) : (

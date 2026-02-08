@@ -52,6 +52,30 @@ export async function fetchLiveTemperature(id: string): Promise<{
   return apiGet(`/projects/${id}/live-temperature`)
 }
 
+export interface BackendHistoryPoint {
+  timestamp: number   // ms epoch
+  temperature: number
+}
+
+export interface BackendHumidityPoint {
+  timestamp: number   // ms epoch
+  humidity: number
+}
+
+export async function fetchProjectHistory(id: string): Promise<{
+  history: BackendHistoryPoint[]
+  humidityHistory: BackendHumidityPoint[]
+}> {
+  const project = await apiGet<{
+    history: BackendHistoryPoint[]
+    humidityHistory: BackendHumidityPoint[]
+  }>(`/projects/${id}`)
+  return {
+    history: project.history ?? [],
+    humidityHistory: project.humidityHistory ?? [],
+  }
+}
+
 export async function archiveBackendProject(id: string): Promise<void> {
   await apiPost(`/projects/${id}/archive`)
 }

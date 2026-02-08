@@ -27,8 +27,15 @@ function appReducer(state: AppState, action: AppAction): AppState {
       const effectiveDt = action.dt * state.speed
       const totalElapsed = state.totalElapsedSeconds + effectiveDt
 
+      // Identify fermenters linked to live backend projects — skip simulation for those
+      const liveFermenterIds = new Set(
+        state.projects
+          .filter(p => p.backendProjectId && p.fermenterId)
+          .map(p => p.fermenterId!)
+      )
+
       const fermenters = state.fermenters.map(f =>
-        simulateFermenter(f, state.ambientTemp, effectiveDt, totalElapsed)
+        liveFermenterIds.has(f.id) ? f : simulateFermenter(f, state.ambientTemp, effectiveDt, totalElapsed)
       )
 
       // Auto-record gravity for fermenting projects
@@ -264,19 +271,25 @@ function appReducer(state: AppState, action: AppAction): AppState {
           const updated = { ...f, temperature: action.temperature, relayOn: action.relayOn }
           if (action.humidity !== undefined) updated.humidity = action.humidity
           if (action.humidityRelayOn !== undefined) updated.humidityRelayOn = action.humidityRelayOn
-          // Append to history
-          const time = state.totalElapsedSeconds
-          updated.temperatureHistory = [...f.temperatureHistory, {
-            time, temp: action.temperature, setpoint: f.setpoint, relayOn: action.relayOn,
-          }].slice(-500)
+          // Append to history using real timestamp (seconds since epoch)
+          const time = Date.now() / 1000
+          // Deduplicate: skip if last point was less than 4s ago
+          const lastPoint = f.temperatureHistory[f.temperatureHistory.length - 1]
+          if (!lastPoint || time - lastPoint.time > 4) {
+            updated.temperatureHistory = [...f.temperatureHistory, {
+              time, temp: action.temperature, setpoint: f.setpoint, relayOn: action.relayOn,
+            }].slice(-2000)
+          }
           if (action.humidity !== undefined && f.humidityHistory) {
-            updated.humidityHistory = [...f.humidityHistory, {
-              time, humidity: action.humidity, setpoint: f.humiditySetpoint ?? 85, relayOn: action.humidityRelayOn ?? false,
-            }].slice(-500)
+            const lastH = f.humidityHistory[f.humidityHistory.length - 1]
+            if (!lastH || time - lastH.time > 4) {
+              updated.humidityHistory = [...f.humidityHistory, {
+                time, humidity: action.humidity, setpoint: f.humiditySetpoint ?? 85, relayOn: action.humidityRelayOn ?? false,
+              }].slice(-2000)
+            }
           }
           return updated
         }),
-        totalElapsedSeconds: state.totalElapsedSeconds + 10, // 10s poll interval
       }
     }
 
