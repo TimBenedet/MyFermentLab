@@ -112,7 +112,7 @@ export function TemperatureChart({ fermenterId, className }: Props = {}) {
               stroke="#555566"
               fontSize={9}
               fontFamily="monospace"
-              domain={['auto', 'auto']}
+              domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]}
               tickFormatter={(v: number) => `${v}°`}
             />
             <Tooltip
