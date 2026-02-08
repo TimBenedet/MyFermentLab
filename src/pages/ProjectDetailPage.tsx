@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, Droplets, Droplet, Archive, Trash2, Wifi, Cpu, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { useConnection } from '../context/ConnectionContext'
-import { fetchBackendProject } from '../api/projects'
+import { fetchBackendProject, fetchLiveTemperature } from '../api/projects'
 import { VesselSVG } from '../components/vessels/VesselSVG'
 import { KojiTraySVG } from '../components/vessels/KojiTraySVG'
 import { MushroomBagSVG } from '../components/vessels/MushroomBagSVG'
@@ -31,10 +31,11 @@ export function ProjectDetailPage() {
     if (!project?.backendProjectId || !project.fermenterId || refreshing) return
     setRefreshing(true)
     try {
+      const live = await fetchLiveTemperature(project.backendProjectId)
       const bp = await fetchBackendProject(project.backendProjectId)
       syncLiveData(
         project.fermenterId,
-        bp.currentTemperature,
+        live.temperature,
         bp.outletActive,
         bp.currentHumidity ?? undefined,
       )
@@ -49,24 +50,27 @@ export function ProjectDetailPage() {
 
   const isLive = mode === 'live' && !!project?.backendProjectId
 
-  // Live data polling
+  // Live data polling — 5s interval, reads directly from HA via live-temperature
   useEffect(() => {
     if (!isLive || !project?.backendProjectId || !project.fermenterId) return
     let active = true
     const poll = async () => {
       try {
-        const bp = await fetchBackendProject(project.backendProjectId!)
+        const [live, bp] = await Promise.all([
+          fetchLiveTemperature(project.backendProjectId!),
+          fetchBackendProject(project.backendProjectId!),
+        ])
         if (!active) return
         syncLiveData(
           project.fermenterId!,
-          bp.currentTemperature,
+          live.temperature,
           bp.outletActive,
           bp.currentHumidity ?? undefined,
         )
       } catch { /* ignore poll errors */ }
     }
     poll()
-    const interval = setInterval(poll, 10000)
+    const interval = setInterval(poll, 5000)
     return () => { active = false; clearInterval(interval) }
   }, [isLive, project?.backendProjectId, project?.fermenterId, syncLiveData])
 

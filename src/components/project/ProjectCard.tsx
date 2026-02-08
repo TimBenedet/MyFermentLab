@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Thermometer, Droplets, Droplet, Calendar, RefreshCw } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../../context/BrewingContext'
 import { useConnection } from '../../context/ConnectionContext'
-import { fetchBackendProject } from '../../api/projects'
+import { fetchBackendProject, fetchLiveTemperature } from '../../api/projects'
 import { srmToColor } from '../../simulation/constants'
 import { VesselSVG } from '../vessels/VesselSVG'
 import { KojiTraySVG } from '../vessels/KojiTraySVG'
@@ -28,10 +28,13 @@ export function ProjectCard({ project }: Props) {
     if (!project.backendProjectId || !project.fermenterId || refreshing) return
     setRefreshing(true)
     try {
-      const bp = await fetchBackendProject(project.backendProjectId)
+      const [live, bp] = await Promise.all([
+        fetchLiveTemperature(project.backendProjectId),
+        fetchBackendProject(project.backendProjectId),
+      ])
       syncLiveData(
         project.fermenterId,
-        bp.currentTemperature,
+        live.temperature,
         bp.outletActive,
         bp.currentHumidity ?? undefined,
       )

@@ -42,6 +42,16 @@ export async function setControlMode(id: string, mode: string): Promise<void> {
   await apiPut(`/projects/${id}/control-mode`, { mode })
 }
 
+export async function fetchLiveTemperature(id: string): Promise<{
+  temperature: number
+  timestamp: number
+  entityId: string
+  sensorName: string
+  outletChanged?: boolean
+}> {
+  return apiGet(`/projects/${id}/live-temperature`)
+}
+
 export async function archiveBackendProject(id: string): Promise<void> {
   await apiPost(`/projects/${id}/archive`)
 }
