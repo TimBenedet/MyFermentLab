@@ -137,8 +137,11 @@ export function ProjectDetailPage() {
               </button>
             )}
             <button
-              onClick={() => {
-                if (project.backendProjectId) archiveBackendProject(project.backendProjectId).catch(() => {})
+              onClick={async () => {
+                if (project.backendProjectId) {
+                  try { await archiveBackendProject(project.backendProjectId) }
+                  catch (e) { console.error('Backend archive failed:', e) }
+                }
                 archiveProject(project.id)
                 navigate('/archives')
               }}
@@ -158,8 +161,11 @@ export function ProjectDetailPage() {
               </button>
             ) : (
               <button
-                onClick={() => {
-                  if (project.backendProjectId) deleteBackendProject(project.backendProjectId).catch(() => {})
+                onClick={async () => {
+                  if (project.backendProjectId) {
+                    try { await deleteBackendProject(project.backendProjectId) }
+                    catch (e) { console.error('Backend delete failed:', e) }
+                  }
                   deleteProject(project.id)
                   navigate('/')
                 }}
