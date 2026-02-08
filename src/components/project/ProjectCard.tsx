@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Thermometer, Droplets, Droplet, Calendar } from 'lucide-react'
-import { useBrewing } from '../../context/BrewingContext'
+import { Thermometer, Droplets, Droplet, Calendar, RefreshCw } from 'lucide-react'
+import { useBrewing, useBrewingActions } from '../../context/BrewingContext'
+import { useConnection } from '../../context/ConnectionContext'
+import { fetchBackendProject } from '../../api/projects'
 import { srmToColor } from '../../simulation/constants'
 import { VesselSVG } from '../vessels/VesselSVG'
 import { KojiTraySVG } from '../vessels/KojiTraySVG'
@@ -14,6 +17,27 @@ interface Props {
 export function ProjectCard({ project }: Props) {
   const navigate = useNavigate()
   const { state } = useBrewing()
+  const { syncLiveData } = useBrewingActions()
+  const { mode } = useConnection()
+  const [refreshing, setRefreshing] = useState(false)
+
+  const isLive = mode === 'live' && !!project.backendProjectId
+
+  const handleRefresh = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!project.backendProjectId || !project.fermenterId || refreshing) return
+    setRefreshing(true)
+    try {
+      const bp = await fetchBackendProject(project.backendProjectId)
+      syncLiveData(
+        project.fermenterId,
+        bp.currentTemperature,
+        bp.outletActive,
+        bp.currentHumidity ?? undefined,
+      )
+    } catch { /* ignore */ }
+    finally { setRefreshing(false) }
+  }
 
   const fermenter = project.fermenterId
     ? state.fermenters.find(f => f.id === project.fermenterId)
@@ -49,13 +73,25 @@ export function ProjectCard({ project }: Props) {
             <p className="text-[10px] text-scada-text-muted truncate">{project.style}</p>
           </div>
         </div>
-        <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium shrink-0 ${
-          project.phase === 'fermenting'
-            ? 'bg-scada-accent/15 text-scada-accent'
-            : 'bg-scada-text-muted/15 text-scada-text-muted'
-        }`}>
-          {project.phase === 'fermenting' ? 'Fermentation' : 'Terminé'}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isLive && project.phase === 'fermenting' && (
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-1 rounded text-scada-text-muted hover:text-scada-accent transition-colors"
+              title="Rafraîchir"
+            >
+              <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
+            </button>
+          )}
+          <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium ${
+            project.phase === 'fermenting'
+              ? 'bg-scada-accent/15 text-scada-accent'
+              : 'bg-scada-text-muted/15 text-scada-text-muted'
+          }`}>
+            {project.phase === 'fermenting' ? 'Fermentation' : 'Terminé'}
+          </span>
+        </div>
       </div>
 
       {/* Vessel centered — type-specific visual */}

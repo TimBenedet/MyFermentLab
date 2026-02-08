@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, Droplets, Droplet, Archive, Trash2, Wifi, Cpu, ChevronDown, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Calendar, Droplets, Droplet, Archive, Trash2, Wifi, Cpu, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { useConnection } from '../context/ConnectionContext'
 import { fetchBackendProject } from '../api/projects'
@@ -25,6 +25,22 @@ export function ProjectDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [recipeOpen, setRecipeOpen] = useState(false)
   const [chartTab, setChartTab] = useState<'temp' | 'humidity'>('temp')
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    if (!project?.backendProjectId || !project.fermenterId || refreshing) return
+    setRefreshing(true)
+    try {
+      const bp = await fetchBackendProject(project.backendProjectId)
+      syncLiveData(
+        project.fermenterId,
+        bp.currentTemperature,
+        bp.outletActive,
+        bp.currentHumidity ?? undefined,
+      )
+    } catch { /* ignore */ }
+    finally { setRefreshing(false) }
+  }
 
   const project = state.projects.find(p => p.id === projectId)
   const fermenter = project?.fermenterId
@@ -127,8 +143,18 @@ export function ProjectDetailPage() {
             <p className="text-[10px] text-scada-text-muted truncate mt-0.5">{project.recipeName} - {project.style}</p>
           </div>
 
-          {/* Archive / Delete — always visible */}
+          {/* Refresh / Archive / Delete */}
           <div className="flex items-center gap-1.5 shrink-0">
+            {isLive && project.phase === 'fermenting' && (
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="p-1.5 rounded-lg text-scada-text-muted hover:text-scada-accent transition-colors"
+                title="Rafraîchir les données"
+              >
+                <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+              </button>
+            )}
             <button
               onClick={() => { archiveProject(project.id); navigate('/archives') }}
               className="flex items-center gap-1 px-2 py-1.5 text-[9px] rounded-lg text-scada-accent bg-scada-accent/10 border border-scada-accent/20 hover:bg-scada-accent/20 transition-colors"
