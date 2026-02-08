@@ -15,11 +15,11 @@ import { useBrewingActions } from '../../context/BrewingContext'
 import { fetchProjectHistory, type BackendHumidityPoint } from '../../api/projects'
 
 const timeRanges = [
-  { label: '15m', seconds: 900 },
   { label: '1h', seconds: 3600 },
   { label: '6h', seconds: 21600 },
-  { label: '1j', seconds: 86400 },
-  { label: '1s', seconds: 604800 },
+  { label: '24h', seconds: 86400 },
+  { label: '7j', seconds: 604800 },
+  { label: '30j', seconds: 2592000 },
   { label: 'Tout', seconds: Infinity },
 ]
 
@@ -31,7 +31,10 @@ function formatTimestamp(epochSec: number, rangeSeconds: number): string {
   if (rangeSeconds <= 86400) {
     return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   }
-  return d.toLocaleDateString('fr-FR', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+  if (rangeSeconds <= 604800) {
+    return d.toLocaleDateString('fr-FR', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+  }
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
 }
 
 function formatTooltipTime(epochSec: number): string {
@@ -62,7 +65,7 @@ export function HumidityChart({ humidityHistory, targetHumidity, className, proj
 
   // Fetch backend humidity history for longer ranges
   useEffect(() => {
-    if (!backendProjectId || selectedRange.seconds <= 900) {
+    if (!backendProjectId || selectedRange.seconds <= 3600) {
       setBackendHistory([])
       return
     }
@@ -93,7 +96,7 @@ export function HumidityChart({ humidityHistory, targetHumidity, className, proj
     const cutoff = selectedRange.seconds === Infinity ? 0 : nowSec - selectedRange.seconds
 
     // Use backend history for longer ranges
-    if (backendHistory.length > 0 && selectedRange.seconds > 900) {
+    if (backendHistory.length > 0 && selectedRange.seconds > 3600) {
       const filtered = backendHistory.filter(p => p.timestamp / 1000 > cutoff)
       const maxPoints = 500
       const step = Math.max(1, Math.floor(filtered.length / maxPoints))
