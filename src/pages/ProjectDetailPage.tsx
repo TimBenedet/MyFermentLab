@@ -51,15 +51,17 @@ export function ProjectDetailPage() {
   const isLive = mode === 'live' && !!project?.backendProjectId
 
   // Live data polling — 5s interval, reads directly from HA via live-temperature
+  // Sequential: live-temperature first (triggers backend control), then fetch project state
   useEffect(() => {
     if (!isLive || !project?.backendProjectId || !project.fermenterId) return
     let active = true
     const poll = async () => {
       try {
-        const [live, bp] = await Promise.all([
-          fetchLiveTemperature(project.backendProjectId!),
-          fetchBackendProject(project.backendProjectId!),
-        ])
+        // 1) Call live-temperature — backend reads HA and runs outlet control logic
+        const live = await fetchLiveTemperature(project.backendProjectId!)
+        if (!active) return
+        // 2) Fetch project state AFTER control logic has run
+        const bp = await fetchBackendProject(project.backendProjectId!)
         if (!active) return
         syncLiveData(
           project.fermenterId!,

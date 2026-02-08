@@ -28,10 +28,9 @@ export function ProjectCard({ project }: Props) {
     if (!project.backendProjectId || !project.fermenterId || refreshing) return
     setRefreshing(true)
     try {
-      const [live, bp] = await Promise.all([
-        fetchLiveTemperature(project.backendProjectId),
-        fetchBackendProject(project.backendProjectId),
-      ])
+      // Sequential: live-temperature triggers backend control, then fetch updated state
+      const live = await fetchLiveTemperature(project.backendProjectId)
+      const bp = await fetchBackendProject(project.backendProjectId)
       syncLiveData(
         project.fermenterId,
         live.temperature,
