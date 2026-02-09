@@ -24,6 +24,7 @@ export function useLiveSync() {
 
         // Import archived projects with their history
         const archived = projects.filter(p => p.archived)
+        console.log('[LiveSync] Found', archived.length, 'archived projects')
         if (archived.length === 0) return
 
         const archives: ArchivedProject[] = []
@@ -33,10 +34,10 @@ export function useLiveSync() {
             const projectType = bp.fermentationType as ProjectType
             const history = (full as any).history ?? []
             const humidityHistory = (full as any).humidityHistory ?? []
-            const temps = history.map((h: any) => h.temperature as number)
             const fermentationDays = bp.createdAt
               ? Math.floor((Date.now() - bp.createdAt) / 86400000)
               : 0
+            console.log('[LiveSync] Archive', bp.name, ':', history.length, 'temp points,', humidityHistory.length, 'humidity points')
 
             archives.push({
               id: bp.id,
@@ -78,11 +79,12 @@ export function useLiveSync() {
                 ? humidityHistory[humidityHistory.length - 1].humidity
                 : undefined,
             })
-          } catch { /* skip this archive */ }
+          } catch (e) { console.error('[LiveSync] Failed to load archive', bp.name, e) }
         }
+        console.log('[LiveSync] Importing', archives.length, 'archives')
         if (archives.length > 0) importBackendArchives(archives)
       })
-      .catch(() => {})
+      .catch((e) => console.error('[LiveSync] Failed to fetch projects', e))
   }, [mode, importBackendProjects, importBackendArchives])
 
   // Stable list of live project IDs — only changes when projects are added/removed
