@@ -2,27 +2,88 @@ import { useEffect, useRef, useMemo } from 'react'
 import { useConnection } from '../context/ConnectionContext'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { fetchBackendProjects, fetchBackendProject, fetchLiveTemperature } from '../api/projects'
+import type { ArchivedProject, ProjectType } from '../types/brewing'
 
 /** Imports active backend projects into local state on first live mode mount,
  *  then polls live-temperature every 5s for all active projects */
 export function useLiveSync() {
   const { mode } = useConnection()
   const { state } = useBrewing()
-  const { importBackendProjects, syncLiveData } = useBrewingActions()
+  const { importBackendProjects, importBackendArchives, syncLiveData } = useBrewingActions()
   const hasSynced = useRef(false)
 
-  // One-time import of backend projects
+  // One-time import of backend projects (active + archived)
   useEffect(() => {
     if (mode !== 'live' || hasSynced.current) return
     hasSynced.current = true
 
     fetchBackendProjects()
-      .then(projects => {
+      .then(async (projects) => {
         const active = projects.filter(p => !p.archived)
         if (active.length > 0) importBackendProjects(active)
+
+        // Import archived projects with their history
+        const archived = projects.filter(p => p.archived)
+        if (archived.length === 0) return
+
+        const archives: ArchivedProject[] = []
+        for (const bp of archived) {
+          try {
+            const full = await fetchBackendProject(bp.id)
+            const projectType = bp.fermentationType as ProjectType
+            const history = (full as any).history ?? []
+            const humidityHistory = (full as any).humidityHistory ?? []
+            const temps = history.map((h: any) => h.temperature as number)
+            const fermentationDays = bp.createdAt
+              ? Math.floor((Date.now() - bp.createdAt) / 86400000)
+              : 0
+
+            archives.push({
+              id: bp.id,
+              name: bp.name,
+              projectType,
+              recipeId: bp.id,
+              recipeName: bp.name,
+              createdAt: bp.createdAt ?? Date.now(),
+              archivedAt: (full as any).archivedAt ?? Date.now(),
+              recipeSnapshot: {
+                id: bp.id, projectType, name: bp.name, style: bp.fermentationType,
+                batchSize: projectType === 'koji' ? 2 : projectType === 'mushroom' ? 5 : 25,
+                og: 1, fg: 1, abv: 0, ibu: 0,
+                srm: projectType === 'koji' ? 2 : projectType === 'mushroom' ? 0 : 10,
+                ingredients: [], steps: [],
+              },
+              style: bp.fermentationType,
+              batchSize: projectType === 'koji' ? 2 : projectType === 'mushroom' ? 5 : 25,
+              srm: projectType === 'koji' ? 2 : projectType === 'mushroom' ? 0 : 10,
+              fermentationStartedAt: bp.createdAt,
+              totalFermentationDays: fermentationDays,
+              temperatureHistory: history.map((h: any) => ({
+                time: h.timestamp / 1000,
+                temp: h.temperature,
+                setpoint: bp.targetTemperature,
+                relayOn: false,
+              })),
+              gravityHistory: [],
+              og: 1, fg: 1,
+              finalGravity: 1,
+              actualAbv: 0,
+              humidityHistory: humidityHistory.length > 0 ? humidityHistory.map((h: any) => ({
+                time: h.timestamp / 1000,
+                humidity: h.humidity,
+                setpoint: bp.targetHumidity ?? 85,
+                relayOn: false,
+              })) : undefined,
+              finalHumidity: humidityHistory.length > 0
+                ? humidityHistory[humidityHistory.length - 1].humidity
+                : undefined,
+            })
+          } catch { /* skip this archive */ }
+        }
+        if (archives.length > 0) importBackendArchives(archives)
       })
       .catch(() => {})
-  }, [mode, importBackendProjects])
+  }, [mode, importBackendProjects, importBackendArchives])
 
   // Stable list of live project IDs — only changes when projects are added/removed
   const liveProjectKeys = useMemo(() => {

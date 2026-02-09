@@ -242,6 +242,16 @@ function appReducer(state: AppState, action: AppAction): AppState {
       }
     }
 
+    case 'IMPORT_BACKEND_ARCHIVES': {
+      const existingIds = new Set(state.archivedProjects.map(a => a.id))
+      const newArchives = action.archives.filter(a => !existingIds.has(a.id))
+      if (newArchives.length === 0) return state
+      return {
+        ...state,
+        archivedProjects: [...state.archivedProjects, ...newArchives],
+      }
+    }
+
     // === Humidity Controls ===
     case 'SET_HUMIDITY_SETPOINT':
       return {
@@ -374,6 +384,8 @@ export function useBrewingActions() {
       dispatch({ type: 'SYNC_LIVE_DATA', fermenterId: fId, temperature, relayOn, humidity, humidityRelayOn }), [dispatch]),
     importBackendProjects: useCallback((backendProjects: BackendProject[]) =>
       dispatch({ type: 'IMPORT_BACKEND_PROJECTS', backendProjects }), [dispatch]),
+    importBackendArchives: useCallback((archives: ArchivedProject[]) =>
+      dispatch({ type: 'IMPORT_BACKEND_ARCHIVES', archives }), [dispatch]),
     // Humidity
     setHumiditySetpoint: useCallback((fId: string, value: number) => dispatch({ type: 'SET_HUMIDITY_SETPOINT', fermenterId: fId, value }), [dispatch]),
     setHumidityPidMode: useCallback((fId: string, mode: 'auto' | 'manual' | 'off') => dispatch({ type: 'SET_HUMIDITY_PID_MODE', fermenterId: fId, mode }), [dispatch]),
