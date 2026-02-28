@@ -13,6 +13,7 @@ import { HumidityChart } from '../components/charts/HumidityChart'
 import { ProjectControls } from '../components/project/ProjectControls'
 import { IngredientEditor } from '../components/project/IngredientEditor'
 import { StepEditor } from '../components/project/StepEditor'
+import { BrewingAssistant } from '../components/BrewingAssistant'
 
 import { srmToColor } from '../simulation/constants'
 
@@ -364,6 +365,9 @@ export function ProjectDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Brewing Assistant */}
+      <BrewingAssistant project={project} fermenter={fermenter} />
     </div>
   )
 }
