@@ -39,7 +39,7 @@ export async function updateTargetHumidity(id: string, humidity: number): Promis
 }
 
 export async function toggleOutlet(id: string): Promise<{ active: boolean }> {
-  return apiPost<{ active: boolean }>(`/projects/${id}/toggle-outlet`)
+  return apiPost<{ active: boolean }>(`/projects/${id}/outlet/toggle`)
 }
 
 export async function setControlMode(id: string, mode: string): Promise<void> {

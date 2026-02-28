@@ -116,6 +116,9 @@ export function useLiveSync() {
             live.temperature,
             bp.outletActive,
             bp.currentHumidity ?? undefined,
+            undefined, // humidityRelayOn
+            bp.targetTemperature,
+            bp.targetHumidity ?? undefined,
           )
         } catch { /* ignore */ }
       }

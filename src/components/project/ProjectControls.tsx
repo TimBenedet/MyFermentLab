@@ -81,26 +81,40 @@ function SetpointEditor({
   step: number
   min: number
   max: number
-  onApply: (v: number) => void
+  onApply: (v: number) => Promise<void>
   disabled?: boolean
   accentColor?: string
 }) {
   const [localValue, setLocalValue] = useState(value)
   const [editing, setEditing] = useState(false)
   const [applying, setApplying] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const inputRef = useRef<HTMLInputElement>(null)
+  // Track the "committed" value (what backend knows)
+  const [committedValue, setCommittedValue] = useState(value)
 
-  // Sync local value when external value changes (e.g. from live sync)
+  // Sync local value when external value changes (e.g. from live sync / import)
   useEffect(() => {
-    if (!editing) setLocalValue(value)
-  }, [value, editing])
+    if (!editing && !applying) {
+      setLocalValue(value)
+      setCommittedValue(value)
+    }
+  }, [value, editing, applying])
 
-  const hasChanged = Math.abs(localValue - value) > 0.01
+  const hasChanged = Math.abs(localValue - committedValue) > 0.01
 
   const handleApply = async () => {
     setApplying(true)
+    setStatus('idle')
     try {
       await onApply(localValue)
+      setCommittedValue(localValue)
+      setStatus('success')
+      setTimeout(() => setStatus('idle'), 2000)
+    } catch (err) {
+      console.error('[SetpointEditor] Apply failed:', err)
+      setStatus('error')
+      setTimeout(() => setStatus('idle'), 3000)
     } finally {
       setApplying(false)
     }
@@ -108,18 +122,17 @@ function SetpointEditor({
 
   const handleInputSubmit = () => {
     setEditing(false)
-    // Clamp value
     const clamped = Math.max(min, Math.min(max, localValue))
     setLocalValue(clamped)
   }
 
-  const decrement = () => setLocalValue(v => Math.max(min, +(v - step).toFixed(1)))
-  const increment = () => setLocalValue(v => Math.min(max, +(v + step).toFixed(1)))
+  const decrement = () => { setLocalValue(v => Math.max(min, +(v - step).toFixed(1))); setStatus('idle') }
+  const increment = () => { setLocalValue(v => Math.min(max, +(v + step).toFixed(1))); setStatus('idle') }
 
   return (
     <div>
       <div className="text-[9px] text-scada-text-muted uppercase tracking-wider mb-2">Consigne</div>
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center gap-2 flex-wrap">
         <button onClick={decrement} className="scada-btn-neutral p-2.5 sm:p-2" disabled={disabled}>
           <Minus size={16} />
         </button>
@@ -156,19 +169,29 @@ function SetpointEditor({
         <button
           onClick={handleApply}
           disabled={disabled || !hasChanged || applying}
-          className={`flex items-center gap-1 px-3 py-2 text-[10px] font-semibold rounded-lg uppercase tracking-wider transition-all ${
-            hasChanged
-              ? `bg-${accentColor}/20 text-${accentColor} border border-${accentColor}/40 hover:bg-${accentColor}/30`
-              : 'bg-scada-card text-scada-text-muted border border-scada-border opacity-50 cursor-not-allowed'
-          }`}
-          style={hasChanged ? {
-            background: accentColor === 'scada-cold' ? 'rgba(74, 158, 255, 0.2)' : 'rgba(0, 212, 170, 0.2)',
-            color: accentColor === 'scada-cold' ? '#4a9eff' : '#00d4aa',
-            borderColor: accentColor === 'scada-cold' ? 'rgba(74, 158, 255, 0.4)' : 'rgba(0, 212, 170, 0.4)',
-          } : {}}
+          className="flex items-center gap-1 px-3 py-2 text-[10px] font-semibold rounded-lg uppercase tracking-wider transition-all border"
+          style={{
+            background: status === 'success' ? 'rgba(0, 212, 170, 0.3)'
+              : status === 'error' ? 'rgba(255, 71, 87, 0.2)'
+              : hasChanged
+                ? (accentColor === 'scada-cold' ? 'rgba(74, 158, 255, 0.2)' : 'rgba(0, 212, 170, 0.2)')
+                : undefined,
+            color: status === 'success' ? '#00d4aa'
+              : status === 'error' ? '#ff4757'
+              : hasChanged
+                ? (accentColor === 'scada-cold' ? '#4a9eff' : '#00d4aa')
+                : undefined,
+            borderColor: status === 'success' ? 'rgba(0, 212, 170, 0.5)'
+              : status === 'error' ? 'rgba(255, 71, 87, 0.4)'
+              : hasChanged
+                ? (accentColor === 'scada-cold' ? 'rgba(74, 158, 255, 0.4)' : 'rgba(0, 212, 170, 0.4)')
+                : undefined,
+            opacity: (!hasChanged && status === 'idle') ? 0.5 : 1,
+            cursor: (!hasChanged && status === 'idle') ? 'not-allowed' : 'pointer',
+          }}
         >
           <Check size={12} />
-          {applying ? '...' : 'Appliquer'}
+          {applying ? '...' : status === 'success' ? 'OK !' : status === 'error' ? 'Erreur' : 'Appliquer'}
         </button>
       </div>
     </div>

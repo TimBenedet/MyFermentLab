@@ -157,6 +157,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
           const updated = { ...f, temperature: action.temperature, relayOn: action.relayOn }
           if (action.humidity !== undefined) updated.humidity = action.humidity
           if (action.humidityRelayOn !== undefined) updated.humidityRelayOn = action.humidityRelayOn
+          if (action.setpoint !== undefined) {
+            updated.setpoint = action.setpoint
+            if (updated.pid) updated.pid = { ...updated.pid, setpoint: action.setpoint }
+          }
+          if (action.humiditySetpoint !== undefined) {
+            updated.humiditySetpoint = action.humiditySetpoint
+            if (updated.humidityPid) updated.humidityPid = { ...updated.humidityPid, setpoint: action.humiditySetpoint }
+          }
           // Append to history using real timestamp (seconds since epoch)
           const time = Date.now() / 1000
           // Deduplicate: skip if last point was less than 4s ago
@@ -380,8 +388,8 @@ export function useBrewingActions() {
     // Gravity
     addGravityReading: useCallback((projectId: string, gravity: number) => dispatch({ type: 'ADD_GRAVITY_READING', projectId, gravity }), [dispatch]),
     // Live mode
-    syncLiveData: useCallback((fId: string, temperature: number, relayOn: boolean, humidity?: number, humidityRelayOn?: boolean) =>
-      dispatch({ type: 'SYNC_LIVE_DATA', fermenterId: fId, temperature, relayOn, humidity, humidityRelayOn }), [dispatch]),
+    syncLiveData: useCallback((fId: string, temperature: number, relayOn: boolean, humidity?: number, humidityRelayOn?: boolean, setpoint?: number, humiditySetpoint?: number) =>
+      dispatch({ type: 'SYNC_LIVE_DATA', fermenterId: fId, temperature, relayOn, humidity, humidityRelayOn, setpoint, humiditySetpoint }), [dispatch]),
     importBackendProjects: useCallback((backendProjects: BackendProject[]) =>
       dispatch({ type: 'IMPORT_BACKEND_PROJECTS', backendProjects }), [dispatch]),
     importBackendArchives: useCallback((archives: ArchivedProject[]) =>

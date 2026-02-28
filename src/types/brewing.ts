@@ -214,7 +214,7 @@ export type AppAction =
   // Fermentation
   | { type: 'START_FERMENTATION'; recipe: Recipe; projectName: string }
   // Live mode sync
-  | { type: 'SYNC_LIVE_DATA'; fermenterId: string; temperature: number; relayOn: boolean; humidity?: number; humidityRelayOn?: boolean }
+  | { type: 'SYNC_LIVE_DATA'; fermenterId: string; temperature: number; relayOn: boolean; humidity?: number; humidityRelayOn?: boolean; setpoint?: number; humiditySetpoint?: number }
   | { type: 'IMPORT_BACKEND_PROJECTS'; backendProjects: BackendProject[] }
   | { type: 'IMPORT_BACKEND_ARCHIVES'; archives: ArchivedProject[] }
   // Alarms
