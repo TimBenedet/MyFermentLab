@@ -31,8 +31,6 @@ export function MobileBrewingAssistant({ project }: MobileBrewingAssistantProps)
     }
   };
 
-  if (tips.length === 0) return null;
-
   return (
     <>
       {/* Floating Button */}

@@ -678,6 +678,7 @@ function generateSourdoughTips(project: Project): AssistantTip[] {
 // ==========================================
 function generateGeneralTips(project: Project): AssistantTip[] {
   const tips: AssistantTip[] = [];
+  if (project.currentTemperature == null || project.targetTemperature == null) return tips;
   const diff = project.currentTemperature - project.targetTemperature;
 
   // Ecart temperature
@@ -722,6 +723,7 @@ function generateGeneralTips(project: Project): AssistantTip[] {
 export function generateTips(project: Project): AssistantTip[] {
   let tips: AssistantTip[] = [];
 
+  try {
   // Regles specifiques au type
   switch (project.fermentationType) {
     case 'beer':
@@ -753,6 +755,9 @@ export function generateTips(project: Project): AssistantTip[] {
   // Tri par priorite
   const priorityOrder = { high: 0, medium: 1, low: 2 };
   tips.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  } catch (e) {
+    console.error('Assistant: erreur lors de la generation des conseils', e);
+  }
 
   return tips;
 }

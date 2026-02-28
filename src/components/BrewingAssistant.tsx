@@ -32,8 +32,6 @@ export function BrewingAssistant({ project }: BrewingAssistantProps) {
     }
   };
 
-  if (tips.length === 0) return null;
-
   return (
     <>
       {/* Floating Button */}
