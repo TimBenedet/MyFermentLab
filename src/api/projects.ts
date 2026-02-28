@@ -31,7 +31,11 @@ export async function deleteBackendProject(id: string): Promise<void> {
 }
 
 export async function updateTargetTemperature(id: string, temperature: number): Promise<void> {
-  await apiPut(`/projects/${id}/target-temperature`, { temperature })
+  await apiPut(`/projects/${id}/target`, { targetTemperature: temperature })
+}
+
+export async function updateTargetHumidity(id: string, humidity: number): Promise<void> {
+  await apiPatch(`/projects/${id}`, { targetHumidity: humidity })
 }
 
 export async function toggleOutlet(id: string): Promise<{ active: boolean }> {

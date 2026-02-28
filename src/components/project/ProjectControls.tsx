@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { Minus, Plus, Thermometer, Droplet } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Minus, Plus, Thermometer, Droplet, Check } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../../context/BrewingContext'
 import { useConnection } from '../../context/ConnectionContext'
-import { updateTargetTemperature, toggleOutlet, setControlMode } from '../../api/projects'
+import { updateTargetTemperature, updateTargetHumidity, toggleOutlet, setControlMode } from '../../api/projects'
 import { RelayIndicator } from '../fermenter/RelayIndicator'
 
 interface Props {
@@ -19,11 +19,6 @@ export function ProjectControls({ fermenterId, backendProjectId }: Props) {
   const isLive = mode === 'live' && !!backendProjectId
   const isViewer = role === 'viewer'
 
-  // Wrap actions to also call API in live mode
-  const handleSetSetpoint = (fId: string, value: number) => {
-    setSetpoint(fId, value)
-    if (isLive) updateTargetTemperature(backendProjectId!, value).catch(() => {})
-  }
   const handleToggleRelay = (fId: string) => {
     toggleRelay(fId)
     if (isLive) toggleOutlet(backendProjectId!).catch(() => {})
@@ -44,7 +39,9 @@ export function ProjectControls({ fermenterId, backendProjectId }: Props) {
         <ControlsWithTabs
           fermenterId={fermenterId}
           fermenter={fermenter}
-          setSetpoint={handleSetSetpoint}
+          backendProjectId={backendProjectId}
+          isLive={isLive}
+          setSetpoint={setSetpoint}
           setPidMode={handleSetPidMode}
           toggleRelay={handleToggleRelay}
           setHumiditySetpoint={setHumiditySetpoint}
@@ -56,7 +53,9 @@ export function ProjectControls({ fermenterId, backendProjectId }: Props) {
         <TemperaturePanel
           fermenterId={fermenterId}
           fermenter={fermenter}
-          setSetpoint={handleSetSetpoint}
+          backendProjectId={backendProjectId}
+          isLive={isLive}
+          setSetpoint={setSetpoint}
           setPidMode={handleSetPidMode}
           toggleRelay={handleToggleRelay}
           disabled={isViewer}
@@ -66,9 +65,126 @@ export function ProjectControls({ fermenterId, backendProjectId }: Props) {
   )
 }
 
+/* Editable setpoint with +/-, manual input, and Apply button */
+function SetpointEditor({
+  value,
+  unit,
+  step,
+  min,
+  max,
+  onApply,
+  disabled,
+  accentColor = 'scada-accent',
+}: {
+  value: number
+  unit: string
+  step: number
+  min: number
+  max: number
+  onApply: (v: number) => void
+  disabled?: boolean
+  accentColor?: string
+}) {
+  const [localValue, setLocalValue] = useState(value)
+  const [editing, setEditing] = useState(false)
+  const [applying, setApplying] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Sync local value when external value changes (e.g. from live sync)
+  useEffect(() => {
+    if (!editing) setLocalValue(value)
+  }, [value, editing])
+
+  const hasChanged = Math.abs(localValue - value) > 0.01
+
+  const handleApply = async () => {
+    setApplying(true)
+    try {
+      await onApply(localValue)
+    } finally {
+      setApplying(false)
+    }
+  }
+
+  const handleInputSubmit = () => {
+    setEditing(false)
+    // Clamp value
+    const clamped = Math.max(min, Math.min(max, localValue))
+    setLocalValue(clamped)
+  }
+
+  const decrement = () => setLocalValue(v => Math.max(min, +(v - step).toFixed(1)))
+  const increment = () => setLocalValue(v => Math.min(max, +(v + step).toFixed(1)))
+
+  return (
+    <div>
+      <div className="text-[9px] text-scada-text-muted uppercase tracking-wider mb-2">Consigne</div>
+      <div className="flex items-center justify-center gap-2">
+        <button onClick={decrement} className="scada-btn-neutral p-2.5 sm:p-2" disabled={disabled}>
+          <Minus size={16} />
+        </button>
+
+        {editing ? (
+          <input
+            ref={inputRef}
+            type="number"
+            value={localValue}
+            onChange={(e) => setLocalValue(parseFloat(e.target.value) || 0)}
+            onBlur={handleInputSubmit}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleInputSubmit() }}
+            className="font-mono text-lg font-bold text-white bg-scada-bg border border-scada-border rounded-lg w-20 text-center py-1 outline-none focus:border-scada-accent"
+            step={step}
+            min={min}
+            max={max}
+            autoFocus
+          />
+        ) : (
+          <button
+            onClick={() => { if (!disabled) { setEditing(true); setTimeout(() => inputRef.current?.select(), 50) } }}
+            className="font-mono text-lg font-bold text-white w-20 text-center hover:bg-scada-bg rounded-lg py-1 transition-colors cursor-text"
+            title="Cliquer pour saisir manuellement"
+          >
+            {unit === '%' ? `${localValue.toFixed(0)}${unit}` : `${localValue.toFixed(1)}${unit}`}
+          </button>
+        )}
+
+        <button onClick={increment} className="scada-btn-neutral p-2.5 sm:p-2" disabled={disabled}>
+          <Plus size={16} />
+        </button>
+
+        {/* Apply button */}
+        <button
+          onClick={handleApply}
+          disabled={disabled || !hasChanged || applying}
+          className={`flex items-center gap-1 px-3 py-2 text-[10px] font-semibold rounded-lg uppercase tracking-wider transition-all ${
+            hasChanged
+              ? `bg-${accentColor}/20 text-${accentColor} border border-${accentColor}/40 hover:bg-${accentColor}/30`
+              : 'bg-scada-card text-scada-text-muted border border-scada-border opacity-50 cursor-not-allowed'
+          }`}
+          style={hasChanged ? {
+            background: accentColor === 'scada-cold' ? 'rgba(74, 158, 255, 0.2)' : 'rgba(0, 212, 170, 0.2)',
+            color: accentColor === 'scada-cold' ? '#4a9eff' : '#00d4aa',
+            borderColor: accentColor === 'scada-cold' ? 'rgba(74, 158, 255, 0.4)' : 'rgba(0, 212, 170, 0.4)',
+          } : {}}
+        >
+          <Check size={12} />
+          {applying ? '...' : 'Appliquer'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /* Temperature-only panel (beer/mead) */
-function TemperaturePanel({ fermenterId, fermenter, setSetpoint, setPidMode, toggleRelay, disabled }: any) {
+function TemperaturePanel({ fermenterId, fermenter, backendProjectId, isLive, setSetpoint, setPidMode, toggleRelay, disabled }: any) {
   const deviation = fermenter.temperature - fermenter.setpoint
+
+  const handleApplyTemp = async (value: number) => {
+    setSetpoint(fermenterId, value)
+    if (isLive && backendProjectId) {
+      await updateTargetTemperature(backendProjectId, value)
+    }
+  }
 
   return (
     <>
@@ -88,20 +204,15 @@ function TemperaturePanel({ fermenterId, fermenter, setSetpoint, setPidMode, tog
         </div>
       </div>
 
-      <div>
-        <div className="text-[9px] text-scada-text-muted uppercase tracking-wider mb-2">Consigne</div>
-        <div className="flex items-center justify-center gap-3">
-          <button onClick={() => setSetpoint(fermenterId, fermenter.setpoint - 0.5)} className="scada-btn-neutral p-2" disabled={disabled}>
-            <Minus size={14} />
-          </button>
-          <span className="font-mono text-lg font-bold text-white w-16 text-center">
-            {fermenter.setpoint.toFixed(1)}°
-          </span>
-          <button onClick={() => setSetpoint(fermenterId, fermenter.setpoint + 0.5)} className="scada-btn-neutral p-2" disabled={disabled}>
-            <Plus size={14} />
-          </button>
-        </div>
-      </div>
+      <SetpointEditor
+        value={fermenter.setpoint}
+        unit="°"
+        step={0.5}
+        min={0}
+        max={100}
+        onApply={handleApplyTemp}
+        disabled={disabled}
+      />
 
       <div>
         <div className="text-[9px] text-scada-text-muted uppercase tracking-wider mb-2">Mode PID</div>
@@ -141,11 +252,25 @@ function TemperaturePanel({ fermenterId, fermenter, setSetpoint, setPidMode, tog
 }
 
 /* Tabbed panel for koji/mushroom (temperature + humidity) */
-function ControlsWithTabs({ fermenterId, fermenter, setSetpoint, setPidMode, toggleRelay, setHumiditySetpoint, setHumidityPidMode, toggleHumidityRelay, disabled }: any) {
+function ControlsWithTabs({ fermenterId, fermenter, backendProjectId, isLive, setSetpoint, setPidMode, toggleRelay, setHumiditySetpoint, setHumidityPidMode, toggleHumidityRelay, disabled }: any) {
   const [tab, setTab] = useState<Tab>('temp')
 
   const deviation = fermenter.temperature - fermenter.setpoint
   const humidityDeviation = fermenter.humidity - (fermenter.humiditySetpoint ?? 85)
+
+  const handleApplyTemp = async (value: number) => {
+    setSetpoint(fermenterId, value)
+    if (isLive && backendProjectId) {
+      await updateTargetTemperature(backendProjectId, value)
+    }
+  }
+
+  const handleApplyHumidity = async (value: number) => {
+    setHumiditySetpoint(fermenterId, value)
+    if (isLive && backendProjectId) {
+      await updateTargetHumidity(backendProjectId, value)
+    }
+  }
 
   return (
     <>
@@ -192,21 +317,15 @@ function ControlsWithTabs({ fermenterId, fermenter, setSetpoint, setPidMode, tog
             </div>
           </div>
 
-          {/* Setpoint */}
-          <div>
-            <div className="text-[9px] text-scada-text-muted uppercase tracking-wider mb-2">Consigne</div>
-            <div className="flex items-center justify-center gap-3">
-              <button onClick={() => setSetpoint(fermenterId, fermenter.setpoint - 0.5)} className="scada-btn-neutral p-2.5 sm:p-2">
-                <Minus size={16} />
-              </button>
-              <span className="font-mono text-lg font-bold text-white w-16 text-center">
-                {fermenter.setpoint.toFixed(1)}°
-              </span>
-              <button onClick={() => setSetpoint(fermenterId, fermenter.setpoint + 0.5)} className="scada-btn-neutral p-2.5 sm:p-2">
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
+          <SetpointEditor
+            value={fermenter.setpoint}
+            unit="°"
+            step={0.5}
+            min={0}
+            max={100}
+            onApply={handleApplyTemp}
+            disabled={disabled}
+          />
 
           {/* PID Mode */}
           <div>
@@ -266,21 +385,16 @@ function ControlsWithTabs({ fermenterId, fermenter, setSetpoint, setPidMode, tog
             </div>
           </div>
 
-          {/* Humidity setpoint */}
-          <div>
-            <div className="text-[9px] text-scada-text-muted uppercase tracking-wider mb-2">Consigne</div>
-            <div className="flex items-center justify-center gap-3">
-              <button onClick={() => setHumiditySetpoint(fermenterId, (fermenter.humiditySetpoint ?? 85) - 1)} className="scada-btn-neutral p-2.5 sm:p-2">
-                <Minus size={16} />
-              </button>
-              <span className="font-mono text-lg font-bold text-white w-16 text-center">
-                {(fermenter.humiditySetpoint ?? 85).toFixed(0)}%
-              </span>
-              <button onClick={() => setHumiditySetpoint(fermenterId, (fermenter.humiditySetpoint ?? 85) + 1)} className="scada-btn-neutral p-2.5 sm:p-2">
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
+          <SetpointEditor
+            value={fermenter.humiditySetpoint ?? 85}
+            unit="%"
+            step={1}
+            min={0}
+            max={100}
+            onApply={handleApplyHumidity}
+            disabled={disabled}
+            accentColor="scada-cold"
+          />
 
           {/* Humidity PID Mode */}
           <div>
