@@ -7,6 +7,7 @@ import { MonitoringPage } from './pages/MonitoringPage';
 import { DevicesPage } from './pages/DevicesPage';
 import { HealthCheckPage } from './pages/HealthCheckPage';
 import { LoginPage } from './pages/LoginPage';
+import { MobileBrewingAssistant } from './components/MobileBrewingAssistant';
 
 type Page = 'home' | 'monitoring' | 'devices' | 'health';
 
@@ -244,6 +245,11 @@ function AppContent() {
           <HealthCheckPage onBack={() => navigateTo('home')} />
         )}
       </main>
+
+      {/* Brewing Assistant - au niveau racine pour position: fixed */}
+      {currentPage === 'monitoring' && selectedProject && (
+        <MobileBrewingAssistant project={selectedProject} />
+      )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { HealthCheckPage } from './pages/HealthCheckPage';
 import { Project, Device, FermentationType, BrewingSession, BrewingRecipe } from './types';
 import { apiService, ProjectWithHistory } from './services/api.service';
 import { useAuth } from './contexts/AuthContext';
+import { BrewingAssistant } from './components/BrewingAssistant';
 import './App.css';
 
 type Page = 'home' | 'create-project' | 'monitoring' | 'brewing-session' | 'devices' | 'summary' | 'labels' | 'stats';
@@ -866,6 +867,10 @@ function App() {
         )}
       </main>
 
+      {/* Brewing Assistant - au niveau racine pour position: fixed */}
+      {currentPage === 'monitoring' && selectedProject && (
+        <BrewingAssistant project={selectedProject} />
+      )}
     </div>
   );
 }
