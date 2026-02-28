@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Project } from '../types';
 import { generateTips, AssistantTip } from '../utils/assistantRules';
 import './BrewingAssistant.css';
@@ -32,7 +33,7 @@ export function BrewingAssistant({ project }: BrewingAssistantProps) {
     }
   };
 
-  return (
+  return createPortal(
     <>
       {/* Floating Button */}
       <button
@@ -80,6 +81,7 @@ export function BrewingAssistant({ project }: BrewingAssistantProps) {
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body
   );
 }
