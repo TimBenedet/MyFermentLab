@@ -7,6 +7,7 @@ import { TemperatureAlert } from '../components/TemperatureAlert';
 import { ProjectSettingsModal } from '../components/ProjectSettingsModal';
 import { apiService } from '../services/api.service';
 import { getColorForEBC, calculateColorEBC } from '../utils/brewingCalculations';
+import { BrewingAssistant } from '../components/BrewingAssistant';
 import './MonitoringPage.css';
 
 // Sensor frozen detection - 10 minutes without temperature change
@@ -1017,6 +1018,9 @@ export function MonitoringPage({
           onClose={() => setShowSettingsModal(false)}
         />
       )}
+
+      {/* Brewing Assistant */}
+      <BrewingAssistant project={project} />
     </div>
   );
 }

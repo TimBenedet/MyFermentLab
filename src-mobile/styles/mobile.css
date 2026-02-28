@@ -1923,3 +1923,219 @@ body {
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* ================================================
+   BREWING ASSISTANT - FLOATING BUBBLE
+   ================================================ */
+
+.mobile-assistant-fab {
+  position: fixed;
+  bottom: 20px;
+  right: 16px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.mobile-assistant-fab.has-alerts {
+  border-color: var(--accent-red);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+.mobile-assistant-fab-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.mobile-assistant-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--accent-red);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* Overlay */
+.mobile-assistant-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 101;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Panel */
+.mobile-assistant-panel {
+  width: 100%;
+  max-height: 75vh;
+  background: var(--bg-secondary);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: mobileAssistantSlide 0.25s ease-out;
+}
+
+@keyframes mobileAssistantSlide {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.mobile-assistant-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mobile-assistant-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+}
+
+.mobile-assistant-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mobile-assistant-count {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  padding: 2px 7px;
+  border-radius: 8px;
+}
+
+.mobile-assistant-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+/* Tips */
+.mobile-assistant-tips {
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-assistant-tip {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.mobile-assistant-tip.mtip-high {
+  border-left: 3px solid var(--accent-red);
+}
+
+.mobile-assistant-tip.mtip-medium {
+  border-left: 3px solid var(--accent-orange);
+}
+
+.mobile-assistant-tip.mtip-low {
+  border-left: 3px solid var(--accent-green);
+}
+
+.mtip-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.mtip-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mtip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.mtip-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mtip-category {
+  font-size: 9px;
+  font-weight: 500;
+  padding: 2px 5px;
+  border-radius: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
+
+.mtip-cat-recipe {
+  background: rgba(212, 165, 116, 0.15);
+  color: var(--accent-primary);
+}
+
+.mtip-cat-temperature {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-orange);
+}
+
+.mtip-cat-humidity {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+}
+
+.mtip-cat-fermentation {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-green);
+}
+
+.mtip-cat-action {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-red);
+}
+
+.mtip-message {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}

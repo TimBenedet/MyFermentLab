@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Project, Device, FERMENTATION_TYPES } from '../../src/types';
 import { apiService } from '../../src/services/api.service';
 import { MobileChart } from '../components/MobileChart';
+import { MobileBrewingAssistant } from '../components/MobileBrewingAssistant';
 
 interface MonitoringPageProps {
   project: Project;
@@ -461,6 +462,9 @@ export function MonitoringPage({
           </div>
         )}
       </div>
+
+      {/* Brewing Assistant */}
+      <MobileBrewingAssistant project={project} />
     </div>
   );
 }
