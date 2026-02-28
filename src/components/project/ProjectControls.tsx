@@ -88,27 +88,25 @@ function SetpointEditor({
   const [localValue, setLocalValue] = useState(value)
   const [editing, setEditing] = useState(false)
   const [applying, setApplying] = useState(false)
+  const [dirty, setDirty] = useState(false) // user has modified the value
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const inputRef = useRef<HTMLInputElement>(null)
-  // Track the "committed" value (what backend knows)
-  const [committedValue, setCommittedValue] = useState(value)
 
-  // Sync local value when external value changes (e.g. from live sync / import)
+  // Sync local value from external prop ONLY when user hasn't touched it
   useEffect(() => {
-    if (!editing && !applying) {
+    if (!dirty && !editing && !applying) {
       setLocalValue(value)
-      setCommittedValue(value)
     }
-  }, [value, editing, applying])
+  }, [value, dirty, editing, applying])
 
-  const hasChanged = Math.abs(localValue - committedValue) > 0.01
+  const hasChanged = dirty && Math.abs(localValue - value) > 0.01
 
   const handleApply = async () => {
     setApplying(true)
     setStatus('idle')
     try {
       await onApply(localValue)
-      setCommittedValue(localValue)
+      setDirty(false)
       setStatus('success')
       setTimeout(() => setStatus('idle'), 2000)
     } catch (err) {
@@ -126,8 +124,9 @@ function SetpointEditor({
     setLocalValue(clamped)
   }
 
-  const decrement = () => { setLocalValue(v => Math.max(min, +(v - step).toFixed(1))); setStatus('idle') }
-  const increment = () => { setLocalValue(v => Math.min(max, +(v + step).toFixed(1))); setStatus('idle') }
+  const markDirty = () => { setDirty(true); setStatus('idle') }
+  const decrement = () => { setLocalValue(v => Math.max(min, +(v - step).toFixed(1))); markDirty() }
+  const increment = () => { setLocalValue(v => Math.min(max, +(v + step).toFixed(1))); markDirty() }
 
   return (
     <div>
@@ -142,7 +141,7 @@ function SetpointEditor({
             ref={inputRef}
             type="number"
             value={localValue}
-            onChange={(e) => setLocalValue(parseFloat(e.target.value) || 0)}
+            onChange={(e) => { setLocalValue(parseFloat(e.target.value) || 0); markDirty() }}
             onBlur={handleInputSubmit}
             onKeyDown={(e) => { if (e.key === 'Enter') handleInputSubmit() }}
             className="font-mono text-lg font-bold text-white bg-scada-bg border border-scada-border rounded-lg w-20 text-center py-1 outline-none focus:border-scada-accent"
