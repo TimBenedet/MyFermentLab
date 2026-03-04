@@ -25,6 +25,8 @@ export interface Project {
   // Sensor health tracking
   lastTemperatureUpdate?: number;
   lastTemperatureValue?: number;
+  // Activation threshold
+  activationThreshold?: number;
 }
 
 export interface Device {
@@ -149,6 +151,13 @@ class DatabaseService {
         console.log('Migration completed successfully');
       }
 
+      const hasActivationThreshold = columns.some(col => col.name === 'activation_threshold');
+      if (!hasActivationThreshold) {
+        console.log('Adding activation_threshold column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN activation_threshold REAL DEFAULT 0.2");
+        console.log('Migration completed successfully');
+      }
+
       const hasLastTemperatureValue = columns.some(col => col.name === 'last_temperature_value');
       if (!hasLastTemperatureValue) {
         console.log('Adding last_temperature_value column to projects table...');
@@ -231,7 +240,8 @@ class DatabaseService {
       currentHumidity: row.current_humidity || undefined,
       mushroomType: row.mushroom_type || undefined,
       lastTemperatureUpdate: row.last_temperature_update || undefined,
-      lastTemperatureValue: row.last_temperature_value || undefined
+      lastTemperatureValue: row.last_temperature_value || undefined,
+      activationThreshold: row.activation_threshold ?? 0.2
     }));
   }
 
@@ -260,7 +270,8 @@ class DatabaseService {
       currentHumidity: row.current_humidity || undefined,
       mushroomType: row.mushroom_type || undefined,
       lastTemperatureUpdate: row.last_temperature_update || undefined,
-      lastTemperatureValue: row.last_temperature_value || undefined
+      lastTemperatureValue: row.last_temperature_value || undefined,
+      activationThreshold: row.activation_threshold ?? 0.2
     };
   }
 
@@ -340,6 +351,11 @@ class DatabaseService {
   updateProjectInfo(id: string, name: string, fermentationType: string) {
     const stmt = this.db.prepare('UPDATE projects SET name = ?, fermentation_type = ? WHERE id = ?');
     stmt.run(name, fermentationType, id);
+  }
+
+  updateProjectActivationThreshold(id: string, activationThreshold: number) {
+    const stmt = this.db.prepare('UPDATE projects SET activation_threshold = ? WHERE id = ?');
+    stmt.run(activationThreshold, id);
   }
 
   updateProjectHumiditySettings(id: string, humiditySensorId: string | undefined, targetHumidity: number | undefined) {

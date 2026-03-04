@@ -470,7 +470,8 @@ router.get('/:id/live-temperature', async (req: Request, res: Response) => {
     let outletChanged = false;
     if (project.controlMode === 'automatic' && project.outletId) {
       const diff = project.targetTemperature - temperature;
-      const shouldActivate = diff >= 0.2;
+      const threshold = project.activationThreshold ?? 0.2;
+      const shouldActivate = diff >= threshold;
 
       const outletDevice = databaseService.getDevice(project.outletId);
       if (outletDevice && outletDevice.entityId) {
@@ -700,7 +701,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req: Request, res: Respo
 router.patch('/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { brewingSession, recipe, name, fermentationType, sensorId, outletId, humiditySensorId, targetHumidity } = req.body;
+    const { brewingSession, recipe, name, fermentationType, sensorId, outletId, humiditySensorId, targetHumidity, activationThreshold } = req.body;
 
     const project = databaseService.getProject(id);
     if (!project) {
@@ -751,6 +752,10 @@ router.patch('/:id', requireAuth, requireAdmin, async (req: Request, res: Respon
       }
 
       databaseService.updateProjectHumiditySettings(id, newHumiditySensorId, newTargetHumidity);
+    }
+
+    if (activationThreshold !== undefined) {
+      databaseService.updateProjectActivationThreshold(id, activationThreshold);
     }
 
     const updatedProject = databaseService.getProject(id);
