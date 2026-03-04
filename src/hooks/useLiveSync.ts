@@ -125,7 +125,7 @@ export function useLiveSync() {
     }
 
     poll()
-    const interval = setInterval(poll, 5000)
+    const interval = setInterval(poll, 3000)
     return () => { active = false; clearInterval(interval) }
   }, [mode, liveProjectKeys, syncLiveData])
 }

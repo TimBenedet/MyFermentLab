@@ -39,6 +39,9 @@ export function ProjectDetailPage() {
         live.temperature,
         bp.outletActive,
         bp.currentHumidity ?? undefined,
+        undefined,
+        bp.targetTemperature,
+        bp.targetHumidity ?? undefined,
       )
     } catch { /* ignore */ }
     finally { setRefreshing(false) }
