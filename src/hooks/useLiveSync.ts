@@ -119,6 +119,7 @@ export function useLiveSync() {
             undefined, // humidityRelayOn
             bp.targetTemperature,
             bp.targetHumidity ?? undefined,
+            bp.activationThreshold ?? 0.2,
           )
         } catch { /* ignore */ }
       }

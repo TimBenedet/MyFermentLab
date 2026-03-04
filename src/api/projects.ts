@@ -38,6 +38,10 @@ export async function updateTargetHumidity(id: string, humidity: number): Promis
   await apiPatch(`/projects/${id}`, { targetHumidity: humidity })
 }
 
+export async function updateActivationThreshold(id: string, threshold: number): Promise<void> {
+  await apiPatch(`/projects/${id}`, { activationThreshold: threshold })
+}
+
 export async function toggleOutlet(id: string): Promise<{ active: boolean }> {
   return apiPost<{ active: boolean }>(`/projects/${id}/outlet/toggle`)
 }

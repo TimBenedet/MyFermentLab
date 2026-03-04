@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Minus, Plus, Thermometer, Droplet, Check } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../../context/BrewingContext'
 import { useConnection } from '../../context/ConnectionContext'
-import { updateTargetTemperature, updateTargetHumidity, toggleOutlet, setControlMode } from '../../api/projects'
+import { updateTargetTemperature, updateTargetHumidity, updateActivationThreshold, toggleOutlet, setControlMode } from '../../api/projects'
 import { RelayIndicator } from '../fermenter/RelayIndicator'
 
 interface Props {
@@ -68,6 +68,7 @@ export function ProjectControls({ fermenterId, backendProjectId }: Props) {
 /* Editable setpoint with +/-, manual input, and Apply button */
 function SetpointEditor({
   value,
+  label = 'Consigne',
   unit,
   step,
   min,
@@ -77,6 +78,7 @@ function SetpointEditor({
   accentColor = 'scada-accent',
 }: {
   value: number
+  label?: string
   unit: string
   step: number
   min: number
@@ -130,7 +132,7 @@ function SetpointEditor({
 
   return (
     <div>
-      <div className="text-[9px] text-scada-text-muted uppercase tracking-wider mb-2">Consigne</div>
+      <div className="text-[9px] text-scada-text-muted uppercase tracking-wider mb-2">{label}</div>
       <div className="flex items-center justify-center gap-2 flex-wrap">
         <button onClick={decrement} className="scada-btn-neutral p-2.5 sm:p-2" disabled={disabled}>
           <Minus size={16} />
@@ -208,6 +210,12 @@ function TemperaturePanel({ fermenterId, fermenter, backendProjectId, isLive, se
     }
   }
 
+  const handleApplyThreshold = async (value: number) => {
+    if (isLive && backendProjectId) {
+      await updateActivationThreshold(backendProjectId, value)
+    }
+  }
+
   return (
     <>
       <div className="scada-label">Contrôles</div>
@@ -235,6 +243,20 @@ function TemperaturePanel({ fermenterId, fermenter, backendProjectId, isLive, se
         onApply={handleApplyTemp}
         disabled={disabled}
       />
+
+      {isLive && (
+        <SetpointEditor
+          value={fermenter.activationThreshold ?? 0.2}
+          label="Seuil d'activation"
+          unit="°"
+          step={0.1}
+          min={0.1}
+          max={5}
+          onApply={handleApplyThreshold}
+          disabled={disabled}
+          accentColor="scada-warning"
+        />
+      )}
 
       <div>
         <div className="text-[9px] text-scada-text-muted uppercase tracking-wider mb-2">Mode PID</div>
@@ -294,6 +316,12 @@ function ControlsWithTabs({ fermenterId, fermenter, backendProjectId, isLive, se
     }
   }
 
+  const handleApplyThreshold = async (value: number) => {
+    if (isLive && backendProjectId) {
+      await updateActivationThreshold(backendProjectId, value)
+    }
+  }
+
   return (
     <>
       {/* Tab bar */}
@@ -348,6 +376,20 @@ function ControlsWithTabs({ fermenterId, fermenter, backendProjectId, isLive, se
             onApply={handleApplyTemp}
             disabled={disabled}
           />
+
+          {isLive && (
+            <SetpointEditor
+              value={fermenter.activationThreshold ?? 0.2}
+              label="Seuil d'activation"
+              unit="°"
+              step={0.1}
+              min={0.1}
+              max={5}
+              onApply={handleApplyThreshold}
+              disabled={disabled}
+              accentColor="scada-warning"
+            />
+          )}
 
           {/* PID Mode */}
           <div>

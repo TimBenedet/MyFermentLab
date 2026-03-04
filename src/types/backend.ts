@@ -21,6 +21,7 @@ export interface BackendProject {
   humiditySensorId?: string | null
   targetHumidity?: number | null
   currentHumidity?: number | null
+  activationThreshold?: number
 }
 
 export interface AuthResponse {

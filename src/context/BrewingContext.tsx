@@ -165,6 +165,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
             updated.humiditySetpoint = action.humiditySetpoint
             if (updated.humidityPid) updated.humidityPid = { ...updated.humidityPid, setpoint: action.humiditySetpoint }
           }
+          if (action.activationThreshold !== undefined) {
+            updated.activationThreshold = action.activationThreshold
+          }
           // Append to history using real timestamp (seconds since epoch)
           const time = Date.now() / 1000
           // Deduplicate: skip if last point was less than 4s ago
@@ -217,6 +220,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         fermenter.setpoint = bp.targetTemperature
         fermenter.temperature = bp.currentTemperature
         fermenter.relayOn = bp.outletActive
+        fermenter.activationThreshold = bp.activationThreshold ?? 0.2
         if (fermenter.pid) fermenter.pid.setpoint = bp.targetTemperature
         if (needsHumidity) {
           fermenter.humidity = bp.currentHumidity ?? undefined
@@ -388,8 +392,8 @@ export function useBrewingActions() {
     // Gravity
     addGravityReading: useCallback((projectId: string, gravity: number) => dispatch({ type: 'ADD_GRAVITY_READING', projectId, gravity }), [dispatch]),
     // Live mode
-    syncLiveData: useCallback((fId: string, temperature: number, relayOn: boolean, humidity?: number, humidityRelayOn?: boolean, setpoint?: number, humiditySetpoint?: number) =>
-      dispatch({ type: 'SYNC_LIVE_DATA', fermenterId: fId, temperature, relayOn, humidity, humidityRelayOn, setpoint, humiditySetpoint }), [dispatch]),
+    syncLiveData: useCallback((fId: string, temperature: number, relayOn: boolean, humidity?: number, humidityRelayOn?: boolean, setpoint?: number, humiditySetpoint?: number, activationThreshold?: number) =>
+      dispatch({ type: 'SYNC_LIVE_DATA', fermenterId: fId, temperature, relayOn, humidity, humidityRelayOn, setpoint, humiditySetpoint, activationThreshold }), [dispatch]),
     importBackendProjects: useCallback((backendProjects: BackendProject[]) =>
       dispatch({ type: 'IMPORT_BACKEND_PROJECTS', backendProjects }), [dispatch]),
     importBackendArchives: useCallback((archives: ArchivedProject[]) =>
