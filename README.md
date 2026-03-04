@@ -13,10 +13,11 @@ Application web de monitoring de fermentation pour homebrewing, hydromel, koji e
 
 ### Monitoring temps-reel
 
-- Polling toutes les 5s vers Home Assistant (sondes de temperature, humidite, prises connectees)
+- Polling toutes les 3s vers Home Assistant (sondes de temperature, humidite, prises connectees)
 - Graphiques Recharts avec plages : 1h, 6h, 24h, 7j, 30j, Tout
 - Historique stocke dans InfluxDB via le backend
 - Controle automatique des prises (chauffage) base sur la temperature cible
+- Seuil d'activation configurable par projet (0.1 a 5°C, defaut 0.2°C)
 
 ### Gestion de projets
 
@@ -83,6 +84,17 @@ src/
     backend.ts              # Types API (BackendProject, BackendDevice)
   simulation/
     constants.ts            # Templates, factories, couleurs SRM
+backend/
+  src/
+    routes/
+      projects.routes.ts    # API projets, live-temperature, controle prises
+      auth.routes.ts        # Authentification admin/viewer
+      devices.routes.ts     # CRUD appareils Home Assistant
+    services/
+      database.service.ts   # SQLite (projets, appareils, migrations)
+      sensor-poller.service.ts # Polling periodique des sondes HA
+      influx.service.ts     # Ecriture/lecture InfluxDB
+      stats.service.ts      # Calcul statistiques projets
 ```
 
 ## Developpement
@@ -142,10 +154,11 @@ Navigateur <---> Nginx (SPA + proxy)
 
 **Flux de donnees live :**
 
-1. `useLiveSync` poll `GET /api/projects/:id/live-temperature` toutes les 5s
+1. `useLiveSync` poll `GET /api/projects/:id/live-temperature` toutes les 3s
 2. Le backend lit la sonde via Home Assistant, enregistre dans InfluxDB
-3. Le backend evalue le controle automatique (seuil +0.2°C) et commande la prise
+3. Le backend evalue le controle automatique (seuil configurable par projet, defaut 0.2°C) et commande la prise
 4. Le frontend met a jour le state local et les graphiques
+5. Les projets archives sont ignores par le sensor poller (pas de controle de prise ni d'enregistrement)
 
 **Flux de donnees historiques :**
 
@@ -184,7 +197,8 @@ Interface sombre optimisee pour le monitoring industriel :
 | GET | `/api/projects` | Liste tous les projets |
 | POST | `/api/projects` | Creer un projet |
 | GET | `/api/projects/:id` | Projet + historique InfluxDB |
-| PATCH | `/api/projects/:id` | Mise a jour partielle |
+| PATCH | `/api/projects/:id` | Mise a jour partielle (seuil d'activation, humidite, etc.) |
+| PUT | `/api/projects/:id/target` | Modifier la temperature cible |
 | DELETE | `/api/projects/:id` | Supprimer un projet |
 | GET | `/api/projects/:id/live-temperature` | Temperature temps-reel + controle auto |
 | GET | `/api/projects/:id/live-humidity` | Humidite temps-reel |
