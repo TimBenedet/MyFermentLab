@@ -9,6 +9,7 @@ function createInitialState(): AppState {
     projects: [],
     archivedProjects: [],
     alarms: [],
+    recipes: [],
   }
 }
 
@@ -333,6 +334,28 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ),
       }
 
+    // === Recipes ===
+    case 'ADD_RECIPE':
+      return { ...state, recipes: [...state.recipes, action.recipe] }
+
+    case 'UPDATE_RECIPE':
+      return {
+        ...state,
+        recipes: state.recipes.map(r =>
+          r.id === action.recipeId ? { ...r, ...action.updates } : r
+        ),
+      }
+
+    case 'DELETE_RECIPE':
+      return { ...state, recipes: state.recipes.filter(r => r.id !== action.recipeId) }
+
+    case 'IMPORT_RECIPES': {
+      const existingIds = new Set(state.recipes.map(r => r.id))
+      const newRecipes = action.recipes.filter(r => !existingIds.has(r.id))
+      if (newRecipes.length === 0) return state
+      return { ...state, recipes: [...state.recipes, ...newRecipes] }
+    }
+
     // === Alarms ===
     case 'ACK_ALARM':
       return {
@@ -403,6 +426,11 @@ export function useBrewingActions() {
     setHumidityPidMode: useCallback((fId: string, mode: 'auto' | 'manual' | 'off') => dispatch({ type: 'SET_HUMIDITY_PID_MODE', fermenterId: fId, mode }), [dispatch]),
     toggleHumidityRelay: useCallback((fId: string) => dispatch({ type: 'TOGGLE_HUMIDITY_RELAY', fermenterId: fId }), [dispatch]),
     addHumidityReading: useCallback((projectId: string, humidity: number) => dispatch({ type: 'ADD_HUMIDITY_READING', projectId, humidity }), [dispatch]),
+    // Recipes
+    addRecipe: useCallback((recipe: Recipe) => dispatch({ type: 'ADD_RECIPE', recipe }), [dispatch]),
+    updateRecipe: useCallback((id: string, updates: Partial<Recipe>) => dispatch({ type: 'UPDATE_RECIPE', recipeId: id, updates }), [dispatch]),
+    deleteRecipe: useCallback((id: string) => dispatch({ type: 'DELETE_RECIPE', recipeId: id }), [dispatch]),
+    importRecipes: useCallback((recipes: Recipe[]) => dispatch({ type: 'IMPORT_RECIPES', recipes }), [dispatch]),
     // Alarms
     ackAlarm: useCallback((alarmId: string) => dispatch({ type: 'ACK_ALARM', alarmId }), [dispatch]),
     ackAllAlarms: useCallback(() => dispatch({ type: 'ACK_ALL_ALARMS' }), [dispatch]),

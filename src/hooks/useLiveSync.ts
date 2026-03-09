@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo } from 'react'
 import { useConnection } from '../context/ConnectionContext'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { fetchBackendProjects, fetchBackendProject, fetchLiveTemperature } from '../api/projects'
+import { fetchRecipes } from '../api/recipes'
 import type { ArchivedProject, ProjectType } from '../types/brewing'
 
 /** Imports active backend projects into local state on first live mode mount,
@@ -9,7 +10,7 @@ import type { ArchivedProject, ProjectType } from '../types/brewing'
 export function useLiveSync() {
   const { mode } = useConnection()
   const { state } = useBrewing()
-  const { importBackendProjects, importBackendArchives, syncLiveData } = useBrewingActions()
+  const { importBackendProjects, importBackendArchives, syncLiveData, importRecipes } = useBrewingActions()
   const hasSynced = useRef(false)
 
   // One-time import of backend projects (active + archived)
@@ -79,9 +80,15 @@ export function useLiveSync() {
           } catch { /* skip */ }
         }
         if (archives.length > 0) importBackendArchives(archives)
+
+        // Import recipes
+        try {
+          const recipes = await fetchRecipes()
+          if (recipes.length > 0) importRecipes(recipes)
+        } catch { /* ignore */ }
       })
       .catch(() => {})
-  }, [mode, importBackendProjects, importBackendArchives])
+  }, [mode, importBackendProjects, importBackendArchives, importRecipes])
 
   // Stable list of live project IDs — only changes when projects are added/removed
   const liveProjectKeys = useMemo(() => {

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Play, Thermometer, Power, Droplet } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Play, Thermometer, Power, Droplet, BookOpen } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { useConnection } from '../context/ConnectionContext'
 import { fetchDevices } from '../api/devices'
 import { createBackendProject } from '../api/projects'
+import { createBackendRecipe } from '../api/recipes'
 import { generateId, BEER_TEMPLATES, MEAD_TEMPLATES, KOJI_TEMPLATES, MUSHROOM_TEMPLATES } from '../simulation/constants'
 import { IngredientEditor } from '../components/project/IngredientEditor'
 import { StepEditor } from '../components/project/StepEditor'
@@ -30,8 +31,11 @@ function getTemplatesForType(type: ProjectType) {
 
 export function CreateProjectPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isRecipeMode = searchParams.get('mode') === 'recipe'
+  const recipeId = searchParams.get('recipeId')
   const { state } = useBrewing()
-  const { startFermentation, updateProject } = useBrewingActions()
+  const { startFermentation, updateProject, addRecipe } = useBrewingActions()
   const { mode } = useConnection()
   const isLive = mode === 'live'
 
@@ -87,6 +91,22 @@ export function CreateProjectPage() {
       .finally(() => setLoadingDevices(false))
   }, [isLive])
 
+  // Pre-fill from existing recipe
+  useEffect(() => {
+    if (!recipeId) return
+    const recipe = state.recipes.find(r => r.id === recipeId)
+    if (!recipe) return
+    setProjectType(recipe.projectType)
+    setProjectName(recipe.name)
+    setStyle(recipe.style)
+    setBatchSize(recipe.batchSize)
+    setOg(recipe.og); setFg(recipe.fg); setAbv(recipe.abv)
+    setIbu(recipe.ibu); setSrm(recipe.srm)
+    setIngredients(recipe.ingredients.map(i => ({ ...i, id: generateId('ing-') })))
+    setSteps(recipe.steps.map(s => ({ ...s, id: generateId('step-') })))
+    if (recipe.steps[0]?.targetTemp) setTargetTemp(recipe.steps[0].targetTemp)
+  }, [recipeId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const sensors = devices.filter(d => d.type === 'sensor')
   const humiditySensors = devices.filter(d => d.type === 'humidity_sensor')
   const outlets = devices.filter(d => d.type === 'outlet')
@@ -123,6 +143,20 @@ export function CreateProjectPage() {
     setCreating(true)
     try {
       const recipe = getRecipe()
+
+      // Recipe-only mode: save recipe and return to library
+      if (isRecipeMode) {
+        recipe.id = generateId('recipe-')
+        recipe.createdAt = Date.now()
+        if (isLive) {
+          try { await createBackendRecipe(recipe) } catch { /* continue in sim */ }
+        }
+        addRecipe(recipe)
+        navigate('/recipes')
+        return
+      }
+
+      // Normal fermentation launch
       const name = projectName.trim() || `${recipe.name} - ${new Date().toLocaleDateString('fr-FR')}`
 
       startFermentation(recipe, name)
@@ -165,12 +199,16 @@ export function CreateProjectPage() {
     <div className="max-w-2xl mx-auto space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/')} className="scada-btn-neutral p-2">
+        <button onClick={() => navigate(isRecipeMode ? '/recipes' : '/')} className="scada-btn-neutral p-2">
           <ArrowLeft size={14} />
         </button>
         <div>
-          <h2 className="text-sm font-bold text-white">Nouveau projet</h2>
-          <p className="text-[10px] text-scada-text-muted">Lancer une fermentation</p>
+          <h2 className="text-sm font-bold text-white">
+            {isRecipeMode ? 'Nouvelle recette' : recipeId ? 'Lancer depuis une recette' : 'Nouveau projet'}
+          </h2>
+          <p className="text-[10px] text-scada-text-muted">
+            {isRecipeMode ? 'Sauvegarder dans la bibliotheque' : 'Lancer une fermentation'}
+          </p>
         </div>
       </div>
 
@@ -319,8 +357,8 @@ export function CreateProjectPage() {
         />
       </div>
 
-      {/* Device selection (live mode only) */}
-      {isLive && (
+      {/* Device selection (live mode only, not in recipe mode) */}
+      {isLive && !isRecipeMode && (
         <div className="scada-card space-y-3">
           <div className="scada-label">Devices</div>
           {loadingDevices ? (
@@ -367,10 +405,10 @@ export function CreateProjectPage() {
           disabled={!canCreate || creating}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-scada-accent/20 text-scada-accent border border-scada-accent/40 rounded-lg text-sm font-medium hover:bg-scada-accent/30 transition-colors disabled:opacity-50"
         >
-          <Play size={16} />
-          {creating ? 'Creation...' : 'Lancer la fermentation'}
+          {isRecipeMode ? <BookOpen size={16} /> : <Play size={16} />}
+          {creating ? 'Creation...' : isRecipeMode ? 'Sauvegarder la recette' : 'Lancer la fermentation'}
         </button>
-        <button onClick={() => navigate('/')} className="scada-btn-neutral px-4 py-3">
+        <button onClick={() => navigate(isRecipeMode ? '/recipes' : '/')} className="scada-btn-neutral px-4 py-3">
           Annuler
         </button>
       </div>

@@ -87,6 +87,7 @@ export interface Recipe {
   srm: number
   ingredients: RecipeIngredient[]
   steps: RecipeStep[]
+  createdAt?: number
 }
 
 // === Gravity ===
@@ -189,6 +190,7 @@ export interface AppState {
   projects: BrewProject[]
   archivedProjects: ArchivedProject[]
   alarms: Alarm[]
+  recipes: Recipe[]
 }
 
 // === Actions ===
@@ -218,6 +220,11 @@ export type AppAction =
   | { type: 'SYNC_LIVE_DATA'; fermenterId: string; temperature: number; relayOn: boolean; humidity?: number; humidityRelayOn?: boolean; setpoint?: number; humiditySetpoint?: number; activationThreshold?: number }
   | { type: 'IMPORT_BACKEND_PROJECTS'; backendProjects: BackendProject[] }
   | { type: 'IMPORT_BACKEND_ARCHIVES'; archives: ArchivedProject[] }
+  // Recipes
+  | { type: 'ADD_RECIPE'; recipe: Recipe }
+  | { type: 'UPDATE_RECIPE'; recipeId: string; updates: Partial<Recipe> }
+  | { type: 'DELETE_RECIPE'; recipeId: string }
+  | { type: 'IMPORT_RECIPES'; recipes: Recipe[] }
   // Alarms
   | { type: 'ACK_ALARM'; alarmId: string }
   | { type: 'ACK_ALL_ALARMS' }

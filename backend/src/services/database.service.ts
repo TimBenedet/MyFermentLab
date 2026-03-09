@@ -37,6 +37,22 @@ export interface Device {
   entityId?: string;
 }
 
+export interface RecipeRecord {
+  id: string;
+  projectType: string;
+  name: string;
+  style: string;
+  batchSize: number;
+  og: number;
+  fg: number;
+  abv: number;
+  ibu: number;
+  srm: number;
+  ingredients: any[];
+  steps: any[];
+  createdAt: number;
+}
+
 class DatabaseService {
   private db: Database.Database;
 
@@ -72,6 +88,22 @@ class DatabaseService {
         type TEXT NOT NULL,
         ip TEXT NOT NULL,
         entity_id TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS recipes (
+        id TEXT PRIMARY KEY,
+        project_type TEXT NOT NULL,
+        name TEXT NOT NULL,
+        style TEXT NOT NULL DEFAULT '',
+        batch_size REAL NOT NULL DEFAULT 25,
+        og REAL NOT NULL DEFAULT 1.0,
+        fg REAL NOT NULL DEFAULT 1.0,
+        abv REAL NOT NULL DEFAULT 0,
+        ibu REAL NOT NULL DEFAULT 0,
+        srm REAL NOT NULL DEFAULT 0,
+        ingredients TEXT,
+        steps TEXT,
+        created_at INTEGER NOT NULL
       );
     `);
 
@@ -452,6 +484,101 @@ class DatabaseService {
 
   deleteDevice(id: string) {
     const stmt = this.db.prepare('DELETE FROM devices WHERE id = ?');
+    stmt.run(id);
+  }
+
+  // Recipes CRUD
+  getAllRecipes(): RecipeRecord[] {
+    const stmt = this.db.prepare('SELECT * FROM recipes ORDER BY created_at DESC');
+    const rows = stmt.all() as any[];
+    return rows.map(row => ({
+      id: row.id,
+      projectType: row.project_type,
+      name: row.name,
+      style: row.style,
+      batchSize: row.batch_size,
+      og: row.og,
+      fg: row.fg,
+      abv: row.abv,
+      ibu: row.ibu,
+      srm: row.srm,
+      ingredients: row.ingredients ? JSON.parse(row.ingredients) : [],
+      steps: row.steps ? JSON.parse(row.steps) : [],
+      createdAt: row.created_at,
+    }));
+  }
+
+  getRecipe(id: string): RecipeRecord | null {
+    const stmt = this.db.prepare('SELECT * FROM recipes WHERE id = ?');
+    const row = stmt.get(id) as any;
+    if (!row) return null;
+    return {
+      id: row.id,
+      projectType: row.project_type,
+      name: row.name,
+      style: row.style,
+      batchSize: row.batch_size,
+      og: row.og,
+      fg: row.fg,
+      abv: row.abv,
+      ibu: row.ibu,
+      srm: row.srm,
+      ingredients: row.ingredients ? JSON.parse(row.ingredients) : [],
+      steps: row.steps ? JSON.parse(row.steps) : [],
+      createdAt: row.created_at,
+    };
+  }
+
+  createRecipe(recipe: RecipeRecord): RecipeRecord {
+    const stmt = this.db.prepare(`
+      INSERT INTO recipes (id, project_type, name, style, batch_size, og, fg, abv, ibu, srm, ingredients, steps, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      recipe.id,
+      recipe.projectType,
+      recipe.name,
+      recipe.style,
+      recipe.batchSize,
+      recipe.og,
+      recipe.fg,
+      recipe.abv,
+      recipe.ibu,
+      recipe.srm,
+      JSON.stringify(recipe.ingredients),
+      JSON.stringify(recipe.steps),
+      recipe.createdAt,
+    );
+    return this.getRecipe(recipe.id)!;
+  }
+
+  updateRecipe(id: string, updates: Partial<RecipeRecord>): RecipeRecord | null {
+    const recipe = this.getRecipe(id);
+    if (!recipe) return null;
+    const merged = { ...recipe, ...updates };
+    const stmt = this.db.prepare(`
+      UPDATE recipes SET project_type = ?, name = ?, style = ?, batch_size = ?, og = ?, fg = ?, abv = ?, ibu = ?, srm = ?, ingredients = ?, steps = ?
+      WHERE id = ?
+    `);
+    stmt.run(
+      merged.projectType,
+      merged.name,
+      merged.style,
+      merged.batchSize,
+      merged.og,
+      merged.fg,
+      merged.abv,
+      merged.ibu,
+      merged.srm,
+      JSON.stringify(merged.ingredients),
+      JSON.stringify(merged.steps),
+      id,
+    );
+    return this.getRecipe(id);
+  }
+
+  deleteRecipe(id: string) {
+    const stmt = this.db.prepare('DELETE FROM recipes WHERE id = ?');
     stmt.run(id);
   }
 

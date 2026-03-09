@@ -8,6 +8,7 @@ import { ArchivesPage } from './pages/ArchivesPage'
 import { LoginPage } from './pages/LoginPage'
 import { DevicesPage } from './pages/DevicesPage'
 import { CreateProjectPage } from './pages/CreateProjectPage'
+import { RecipesPage } from './pages/RecipesPage'
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
               <Route path="/project/:projectId" element={<ProjectDetailPage />} />
               <Route path="/archives" element={<ArchivesPage />} />
               <Route path="/devices" element={<DevicesPage />} />
+              <Route path="/recipes" element={<RecipesPage />} />
               <Route path="/create" element={<CreateProjectPage />} />
             </Route>
           </Routes>
