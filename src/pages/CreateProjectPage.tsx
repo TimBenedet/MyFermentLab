@@ -203,10 +203,10 @@ export function CreateProjectPage() {
           <ArrowLeft size={14} />
         </button>
         <div>
-          <h2 className="text-sm font-bold text-white">
+          <h2 className="text-base font-bold text-white">
             {isRecipeMode ? 'Nouvelle recette' : recipeId ? 'Lancer depuis une recette' : 'Nouveau projet'}
           </h2>
-          <p className="text-[10px] text-scada-text-muted">
+          <p className="text-xs text-scada-text-muted">
             {isRecipeMode ? 'Sauvegarder dans la bibliotheque' : 'Lancer une fermentation'}
           </p>
         </div>
@@ -214,10 +214,10 @@ export function CreateProjectPage() {
 
       {/* Project type + name + template */}
       <div className="scada-card space-y-3">
-        <div className="scada-label">Projet</div>
+        <div className="scada-label text-xs">Projet</div>
 
         <div>
-          <label className="block text-[9px] text-scada-text-muted uppercase tracking-wider mb-1">
+          <label className="block text-[11px] text-scada-text-muted uppercase tracking-wider mb-1">
             Type de projet
           </label>
           <div className="flex gap-1.5">
@@ -226,7 +226,7 @@ export function CreateProjectPage() {
                 key={t}
                 type="button"
                 onClick={() => setProjectType(t)}
-                className={`flex-1 px-2 py-2 text-[10px] rounded-lg border font-medium transition-colors ${
+                className={`flex-1 px-2 py-2 text-xs rounded-lg border font-medium transition-colors ${
                   projectType === t
                     ? 'bg-scada-accent/15 text-scada-accent border-scada-accent/40'
                     : 'border-scada-border text-scada-text-muted hover:text-white'
@@ -240,7 +240,7 @@ export function CreateProjectPage() {
 
         {/* Template selector */}
         <div>
-          <label className="block text-[9px] text-scada-text-muted uppercase tracking-wider mb-1">
+          <label className="block text-[11px] text-scada-text-muted uppercase tracking-wider mb-1">
             Modele (optionnel)
           </label>
           <select
@@ -257,7 +257,7 @@ export function CreateProjectPage() {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2 sm:col-span-1">
-            <label className="block text-[9px] text-scada-text-muted uppercase tracking-wider mb-1">
+            <label className="block text-[11px] text-scada-text-muted uppercase tracking-wider mb-1">
               Nom du projet
             </label>
             <input
@@ -270,7 +270,7 @@ export function CreateProjectPage() {
             />
           </div>
           <div className="col-span-2 sm:col-span-1">
-            <label className="block text-[9px] text-scada-text-muted uppercase tracking-wider mb-1">
+            <label className="block text-[11px] text-scada-text-muted uppercase tracking-wider mb-1">
               Temperature cible (°C)
             </label>
             <input
@@ -286,54 +286,54 @@ export function CreateProjectPage() {
 
       {/* Recipe parameters */}
       <div className="scada-card space-y-3">
-        <div className="scada-label">Parametres</div>
+        <div className="scada-label text-xs">Parametres</div>
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           <div>
-            <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">Style</label>
+            <label className="block text-[10px] text-scada-text-muted uppercase mb-1">Style</label>
             <input
               type="text"
               value={style}
               onChange={e => setStyle(e.target.value)}
               placeholder={TYPE_LABELS[projectType]}
-              className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white placeholder:text-scada-text-muted focus:outline-none focus:border-scada-accent/50"
+              className="w-full px-2.5 py-2 bg-scada-bg rounded border border-scada-border text-xs text-white placeholder:text-scada-text-muted focus:outline-none focus:border-scada-accent/50"
             />
           </div>
           <div>
-            <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">Volume ({needsHumidity ? 'kg' : 'L'})</label>
+            <label className="block text-[10px] text-scada-text-muted uppercase mb-1">Volume ({needsHumidity ? 'kg' : 'L'})</label>
             <input
               type="number"
               value={batchSize}
               onChange={e => setBatchSize(+e.target.value)}
-              className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50"
+              className="w-full px-2.5 py-2 bg-scada-bg rounded border border-scada-border text-xs text-white font-mono focus:outline-none focus:border-scada-accent/50"
               step={1}
             />
           </div>
           {isBeerLike && (
             <>
               <div>
-                <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">OG</label>
+                <label className="block text-[10px] text-scada-text-muted uppercase mb-1">OG</label>
                 <input type="number" value={og} onChange={e => setOg(+e.target.value)} step={0.001} min={1}
-                  className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50" />
+                  className="w-full px-2.5 py-2 bg-scada-bg rounded border border-scada-border text-xs text-white font-mono focus:outline-none focus:border-scada-accent/50" />
               </div>
               <div>
-                <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">FG</label>
+                <label className="block text-[10px] text-scada-text-muted uppercase mb-1">FG</label>
                 <input type="number" value={fg} onChange={e => setFg(+e.target.value)} step={0.001} min={1}
-                  className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50" />
+                  className="w-full px-2.5 py-2 bg-scada-bg rounded border border-scada-border text-xs text-white font-mono focus:outline-none focus:border-scada-accent/50" />
               </div>
               <div>
-                <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">ABV %</label>
+                <label className="block text-[10px] text-scada-text-muted uppercase mb-1">ABV %</label>
                 <input type="number" value={abv} onChange={e => setAbv(+e.target.value)} step={0.1}
-                  className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50" />
+                  className="w-full px-2.5 py-2 bg-scada-bg rounded border border-scada-border text-xs text-white font-mono focus:outline-none focus:border-scada-accent/50" />
               </div>
               <div>
-                <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">IBU</label>
+                <label className="block text-[10px] text-scada-text-muted uppercase mb-1">IBU</label>
                 <input type="number" value={ibu} onChange={e => setIbu(+e.target.value)} step={1}
-                  className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50" />
+                  className="w-full px-2.5 py-2 bg-scada-bg rounded border border-scada-border text-xs text-white font-mono focus:outline-none focus:border-scada-accent/50" />
               </div>
               <div>
-                <label className="block text-[8px] text-scada-text-muted uppercase mb-0.5">SRM</label>
+                <label className="block text-[10px] text-scada-text-muted uppercase mb-1">SRM</label>
                 <input type="number" value={srm} onChange={e => setSrm(+e.target.value)} step={1}
-                  className="w-full px-2 py-1.5 bg-scada-bg rounded border border-scada-border text-[10px] text-white font-mono focus:outline-none focus:border-scada-accent/50" />
+                  className="w-full px-2.5 py-2 bg-scada-bg rounded border border-scada-border text-xs text-white font-mono focus:outline-none focus:border-scada-accent/50" />
               </div>
             </>
           )}
@@ -360,7 +360,7 @@ export function CreateProjectPage() {
       {/* Device selection (live mode only, not in recipe mode) */}
       {isLive && !isRecipeMode && (
         <div className="scada-card space-y-3">
-          <div className="scada-label">Devices</div>
+          <div className="scada-label text-xs">Devices</div>
           {loadingDevices ? (
             <p className="text-sm text-scada-text-muted text-center py-4">Chargement des devices...</p>
           ) : (
