@@ -31,6 +31,10 @@ export function RecipesPage() {
     navigate(`/create?recipeId=${recipe.id}`)
   }
 
+  const handleEdit = (recipe: Recipe) => {
+    navigate(`/create?mode=recipe&editId=${recipe.id}`)
+  }
+
   const handleDelete = async (recipe: Recipe) => {
     if (isLive) {
       try { await deleteBackendRecipe(recipe.id) } catch { return }
@@ -76,6 +80,7 @@ export function RecipesPage() {
               key={recipe.id}
               recipe={recipe}
               onLaunch={handleLaunch}
+              onEdit={handleEdit}
               onDelete={handleDelete}
             />
           ))}

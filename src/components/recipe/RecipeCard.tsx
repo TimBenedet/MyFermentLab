@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, Trash2 } from 'lucide-react'
+import { Play, Trash2, Pencil } from 'lucide-react'
 import { srmToColor } from '../../simulation/constants'
 import type { Recipe, ProjectType } from '../../types/brewing'
 
@@ -13,10 +13,11 @@ const TYPE_LABELS: Record<ProjectType, string> = {
 interface Props {
   recipe: Recipe
   onLaunch: (recipe: Recipe) => void
+  onEdit: (recipe: Recipe) => void
   onDelete: (recipe: Recipe) => void
 }
 
-export function RecipeCard({ recipe, onLaunch, onDelete }: Props) {
+export function RecipeCard({ recipe, onLaunch, onEdit, onDelete }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const isBeerLike = recipe.projectType === 'beer' || recipe.projectType === 'mead'
   const needsHumidity = recipe.projectType === 'koji' || recipe.projectType === 'mushroom'
@@ -41,7 +42,7 @@ export function RecipeCard({ recipe, onLaunch, onDelete }: Props) {
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className={`grid gap-1.5 ${isBeerLike ? 'grid-cols-4' : 'grid-cols-3'}`}>
         <div className="bg-scada-bg rounded-lg p-2 text-center">
           <div className="text-[8px] text-scada-text-muted uppercase">Volume</div>
           <div className="font-mono text-xs font-bold text-white mt-0.5">
@@ -51,10 +52,12 @@ export function RecipeCard({ recipe, onLaunch, onDelete }: Props) {
         {isBeerLike ? (
           <>
             <div className="bg-scada-bg rounded-lg p-2 text-center">
-              <div className="text-[8px] text-scada-text-muted uppercase">OG/FG</div>
-              <div className="font-mono text-xs font-bold text-white mt-0.5">
-                {recipe.og.toFixed(3)}/{recipe.fg.toFixed(3)}
-              </div>
+              <div className="text-[8px] text-scada-text-muted uppercase">OG</div>
+              <div className="font-mono text-xs font-bold text-white mt-0.5">{recipe.og.toFixed(3)}</div>
+            </div>
+            <div className="bg-scada-bg rounded-lg p-2 text-center">
+              <div className="text-[8px] text-scada-text-muted uppercase">FG</div>
+              <div className="font-mono text-xs font-bold text-white mt-0.5">{recipe.fg.toFixed(3)}</div>
             </div>
             <div className="bg-scada-bg rounded-lg p-2 text-center">
               <div className="text-[8px] text-scada-text-muted uppercase">ABV</div>
@@ -83,6 +86,12 @@ export function RecipeCard({ recipe, onLaunch, onDelete }: Props) {
         >
           <Play size={12} />
           Lancer
+        </button>
+        <button
+          onClick={() => onEdit(recipe)}
+          className="p-2 text-scada-text-muted hover:text-scada-accent transition-colors rounded-lg hover:bg-scada-accent/10"
+        >
+          <Pencil size={14} />
         </button>
         {confirmDelete ? (
           <div className="flex gap-1">

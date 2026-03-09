@@ -5,7 +5,7 @@ import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { useConnection } from '../context/ConnectionContext'
 import { fetchDevices } from '../api/devices'
 import { createBackendProject } from '../api/projects'
-import { createBackendRecipe } from '../api/recipes'
+import { createBackendRecipe, updateBackendRecipe } from '../api/recipes'
 import { generateId, BEER_TEMPLATES, MEAD_TEMPLATES, KOJI_TEMPLATES, MUSHROOM_TEMPLATES } from '../simulation/constants'
 import { IngredientEditor } from '../components/project/IngredientEditor'
 import { StepEditor } from '../components/project/StepEditor'
@@ -34,8 +34,10 @@ export function CreateProjectPage() {
   const [searchParams] = useSearchParams()
   const isRecipeMode = searchParams.get('mode') === 'recipe'
   const recipeId = searchParams.get('recipeId')
+  const editId = searchParams.get('editId')
+  const isEditing = isRecipeMode && !!editId
   const { state } = useBrewing()
-  const { startFermentation, updateProject, addRecipe } = useBrewingActions()
+  const { startFermentation, updateProject, addRecipe, updateRecipe } = useBrewingActions()
   const { mode } = useConnection()
   const isLive = mode === 'live'
 
@@ -91,10 +93,11 @@ export function CreateProjectPage() {
       .finally(() => setLoadingDevices(false))
   }, [isLive])
 
-  // Pre-fill from existing recipe
+  // Pre-fill from existing recipe (launch or edit)
+  const prefillId = recipeId || editId
   useEffect(() => {
-    if (!recipeId) return
-    const recipe = state.recipes.find(r => r.id === recipeId)
+    if (!prefillId) return
+    const recipe = state.recipes.find(r => r.id === prefillId)
     if (!recipe) return
     setProjectType(recipe.projectType)
     setProjectName(recipe.name)
@@ -105,7 +108,7 @@ export function CreateProjectPage() {
     setIngredients(recipe.ingredients.map(i => ({ ...i, id: generateId('ing-') })))
     setSteps(recipe.steps.map(s => ({ ...s, id: generateId('step-') })))
     if (recipe.steps[0]?.targetTemp) setTargetTemp(recipe.steps[0].targetTemp)
-  }, [recipeId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [prefillId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sensors = devices.filter(d => d.type === 'sensor')
   const humiditySensors = devices.filter(d => d.type === 'humidity_sensor')
@@ -144,14 +147,24 @@ export function CreateProjectPage() {
     try {
       const recipe = getRecipe()
 
-      // Recipe-only mode: save recipe and return to library
+      // Recipe-only mode: save or update recipe and return to library
       if (isRecipeMode) {
-        recipe.id = generateId('recipe-')
-        recipe.createdAt = Date.now()
-        if (isLive) {
-          try { await createBackendRecipe(recipe) } catch { /* continue in sim */ }
+        if (isEditing && editId) {
+          // Update existing recipe
+          const updates = { projectType, name: recipe.name, style: recipe.style, batchSize, og, fg, abv, ibu, srm, ingredients, steps }
+          if (isLive) {
+            try { await updateBackendRecipe(editId, updates) } catch { /* continue in sim */ }
+          }
+          updateRecipe(editId, updates)
+        } else {
+          // Create new recipe
+          recipe.id = generateId('recipe-')
+          recipe.createdAt = Date.now()
+          if (isLive) {
+            try { await createBackendRecipe(recipe) } catch { /* continue in sim */ }
+          }
+          addRecipe(recipe)
         }
-        addRecipe(recipe)
         navigate('/recipes')
         return
       }
@@ -204,7 +217,7 @@ export function CreateProjectPage() {
         </button>
         <div>
           <h2 className="text-base font-bold text-white">
-            {isRecipeMode ? 'Nouvelle recette' : recipeId ? 'Lancer depuis une recette' : 'Nouveau projet'}
+            {isEditing ? 'Modifier la recette' : isRecipeMode ? 'Nouvelle recette' : recipeId ? 'Lancer depuis une recette' : 'Nouveau projet'}
           </h2>
           <p className="text-xs text-scada-text-muted">
             {isRecipeMode ? 'Sauvegarder dans la bibliotheque' : 'Lancer une fermentation'}
@@ -406,7 +419,7 @@ export function CreateProjectPage() {
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-scada-accent/20 text-scada-accent border border-scada-accent/40 rounded-lg text-sm font-medium hover:bg-scada-accent/30 transition-colors disabled:opacity-50"
         >
           {isRecipeMode ? <BookOpen size={16} /> : <Play size={16} />}
-          {creating ? 'Creation...' : isRecipeMode ? 'Sauvegarder la recette' : 'Lancer la fermentation'}
+          {creating ? 'Creation...' : isEditing ? 'Mettre a jour la recette' : isRecipeMode ? 'Sauvegarder la recette' : 'Lancer la fermentation'}
         </button>
         <button onClick={() => navigate(isRecipeMode ? '/recipes' : '/')} className="scada-btn-neutral px-4 py-3">
           Annuler
