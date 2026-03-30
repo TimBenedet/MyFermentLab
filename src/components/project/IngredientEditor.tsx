@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, Trash2, X, Check } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Plus, Trash2, X, Check, Droplets } from 'lucide-react'
 import { generateId } from '../../simulation/constants'
 import type { RecipeIngredient, IngredientType, ProjectType } from '../../types/brewing'
 
@@ -15,16 +15,79 @@ interface Props {
   ingredients: RecipeIngredient[]
   onChange: (ingredients: RecipeIngredient[]) => void
   projectType: ProjectType
+  batchSize?: number
   readOnly?: boolean
 }
 
 const emptyForm = { name: '', type: 'grain' as IngredientType, quantity: '', unit: 'kg', addAt: '' }
 
-export function IngredientEditor({ ingredients, onChange, readOnly }: Props) {
+// Calcul BIAB sans rinçage
+// Eau totale = (batchSize / 0.96) / (1 - 0.10 * boilHours) + totalGrainKg * 1
+function calcWaterBIAB(batchSize: number, totalGrainKg: number, boilHours = 1): number {
+  const postBoil = batchSize / 0.96
+  const preBoil = postBoil / (1 - 0.10 * boilHours)
+  const water = preBoil + totalGrainKg * 1.0
+  return Math.round(water * 10) / 10
+}
+
+const WATER_ID_PREFIX = 'eau-auto-'
+
+export function IngredientEditor({ ingredients, onChange, projectType, batchSize, readOnly }: Props) {
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState(emptyForm)
+  const [boilHours, setBoilHours] = useState(1)
+  const autoWaterRef = useRef<string | null>(null)
+
+  // Recalcule l'eau automatique quand grains ou batchSize changent (bière uniquement)
+  useEffect(() => {
+    if (projectType !== 'beer' && projectType !== 'mead') return
+    if (!batchSize) return
+
+    const totalGrainKg = ingredients
+      .filter(i => i.type === 'grain')
+      .reduce((sum, i) => sum + i.quantity, 0)
+
+    if (totalGrainKg === 0) {
+      // Supprimer l'eau auto si plus de grain
+      if (autoWaterRef.current) {
+        onChange(ingredients.filter(i => i.id !== autoWaterRef.current))
+        autoWaterRef.current = null
+      }
+      return
+    }
+
+    const waterQty = calcWaterBIAB(batchSize, totalGrainKg, boilHours)
+    const existingAuto = ingredients.find(i => i.id === autoWaterRef.current)
+
+    if (existingAuto) {
+      // Mettre à jour la quantité
+      onChange(ingredients.map(i =>
+        i.id === autoWaterRef.current ? { ...i, quantity: waterQty } : i
+      ))
+    } else {
+      // Créer l'ingrédient eau auto
+      const id = generateId(WATER_ID_PREFIX)
+      autoWaterRef.current = id
+      const waterIng: RecipeIngredient = {
+        id,
+        name: 'Eau (BIAB)',
+        type: 'eau',
+        quantity: waterQty,
+        unit: 'L',
+        addAt: 'Empâtage',
+      }
+      onChange([...ingredients, waterIng])
+    }
+  }, [
+    batchSize,
+    boilHours,
+    // Dépendance sur les grains seulement (évite boucle infinie)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ingredients.filter(i => i.type === 'grain').map(i => `${i.id}:${i.quantity}`).join(','),
+    projectType,
+  ])
 
   const handleAdd = () => {
     if (!form.name.trim() || !form.quantity) return
@@ -41,6 +104,7 @@ export function IngredientEditor({ ingredients, onChange, readOnly }: Props) {
   }
 
   const handleRemove = (id: string) => {
+    if (id === autoWaterRef.current) autoWaterRef.current = null
     onChange(ingredients.filter(i => i.id !== id))
   }
 
@@ -58,6 +122,8 @@ export function IngredientEditor({ ingredients, onChange, readOnly }: Props) {
 
   const confirmEdit = () => {
     if (!editingId || !editForm.name.trim() || !editForm.quantity) return
+    // Si on modifie l'eau auto manuellement, on détache du calcul auto
+    if (editingId === autoWaterRef.current) autoWaterRef.current = null
     onChange(ingredients.map(ing =>
       ing.id === editingId
         ? {
@@ -77,6 +143,9 @@ export function IngredientEditor({ ingredients, onChange, readOnly }: Props) {
     setEditingId(null)
   }
 
+  const isAutoWater = (id: string) => id === autoWaterRef.current
+  const showWaterCalc = (projectType === 'beer' || projectType === 'mead') && !readOnly
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -92,6 +161,25 @@ export function IngredientEditor({ ingredients, onChange, readOnly }: Props) {
           </button>
         )}
       </div>
+
+      {/* Paramètres calcul eau BIAB */}
+      {showWaterCalc && (
+        <div className="flex items-center gap-2 px-2.5 py-1.5 bg-scada-bg rounded border border-scada-border/50">
+          <Droplets size={12} className="text-blue-400 shrink-0" />
+          <span className="text-[10px] text-scada-text-muted">Ébullition</span>
+          <select
+            value={boilHours}
+            onChange={e => setBoilHours(parseFloat(e.target.value))}
+            className="px-1.5 py-0.5 bg-scada-bg-secondary rounded border border-scada-border text-xs text-white focus:outline-none focus:border-scada-accent/50 appearance-none"
+          >
+            <option value={0.75}>45 min</option>
+            <option value={1}>60 min</option>
+            <option value={1.25}>75 min</option>
+            <option value={1.5}>90 min</option>
+          </select>
+          <span className="text-[10px] text-scada-text-muted ml-auto">Calcul BIAB auto</span>
+        </div>
+      )}
 
       {/* List */}
       {ingredients.length > 0 ? (
@@ -160,11 +248,14 @@ export function IngredientEditor({ ingredients, onChange, readOnly }: Props) {
               <div
                 key={ing.id}
                 onClick={() => startEdit(ing)}
-                className={`flex items-center justify-between p-2.5 bg-scada-bg rounded text-xs ${!readOnly ? 'cursor-pointer hover:bg-scada-bg-secondary transition-colors' : ''}`}
+                className={`flex items-center justify-between p-2.5 bg-scada-bg rounded text-xs ${!readOnly ? 'cursor-pointer hover:bg-scada-bg-secondary transition-colors' : ''} ${isAutoWater(ing.id) ? 'border-l-2 border-blue-400/50' : ''}`}
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-white truncate">{ing.name}</span>
                   <span className="text-scada-text-muted shrink-0">({TYPE_OPTIONS.find(t => t.value === ing.type)?.label ?? ing.type})</span>
+                  {isAutoWater(ing.id) && (
+                    <span className="text-[9px] text-blue-400 shrink-0">auto</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 font-mono text-scada-text-secondary shrink-0">
                   <span>{ing.quantity} {ing.unit}</span>

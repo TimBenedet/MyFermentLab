@@ -359,6 +359,7 @@ export function CreateProjectPage() {
           ingredients={ingredients}
           onChange={setIngredients}
           projectType={projectType}
+          batchSize={batchSize}
         />
       </div>
 
