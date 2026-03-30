@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Trash2, X, Check, Droplets } from 'lucide-react'
+import { Plus, Trash2, X, Check } from 'lucide-react'
 import { generateId } from '../../simulation/constants'
 import type { RecipeIngredient, IngredientType, ProjectType } from '../../types/brewing'
 
@@ -16,6 +16,7 @@ interface Props {
   onChange: (ingredients: RecipeIngredient[]) => void
   projectType: ProjectType
   batchSize?: number
+  boilHours?: number
   readOnly?: boolean
 }
 
@@ -32,12 +33,11 @@ function calcWaterBIAB(batchSize: number, totalGrainKg: number, boilHours = 1): 
 
 const WATER_ID_PREFIX = 'eau-auto-'
 
-export function IngredientEditor({ ingredients, onChange, projectType, batchSize, readOnly }: Props) {
+export function IngredientEditor({ ingredients, onChange, projectType, batchSize, boilHours = 1, readOnly }: Props) {
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState(emptyForm)
-  const [boilHours, setBoilHours] = useState(1)
   const autoWaterRef = useRef<string | null>(null)
 
   // Recalcule l'eau automatique quand grains ou batchSize changent (bière uniquement)
@@ -144,7 +144,6 @@ export function IngredientEditor({ ingredients, onChange, projectType, batchSize
   }
 
   const isAutoWater = (id: string) => id === autoWaterRef.current
-  const showWaterCalc = (projectType === 'beer' || projectType === 'mead') && !readOnly
 
   return (
     <div className="space-y-2">
@@ -161,25 +160,6 @@ export function IngredientEditor({ ingredients, onChange, projectType, batchSize
           </button>
         )}
       </div>
-
-      {/* Paramètres calcul eau BIAB */}
-      {showWaterCalc && (
-        <div className="flex items-center gap-2 px-2.5 py-1.5 bg-scada-bg rounded border border-scada-border/50">
-          <Droplets size={12} className="text-blue-400 shrink-0" />
-          <span className="text-[10px] text-scada-text-muted">Ébullition</span>
-          <select
-            value={boilHours}
-            onChange={e => setBoilHours(parseFloat(e.target.value))}
-            className="px-1.5 py-0.5 bg-scada-bg-secondary rounded border border-scada-border text-xs text-white focus:outline-none focus:border-scada-accent/50 appearance-none"
-          >
-            <option value={0.75}>45 min</option>
-            <option value={1}>60 min</option>
-            <option value={1.25}>75 min</option>
-            <option value={1.5}>90 min</option>
-          </select>
-          <span className="text-[10px] text-scada-text-muted ml-auto">Calcul BIAB auto</span>
-        </div>
-      )}
 
       {/* List */}
       {ingredients.length > 0 ? (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Play, Thermometer, Power, Droplet, BookOpen } from 'lucide-react'
+import { ArrowLeft, Play, Thermometer, Power, Droplet, BookOpen, Droplets } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { useConnection } from '../context/ConnectionContext'
 import { fetchDevices } from '../api/devices'
@@ -70,9 +70,17 @@ export function CreateProjectPage() {
   const [humiditySensorId, setHumiditySensorId] = useState<string | null>(null)
 
   const [creating, setCreating] = useState(false)
+  const [boilHours, setBoilHours] = useState(1)
 
   const needsHumidity = projectType === 'koji' || projectType === 'mushroom'
   const isBeerLike = projectType === 'beer' || projectType === 'mead'
+
+  // Calcul BIAB
+  const totalGrainKg = ingredients.filter(i => i.type === 'grain').reduce((s, i) => s + i.quantity, 0)
+  const postBoil = batchSize / 0.96
+  const preBoil = postBoil / (1 - 0.10 * boilHours)
+  const grainAbsorption = totalGrainKg * 1.0
+  const waterTotal = Math.round((preBoil + grainAbsorption) * 10) / 10
 
   // Reset template when project type changes
   useEffect(() => {
@@ -351,6 +359,60 @@ export function CreateProjectPage() {
             </>
           )}
         </div>
+
+        {/* BIAB water summary — bière uniquement, quand il y a des grains */}
+        {isBeerLike && totalGrainKg > 0 && (
+          <div className="mt-1 p-3 bg-scada-bg rounded-lg border border-blue-400/20 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Droplets size={13} className="text-blue-400" />
+                <span className="text-[10px] text-scada-text-muted uppercase tracking-wider">Eau BIAB</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-scada-text-muted">Ébullition</span>
+                <select
+                  value={boilHours}
+                  onChange={e => setBoilHours(parseFloat(e.target.value))}
+                  className="px-1.5 py-0.5 bg-scada-bg-secondary rounded border border-scada-border text-xs text-white focus:outline-none focus:border-scada-accent/50 appearance-none"
+                >
+                  <option value={0.75}>45 min</option>
+                  <option value={1}>60 min</option>
+                  <option value={1.25}>75 min</option>
+                  <option value={1.5}>90 min</option>
+                </select>
+              </div>
+            </div>
+            {/* Résumé étape par étape */}
+            <div className="grid grid-cols-5 gap-1 text-center">
+              <div className="bg-scada-bg-secondary rounded p-1.5">
+                <div className="text-[9px] text-scada-text-muted uppercase mb-0.5">Fermenteur</div>
+                <div className="text-xs font-mono font-bold text-white">{batchSize} L</div>
+              </div>
+              <div className="flex items-center justify-center text-scada-text-muted text-xs">+</div>
+              <div className="bg-scada-bg-secondary rounded p-1.5">
+                <div className="text-[9px] text-scada-text-muted uppercase mb-0.5">Contraction</div>
+                <div className="text-xs font-mono font-bold text-scada-text-secondary">+{Math.round((postBoil - batchSize) * 10) / 10} L</div>
+              </div>
+              <div className="flex items-center justify-center text-scada-text-muted text-xs">+</div>
+              <div className="bg-scada-bg-secondary rounded p-1.5">
+                <div className="text-[9px] text-scada-text-muted uppercase mb-0.5">Évaporation</div>
+                <div className="text-xs font-mono font-bold text-scada-text-secondary">+{Math.round((preBoil - postBoil) * 10) / 10} L</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-5 gap-1 text-center">
+              <div className="col-span-2" />
+              <div className="bg-scada-bg-secondary rounded p-1.5">
+                <div className="text-[9px] text-scada-text-muted uppercase mb-0.5">Grain ({totalGrainKg} kg)</div>
+                <div className="text-xs font-mono font-bold text-scada-text-secondary">+{Math.round(grainAbsorption * 10) / 10} L</div>
+              </div>
+              <div className="flex items-center justify-center text-blue-400 text-xs font-bold">=</div>
+              <div className="bg-blue-400/10 border border-blue-400/30 rounded p-1.5">
+                <div className="text-[9px] text-blue-400 uppercase mb-0.5">Eau totale</div>
+                <div className="text-xs font-mono font-bold text-blue-400">{waterTotal} L</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Ingredients */}
@@ -360,6 +422,7 @@ export function CreateProjectPage() {
           onChange={setIngredients}
           projectType={projectType}
           batchSize={batchSize}
+          boilHours={boilHours}
         />
       </div>
 
