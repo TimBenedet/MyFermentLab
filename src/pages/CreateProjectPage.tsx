@@ -71,6 +71,7 @@ export function CreateProjectPage() {
 
   const [creating, setCreating] = useState(false)
   const [boilHours, setBoilHours] = useState(1)
+  const [refBatchSize, setRefBatchSize] = useState<number | null>(null)
 
   const needsHumidity = projectType === 'koji' || projectType === 'mushroom'
   const isBeerLike = projectType === 'beer' || projectType === 'mead'
@@ -81,6 +82,21 @@ export function CreateProjectPage() {
   const preBoil = postBoil / (1 - 0.10 * boilHours)
   const grainAbsorption = totalGrainKg * 1.0
   const waterTotal = Math.round((preBoil + grainAbsorption) * 10) / 10
+
+  // Scaling
+  const scaleRatio = refBatchSize && refBatchSize > 0 && batchSize !== refBatchSize
+    ? Math.round((batchSize / refBatchSize) * 100) / 100
+    : null
+  const hasScalableIngredients = ingredients.filter(i => i.type !== 'eau').length > 0
+
+  const applyScaling = () => {
+    if (!scaleRatio) return
+    setIngredients(prev => prev.map(i => {
+      if (i.type === 'eau') return i // l'eau est recalculée automatiquement
+      return { ...i, quantity: Math.round(i.quantity * scaleRatio * 1000) / 1000 }
+    }))
+    setRefBatchSize(batchSize)
+  }
 
   // Reset template when project type changes
   useEffect(() => {
@@ -111,6 +127,7 @@ export function CreateProjectPage() {
     setProjectName(recipe.name)
     setStyle(recipe.style)
     setBatchSize(recipe.batchSize)
+    setRefBatchSize(recipe.batchSize)
     setOg(recipe.og); setFg(recipe.fg); setAbv(recipe.abv)
     setIbu(recipe.ibu); setSrm(recipe.srm)
     setIngredients(recipe.ingredients.map(i => ({ ...i, id: generateId('ing-') })))
@@ -132,6 +149,7 @@ export function CreateProjectPage() {
     if (!projectName) setProjectName(tpl.name)
     setStyle(tpl.style)
     setBatchSize(tpl.batchSize)
+    setRefBatchSize(tpl.batchSize)
     setOg(tpl.og); setFg(tpl.fg); setAbv(tpl.abv)
     setIbu(tpl.ibu); setSrm(tpl.srm)
     setTargetTemp(tpl.steps[0]?.targetTemp ?? targetTemp)
@@ -359,6 +377,34 @@ export function CreateProjectPage() {
             </>
           )}
         </div>
+
+        {/* Bandeau scaling */}
+        {scaleRatio !== null && hasScalableIngredients && (
+          <div className="flex items-center justify-between gap-2 px-3 py-2 bg-scada-warning/10 border border-scada-warning/30 rounded-lg">
+            <div className="min-w-0">
+              <span className="text-xs text-scada-warning font-medium">Scaler les ingrédients</span>
+              <span className="text-xs text-scada-text-muted ml-1.5">
+                ×{scaleRatio} ({refBatchSize} L → {batchSize} L)
+              </span>
+            </div>
+            <div className="flex gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={applyScaling}
+                className="px-2.5 py-1 bg-scada-warning/15 text-scada-warning border border-scada-warning/30 rounded text-xs font-medium hover:bg-scada-warning/25 transition-colors"
+              >
+                Appliquer
+              </button>
+              <button
+                type="button"
+                onClick={() => setRefBatchSize(batchSize)}
+                className="px-2 py-1 text-scada-text-muted border border-scada-border rounded text-xs hover:text-white transition-colors"
+              >
+                Ignorer
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* BIAB water summary — bière uniquement, quand il y a des grains */}
         {isBeerLike && totalGrainKg > 0 && (
