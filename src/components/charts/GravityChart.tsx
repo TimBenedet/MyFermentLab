@@ -27,16 +27,32 @@ function formatDay(seconds: number): string {
   return `J${Math.floor(days)}`
 }
 
+function nowLocalDatetimeValue(): string {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+}
+
 export function GravityChart({ gravityHistory, og, fg, color, className, projectId }: Props) {
   const { addGravityReading } = useBrewingActions()
   const [showInput, setShowInput] = useState(false)
   const [inputValue, setInputValue] = useState('')
+  const [dateValue, setDateValue] = useState('')
+
+  const openInput = () => {
+    const data = gravityHistory.map(p => Math.round(p.gravity * 1000) / 1000)
+    setInputValue(data[data.length - 1]?.toFixed(3) ?? og.toFixed(3))
+    setDateValue(nowLocalDatetimeValue())
+    setShowInput(true)
+  }
 
   const handleAddPoint = () => {
     const gravity = parseFloat(inputValue)
     if (projectId && !isNaN(gravity) && gravity >= 0.990 && gravity <= 1.200) {
-      addGravityReading(projectId, gravity)
+      const timestamp = dateValue ? new Date(dateValue).getTime() / 1000 : undefined
+      addGravityReading(projectId, gravity, timestamp)
       setInputValue('')
+      setDateValue('')
       setShowInput(false)
     }
   }
@@ -46,13 +62,64 @@ export function GravityChart({ gravityHistory, og, fg, color, className, project
     gravity: Math.round(p.gravity * 1000) / 1000,
   }))
 
+  const addButton = projectId && !showInput && (
+    <button
+      onClick={openInput}
+      className="flex items-center gap-1 px-2.5 sm:px-2 py-1.5 sm:py-0.5 rounded bg-scada-accent/15 text-scada-accent border border-scada-accent/30 hover:bg-scada-accent/25 transition-colors"
+    >
+      <Plus size={10} />
+      Mesure
+    </button>
+  )
+
+  const inputForm = projectId && showInput && (
+    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+      <input
+        type="number"
+        step="0.001"
+        min="0.990"
+        max="1.200"
+        value={inputValue}
+        onChange={e => setInputValue(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') handleAddPoint(); if (e.key === 'Escape') setShowInput(false) }}
+        autoFocus
+        placeholder="1.050"
+        className="w-[72px] px-1.5 py-0.5 rounded bg-scada-bg border border-scada-accent/40 text-white text-[10px] font-mono focus:outline-none focus:border-scada-accent"
+      />
+      <input
+        type="datetime-local"
+        value={dateValue}
+        onChange={e => setDateValue(e.target.value)}
+        className="px-1.5 py-0.5 rounded bg-scada-bg border border-scada-accent/40 text-white text-[10px] font-mono focus:outline-none focus:border-scada-accent"
+      />
+      <button
+        onClick={handleAddPoint}
+        className="px-2 py-0.5 rounded bg-scada-accent/20 text-scada-accent border border-scada-accent/40 hover:bg-scada-accent/30 transition-colors text-[10px]"
+      >
+        OK
+      </button>
+      <button
+        onClick={() => setShowInput(false)}
+        className="px-1.5 py-0.5 rounded text-scada-text-muted hover:text-white transition-colors text-[10px]"
+      >
+        ✕
+      </button>
+    </div>
+  )
+
   if (data.length === 0) {
     return (
       <div className={`scada-card flex flex-col ${className ?? ''}`}>
-        <span className="scada-label">Densité</span>
-        <div className="flex-1 min-h-[120px] flex items-center justify-center text-[10px] text-scada-text-muted">
-          En attente de données de densité...
+        <div className="flex items-center justify-between mb-2">
+          <span className="scada-label">Densité</span>
+          {addButton}
         </div>
+        {inputForm && <div className="mb-2">{inputForm}</div>}
+        {!showInput && (
+          <div className="flex-1 min-h-[120px] flex items-center justify-center text-[10px] text-scada-text-muted">
+            En attente de données de densité...
+          </div>
+        )}
       </div>
     )
   }
@@ -67,42 +134,8 @@ export function GravityChart({ gravityHistory, og, fg, color, className, project
           <span className="text-white font-bold">
             Actuel: {data[data.length - 1]?.gravity.toFixed(3)}
           </span>
-          {projectId && !showInput && (
-            <button
-              onClick={() => { setShowInput(true); setInputValue(data[data.length - 1]?.gravity.toFixed(3) ?? og.toFixed(3)) }}
-              className="flex items-center gap-1 px-2.5 sm:px-2 py-1.5 sm:py-0.5 rounded bg-scada-accent/15 text-scada-accent border border-scada-accent/30 hover:bg-scada-accent/25 transition-colors"
-            >
-              <Plus size={10} />
-              Mesure
-            </button>
-          )}
-          {projectId && showInput && (
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                step="0.001"
-                min="0.990"
-                max="1.200"
-                value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleAddPoint(); if (e.key === 'Escape') setShowInput(false) }}
-                autoFocus
-                className="w-[72px] px-1.5 py-0.5 rounded bg-scada-bg border border-scada-accent/40 text-white text-[10px] font-mono focus:outline-none focus:border-scada-accent"
-              />
-              <button
-                onClick={handleAddPoint}
-                className="px-2 py-0.5 rounded bg-scada-accent/20 text-scada-accent border border-scada-accent/40 hover:bg-scada-accent/30 transition-colors"
-              >
-                OK
-              </button>
-              <button
-                onClick={() => setShowInput(false)}
-                className="px-1.5 py-0.5 rounded text-scada-text-muted hover:text-white transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-          )}
+          {addButton}
+          {inputForm}
         </div>
       </div>
 

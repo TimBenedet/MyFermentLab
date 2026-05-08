@@ -325,7 +325,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
                 ...p,
                 currentGravity: action.gravity,
                 gravityHistory: [...p.gravityHistory, {
-                  time: Date.now() / 1000,
+                  time: action.timestamp ?? Date.now() / 1000,
                   gravity: action.gravity,
                   temperature: state.fermenters.find(f => f.id === p.fermenterId)?.temperature ?? 20,
                 }],
@@ -413,7 +413,7 @@ export function useBrewingActions() {
     // Fermentation
     startFermentation: useCallback((recipe: Recipe, projectName: string) => dispatch({ type: 'START_FERMENTATION', recipe, projectName }), [dispatch]),
     // Gravity
-    addGravityReading: useCallback((projectId: string, gravity: number) => dispatch({ type: 'ADD_GRAVITY_READING', projectId, gravity }), [dispatch]),
+    addGravityReading: useCallback((projectId: string, gravity: number, timestamp?: number) => dispatch({ type: 'ADD_GRAVITY_READING', projectId, gravity, timestamp }), [dispatch]),
     // Live mode
     syncLiveData: useCallback((fId: string, temperature: number, relayOn: boolean, humidity?: number, humidityRelayOn?: boolean, setpoint?: number, humiditySetpoint?: number, activationThreshold?: number) =>
       dispatch({ type: 'SYNC_LIVE_DATA', fermenterId: fId, temperature, relayOn, humidity, humidityRelayOn, setpoint, humiditySetpoint, activationThreshold }), [dispatch]),

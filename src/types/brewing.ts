@@ -208,7 +208,7 @@ export type AppAction =
   | { type: 'DELETE_PROJECT'; projectId: string }
   | { type: 'ARCHIVE_PROJECT'; projectId: string }
   // Gravity
-  | { type: 'ADD_GRAVITY_READING'; projectId: string; gravity: number }
+  | { type: 'ADD_GRAVITY_READING'; projectId: string; gravity: number; timestamp?: number }
   // Humidity
   | { type: 'SET_HUMIDITY_SETPOINT'; fermenterId: string; value: number }
   | { type: 'SET_HUMIDITY_PID_MODE'; fermenterId: string; mode: 'auto' | 'manual' | 'off' }

@@ -646,6 +646,35 @@ router.put('/:id/archive', requireAuth, requireAdmin, async (req: Request, res: 
       return res.status(404).json({ error: 'Project not found' });
     }
 
+    // Éteindre la prise si elle est active avant d'archiver
+    if (project.outletActive && project.outletId) {
+      const device = databaseService.getDevice(project.outletId);
+      if (device) {
+        const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
+        const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
+        try {
+          if (device.entityId) {
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (HOME_ASSISTANT_TOKEN) headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
+            await fetch(`${HOME_ASSISTANT_URL}/api/services/switch/turn_off`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ entity_id: device.entityId })
+            });
+            console.log(`[Archive] Turned off outlet ${device.entityId} for project ${project.name}`);
+          } else if (device.ip) {
+            await fetch(`http://${device.ip}/rpc/Switch.Set?id=0&on=false`);
+            console.log(`[Archive] Turned off outlet ${device.ip} for project ${project.name}`);
+          }
+          databaseService.updateProjectOutletStatus(id, false);
+          await influxService.writeOutletState(id, false, 'manual', project.currentTemperature);
+        } catch (outletErr) {
+          console.error(`[Archive] Failed to turn off outlet for project ${project.name}:`, outletErr);
+          // On continue l'archivage même si l'extinction échoue
+        }
+      }
+    }
+
     databaseService.archiveProject(id);
     const updatedProject = databaseService.getProject(id);
 
