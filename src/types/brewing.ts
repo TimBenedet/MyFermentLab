@@ -206,7 +206,7 @@ export type AppAction =
   | { type: 'CREATE_PROJECT'; project: BrewProject }
   | { type: 'UPDATE_PROJECT'; projectId: string; updates: Partial<BrewProject> }
   | { type: 'DELETE_PROJECT'; projectId: string }
-  | { type: 'ARCHIVE_PROJECT'; projectId: string }
+  | { type: 'ARCHIVE_PROJECT'; projectId: string; fullTempHistory?: TempDataPoint[] }
   // Gravity
   | { type: 'ADD_GRAVITY_READING'; projectId: string; gravity: number; timestamp?: number }
   // Humidity

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import type { TempDataPoint } from '../types/brewing'
 import { ArrowLeft, Calendar, Droplets, Droplet, Archive, Trash2, Wifi, Cpu, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
 import { useConnection } from '../context/ConnectionContext'
-import { fetchBackendProject, fetchLiveTemperature, archiveBackendProject, deleteBackendProject } from '../api/projects'
+import { fetchBackendProject, fetchLiveTemperature, archiveBackendProject, deleteBackendProject, fetchProjectHistory } from '../api/projects'
 import { VesselSVG } from '../components/vessels/VesselSVG'
 import { KojiTraySVG } from '../components/vessels/KojiTraySVG'
 import { MushroomBagSVG } from '../components/vessels/MushroomBagSVG'
@@ -143,11 +144,22 @@ export function ProjectDetailPage() {
             )}
             <button
               onClick={async () => {
+                let fullTempHistory: TempDataPoint[] | undefined
                 if (project.backendProjectId) {
+                  try {
+                    const hist = await fetchProjectHistory(project.backendProjectId)
+                    const setpoint = fermenter?.setpoint ?? 20
+                    fullTempHistory = hist.history.map(p => ({
+                      time: p.timestamp / 1000,
+                      temp: p.temperature,
+                      setpoint,
+                      relayOn: false,
+                    }))
+                  } catch (e) { console.error('Failed to fetch history before archive:', e) }
                   try { await archiveBackendProject(project.backendProjectId) }
                   catch (e) { console.error('Backend archive failed:', e) }
                 }
-                archiveProject(project.id)
+                archiveProject(project.id, fullTempHistory)
                 navigate('/archives')
               }}
               className="flex items-center gap-1 px-2 py-1.5 text-[9px] rounded-lg text-scada-accent bg-scada-accent/10 border border-scada-accent/20 hover:bg-scada-accent/20 transition-colors"
