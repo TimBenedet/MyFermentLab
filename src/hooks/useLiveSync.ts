@@ -1,7 +1,8 @@
 import { useEffect, useRef, useMemo } from 'react'
 import { useConnection } from '../context/ConnectionContext'
 import { useBrewing, useBrewingActions } from '../context/BrewingContext'
-import { fetchBackendProjects, fetchBackendProject, fetchLiveTemperature } from '../api/projects'
+import { fetchBackendProjects, fetchBackendProject, fetchLiveTemperature, fetchProjectHistory } from '../api/projects'
+import type { GravityDataPoint } from '../types/brewing'
 import { fetchRecipes } from '../api/recipes'
 import type { ArchivedProject, ProjectType } from '../types/brewing'
 
@@ -21,7 +22,24 @@ export function useLiveSync() {
     fetchBackendProjects()
       .then(async (projects) => {
         const active = projects.filter(p => !p.archived)
-        if (active.length > 0) importBackendProjects(active)
+        if (active.length > 0) {
+          // Load density history from InfluxDB for each active project
+          const densityHistoryMap: Record<string, GravityDataPoint[]> = {}
+          await Promise.all(active.map(async (bp) => {
+            try {
+              const hist = await fetchProjectHistory(bp.id)
+              if (hist.densityHistory.length > 0) {
+                const fermentStart = bp.createdAt ?? Date.now()
+                densityHistoryMap[bp.id] = hist.densityHistory.map(p => ({
+                  time: (p.timestamp - fermentStart) / 1000,
+                  gravity: p.density,
+                  temperature: bp.currentTemperature,
+                }))
+              }
+            } catch { /* ignore */ }
+          }))
+          importBackendProjects(active, densityHistoryMap)
+        }
 
         // Import archived projects with their history
         const archived = projects.filter(p => p.archived)

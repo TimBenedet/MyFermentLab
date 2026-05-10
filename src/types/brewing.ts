@@ -218,7 +218,7 @@ export type AppAction =
   | { type: 'START_FERMENTATION'; recipe: Recipe; projectName: string }
   // Live mode sync
   | { type: 'SYNC_LIVE_DATA'; fermenterId: string; temperature: number; relayOn: boolean; humidity?: number; humidityRelayOn?: boolean; setpoint?: number; humiditySetpoint?: number; activationThreshold?: number }
-  | { type: 'IMPORT_BACKEND_PROJECTS'; backendProjects: BackendProject[] }
+  | { type: 'IMPORT_BACKEND_PROJECTS'; backendProjects: BackendProject[]; densityHistoryMap?: Record<string, GravityDataPoint[]> }
   | { type: 'IMPORT_BACKEND_ARCHIVES'; archives: ArchivedProject[] }
   // Recipes
   | { type: 'ADD_RECIPE'; recipe: Recipe }

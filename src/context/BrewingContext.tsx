@@ -242,6 +242,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
           project.currentHumidity = bp.currentHumidity ?? undefined
         }
 
+        // Restore density history from InfluxDB if provided
+        if (action.densityHistoryMap?.[bp.id]) {
+          project.gravityHistory = action.densityHistoryMap[bp.id]
+          const lastG = project.gravityHistory[project.gravityHistory.length - 1]?.gravity
+          if (lastG) project.currentGravity = lastG
+        }
+
         newProjects.push(project)
         newFermenters.push(fermenter)
       }
@@ -417,8 +424,8 @@ export function useBrewingActions() {
     // Live mode
     syncLiveData: useCallback((fId: string, temperature: number, relayOn: boolean, humidity?: number, humidityRelayOn?: boolean, setpoint?: number, humiditySetpoint?: number, activationThreshold?: number) =>
       dispatch({ type: 'SYNC_LIVE_DATA', fermenterId: fId, temperature, relayOn, humidity, humidityRelayOn, setpoint, humiditySetpoint, activationThreshold }), [dispatch]),
-    importBackendProjects: useCallback((backendProjects: BackendProject[]) =>
-      dispatch({ type: 'IMPORT_BACKEND_PROJECTS', backendProjects }), [dispatch]),
+    importBackendProjects: useCallback((backendProjects: BackendProject[], densityHistoryMap?: Record<string, import('../types/brewing').GravityDataPoint[]>) =>
+      dispatch({ type: 'IMPORT_BACKEND_PROJECTS', backendProjects, densityHistoryMap }), [dispatch]),
     importBackendArchives: useCallback((archives: ArchivedProject[]) =>
       dispatch({ type: 'IMPORT_BACKEND_ARCHIVES', archives }), [dispatch]),
     // Humidity
