@@ -114,7 +114,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         fermentationStartedAt: proj.fermentationStartedAt,
         totalFermentationDays: fermentationDays,
         temperatureHistory: action.fullTempHistory ?? fermenter?.temperatureHistory ?? [],
-        gravityHistory: proj.gravityHistory,
+        gravityHistory: action.fullGravityHistory ?? proj.gravityHistory,
         og: proj.og,
         fg: proj.fg,
         finalGravity: lastGravity,
@@ -409,7 +409,7 @@ export function useBrewingActions() {
     createProjectAction: useCallback((project: BrewProject) => dispatch({ type: 'CREATE_PROJECT', project }), [dispatch]),
     updateProject: useCallback((id: string, updates: Partial<BrewProject>) => dispatch({ type: 'UPDATE_PROJECT', projectId: id, updates }), [dispatch]),
     deleteProject: useCallback((id: string) => dispatch({ type: 'DELETE_PROJECT', projectId: id }), [dispatch]),
-    archiveProject: useCallback((id: string, fullTempHistory?: import('../types/brewing').TempDataPoint[]) => dispatch({ type: 'ARCHIVE_PROJECT', projectId: id, fullTempHistory }), [dispatch]),
+    archiveProject: useCallback((id: string, fullTempHistory?: import('../types/brewing').TempDataPoint[], fullGravityHistory?: import('../types/brewing').GravityDataPoint[]) => dispatch({ type: 'ARCHIVE_PROJECT', projectId: id, fullTempHistory, fullGravityHistory }), [dispatch]),
     // Fermentation
     startFermentation: useCallback((recipe: Recipe, projectName: string) => dispatch({ type: 'START_FERMENTATION', recipe, projectName }), [dispatch]),
     // Gravity

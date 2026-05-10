@@ -145,6 +145,7 @@ export function ProjectDetailPage() {
             <button
               onClick={async () => {
                 let fullTempHistory: TempDataPoint[] | undefined
+                let fullGravityHistory: import('../types/brewing').GravityDataPoint[] | undefined
                 if (project.backendProjectId) {
                   try {
                     const hist = await fetchProjectHistory(project.backendProjectId)
@@ -155,11 +156,19 @@ export function ProjectDetailPage() {
                       setpoint,
                       relayOn: false,
                     }))
+                    if (hist.densityHistory.length > 0) {
+                      const fermentStart = project.fermentationStartedAt ?? Date.now()
+                      fullGravityHistory = hist.densityHistory.map(p => ({
+                        time: (p.timestamp - fermentStart) / 1000,
+                        gravity: p.density,
+                        temperature: fermenter?.temperature ?? 20,
+                      }))
+                    }
                   } catch (e) { console.error('Failed to fetch history before archive:', e) }
                   try { await archiveBackendProject(project.backendProjectId) }
                   catch (e) { console.error('Backend archive failed:', e) }
                 }
-                archiveProject(project.id, fullTempHistory)
+                archiveProject(project.id, fullTempHistory, fullGravityHistory)
                 navigate('/archives')
               }}
               className="flex items-center gap-1 px-2 py-1.5 text-[9px] rounded-lg text-scada-accent bg-scada-accent/10 border border-scada-accent/20 hover:bg-scada-accent/20 transition-colors"

@@ -74,17 +74,25 @@ export interface BackendHumidityPoint {
   humidity: number
 }
 
+export interface BackendDensityPoint {
+  timestamp: number   // ms epoch
+  density: number
+}
+
 export async function fetchProjectHistory(id: string): Promise<{
   history: BackendHistoryPoint[]
   humidityHistory: BackendHumidityPoint[]
+  densityHistory: BackendDensityPoint[]
 }> {
   const project = await apiGet<{
     history: BackendHistoryPoint[]
     humidityHistory: BackendHumidityPoint[]
+    densityHistory: BackendDensityPoint[]
   }>(`/projects/${id}`)
   return {
     history: project.history ?? [],
     humidityHistory: project.humidityHistory ?? [],
+    densityHistory: project.densityHistory ?? [],
   }
 }
 
