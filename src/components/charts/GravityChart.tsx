@@ -12,6 +12,7 @@ import {
 import { Plus } from 'lucide-react'
 import type { GravityDataPoint } from '../../types/brewing'
 import { useBrewingActions } from '../../context/BrewingContext'
+import { addDensityReading } from '../../api/projects'
 
 interface Props {
   gravityHistory: GravityDataPoint[]
@@ -20,6 +21,7 @@ interface Props {
   color: string
   className?: string
   projectId?: string
+  backendProjectId?: string
 }
 
 function formatDay(seconds: number): string {
@@ -33,7 +35,7 @@ function nowLocalDatetimeValue(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
 }
 
-export function GravityChart({ gravityHistory, og, fg, color, className, projectId }: Props) {
+export function GravityChart({ gravityHistory, og, fg, color, className, projectId, backendProjectId }: Props) {
   const { addGravityReading } = useBrewingActions()
   const [showInput, setShowInput] = useState(false)
   const [inputValue, setInputValue] = useState('')
@@ -46,11 +48,15 @@ export function GravityChart({ gravityHistory, og, fg, color, className, project
     setShowInput(true)
   }
 
-  const handleAddPoint = () => {
+  const handleAddPoint = async () => {
     const gravity = parseFloat(inputValue)
     if (projectId && !isNaN(gravity) && gravity >= 0.990 && gravity <= 1.200) {
       const timestamp = dateValue ? new Date(dateValue).getTime() / 1000 : undefined
       addGravityReading(projectId, gravity, timestamp)
+      if (backendProjectId) {
+        try { await addDensityReading(backendProjectId, gravity, timestamp) }
+        catch (e) { console.error('Failed to persist density reading:', e) }
+      }
       setInputValue('')
       setDateValue('')
       setShowInput(false)

@@ -303,6 +303,7 @@ export function ProjectDetailPage() {
                 color={srmToColor(project.srm)}
                 className="h-full"
                 projectId={project.id}
+                backendProjectId={project.backendProjectId}
               />
             </div>
           )}

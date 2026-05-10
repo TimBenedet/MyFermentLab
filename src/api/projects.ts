@@ -42,6 +42,10 @@ export async function updateActivationThreshold(id: string, threshold: number): 
   await apiPatch(`/projects/${id}`, { activationThreshold: threshold })
 }
 
+export async function addDensityReading(id: string, density: number, timestamp?: number): Promise<void> {
+  await apiPost(`/projects/${id}/density`, { density, timestamp })
+}
+
 export async function toggleOutlet(id: string): Promise<{ active: boolean }> {
   return apiPost<{ active: boolean }>(`/projects/${id}/outlet/toggle`)
 }
