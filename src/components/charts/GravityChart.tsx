@@ -51,10 +51,11 @@ export function GravityChart({ gravityHistory, og, fg, color, className, project
   const handleAddPoint = async () => {
     const gravity = parseFloat(inputValue)
     if (projectId && !isNaN(gravity) && gravity >= 0.990 && gravity <= 1.200) {
-      const timestamp = dateValue ? new Date(dateValue).getTime() / 1000 : undefined
-      addGravityReading(projectId, gravity, timestamp)
+      const timestampMs = dateValue ? new Date(dateValue).getTime() : undefined
+      const timestampSec = timestampMs ? timestampMs / 1000 : undefined
+      addGravityReading(projectId, gravity, timestampSec)
       if (backendProjectId) {
-        try { await addDensityReading(backendProjectId, gravity, timestamp) }
+        try { await addDensityReading(backendProjectId, gravity, timestampMs) }
         catch (e) { console.error('Failed to persist density reading:', e) }
       }
       setInputValue('')
