@@ -56,7 +56,8 @@ jobs:
 
       - name: Update manifests with new image SHA
         run: |
-          SHA_TAG="ghcr.io/${{ github.repository_owner }}/myfermentlab-frontend:scada-v2-$(echo ${{ github.sha }} | cut -c1-7)"
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          SHA_TAG="ghcr.io/${OWNER}/myfermentlab-frontend:scada-v2-$(echo ${{ github.sha }} | cut -c1-7)"
           sed -i "s|image: ghcr.io/.*/myfermentlab-frontend:.*|image: ${SHA_TAG}|g" manifests/frontend-scada-v2.yaml
           sed -i "s|image: ghcr.io/.*/myfermentlab-frontend:.*|image: ${SHA_TAG}|g" manifests/frontend-scada-v2-mobile.yaml
 
