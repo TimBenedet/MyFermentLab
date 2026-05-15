@@ -175,6 +175,7 @@ export function parseBeerXml(xmlText: string): Recipe[] {
 
     // SRM via Morey formula: SRM = 1.4922 × MCU^0.6859
     // MCU = (color_SRM × weight_lbs) / volume_gal  (US units)
+    // For very dark beers (MCU > 40), Morey saturates — use MCU directly
     const fermentableEls = Array.from(el.querySelectorAll('FERMENTABLES > FERMENTABLE'))
     const totalWeight = fermentableEls.reduce((s, f) => s + getFloat(f, 'AMOUNT'), 0)
     const batchGal = batchSize * 0.264172
@@ -182,7 +183,11 @@ export function parseBeerXml(xmlText: string): Recipe[] {
       const weightLbs = getFloat(f, 'AMOUNT') * 2.20462
       return s + (getFloat(f, 'COLOR') * weightLbs) / batchGal
     }, 0)
-    const srm = totalWeight > 0 ? Math.min(Math.round(1.4922 * Math.pow(mcu, 0.6859)), 40) : 10
+    const srm = totalWeight > 0
+      ? mcu > 40
+        ? Math.round(mcu)
+        : Math.round(1.4922 * Math.pow(mcu, 0.6859))
+      : 10
 
     return {
       id: generateId('recipe-'),

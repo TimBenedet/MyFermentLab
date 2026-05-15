@@ -22,7 +22,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -53,3 +53,17 @@ jobs:
           no-cache: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Update manifests with new image SHA
+        run: |
+          SHA_TAG="ghcr.io/${{ github.repository_owner }}/myfermentlab-frontend:scada-v2-$(echo ${{ github.sha }} | cut -c1-7)"
+          sed -i "s|image: ghcr.io/.*/myfermentlab-frontend:.*|image: ${SHA_TAG}|g" manifests/frontend-scada-v2.yaml
+          sed -i "s|image: ghcr.io/.*/myfermentlab-frontend:.*|image: ${SHA_TAG}|g" manifests/frontend-scada-v2-mobile.yaml
+
+      - name: Commit and push updated manifests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifests/frontend-scada-v2.yaml manifests/frontend-scada-v2-mobile.yaml
+          git diff --staged --quiet || git commit -m "ci: update image to scada-v2-$(echo ${{ github.sha }} | cut -c1-7)"
+          git push
