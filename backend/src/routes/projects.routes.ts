@@ -28,12 +28,10 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     // Récupérer l'historique depuis InfluxDB
-    // Par défaut, utiliser la date de création du projet pour avoir toutes les données depuis le début
+    // Utiliser -30d pour couvrir les mesures de densité saisies manuellement avec une date antérieure
     let start = req.query.start as string;
     if (!start) {
-      // Convertir createdAt en timestamp ISO pour InfluxDB
-      const createdAtDate = new Date(project.createdAt);
-      start = createdAtDate.toISOString();
+      start = '-30d';
     }
     const temperatureHistory = await influxService.getTemperatureHistory(id, start);
     const densityHistory = await influxService.getDensityHistory(id, start);
