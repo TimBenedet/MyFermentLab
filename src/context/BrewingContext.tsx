@@ -193,11 +193,21 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     // === Import backend projects (live mode) ===
     case 'IMPORT_BACKEND_PROJECTS': {
+      // Update density history on existing projects first
+      const existingProjectsUpdated = state.projects.map(p => {
+        if (p.backendProjectId && action.densityHistoryMap?.[p.backendProjectId]) {
+          const history = action.densityHistoryMap[p.backendProjectId]
+          const lastG = history[history.length - 1]?.gravity
+          return { ...p, gravityHistory: history, ...(lastG ? { currentGravity: lastG } : {}) }
+        }
+        return p
+      })
+
       const newProjects: BrewProject[] = []
       const newFermenters: typeof state.fermenters = []
 
       for (const bp of action.backendProjects) {
-        if (state.projects.some(p => p.backendProjectId === bp.id)) continue
+        if (existingProjectsUpdated.some(p => p.backendProjectId === bp.id)) continue
 
         const projectType = bp.fermentationType as ProjectType
         const needsHumidity = projectType === 'koji' || projectType === 'mushroom'
@@ -253,11 +263,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
         newFermenters.push(fermenter)
       }
 
-      if (newProjects.length === 0) return state
+      const hasChanges = newProjects.length > 0 ||
+        existingProjectsUpdated.some((p, i) => p !== state.projects[i])
+      if (!hasChanges) return state
 
       return {
         ...state,
-        projects: [...state.projects, ...newProjects],
+        projects: [...existingProjectsUpdated, ...newProjects],
         fermenters: [...state.fermenters, ...newFermenters],
       }
     }
