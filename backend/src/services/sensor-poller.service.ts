@@ -65,9 +65,14 @@ class SensorPollerService {
             // Mettre à jour la température actuelle dans SQLite
             databaseService.updateProjectTemperature(project.id, temperature);
 
-            // Gérer le contrôle automatique de la prise (seulement si mode automatique)
+            // Gérer le contrôle automatique des prises (seulement si mode automatique)
             if (project.controlMode === 'automatic') {
-              await this.manageOutlet(project.id, temperature, project.targetTemperature, project.outletId);
+              const outletIds = project.outletIds?.length > 0
+                ? project.outletIds
+                : project.outletId ? [project.outletId] : [];
+              if (outletIds.length > 0) {
+                await this.manageOutlets(project.id, temperature, project.targetTemperature, outletIds);
+              }
             }
           }
 
@@ -133,7 +138,7 @@ class SensorPollerService {
     }
   }
 
-  private async manageOutlet(projectId: string, currentTemp: number, targetTemp: number, outletId: string) {
+  private async manageOutlets(projectId: string, currentTemp: number, targetTemp: number, outletIds: string[]) {
     const project = databaseService.getProject(projectId);
     if (!project) return;
 
@@ -141,28 +146,30 @@ class SensorPollerService {
     const threshold = project.activationThreshold ?? 0.2;
     const shouldActivate = diff >= threshold;
 
-    const device = databaseService.getDevice(outletId);
-    if (!device) return;
-
-    // Synchroniser l'état réel de la prise depuis Home Assistant
-    const actualState = await this.getOutletState(device);
-    if (actualState !== null && actualState !== project.outletActive) {
-      console.log(`[SensorPoller] Project ${project.name}: Syncing outlet state from HA: ${actualState ? 'ON' : 'OFF'}`);
-      databaseService.updateProjectOutletStatus(projectId, actualState);
+    // Synchroniser l'état réel depuis la première prise (prise principale)
+    const primaryDevice = databaseService.getDevice(outletIds[0]);
+    let currentState = project.outletActive;
+    if (primaryDevice) {
+      const actualState = await this.getOutletState(primaryDevice);
+      if (actualState !== null && actualState !== project.outletActive) {
+        console.log(`[SensorPoller] Project ${project.name}: Syncing outlet state from HA: ${actualState ? 'ON' : 'OFF'}`);
+        databaseService.updateProjectOutletStatus(projectId, actualState);
+        currentState = actualState;
+      }
     }
 
-    // Si l'état doit changer (comparer avec l'état réel, pas celui en base)
-    const currentState = actualState !== null ? actualState : project.outletActive;
+    // Si l'état doit changer, contrôler toutes les prises en parallèle
     if (currentState !== shouldActivate) {
-      console.log(`[SensorPoller] Project ${project.name}: Setting outlet to ${shouldActivate ? 'ON' : 'OFF'} at ${currentTemp}°C (target: ${targetTemp}°C)`);
-
+      console.log(`[SensorPoller] Project ${project.name}: Setting ${outletIds.length} outlet(s) to ${shouldActivate ? 'ON' : 'OFF'} at ${currentTemp}°C (target: ${targetTemp}°C)`);
       try {
-        await this.controlOutlet(device, shouldActivate);
+        await Promise.all(outletIds.map(async (outletId) => {
+          const device = databaseService.getDevice(outletId);
+          if (device) await this.controlOutlet(device, shouldActivate);
+        }));
         databaseService.updateProjectOutletStatus(projectId, shouldActivate);
-        // Enregistrer le changement d'état dans l'historique avec la température
         await influxService.writeOutletState(projectId, shouldActivate, 'automatic', currentTemp);
       } catch (error) {
-        console.error(`[SensorPoller] Failed to control outlet for ${project.name}:`, error);
+        console.error(`[SensorPoller] Failed to control outlets for ${project.name}:`, error);
       }
     }
   }
