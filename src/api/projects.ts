@@ -14,6 +14,7 @@ export async function createBackendProject(data: {
   fermentationType: string
   sensorId?: string | null
   outletId?: string | null
+  outletIds?: string[]
   targetTemperature?: number
   humiditySensorId?: string | null
   targetHumidity?: number

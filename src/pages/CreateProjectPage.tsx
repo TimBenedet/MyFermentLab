@@ -66,7 +66,7 @@ export function CreateProjectPage() {
   const [devices, setDevices] = useState<BackendDevice[]>([])
   const [loadingDevices, setLoadingDevices] = useState(false)
   const [sensorId, setSensorId] = useState<string | null>(null)
-  const [outletId, setOutletId] = useState<string | null>(null)
+  const [outletIds, setOutletIds] = useState<string[]>([])
   const [humiditySensorId, setHumiditySensorId] = useState<string | null>(null)
 
   const [creating, setCreating] = useState(false)
@@ -206,7 +206,8 @@ export function CreateProjectPage() {
             name,
             fermentationType: projectType,
             sensorId,
-            outletId,
+            outletIds,
+            outletId: outletIds[0] ?? null,
             targetTemperature: targetTemp,
             humiditySensorId: needsHumidity ? humiditySensorId : null,
             targetHumidity: needsHumidity ? (projectType === 'koji' ? 85 : 90) : undefined,
@@ -217,7 +218,7 @@ export function CreateProjectPage() {
               updateProject(proj.id, {
                 backendProjectId: bp.id,
                 sensorId,
-                outletId,
+                outletId: outletIds[0] ?? null,
                 humiditySensorId: needsHumidity ? humiditySensorId : null,
               })
             }
@@ -508,14 +509,46 @@ export function CreateProjectPage() {
                 />
               )}
 
-              <SelectField
-                icon={<Power size={14} />}
-                label="Prise connectee"
-                value={outletId}
-                onChange={setOutletId}
-                options={outlets}
-                color="scada-warning"
-              />
+              {/* Multi-outlet checkboxes */}
+              <div>
+                <label className="text-[10px] text-scada-warning uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                  <Power size={14} />
+                  Prises connectees{outletIds.length > 0 ? ` (${outletIds.length})` : ''}
+                </label>
+                <div className="space-y-1">
+                  {outlets.length === 0 && (
+                    <p className="text-[10px] text-scada-text-muted px-1">Aucune prise disponible</p>
+                  )}
+                  {outlets.map(d => {
+                    const checked = outletIds.includes(d.id)
+                    return (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => setOutletIds(prev => prev.includes(d.id) ? prev.filter(x => x !== d.id) : [...prev, d.id])}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-left transition-colors ${
+                          checked
+                            ? 'bg-scada-warning/10 border-scada-warning/40 text-white'
+                            : 'border-scada-border text-scada-text-muted hover:text-white'
+                        }`}
+                      >
+                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${
+                          checked ? 'bg-scada-warning border-scada-warning' : 'border-scada-border'
+                        }`}>
+                          {checked && <div className="w-2 h-2 rounded-sm bg-scada-bg" />}
+                        </div>
+                        <span className="text-xs truncate">
+                          {d.name}
+                          {d.entityId
+                            ? <span className="text-[10px] text-scada-text-muted ml-1">({d.entityId})</span>
+                            : d.ip ? <span className="text-[10px] text-scada-text-muted ml-1">({d.ip})</span>
+                            : null}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>

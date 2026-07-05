@@ -109,14 +109,48 @@ router.get('/:id/stats', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// Helper: control a list of outlets (turn on or off)
+async function controlOutlets(outletIds: string[], newState: boolean, projectName: string) {
+  const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
+  const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
+  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  if (HOME_ASSISTANT_TOKEN) headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
+  const service = newState ? 'turn_on' : 'turn_off';
+
+  await Promise.all(outletIds.map(async (outletId) => {
+    const device = databaseService.getDevice(outletId);
+    if (!device) return;
+    try {
+      if (device.entityId) {
+        const domain = device.entityId.split('.')[0];
+        await fetch(`${HOME_ASSISTANT_URL}/api/services/${domain}/${service}`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ entity_id: device.entityId })
+        });
+        console.log(`[Outlet] ${service} ${device.entityId} for ${projectName}`);
+      } else if (device.ip) {
+        await fetch(`http://${device.ip}/rpc/Switch.Set?id=0&on=${newState}`);
+        console.log(`[Outlet] Set ${device.ip} to ${newState} for ${projectName}`);
+      }
+    } catch (err) {
+      console.error(`[Outlet] Failed to control ${outletId} for ${projectName}:`, err);
+    }
+  }));
+}
+
 // POST /api/projects - Créer un nouveau projet
 router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { name, fermentationType, sensorId, outletId, targetTemperature, controlMode, recipe, humiditySensorId, targetHumidity, mushroomType } = req.body;
+    const { name, fermentationType, sensorId, outletId, outletIds: rawOutletIds, targetTemperature, controlMode, recipe, humiditySensorId, targetHumidity, mushroomType } = req.body;
 
-    if (!name || !fermentationType || !sensorId || !outletId || !targetTemperature) {
+    if (!name || !fermentationType || !sensorId || !targetTemperature) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    // outletIds takes precedence over outletId; fall back to [outletId] for backward compat
+    const outletIds: string[] = Array.isArray(rawOutletIds) && rawOutletIds.length > 0
+      ? rawOutletIds
+      : outletId ? [outletId] : [];
 
     // Note: humiditySensorId est optionnel pour tous les types de projets
 
@@ -125,8 +159,10 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
       return res.status(400).json({ error: 'Sensor is already in use by another active project' });
     }
 
-    if (databaseService.isDeviceInUse(outletId)) {
-      return res.status(400).json({ error: 'Outlet is already in use by another active project' });
+    for (const oid of outletIds) {
+      if (databaseService.isDeviceInUse(oid)) {
+        return res.status(400).json({ error: `Outlet ${oid} is already in use by another active project` });
+      }
     }
 
     if (humiditySensorId && databaseService.isDeviceInUse(humiditySensorId)) {
@@ -146,7 +182,8 @@ router.post('/', requireAuth, requireAdmin, async (req: Request, res: Response) 
       name,
       fermentationType,
       sensorId,
-      outletId,
+      outletId: outletIds[0] || '',
+      outletIds,
       targetTemperature,
       controlMode: controlMode || 'automatic',
       archived: false,
@@ -286,7 +323,7 @@ router.put('/:id/target', requireAuth, requireAdmin, async (req: Request, res: R
   }
 });
 
-// POST /api/projects/:id/outlet/toggle - Basculer l'état de la prise
+// POST /api/projects/:id/outlet/toggle - Basculer l'état de toutes les prises
 router.post('/:id/outlet/toggle', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -296,52 +333,13 @@ router.post('/:id/outlet/toggle', requireAuth, requireAdmin, async (req: Request
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const device = databaseService.getDevice(project.outletId);
-    if (!device) {
+    if (!project.outletIds || project.outletIds.length === 0) {
       return res.status(400).json({ error: 'No outlet device configured' });
     }
 
     const newState = !project.outletActive;
 
-    // Utiliser Home Assistant API si entityId est disponible, sinon fallback sur IP directe
-    if (device.entityId) {
-      const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
-      const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
-
-      const service = newState ? 'turn_on' : 'turn_off';
-      const url = `${HOME_ASSISTANT_URL}/api/services/switch/${service}`;
-
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json'
-      };
-      if (HOME_ASSISTANT_TOKEN) {
-        headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ entity_id: device.entityId })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Home Assistant API returned ${response.status}: ${errorText}`);
-      }
-
-      console.log(`[Outlet] Controlled ${device.entityId} via Home Assistant: ${newState ? 'ON' : 'OFF'}`);
-    } else if (device.ip) {
-      // Fallback: Appeler l'API Shelly directement
-      const response = await fetch(`http://${device.ip}/rpc/Switch.Set?id=0&on=${newState}`);
-
-      if (!response.ok) {
-        throw new Error(`Shelly API returned ${response.status}`);
-      }
-
-      console.log(`[Outlet] Controlled ${device.ip} via direct Shelly API: ${newState ? 'ON' : 'OFF'}`);
-    } else {
-      return res.status(400).json({ error: 'No entityId or IP configured for outlet' });
-    }
+    await controlOutlets(project.outletIds, newState, project.name);
 
     databaseService.updateProjectOutletStatus(id, newState);
 
@@ -466,23 +464,22 @@ router.get('/:id/live-temperature', async (req: Request, res: Response) => {
       await influxService.writeTemperature(id, temperature);
     }
 
-    // Gérer le contrôle automatique de la prise (seulement si mode automatique)
+    // Gérer le contrôle automatique des prises (seulement si mode automatique)
     let outletChanged = false;
-    if (project.controlMode === 'automatic' && project.outletId) {
+    if (project.controlMode === 'automatic' && project.outletIds && project.outletIds.length > 0) {
       const diff = project.targetTemperature - temperature;
       const threshold = project.activationThreshold ?? 0.2;
       const shouldActivate = diff >= threshold;
 
-      const outletDevice = databaseService.getDevice(project.outletId);
-      if (outletDevice && outletDevice.entityId) {
-        // D'abord synchroniser l'état réel de la prise depuis Home Assistant
-        let currentOutletState = project.outletActive;
+      // Synchroniser l'état réel depuis la première prise (prise principale)
+      const primaryDevice = databaseService.getDevice(project.outletIds[0]);
+      let currentOutletState = project.outletActive;
+      if (primaryDevice && primaryDevice.entityId) {
         try {
-          const outletResponse = await fetch(`${HOME_ASSISTANT_URL}/api/states/${outletDevice.entityId}`, { headers });
+          const outletResponse = await fetch(`${HOME_ASSISTANT_URL}/api/states/${primaryDevice.entityId}`, { headers });
           if (outletResponse.ok) {
             const outletData = await outletResponse.json();
             currentOutletState = outletData.state === 'on';
-            // Mettre à jour la base si l'état réel diffère
             if (currentOutletState !== project.outletActive) {
               console.log(`[LiveTemp] Project ${project.name}: Syncing outlet state from HA: ${currentOutletState ? 'ON' : 'OFF'}`);
               databaseService.updateProjectOutletStatus(id, currentOutletState);
@@ -491,26 +488,18 @@ router.get('/:id/live-temperature', async (req: Request, res: Response) => {
         } catch (err) {
           console.error(`[LiveTemp] Failed to get outlet state for ${project.name}:`, err);
         }
+      }
 
-        // Si l'état doit changer (comparer avec l'état réel)
-        if (currentOutletState !== shouldActivate) {
-          try {
-            const action = shouldActivate ? 'turn_on' : 'turn_off';
-            const domain = outletDevice.entityId.split('.')[0];
-
-            await fetch(`${HOME_ASSISTANT_URL}/api/services/${domain}/${action}`, {
-              method: 'POST',
-              headers,
-              body: JSON.stringify({ entity_id: outletDevice.entityId })
-            });
-
-            databaseService.updateProjectOutletStatus(id, shouldActivate);
-            await influxService.writeOutletState(id, shouldActivate, 'automatic', temperature);
-            outletChanged = true;
-            console.log(`[LiveTemp] Project ${project.name}: Setting outlet to ${shouldActivate ? 'ON' : 'OFF'} at ${temperature}°C (target: ${project.targetTemperature}°C)`);
-          } catch (err) {
-            console.error(`[LiveTemp] Failed to control outlet for ${project.name}:`, err);
-          }
+      // Si l'état doit changer, contrôler toutes les prises
+      if (currentOutletState !== shouldActivate) {
+        try {
+          await controlOutlets(project.outletIds, shouldActivate, project.name);
+          databaseService.updateProjectOutletStatus(id, shouldActivate);
+          await influxService.writeOutletState(id, shouldActivate, 'automatic', temperature);
+          outletChanged = true;
+          console.log(`[LiveTemp] Project ${project.name}: Setting ${project.outletIds.length} outlet(s) to ${shouldActivate ? 'ON' : 'OFF'} at ${temperature}°C (target: ${project.targetTemperature}°C)`);
+        } catch (err) {
+          console.error(`[LiveTemp] Failed to control outlets for ${project.name}:`, err);
         }
       }
     }
@@ -646,32 +635,16 @@ router.put('/:id/archive', requireAuth, requireAdmin, async (req: Request, res: 
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    // Éteindre la prise si elle est active avant d'archiver
-    if (project.outletActive && project.outletId) {
-      const device = databaseService.getDevice(project.outletId);
-      if (device) {
-        const HOME_ASSISTANT_URL = process.env.HOME_ASSISTANT_URL || 'http://192.168.1.51:8123';
-        const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_TOKEN || '';
-        try {
-          if (device.entityId) {
-            const headers: HeadersInit = { 'Content-Type': 'application/json' };
-            if (HOME_ASSISTANT_TOKEN) headers['Authorization'] = `Bearer ${HOME_ASSISTANT_TOKEN}`;
-            await fetch(`${HOME_ASSISTANT_URL}/api/services/switch/turn_off`, {
-              method: 'POST',
-              headers,
-              body: JSON.stringify({ entity_id: device.entityId })
-            });
-            console.log(`[Archive] Turned off outlet ${device.entityId} for project ${project.name}`);
-          } else if (device.ip) {
-            await fetch(`http://${device.ip}/rpc/Switch.Set?id=0&on=false`);
-            console.log(`[Archive] Turned off outlet ${device.ip} for project ${project.name}`);
-          }
-          databaseService.updateProjectOutletStatus(id, false);
-          await influxService.writeOutletState(id, false, 'manual', project.currentTemperature);
-        } catch (outletErr) {
-          console.error(`[Archive] Failed to turn off outlet for project ${project.name}:`, outletErr);
-          // On continue l'archivage même si l'extinction échoue
-        }
+    // Éteindre toutes les prises si actives avant d'archiver
+    if (project.outletActive && project.outletIds && project.outletIds.length > 0) {
+      try {
+        await controlOutlets(project.outletIds, false, project.name);
+        databaseService.updateProjectOutletStatus(id, false);
+        await influxService.writeOutletState(id, false, 'manual', project.currentTemperature);
+        console.log(`[Archive] Turned off ${project.outletIds.length} outlet(s) for project ${project.name}`);
+      } catch (outletErr) {
+        console.error(`[Archive] Failed to turn off outlets for project ${project.name}:`, outletErr);
+        // On continue l'archivage même si l'extinction échoue
       }
     }
 
@@ -730,7 +703,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req: Request, res: Respo
 router.patch('/:id', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { brewingSession, recipe, name, fermentationType, sensorId, outletId, humiditySensorId, targetHumidity, activationThreshold } = req.body;
+    const { brewingSession, recipe, name, fermentationType, sensorId, outletId, outletIds: rawOutletIds, humiditySensorId, targetHumidity, activationThreshold } = req.body;
 
     const project = databaseService.getProject(id);
     if (!project) {
@@ -754,20 +727,24 @@ router.patch('/:id', requireAuth, requireAdmin, async (req: Request, res: Respon
       );
     }
 
-    // Mise à jour des appareils (sonde et prise)
-    if (sensorId !== undefined || outletId !== undefined) {
+    // Mise à jour des appareils (sonde et prises)
+    if (sensorId !== undefined) {
       const newSensorId = sensorId ?? project.sensorId;
-      const newOutletId = outletId ?? project.outletId;
-
-      // Vérifier que les appareils ne sont pas utilisés par d'autres projets
       if (newSensorId !== project.sensorId && databaseService.isDeviceInUse(newSensorId, id)) {
         return res.status(400).json({ error: 'Cette sonde est déjà utilisée par un autre projet actif' });
       }
+      databaseService.updateProjectDevices(id, newSensorId, project.outletId);
+    }
+
+    // outletIds array update (takes precedence over single outletId)
+    if (Array.isArray(rawOutletIds)) {
+      databaseService.updateProjectOutletIds(id, rawOutletIds);
+    } else if (outletId !== undefined) {
+      const newOutletId = outletId ?? project.outletId;
       if (newOutletId !== project.outletId && databaseService.isDeviceInUse(newOutletId, id)) {
         return res.status(400).json({ error: 'Cette prise est déjà utilisée par un autre projet actif' });
       }
-
-      databaseService.updateProjectDevices(id, newSensorId, newOutletId);
+      databaseService.updateProjectOutletIds(id, newOutletId ? [newOutletId] : []);
     }
 
     // Mise à jour de la sonde d'humidité et de l'humidité cible

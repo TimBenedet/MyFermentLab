@@ -5,7 +5,7 @@ import type { BackendDevice } from '../../types/backend'
 
 interface Props {
   projectType: string
-  onConfirm: (sensorId: string | null, outletId: string | null, humiditySensorId: string | null) => void
+  onConfirm: (sensorId: string | null, outletIds: string[], humiditySensorId: string | null) => void
   onSkip: () => void
   onClose: () => void
 }
@@ -14,7 +14,7 @@ export function DeviceSelectModal({ projectType, onConfirm, onSkip, onClose }: P
   const [devices, setDevices] = useState<BackendDevice[]>([])
   const [loading, setLoading] = useState(true)
   const [sensorId, setSensorId] = useState<string | null>(null)
-  const [outletId, setOutletId] = useState<string | null>(null)
+  const [selectedOutletIds, setSelectedOutletIds] = useState<string[]>([])
   const [humiditySensorId, setHumiditySensorId] = useState<string | null>(null)
 
   const needsHumidity = projectType === 'koji' || projectType === 'mushroom'
@@ -29,6 +29,12 @@ export function DeviceSelectModal({ projectType, onConfirm, onSkip, onClose }: P
   const sensors = devices.filter(d => d.type === 'sensor')
   const humiditySensors = devices.filter(d => d.type === 'humidity_sensor')
   const outlets = devices.filter(d => d.type === 'outlet')
+
+  const toggleOutlet = (id: string) => {
+    setSelectedOutletIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -69,15 +75,44 @@ export function DeviceSelectModal({ projectType, onConfirm, onSkip, onClose }: P
               />
             )}
 
-            {/* Outlet */}
-            <SelectField
-              icon={<Power size={14} />}
-              label="Prise connectee"
-              value={outletId}
-              onChange={setOutletId}
-              options={outlets}
-              color="scada-warning"
-            />
+            {/* Outlets — multi-select checkboxes */}
+            <div>
+              <label className="text-[10px] text-scada-warning uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                <Power size={14} />
+                Prises connectees{selectedOutletIds.length > 0 ? ` (${selectedOutletIds.length})` : ''}
+              </label>
+              <div className="space-y-1">
+                {outlets.length === 0 && (
+                  <p className="text-[10px] text-scada-text-muted px-1">Aucune prise disponible</p>
+                )}
+                {outlets.map(d => {
+                  const checked = selectedOutletIds.includes(d.id)
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => toggleOutlet(d.id)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-left transition-colors ${
+                        checked
+                          ? 'bg-scada-warning/10 border-scada-warning/40 text-white'
+                          : 'border-scada-border text-scada-text-muted hover:text-white hover:border-scada-border'
+                      }`}
+                    >
+                      <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${
+                        checked ? 'bg-scada-warning border-scada-warning' : 'border-scada-border'
+                      }`}>
+                        {checked && <div className="w-2 h-2 rounded-sm bg-scada-bg" />}
+                      </div>
+                      <span className="text-xs truncate">
+                        {d.name}
+                        {d.entityId ? <span className="text-[10px] text-scada-text-muted ml-1">({d.entityId})</span>
+                          : d.ip ? <span className="text-[10px] text-scada-text-muted ml-1">({d.ip})</span> : null}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         )}
 
@@ -90,7 +125,7 @@ export function DeviceSelectModal({ projectType, onConfirm, onSkip, onClose }: P
             Simulation
           </button>
           <button
-            onClick={() => onConfirm(sensorId, outletId, humiditySensorId)}
+            onClick={() => onConfirm(sensorId, selectedOutletIds, humiditySensorId)}
             disabled={!sensorId}
             className="flex-1 px-3 py-2.5 bg-scada-accent/20 text-scada-accent border border-scada-accent/40 rounded-lg text-xs font-medium hover:bg-scada-accent/30 transition-colors disabled:opacity-50"
           >

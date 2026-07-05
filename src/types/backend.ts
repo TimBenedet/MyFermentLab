@@ -12,6 +12,7 @@ export interface BackendProject {
   fermentationType: string
   sensorId: string | null
   outletId: string | null
+  outletIds: string[]
   targetTemperature: number
   currentTemperature: number
   outletActive: boolean

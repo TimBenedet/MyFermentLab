@@ -8,6 +8,7 @@ export interface Project {
   fermentationType: 'beer' | 'mead' | 'cheese' | 'bread' | 'koji' | 'kombucha' | 'mushroom';
   sensorId: string;
   outletId: string;
+  outletIds: string[];
   targetTemperature: number;
   currentTemperature: number;
   outletActive: boolean;
@@ -197,6 +198,13 @@ class DatabaseService {
         console.log('Migration completed successfully');
       }
 
+      const hasOutletIds = columns.some(col => col.name === 'outlet_ids');
+      if (!hasOutletIds) {
+        console.log('Adding outlet_ids column to projects table...');
+        this.db.exec("ALTER TABLE projects ADD COLUMN outlet_ids TEXT");
+        console.log('Migration completed successfully');
+      }
+
       // Ajouter des sondes de test pour les champignons si elles n'existent pas
       this.initTestDevices();
     } catch (error) {
@@ -248,16 +256,18 @@ class DatabaseService {
     }
   }
 
-  // Projects CRUD
-  getAllProjects(): Project[] {
-    const stmt = this.db.prepare('SELECT * FROM projects ORDER BY archived ASC, created_at DESC');
-    const rows = stmt.all() as any[];
-    return rows.map(row => ({
+  private rowToProject(row: any): Project {
+    const outletId = row.outlet_id || '';
+    let outletIds: string[] = row.outlet_ids ? JSON.parse(row.outlet_ids) : [];
+    // Back-fill: if outletIds is empty but outletId exists, seed from outletId
+    if (outletIds.length === 0 && outletId) outletIds = [outletId];
+    return {
       id: row.id,
       name: row.name,
       fermentationType: row.fermentation_type,
       sensorId: row.sensor_id,
-      outletId: row.outlet_id,
+      outletId,
+      outletIds,
       targetTemperature: row.target_temperature,
       currentTemperature: row.current_temperature,
       outletActive: row.outlet_active === 1,
@@ -273,54 +283,45 @@ class DatabaseService {
       mushroomType: row.mushroom_type || undefined,
       lastTemperatureUpdate: row.last_temperature_update || undefined,
       lastTemperatureValue: row.last_temperature_value || undefined,
-      activationThreshold: row.activation_threshold ?? 0.2
-    }));
+      activationThreshold: row.activation_threshold ?? 0.2,
+    };
+  }
+
+  // Projects CRUD
+  getAllProjects(): Project[] {
+    const stmt = this.db.prepare('SELECT * FROM projects ORDER BY archived ASC, created_at DESC');
+    const rows = stmt.all() as any[];
+    return rows.map(row => this.rowToProject(row));
   }
 
   getProject(id: string): Project | null {
     const stmt = this.db.prepare('SELECT * FROM projects WHERE id = ?');
     const row = stmt.get(id) as any;
     if (!row) return null;
-
-    return {
-      id: row.id,
-      name: row.name,
-      fermentationType: row.fermentation_type,
-      sensorId: row.sensor_id,
-      outletId: row.outlet_id,
-      targetTemperature: row.target_temperature,
-      currentTemperature: row.current_temperature,
-      outletActive: row.outlet_active === 1,
-      controlMode: row.control_mode || 'automatic',
-      archived: row.archived === 1,
-      createdAt: row.created_at,
-      archivedAt: row.archived_at || undefined,
-      brewingSession: row.brewing_session ? JSON.parse(row.brewing_session) : undefined,
-      recipe: row.recipe ? JSON.parse(row.recipe) : undefined,
-      humiditySensorId: row.humidity_sensor_id || undefined,
-      targetHumidity: row.target_humidity || undefined,
-      currentHumidity: row.current_humidity || undefined,
-      mushroomType: row.mushroom_type || undefined,
-      lastTemperatureUpdate: row.last_temperature_update || undefined,
-      lastTemperatureValue: row.last_temperature_value || undefined,
-      activationThreshold: row.activation_threshold ?? 0.2
-    };
+    return this.rowToProject(row);
   }
 
   createProject(project: Omit<Project, 'currentTemperature' | 'outletActive'>): Project {
     const stmt = this.db.prepare(`
-      INSERT INTO projects (id, name, fermentation_type, sensor_id, outlet_id, target_temperature, control_mode, created_at, recipe, humidity_sensor_id, target_humidity, mushroom_type)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO projects (id, name, fermentation_type, sensor_id, outlet_id, outlet_ids, target_temperature, control_mode, created_at, recipe, humidity_sensor_id, target_humidity, mushroom_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const recipeJson = project.recipe ? JSON.stringify(project.recipe) : null;
+    // Ensure outletIds includes outletId (first element by convention)
+    const outletIds = project.outletIds?.length
+      ? project.outletIds
+      : project.outletId ? [project.outletId] : [];
+    const outletIdsJson = JSON.stringify(outletIds);
+    const primaryOutletId = outletIds[0] || project.outletId || '';
 
     stmt.run(
       project.id,
       project.name,
       project.fermentationType,
       project.sensorId,
-      project.outletId,
+      primaryOutletId,
+      outletIdsJson,
       project.targetTemperature,
       project.controlMode,
       project.createdAt,
@@ -378,6 +379,12 @@ class DatabaseService {
   updateProjectDevices(id: string, sensorId: string, outletId: string) {
     const stmt = this.db.prepare('UPDATE projects SET sensor_id = ?, outlet_id = ? WHERE id = ?');
     stmt.run(sensorId, outletId, id);
+  }
+
+  updateProjectOutletIds(id: string, outletIds: string[]) {
+    const primaryOutletId = outletIds[0] || '';
+    const stmt = this.db.prepare('UPDATE projects SET outlet_id = ?, outlet_ids = ? WHERE id = ?');
+    stmt.run(primaryOutletId, JSON.stringify(outletIds), id);
   }
 
   updateProjectInfo(id: string, name: string, fermentationType: string) {
