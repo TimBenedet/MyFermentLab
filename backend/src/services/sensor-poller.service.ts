@@ -144,7 +144,7 @@ class SensorPollerService {
 
     const diff = targetTemp - currentTemp;
     const threshold = project.activationThreshold ?? 0.2;
-    const shouldActivate = diff >= threshold;
+    const shouldActivate = diff > threshold;
 
     // Synchroniser l'état réel depuis la première prise (prise principale)
     const primaryDevice = databaseService.getDevice(outletIds[0]);
