@@ -144,7 +144,9 @@ class SensorPollerService {
 
     const diff = targetTemp - currentTemp;
     const threshold = project.activationThreshold ?? 0.2;
-    const shouldActivate = diff > threshold;
+    // Activate when temp is more than threshold below target; deactivate only when temp reaches target
+    const isCurrentlyOn = project.outletActive;
+    const shouldActivate = isCurrentlyOn ? diff > 0 : diff > threshold;
 
     // Synchroniser l'état réel depuis la première prise (prise principale)
     const primaryDevice = databaseService.getDevice(outletIds[0]);
