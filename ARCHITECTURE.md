@@ -1,252 +1,89 @@
-# Architecture du Moniteur de Fermentation
+# Architecture
 
 ## Vue d'ensemble
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    FRONTEND (React + Nginx)                  │
-│                    http://192.168.1.140:80                   │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                ┌───────────┴───────────┐
-                │                       │
-                ▼                       ▼
-┌──────────────────────────┐  ┌──────────────────────────┐
-│   BACKEND API (Node.js)  │  │   Shelly Devices         │
-│   Express + InfluxDB     │  │   (via /shelly/ proxy)   │
-│   Port 3001              │  │                          │
-└──────────────────────────┘  └──────────────────────────┘
-            │
-   ┌────────┴────────┐
-   │                 │
-   ▼                 ▼
-┌──────────┐  ┌──────────────┐
-│ InfluxDB │  │    SQLite    │
-│ (Séries  │  │ (Métadonnées)│
-│temporel) │  │              │
-└──────────┘  └──────────────┘
-            │
-            ▼
-┌─────────────────────────────┐
-│    Home Assistant API       │
-│    (Capteurs Zigbee)        │
-│    http://192.168.1.140:8124│
-└─────────────────────────────┘
+L'application est **entièrement côté navigateur**. Il n'y a ni serveur applicatif, ni base de
+données, ni routeur : une seule page, trois vues, et deux sources de données.
+
+```mermaid
+graph TB
+    A[Navigateur · React] -->|localStorage| B[Recettes · lots · cuve · thème]
+    A --> C[Moteur de simulation]
+    A -->|/ha, même origine| D[Proxy]
+    D -->|Authorization: Bearer| E[Home Assistant]
+    E --> F[Sondes de température]
+    E --> G[Prises connectées]
 ```
 
-## Composants
+**Pourquoi ainsi** : les mesures des cinq ferments sont *simulées* — un backend n'aurait rien
+à calculer. La seule chose réelle est Home Assistant, qui porte déjà l'authentification, les
+appareils et les mesures. Le navigateur n'a donc qu'un travail : afficher et décider.
 
-### 1. Frontend (React + TypeScript)
-- **Localisation** : `/src`
-- **Port** : 80 (via Nginx)
-- **Fonctionnalités** :
-  - Interface utilisateur pour la gestion des projets
-  - Visualisation des graphiques de température et densité
-  - Contrôle des prises Shelly
-  - Gestion des appareils (sondes et prises)
+## Le proxy Home Assistant
 
-### 2. Backend API (Node.js + Express)
-- **Localisation** : `/backend`
-- **Port** : 3001
-- **Base de données** :
-  - **InfluxDB** : Stockage des données de température et densité
-  - **SQLite** : Métadonnées (projets, appareils)
-- **Services** :
-  - API REST pour le frontend
-  - Service de polling des capteurs Home Assistant (toutes les 30s)
-  - Contrôle automatique des prises Shelly basé sur la température
+Le jeton n'est jamais dans le navigateur. Le navigateur appelle `/ha/...` en **même origine**,
+un intermédiaire ajoute l'en-tête d'autorisation et relaie :
 
-### 3. InfluxDB
-- **Version** : 2.7-alpine
-- **Port** : 8086
-- **Organisation** : `fermentation`
-- **Bucket** : `sensors`
-- **Stockage** :
-  - Mesure `temperature` : température par projet avec timestamp
-  - Mesure `density` : densité par projet avec timestamp
+| Environnement | Intermédiaire | Source du jeton |
+|---|---|---|
+| Développement | le serveur de dev (`vite.config.ts`) | `.env.local` |
+| Production | nginx (`/etc/nginx/templates/default.conf.template`) | Secret Kubernetes `fermentation-v3-ha` |
 
-### 4. Nginx
-- **Rôle** : Reverse proxy
-- **Proxies** :
-  - `/api/*` → Backend API (fermentation-backend:3001)
-  - `/shelly/*` → Appareils Shelly (par IP dynamique)
+C'est aussi ce qui rend la vue Devices inutile à sécuriser : l'API ne l'expose jamais.
 
-## Structure des données
+## Les couches du code
 
-### InfluxDB - Measurements
+| Dossier | Rôle | Règle |
+|---|---|---|
+| `src/config/` | les données : ferments, référentiel d'ingrédients, modèles de cuve | que des données, aucune décision |
+| `src/lib/` | la logique pure : formatage, états, régulation, recettes, eau, matériel | ni React, ni DOM |
+| `src/hooks/` | l'état persisté : recettes, productions, cuve, thème, flux | **eux seuls** écrivent dans `localStorage` |
+| `src/components/` | le rendu | n'écrivent jamais dans le stockage |
+| `src/simulation/` | le moteur local | ne connaît ni React ni les recettes |
 
-#### Temperature
-```
-measurement: temperature
-tags:
-  - project_id: string
-fields:
-  - value: float (température en °C)
-timestamp: nanoseconds
-```
+`src/types.ts` est le **seul point de synchronisation** : un type qui y change fait échouer la
+compilation partout où il faut suivre, plutôt que de dériver en silence.
 
-#### Density
-```
-measurement: density
-tags:
-  - project_id: string
-fields:
-  - value: float (densité SG)
-timestamp: nanoseconds
-```
+## Le moteur de simulation
 
-### SQLite - Tables
+- 24 h d'historique, un point toutes les 2 s.
+- Par canal : bruit blanc, cycle lent de régulation, perturbations ponctuelles.
+- **Graine fixe par ferment** : l'historique est reproductible d'un rechargement à l'autre.
+- Une production lancée depuis la bibliothèque devient un ferment comme les autres, à partir
+  de son type — le moteur ne connaît pas les recettes.
 
-#### projects
-```sql
-CREATE TABLE projects (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  fermentation_type TEXT NOT NULL,  -- 'beer' | 'wine' | 'cheese' | 'bread'
-  sensor_id TEXT NOT NULL,
-  outlet_id TEXT NOT NULL,
-  target_temperature REAL NOT NULL,
-  current_temperature REAL NOT NULL DEFAULT 20.0,
-  outlet_active INTEGER NOT NULL DEFAULT 0,
-  created_at INTEGER NOT NULL
-);
-```
+## Le stockage
 
-#### devices
-```sql
-CREATE TABLE devices (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  type TEXT NOT NULL,  -- 'sensor' | 'outlet'
-  ip TEXT NOT NULL,
-  entity_id TEXT NOT NULL
-);
-```
+Quatre clés `localStorage`, enveloppe versionnée `{ version, <champ>: ... }`, relue
+défensivement : une entrée inexploitable est écartée **une à une**, une écriture refusée
+(quota, navigation privée) laisse la session continuer.
 
-## API Endpoints
+| Clé | Version | Contenu |
+|---|---|---|
+| `fermentation4.recipes` | 7 | recettes, appareils liés, volume visé et durée d'ébullition |
+| `fermentation4.productions` | 2 | lots lancés |
+| `fermentation4.equipment` | 1 | la cuve : évaporation, perte, absorption |
+| `fermentation4.theme` | — | thème clair ou sombre |
 
-### Projects
-- `GET /api/projects` - Liste tous les projets
-- `GET /api/projects/:id?start=-30d` - Récupère un projet avec son historique
-- `POST /api/projects` - Créer un nouveau projet
-- `PUT /api/projects/:id/target` - Modifier la température cible
-- `POST /api/projects/:id/outlet/toggle` - Basculer l'état de la prise
-- `POST /api/projects/:id/density` - Ajouter une mesure de densité
-- `DELETE /api/projects/:id` - Supprimer un projet
+Les versions montent sans jamais casser l'existant : une recette écrite avant une évolution se
+relit sans le champ nouveau, l'absence est un état et non un manque.
 
-### Devices
-- `GET /api/devices` - Liste tous les appareils
-- `GET /api/devices/:id` - Récupère un appareil
-- `POST /api/devices` - Créer un nouvel appareil
-- `DELETE /api/devices/:id` - Supprimer un appareil
+## L'asservissement des prises
 
-## Variables d'environnement
+Seuls les lots qui portent une prise entrent dans la boucle, et il faut **une sonde qui
+répond** pour chauffer (`src/lib/control.ts`). Sous la consigne on allume, à la consigne ou
+au-dessus on éteint — la bande morte est de 0,1 °C (`src/lib/regulation.ts`).
 
-### Backend
-```env
-# InfluxDB
-INFLUX_URL=http://influxdb:8086
-INFLUX_TOKEN=my-super-secret-auth-token
-INFLUX_ORG=fermentation
-INFLUX_BUCKET=sensors
+## Le calcul d'eau de brassage
 
-# Home Assistant
-HOME_ASSISTANT_URL=http://192.168.1.140:8124
-HOME_ASSISTANT_TOKEN=
+Le calcul vit dans `src/lib/water.ts`, les réglages de la cuve dans `src/lib/equipment.ts`, et
+les modèles de cuve dans `src/config/equipment.ts`. Le principe, les protocoles de mesure et
+les exemples vérifiés sont dans [`eau-de-brassage.md`](eau-de-brassage.md).
 
-# Polling
-POLL_INTERVAL=30000  # 30 secondes
+## Ce qui a été retiré
 
-# Base de données
-DB_PATH=/data/fermentation.db
-
-# API
-PORT=3001
-```
-
-## Déploiement K3s
-
-### Volumes persistants
-- **influxdb-pvc** : 10Gi pour les données InfluxDB
-- **backend-data-pvc** : 1Gi pour SQLite
-
-### Services
-1. **influxdb** : InfluxDB 2.7
-2. **fermentation-backend** : Backend API Node.js
-3. **fermentation-monitor** : Frontend React + Nginx
-
-## Flux de données
-
-### Collecte de température automatique
-1. Le service de polling interroge Home Assistant toutes les 30s
-2. Récupère la température de chaque capteur assigné à un projet
-3. Enregistre dans InfluxDB (measurement: `temperature`)
-4. Met à jour `current_temperature` dans SQLite
-5. Compare avec `target_temperature` et contrôle automatiquement la prise Shelly
-
-### Ajout manuel de densité
-1. L'utilisateur ajoute une mesure via le frontend
-2. Frontend → `POST /api/projects/:id/density`
-3. Backend enregistre dans InfluxDB (measurement: `density`)
-4. Frontend récupère l'historique mis à jour
-
-### Consultation de l'historique
-1. Frontend → `GET /api/projects/:id?start=-30d`
-2. Backend :
-   - Lit les métadonnées depuis SQLite
-   - Interroge InfluxDB pour l'historique de température
-   - Interroge InfluxDB pour l'historique de densité
-3. Retourne le projet complet avec les historiques
-
-## Intégration Home Assistant
-
-### Prérequis
-- Home Assistant installé et accessible sur le réseau
-- Zigbee2MQTT configuré avec :
-  - Adaptateur USB Zigbee (SONOFF ZBDongle-E recommandé)
-  - Sondes Zigbee SONOFF SNZB-02LD appairées
-- API Home Assistant accessible (socat proxy sur port 8124)
-
-### Configuration des appareils
-Chaque appareil dans la table `devices` contient :
-- `entity_id` : ID de l'entité Home Assistant (ex: `sensor.cave_temp`)
-- `ip` : Adresse IP (pour les prises Shelly)
-- `type` : `sensor` ou `outlet`
-
-## Sécurité
-
-### Tokens et authentification
-- **InfluxDB** : Token d'admin stocké dans ConfigMap K8s
-- **Home Assistant** : Token optionnel (variable `HOME_ASSISTANT_TOKEN`)
-- **Shelly** : Accès direct via IP locale (réseau privé)
-
-### Réseau
-- Tous les services communiquent en interne via K3s
-- Seul Nginx est exposé sur le port 80
-- Shelly et Home Assistant sont accédés depuis le backend (pas depuis le frontend)
-
-## Évolutions futures
-
-### Améliorations possibles
-1. **Grafana** : Intégration pour visualisation avancée des données InfluxDB
-2. **Alertes** : Notifications (email, Telegram) si température hors limites
-3. **Downsampling** : Agrégation automatique des vieilles données (moyennes horaires/journalières)
-4. **Multi-tenant** : Support de plusieurs utilisateurs avec authentification
-5. **Prédictions** : ML pour prédire l'évolution de la fermentation
-6. **Export** : Export des données en CSV/Excel
-7. **API Home Assistant bidirectionnelle** : Créer des entités dans HA pour chaque projet
-
-## Maintenance
-
-### Backup
-- **InfluxDB** : Volume persistant `/var/lib/influxdb2`
-- **SQLite** : Volume persistant `/data/fermentation.db`
-
-Recommandation : Backup régulier des PVCs K3s
-
-### Logs
-- Backend : Logs dans stdout (accessible via `kubectl logs`)
-- Polling service : Log de chaque cycle de polling
-
-### Monitoring
-- Endpoint de santé : `GET /health` (backend)
+Le projet précédent tournait sur un backend Express, InfluxDB et SQLite, avec un
+`zigbee2mqtt` et des prototypes HTML. **Tout cela a été supprimé du cluster le 2026-09-14**,
+données comprises, et remplacé par cette application. Il en reste des dossiers dans le dépôt
+(`backend/`, `zigbee2mqtt/`, `prototype-*.html`) qui ne sont ni construits ni déployés —
+voir la fin du [`README`](README.md).

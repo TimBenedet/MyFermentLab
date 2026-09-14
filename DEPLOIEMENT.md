@@ -1,286 +1,100 @@
-# Guide de Déploiement - Moniteur de Fermentation
+# Déploiement
 
-## Prérequis
+## Le principe
 
-- Serveur Debian avec K3s installé (192.168.1.140)
-- Docker Desktop sur votre Mac
-- Home Assistant accessible sur le réseau
-- Accès SSH au serveur Debian
+Une **branche par version** — `scada-v3` pour celle-ci. Le dépôt est la source de vérité :
+personne n'applique un manifeste à la main, et Argo CD ramène le cluster à ce que dit le
+dépôt dès qu'il s'en écarte.
 
-## Étape 1 : Build des images Docker sur Mac
+## La chaîne, de bout en bout
 
-### 1.1 Build du Backend
-
-```bash
-cd /Volumes/T7/Claude-IA/backend
-docker buildx build --platform linux/amd64 -t fermentation-backend:latest .
-docker save fermentation-backend:latest > /tmp/fermentation-backend-amd64.tar
+```mermaid
+graph LR
+    A[push sur scada-v3] --> B[GitHub Actions]
+    B --> C[GHCR : image scada-v3-sha]
+    B --> D[commit d'épinglage]
+    D --> E[Argo CD]
+    C --> E
+    E --> F[Pod fermentation-v3]
 ```
 
-### 1.2 Build du Frontend
+1. **Push** sur `scada-v3`, touchant `src/`, `public/`, `index.html`, `package.json`,
+   `vite.config.ts`, `Dockerfile`, `nginx.conf` ou le workflow lui-même.
+2. **GitHub Actions** (`.github/workflows/build-frontend.yml`) construit l'image et la pousse
+   sur GHCR sous deux étiquettes : `scada-v3` (mobile, pour le dépannage) et
+   `scada-v3-<sha>` (**immuable**, c'est celle qu'on déploie).
+3. **Le workflow épingle le tag** dans `manifests/frontend.yaml` et pousse ce commit.
+   Argo CD ne réagit qu'à un changement de manifeste, pas à une nouvelle image publiée sous
+   un tag existant : c'est ce commit qui déclenche le déploiement.
+4. **Argo CD** applique (`Application` `fermentation-v3`, `path: manifests`,
+   `targetRevision: scada-v3`), le pod redémarre sur la nouvelle image.
+
+## Les manifestes
+
+| Fichier | Contenu |
+|---|---|
+| `manifests/frontend.yaml` | Deployment + Service. `envFrom` le ConfigMap, `HASS_TOKEN` d'un Secret, sondes de disponibilité, ressources, annotation `restartedAt` |
+| `manifests/configmap.yaml` | `HASS_URL` — l'adresse de Home Assistant n'est pas un secret : elle se règle par manifeste, sans reconstruire d'image |
+| `manifests/ingress.yaml` | l'hôte `ferment.myfermentlab` |
+| `argocd/application-scada-v3.yaml` | l'Application Argo CD |
+
+Deux accès, parce qu'ils ne servent pas à la même chose :
+
+- **NodePort 30087** — `http://192.168.1.51:30087`, joignable par l'adresse IP, sans DNS.
+- **Ingress** — `http://ferment.myfermentlab`, à condition que ton DNS local (ou `/etc/hosts`)
+  résolve le nom vers `192.168.1.51`. Un hôte dédié plutôt qu'un sous-chemin : l'application
+  sert ses fichiers sous `/assets/` et appelle `/ha/` en absolu.
+
+## Le jeton Home Assistant
+
+Le jeton n'est pas dans le dépôt, ni dans le JavaScript servi : il vit dans un Secret, et
+**nginx l'injecte au démarrage du conteneur**. Un pod ne prend donc un nouveau jeton qu'en
+redémarrant.
 
 ```bash
-cd /Volumes/T7/Claude-IA
-# Nettoyer les fichiers macOS
-find . -name "._*" -type f -delete
-
-docker buildx build --platform linux/amd64 -t fermentation-monitor:latest .
-docker save fermentation-monitor:latest > /tmp/fermentation-monitor-amd64.tar
+read -rs TOKEN          # colle le jeton, il ne s'affiche pas
+printf %s "$TOKEN" | kubectl -n default create secret generic fermentation-v3-ha \
+  --from-file=HASS_TOKEN=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+unset TOKEN
 ```
 
-## Étape 2 : Transfert vers le serveur Debian
+**Le piège** : un jeton suivi d'un retour à la ligne casse l'en-tête et nginx répond 401.
+D'où `printf %s` — jamais `echo`.
+
+Puis, pour que le pod le prenne, **modifier l'annotation `kubectl.kubernetes.io/restartedAt`
+dans `manifests/frontend.yaml` et pousser**. Un `kubectl rollout restart` ne sert à rien :
+Argo CD remet aussitôt le modèle du dépôt et le pod garde son ancien environnement.
+
+## Vérifier
 
 ```bash
-scp /tmp/fermentation-backend-amd64.tar tim@192.168.1.140:/tmp/
-scp /tmp/fermentation-monitor-amd64.tar tim@192.168.1.140:/tmp/
+kubectl -n argocd get application fermentation-v3      # Synced · Healthy
+kubectl -n default get deploy,pods
+kubectl -n default get deploy fermentation-v3 -o jsonpath={.spec.template.spec.containers[0].image}
+
+# 200 = le proxy et le jeton fonctionnent ; 401 = Secret absent ou jeton invalide
+curl -s -o /dev/null -w '%{http_code}\n' http://192.168.1.51:30087/ha/api/
 ```
 
-## Étape 3 : Import des images sur le serveur
+Depuis la vue Devices, la même information se lit à l'écran : les appareils s'y listent, ou
+l'erreur de lecture s'y affiche.
 
-```bash
-ssh tim@192.168.1.140
+## Revenir en arrière
 
-# Import des images dans K3s
-sudo k3s ctr images import /tmp/fermentation-backend-amd64.tar
-sudo k3s ctr images import /tmp/fermentation-monitor-amd64.tar
+Le tag déployé est **immuable** : revenir sur le commit d'épinglage qui portait l'image
+précédente suffit. Argo CD redéploie, sans reconstruction.
 
-# Vérifier que les images sont bien importées
-sudo k3s ctr images list | grep fermentation
-```
+## Ce qui n'existe plus
 
-## Étape 4 : Transfert des manifestes K8s
+`backend`, `influxdb`, `zigbee2mqtt` et le namespace `vtt` ont été **supprimés le
+2026-09-14**, volumes et données compris. Il reste une sauvegarde des manifestes dans
+`~/backup-k3s-20260914/` sur le serveur, purgée de ses secrets.
 
-```bash
-# Sur votre Mac
-scp -r /Volumes/T7/Claude-IA/k8s tim@192.168.1.140:~/
-```
+## Diagnostic
 
-## Étape 5 : Déploiement sur K3s
-
-```bash
-# Se connecter au serveur
-ssh tim@192.168.1.140
-
-# Déployer InfluxDB
-kubectl apply -f ~/k8s/influxdb.yaml
-
-# Attendre qu'InfluxDB soit prêt (peut prendre 1-2 minutes)
-kubectl wait --for=condition=ready pod -l app=influxdb --timeout=300s
-
-# Déployer le Backend
-kubectl apply -f ~/k8s/backend.yaml
-
-# Attendre que le backend soit prêt
-kubectl wait --for=condition=ready pod -l app=fermentation-backend --timeout=300s
-
-# Déployer le Frontend (si vous avez mis à jour le manifeste)
-kubectl rollout restart deployment/fermentation-monitor
-```
-
-## Étape 6 : Vérification
-
-```bash
-# Vérifier l'état des pods
-kubectl get pods
-
-# Vous devriez voir :
-# NAME                                    READY   STATUS    RESTARTS   AGE
-# influxdb-xxxxx                         1/1     Running   0          2m
-# fermentation-backend-xxxxx             1/1     Running   0          1m
-# fermentation-monitor-xxxxx             1/1     Running   0          30s
-
-# Vérifier les logs du backend
-kubectl logs -l app=fermentation-backend --tail=50 -f
-
-# Vous devriez voir :
-# [Server] Backend API listening on port 3001
-# [SensorPoller] Starting sensor polling service...
-# [SensorPoller] Poll interval: 30000ms
-```
-
-## Étape 7 : Test de l'API
-
-```bash
-# Sur le serveur Debian, tester l'API backend
-curl http://fermentation-backend:3001/health
-
-# Devrait retourner : {"status":"ok"}
-
-# Tester depuis l'extérieur (via Nginx)
-# Sur votre Mac :
-curl http://192.168.1.140/api/projects
-```
-
-## Étape 8 : Configuration initiale des appareils
-
-1. Accédez à l'application : http://192.168.1.140
-2. Allez dans "Gérer les appareils"
-3. Ajoutez vos appareils :
-
-### Exemple de sonde Zigbee :
-- Nom : "Sonde Cave"
-- Type : "sensor"
-- IP : "192.168.1.100" (ou laisser vide)
-- Entity ID : "sensor.cave_temp" (l'entity_id de Home Assistant)
-
-### Exemple de prise Shelly :
-- Nom : "Prise Tapis 1"
-- Type : "outlet"
-- IP : "192.168.1.157"
-- Entity ID : "switch.heating_mat_1"
-
-## Étape 9 : Créer votre premier projet
-
-1. Cliquez sur "Nouveau Projet"
-2. Remplissez les informations :
-   - Nom : "Fermentation Bière 1"
-   - Type : "Bière"
-   - Sonde : Sélectionnez votre sonde
-   - Prise : Sélectionnez votre prise
-   - Température cible : 20°C
-3. Validez
-
-Le backend va automatiquement :
-- Interroger la sonde toutes les 30 secondes
-- Enregistrer les températures dans InfluxDB
-- Contrôler la prise selon la température
-
-## Dépannage
-
-### Le backend ne démarre pas
-
-```bash
-# Vérifier les logs
-kubectl logs -l app=fermentation-backend --tail=100
-
-# Problèmes courants :
-# - InfluxDB pas prêt → attendre quelques minutes
-# - Problème de connexion SQLite → vérifier le volume persistant
-```
-
-### InfluxDB ne démarre pas
-
-```bash
-# Vérifier les logs
-kubectl logs -l app=influxdb --tail=100
-
-# Vérifier le PVC
-kubectl get pvc influxdb-pvc
-
-# Si le PVC est en "Pending", vérifier le stockage disponible
-df -h
-```
-
-### Le polling des capteurs ne fonctionne pas
-
-```bash
-# Vérifier les logs du backend
-kubectl logs -l app=fermentation-backend --tail=100 -f
-
-# Vous devriez voir toutes les 30s :
-# [SensorPoller] Polling X projects...
-
-# Si erreur "Failed to fetch sensor" :
-# - Vérifier que Home Assistant est accessible depuis le cluster K3s
-# - Tester manuellement :
-kubectl exec -it deployment/fermentation-backend -- sh
-curl http://192.168.1.140:8124/api/states/sensor.cave_temp
-```
-
-### La prise Shelly ne répond pas
-
-```bash
-# Vérifier que la prise est accessible
-ping 192.168.1.157
-
-# Tester l'API Shelly depuis le pod backend
-kubectl exec -it deployment/fermentation-backend -- sh
-curl http://192.168.1.157/rpc/Switch.Set?id=0&on=true
-```
-
-## Mise à jour de l'application
-
-### Mise à jour du frontend uniquement
-
-```bash
-# Sur Mac
-cd /Volumes/T7/Claude-IA
-docker buildx build --platform linux/amd64 -t fermentation-monitor:latest .
-docker save fermentation-monitor:latest > /tmp/fermentation-monitor-amd64.tar
-scp /tmp/fermentation-monitor-amd64.tar tim@192.168.1.140:/tmp/
-
-# Sur serveur
-ssh tim@192.168.1.140
-sudo k3s ctr images import /tmp/fermentation-monitor-amd64.tar
-kubectl rollout restart deployment/fermentation-monitor
-```
-
-### Mise à jour du backend
-
-```bash
-# Sur Mac
-cd /Volumes/T7/Claude-IA/backend
-docker buildx build --platform linux/amd64 -t fermentation-backend:latest .
-docker save fermentation-backend:latest > /tmp/fermentation-backend-amd64.tar
-scp /tmp/fermentation-backend-amd64.tar tim@192.168.1.140:/tmp/
-
-# Sur serveur
-ssh tim@192.168.1.140
-sudo k3s ctr images import /tmp/fermentation-backend-amd64.tar
-kubectl rollout restart deployment/fermentation-backend
-```
-
-## Backup des données
-
-### Backup InfluxDB
-
-```bash
-# Créer un backup
-kubectl exec -it deployment/influxdb -- influx backup /var/lib/influxdb2/backup
-
-# Copier le backup localement
-kubectl cp influxdb-xxxxx:/var/lib/influxdb2/backup ./influxdb-backup
-```
-
-### Backup SQLite
-
-```bash
-# Copier la base de données
-kubectl exec -it deployment/fermentation-backend -- cat /data/fermentation.db > fermentation-backup.db
-```
-
-## Accès à InfluxDB UI
-
-Si vous voulez accéder à l'interface web d'InfluxDB :
-
-```bash
-# Port-forward pour accéder depuis votre Mac
-kubectl port-forward svc/influxdb 8086:8086
-
-# Puis ouvrir dans le navigateur : http://localhost:8086
-# Login : admin / adminpassword
-```
-
-## Variables d'environnement à personnaliser
-
-Si vous avez besoin de modifier la configuration :
-
-```bash
-# Éditer le ConfigMap du backend
-kubectl edit configmap backend-config
-
-# Modifier par exemple :
-# - HOME_ASSISTANT_URL : si votre Home Assistant est sur une autre adresse
-# - POLL_INTERVAL : pour changer la fréquence de polling (en millisecondes)
-# - HOME_ASSISTANT_TOKEN : si vous avez activé l'authentification
-
-# Puis redémarrer le backend
-kubectl rollout restart deployment/fermentation-backend
-```
-
-## Support
-
-Pour toute question ou problème :
-1. Vérifier les logs : `kubectl logs -l app=fermentation-backend`
-2. Vérifier l'état des pods : `kubectl get pods`
-3. Consulter le fichier ARCHITECTURE.md pour comprendre le fonctionnement
+| Symptôme | Cause probable |
+|---|---|
+| La vue Devices affiche 401 | Secret absent, ou `restartedAt` non modifié depuis son changement |
+| Le pod garde son ancien environnement | On a redémarré à la main au lieu de changer le manifeste |
+| Argo CD reste `OutOfSync` | Un manifeste a été édité directement sur le cluster |
+| L'adresse IP ne répond pas, le nom d'hôte oui | Le Service a perdu son NodePort, ou le nom n'est pas résolu |

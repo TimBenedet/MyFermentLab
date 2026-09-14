@@ -1,802 +1,129 @@
-<div align="center">
+# MyFermentLab — tableau de bord de fermentation
 
-# 🧪 MyFermentLab
+Suivi de cinq ferments — bière, hydromel, koji, miso, garum — et bibliothèque de recettes
+personnelles, dans une application **entièrement côté navigateur**.
 
-### Système de Monitoring Intelligent pour Fermentations Artisanales
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-20+-339933.svg)](https://nodejs.org/)
-[![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](https://www.docker.com/)
-
-*Contrôlez et surveillez vos fermentations de bière, vin, saké et culture de champignons avec précision et simplicité*
-
-[Fonctionnalités](#-fonctionnalités) • [Installation](#-installation) • [Documentation](#-configuration) • [Architecture](#-architecture)
-
-</div>
+Pas de serveur applicatif, pas de base de données, pas de routeur : `npm run dev` suffit à
+tout voir. La seule dépendance externe est **Home Assistant**, en lecture (sondes) et en
+commande (prises) — et son jeton ne quitte jamais le serveur.
 
 ---
 
-## 📖 À propos
+## Les cinq ferments
 
-**MyFermentLab** est une application web moderne et complète pour le monitoring et le contrôle automatique de vos fermentations artisanales. Conçue pour les brasseurs, vignerons amateurs et cultivateurs de champignons, elle offre un suivi précis de la température, de la densité et de l'humidité, avec un contrôle intelligent du chauffage.
+Source unique de vérité : `src/config/fermentations.ts`.
 
-### 🎯 Cas d'usage
+| id | nom | type | T° cible | %HR cible | densité |
+|---|---|---|---|---|---|
+| `ipa` | Bière IPA | beer | 19,5 °C | — | 1,060 → 1,012 |
+| `hydromel` | Hydromel | mead | 18 °C | — | 1,108 → 1,004 |
+| `koji` | Koji | koji | 30 °C | 75 % | — |
+| `miso` | Miso | miso | 30 °C | 72 % | — |
+| `garum` | Garum | garum | 26 °C | 62 % | — |
 
-- 🍺 **Brassage de bière** : Contrôle précis de la température et suivi de la densité pour calculer l'ABV
-- 🍷 **Vinification** : Surveillance des températures de fermentation primaire et secondaire
-- 🍶 **Production de saké** : Contrôle des températures basses pour fermentation traditionnelle
-- 🍄 **Culture de champignons** : Suivi de la température et de l'humidité pour myciculture
-- 📊 **Suivi historique** : Archivage et comparaison de vos brassins passés
+**États** : `ok` / `warn` / `alarm`, sur des bandes de 0,2 °C et 1 °C, 2 pts et 5 pts de %HR.
+**Régulation** : `Chauffe` / `Refroidissement` / `À consigne`, bande morte de 0,1 °C
+(`src/lib/regulation.ts`).
 
-## ✨ Fonctionnalités
+Les mesures sont **simulées** : 24 h d'historique, un point toutes les 2 s, bruit et dérive
+par canal, graine fixe par ferment pour que l'historique soit reproductible
+(`src/simulation/engine.ts`). Seuls les appareils Home Assistant sont réels.
 
-### 🌡️ Monitoring en Temps Réel
+## Les trois vues
 
-- **Température live** depuis capteurs Zigbee via Home Assistant
-- **Graphiques interactifs** avec zoom et sélection de période (1h à 30j)
-- **Alertes visuelles** pour température hors plage
-- **Interface responsive** optimisée mobile avec support PWA
+| Vue | Contenu |
+|---|---|
+| **Accueil** | les cinq ferments, puis les lots lancés depuis la bibliothèque |
+| **Bibliothèque** | les recettes personnelles : création, modification, lancement en production |
+| **Devices** | les entités Home Assistant suivies : sondes, prises |
 
-### 🎛️ Contrôle Automatique
+## La bibliothèque de recettes
 
-| Mode | Description |
-|------|-------------|
-| **Auto** | Contrôle PID intelligent basé sur température cible ±0.5°C |
-| **Manuel** | Contrôle direct ON/OFF du tapis chauffant |
+- **Six types de ferments** : `beer`, `mead`, `koji`, `miso`, `soy` (sauce soja), `garum`.
+- **Référentiel d'ingrédients** : 126 entrées (36 malts, 59 houblons, 31 levures) avec
+  producteur, emploi, aliases, et **recherche sans accents** (`src/config/ingredients/`).
+  Un menu propose, il n'enferme pas : le texte libre reste possible.
+- **EBC et AA** : au choix d'un malt ou d'un houblon, le **milieu de la fourchette publiée**
+  remplit le champ, qui reste modifiable — la fiche du sac fait foi.
+- **Calcul d'eau de brassage** : déduit du grain pesé et du volume visé, avec un **profil de
+  matériel** commun à toutes les recettes et un catalogue de modèles de cuve.
+  Le modèle est détaillé dans [`docs/eau-de-brassage.md`](docs/eau-de-brassage.md).
+- **Production** : lancer une recette crée un lot suivi sur l'accueil, dont les prises sont
+  **asservies** — sous la consigne on allume, à la consigne ou au-dessus on éteint.
 
-### 📊 Suivi de Fermentation
-
-- **Enregistrement de densité** (SG) avec calcul automatique ABV
-- **Suivi d'humidité** pour les projets champignon avec graphiques dédiés
-- **Historique complet** de température, densité et humidité
-- **Notes et observations** pour chaque projet
-- **Multi-projets** avec gestion des ressources (capteurs, prises, sondes d'humidité)
-
-### 🍺 Gestion des Recettes de Brassage
-
-- **Création de recettes complètes** : malts, houblons, levures, autres ingrédients
-- **Étapes de brassage guidées** : empâtage, ébullition, fermentation
-- **Calculs automatiques** : OG/FG estimées, ABV, IBU
-- **Style de bière** : plus de 30 styles disponibles
-- **Recette test** : style "🧪 Test bière" avec recette pré-remplie pour tester
-
-### 📋 Journal de Brassage Interactif
-
-- **Suivi étape par étape** avec chronomètre intégré
-- **Ajouts d'ingrédients chronométrés** pendant l'ébullition
-- **Événements personnalisés** : notes, mesures, ajouts, problèmes
-- **Accès au journal** depuis la carte projet (même en cours de fermentation)
-
-### 🖨️ Export PDF / Impression
-
-- **Rapport de brassage complet** exportable en PDF
-- **Inclut** : informations générales, recette, statistiques, densité, journal
-- **Impression propre** avec mise en page optimisée
-
-### 🏷️ Générateur d'Étiquettes
-
-- **Éditeur visuel** : Drag & drop avec snap intelligent sur grille
-- **3 thèmes élégants** : Bière (houblon), Hydromel (abeilles), Koji (spores)
-- **Personnalisation complète** : Textes, couleurs, tailles, rotations
-- **Guides d'alignement** : Affichage des coordonnées et distances en temps réel
-- **QR Code intégré** : Lien vers la fiche du brassin
-- **Export optimisé** : Impression directe ou PDF
-
-### 🔐 Gestion des Utilisateurs
-
-- **Mode Admin** : Contrôle complet (création, modification, suppression)
-- **Mode Lecture** : Consultation uniquement (idéal pour partager l'accès)
-- **Authentification sécurisée** avec stockage de session
-
-### 📱 Progressive Web App (PWA)
-
-- **Installation sur mobile** : Ajoutez l'app à votre écran d'accueil
-- **Mode hors-ligne** : Consultez les données même sans connexion
-- **Notifications push** (à venir) : Alertes de température
-
-## 🏗 Architecture
-
-```mermaid
-graph TB
-    A[React Frontend PWA] -->|API REST| B[Express Backend]
-    B -->|Lecture données| C[InfluxDB]
-    B -->|Gestion projets| D[SQLite]
-    B -->|Contrôle devices| E[Home Assistant]
-    E -->|MQTT/Zigbee| F[Capteurs Température]
-    E -->|MQTT/Zigbee| G[Prises Connectées]
-    F -->|Metrics| C
-```
-
-### 🛠 Stack Technique
-
-<table>
-<tr>
-<td width="50%">
-
-**Frontend**
-- ⚛️ React 18 + TypeScript
-- 📊 Recharts (graphiques)
-- 🎨 CSS3 avec design moderne
-- ⚡ Vite (build ultra-rapide)
-- 📱 PWA avec service workers
-
-</td>
-<td width="50%">
-
-**Backend**
-- 🟢 Node.js 20 + Express
-- 📘 TypeScript
-- 💾 SQLite (projets)
-- 📈 InfluxDB client (séries temporelles)
-- 🏠 Home Assistant API
-
-</td>
-</tr>
-<tr>
-<td colspan="2">
-
-**Infrastructure**
-- 🐳 Docker & Docker Compose
-- ☸️ Kubernetes (K3s)
-- 🔄 ArgoCD (GitOps)
-- 🚀 GitHub Actions (CI/CD)
-- 🌐 Nginx (reverse proxy)
-
-</td>
-</tr>
-</table>
-
-## 📦 Prérequis
-
-### Matériel Requis
-
-- **Capteurs de température** Zigbee (ex: Aqara, Sonoff)
-- **Capteurs d'humidité** Zigbee (ex: Aqara, Sonoff) - pour projets champignon
-- **Prises connectées** Zigbee ou WiFi (ex: Sonoff S31, Aqara)
-- **Coordinateur Zigbee** (ConBee II, Sonoff ZBDongle, etc.)
-- **Tapis chauffant** pour fermentation
-- **Serveur** : Raspberry Pi 4+ ou NUC (pour Home Assistant + MyFermentLab)
-
-### Logiciels Requis
-
-| Environnement | Versions |
-|--------------|----------|
-| Node.js | 20.x ou supérieur |
-| npm/yarn | 9.x ou supérieur |
-| Docker | 24.x (optionnel) |
-| Home Assistant | 2024.x |
-| InfluxDB | 2.x |
-
-## 🚀 Installation
-
-### Méthode 1 : Installation Rapide (Docker Compose)
+## Démarrage
 
 ```bash
-# Cloner le repository
-git clone https://github.com/TimBenedet/MyFermentLab.git
-cd MyFermentLab
-
-# Configurer les variables d'environnement
-cp backend/.env.example backend/.env
-nano backend/.env  # Éditer avec vos paramètres
-
-# Lancer avec Docker Compose
-docker-compose up -d
-
-# Accéder à l'application
-open http://localhost:3000
+npm ci
+npm run dev        # http://localhost:5173
 ```
-
-### Méthode 2 : Installation Développement
-
-<details>
-<summary>📖 Afficher les instructions détaillées</summary>
-
-#### 1. Cloner et Installer
 
 ```bash
-git clone https://github.com/TimBenedet/MyFermentLab.git
-cd MyFermentLab
-
-# Frontend
-npm install
-
-# Backend
-cd backend
-npm install
-cd ..
+npm run build      # tsc --noEmit && vite build
 ```
 
-#### 2. Configurer Backend
-
-Créer `backend/.env` :
-
-```env
-# InfluxDB Configuration
-INFLUX_URL=http://localhost:8086
-INFLUX_TOKEN=your-super-secret-token-here
-INFLUX_ORG=fermentation
-INFLUX_BUCKET=sensors
-
-# Home Assistant
-HOME_ASSISTANT_URL=http://192.168.1.100:8123
-HOME_ASSISTANT_TOKEN=your-ha-long-lived-token
-
-# Application
-PORT=3001
-POLL_INTERVAL=30000
-DB_PATH=./data/fermentation.db
-
-# Authentication
-ADMIN_PASSWORD=your-secure-password
-```
-
-#### 3. Générer les Icônes PWA
-
-```bash
-npm run generate-icons
-```
-
-#### 4. Lancer en Mode Dev
-
-**Terminal 1 - Frontend :**
-```bash
-npm run dev
-# ➜ Local: http://localhost:5173
-```
-
-**Terminal 2 - Backend :**
-```bash
-cd backend
-npm run dev
-# ➜ API: http://localhost:3001
-```
-
-#### 5. Accéder à l'App
-
-Ouvrir [http://localhost:5173](http://localhost:5173)
-
-</details>
-
-### Méthode 3 : Déploiement Kubernetes
-
-<details>
-<summary>☸️ Afficher le guide Kubernetes</summary>
-
-#### Prérequis
-- Cluster K3s configuré
-- `kubectl` installé et configuré
-- ArgoCD installé (optionnel mais recommandé)
-
-#### Installation Manuelle
-
-```bash
-# Créer le namespace
-kubectl create namespace fermentation
-
-# Déployer InfluxDB
-kubectl apply -f manifests/influxdb.yaml
-
-# Déployer le backend
-kubectl apply -f manifests/backend.yaml
-
-# Déployer le frontend
-kubectl apply -f manifests/frontend.yaml
-
-# Configurer l'ingress
-kubectl apply -f manifests/ingress.yaml
-
-# Vérifier le déploiement
-kubectl get pods -n fermentation
-```
-
-#### Avec ArgoCD (GitOps)
-
-Créer `argocd-app.yaml` :
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: myfermentlab
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/TimBenedet/MyFermentLab.git
-    targetRevision: main
-    path: manifests
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: fermentation
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-```
-
-Appliquer :
-```bash
-kubectl apply -f argocd-app.yaml
-```
-
-</details>
-
-## ⚙️ Configuration
-
-### 🏠 Configuration Home Assistant
-
-<details>
-<summary>📋 Exemple de configuration YAML</summary>
-
-**1. Intégration InfluxDB** (`configuration.yaml`)
-
-```yaml
-influxdb:
-  api_version: 2
-  host: localhost
-  port: 8086
-  token: !secret influxdb_token
-  organization: fermentation
-  bucket: sensors
-  include:
-    entities:
-      - sensor.temperature_fermentation_beer
-      - sensor.temperature_fermentation_wine
-      - switch.heating_mat_beer
-      - switch.heating_mat_wine
-```
-
-**2. Capteurs Zigbee via MQTT**
-
-```yaml
-mqtt:
-  sensor:
-    - name: "Temperature Fermentation Beer"
-      state_topic: "zigbee2mqtt/temperature_sensor_beer"
-      unit_of_measurement: "°C"
-      value_template: "{{ value_json.temperature }}"
-      device_class: temperature
-
-  switch:
-    - name: "Heating Mat Beer"
-      state_topic: "zigbee2mqtt/smart_plug_beer"
-      command_topic: "zigbee2mqtt/smart_plug_beer/set"
-      payload_on: '{"state": "ON"}'
-      payload_off: '{"state": "OFF"}'
-      state_on: "ON"
-      state_off: "OFF"
-      value_template: "{{ value_json.state }}"
-```
-
-**3. Créer un Long-Lived Access Token**
-
-1. Aller dans votre profil Home Assistant
-2. Scroll vers le bas jusqu'à "Long-Lived Access Tokens"
-3. Cliquer "Create Token"
-4. Nommer le token "MyFermentLab"
-5. Copier le token dans votre `.env` backend
-
-</details>
-
-### 📊 Configuration InfluxDB
-
-<details>
-<summary>🔧 Étapes de configuration</summary>
-
-**Via l'Interface Web** (http://localhost:8086)
-
-1. **Créer une organisation**
-   - Organization Name: `fermentation`
-
-2. **Créer un bucket**
-   - Bucket Name: `sensors`
-   - Retention: Infini (ou selon vos besoins)
-
-3. **Générer un token**
-   - API Tokens → Generate API Token → Read/Write Token
-   - Sélectionner les buckets: `sensors`
-   - Copier le token généré
-
-**Via CLI**
-
-```bash
-# Créer l'organisation
-influx org create -n fermentation
-
-# Créer le bucket
-influx bucket create -n sensors -o fermentation -r 0
-
-# Créer le token
-influx auth create \
-  --org fermentation \
-  --read-bucket sensors \
-  --write-bucket sensors \
-  --description "MyFermentLab Token"
-```
-
-</details>
-
-## 📱 Utilisation
-
-### Créer votre Premier Projet
-
-1. **Lancer l'application** et se connecter en mode Admin
-2. Cliquer sur **"+ Nouveau Projet"**
-3. Remplir le formulaire :
-
-| Champ | Description | Exemple |
-|-------|-------------|---------|
-| Nom | Nom de votre brassin | "IPA Cascade 2024" |
-| Type | Bière / Vin / Saké / Champignon | Bière |
-| Capteur | Capteur de température HA | sensor.temp_ferment_beer |
-| Prise | Prise connectée HA | switch.heating_mat |
-| Température | Température cible | 20°C |
-| Sonde humidité | Sonde d'humidité (champignon) | sensor.humidity_mushroom |
-| Humidité cible | Humidité cible (champignon) | 85% |
-| Mode | Auto / Manuel | Auto |
-
-4. **Sauvegarder** → Le monitoring démarre automatiquement!
-
-### Interface de Monitoring
-
-#### Page d'accueil - Liste des projets
-![Interface d'accueil](docs/images/interface-accueil.png)
-*Vue d'ensemble de tous vos projets de fermentation avec statuts en temps réel*
-
-#### Monitoring en temps réel
-![Interface de monitoring 1](docs/images/interface-monitoring-1.png)
-*Graphiques de température avec contrôles de période et affichage des statistiques*
-
-![Interface de monitoring 2](docs/images/interface-monitoring-2.png)
-*Panneau de contrôle avec température actuelle, gestion du tapis chauffant et suivi de densité*
-
-#### Gestion des devices
-![Gestion des devices](docs/images/gestion-device.png)
-*Configuration et modification des capteurs et prises connectées*
-
-#### Ajout d'un nouveau projet
-![Ajout device](docs/images/ajout-device.png)
-*Formulaire de création avec sélection des devices Home Assistant et paramètres de fermentation*
-
-#### Récapitulatif de projet terminé
-![Récapitulatif 1](docs/images/recap-1.png)
-*Statistiques complètes de température et informations du projet terminé*
-
-![Récapitulatif 2](docs/images/recap-2.png)
-*Évolution de la densité, calcul de l'ABV et historique des mesures pour les projets de bière*
-
-### Ajouter des Mesures de Densité (Bière)
-
-1. Prélever un échantillon et mesurer avec un densimètre
-2. Dans MyFermentLab : **"+ Ajouter une mesure"**
-3. Entrer la valeur (ex: `1.015`)
-4. L'ABV est calculé automatiquement : `ABV = (OG - FG) × 131.25`
-
-### Mode Lecture Seule
-
-Parfait pour partager l'accès sans risque de modification :
-
-1. Se connecter en **Mode Lecture**
-2. Visualiser tous les projets et graphiques
-3. Aucune action de modification disponible
-
-## 🔄 API Backend
-
-### Endpoints Principaux
-
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| `GET` | `/api/projects` | Liste tous les projets |
-| `POST` | `/api/projects` | Créer un projet |
-| `GET` | `/api/projects/:id` | Détails + historique |
-| `PUT` | `/api/projects/:id/target-temperature` | Modifier température |
-| `PUT` | `/api/projects/:id/outlet` | Toggle prise |
-| `PUT` | `/api/projects/:id/control-mode` | Changer mode |
-| `PUT` | `/api/projects/:id/archive` | Archiver |
-| `DELETE` | `/api/projects/:id` | Supprimer |
-| `POST` | `/api/projects/:id/density` | Ajouter densité |
-| `POST` | `/api/projects/:id/humidity` | Ajouter humidité |
-| `GET` | `/api/devices` | Liste devices HA |
-
-<details>
-<summary>📖 Voir exemples de requêtes</summary>
-
-**Créer un projet**
-
-```bash
-curl -X POST http://localhost:3001/api/projects \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "IPA Cascade 2024",
-    "type": "beer",
-    "temperatureSensor": "sensor.temp_beer",
-    "outletSwitch": "switch.heating_mat",
-    "targetTemperature": 20,
-    "controlMode": "auto",
-    "initialDensity": 1.050
-  }'
-```
-
-**Ajouter une mesure de densité**
-
-```bash
-curl -X POST http://localhost:3001/api/projects/1/density \
-  -H "Content-Type: application/json" \
-  -d '{
-    "density": 1.015,
-    "timestamp": "2024-12-01T10:30:00Z"
-  }'
-```
-
-</details>
-
-## 🛠 Développement
-
-### Structure du Projet
-
-```
-MyFermentLab/
-├── 📁 src/                      # Frontend React
-│   ├── 📄 App.tsx              # Composant principal
-│   ├── 📄 App.css              # Styles globaux
-│   ├── 📁 contexts/
-│   │   └── AuthContext.tsx     # Gestion authentification
-│   ├── 📁 components/          # Composants (à venir)
-│   └── 📄 main.tsx             # Point d'entrée
-│
-├── 📁 backend/                  # Backend Express
-│   ├── 📁 src/
-│   │   ├── 📄 index.ts         # Serveur Express
-│   │   ├── 📁 routes/          # Routes API (à venir)
-│   │   └── 📁 services/        # Services métier (à venir)
-│   └── 📁 data/                # Base SQLite
-│
-├── 📁 public/                   # Assets statiques
-│   ├── 🖼️ icon.png             # Logo source
-│   ├── 🖼️ icon-192.png         # PWA icon 192x192
-│   ├── 🖼️ icon-512.png         # PWA icon 512x512
-│   ├── 🖼️ apple-touch-icon.png # iOS icon 180x180
-│   └── 📄 manifest.json        # PWA manifest
-│
-├── 📁 scripts/                  # Scripts utilitaires
-│   └── 📄 generate-icons.js    # Génération icônes PWA
-│
-├── 📁 manifests/                # Kubernetes YAML
-│   ├── 📄 influxdb.yaml
-│   ├── 📄 backend.yaml
-│   ├── 📄 frontend.yaml
-│   └── 📄 ingress.yaml
-│
-├── 📁 .github/workflows/        # GitHub Actions
-│   ├── 📄 build-frontend.yml
-│   └── 📄 build-backend.yml
-│
-├── 📁 .claude/commands/         # Claude Code Skills
-│   ├── 📄 deploy.md            # Déploiement complet automatisé
-│   ├── 📄 fix-ui.md            # Correction d'interface
-│   ├── 📄 add-feature.md       # Ajout de fonctionnalité
-│   ├── 📄 debug-api.md         # Débogage API
-│   └── 📄 check-build.md       # Vérification build Docker
-│
-├── 🐳 Dockerfile               # Multi-stage Docker build
-├── 🐳 docker-compose.yml       # Stack complète
-├── 📄 package.json             # Dépendances frontend
-└── 📖 README.md                # Ce fichier
-```
-
-### Commandes Utiles
-
-```bash
-# Développement
-npm run dev                    # Frontend (Vite)
-cd backend && npm run dev      # Backend (Nodemon)
-
-# Build Production
-npm run build                  # Frontend → dist/
-cd backend && npm run build    # Backend → dist/
-
-# Linting
-npm run lint                   # ESLint
-
-# Génération PWA
-npm run generate-icons         # Créer icônes de toutes tailles
-
-# Docker
-docker-compose up -d           # Lancer la stack
-docker-compose logs -f         # Voir les logs
-docker-compose down            # Arrêter
-
-# Kubernetes
-kubectl apply -f manifests/    # Déployer tout
-kubectl logs -f deployment/backend  # Logs backend
-kubectl port-forward svc/frontend 8080:80  # Accès local
-```
-
-### 🤖 Claude Code Skills
-
-Ce projet utilise des **Claude Code Skills** pour automatiser les tâches de développement courantes :
-
-| Commande | Description |
-|----------|-------------|
-| `/deploy` | Build, commit, push, attendre GitHub Actions, sync ArgoCD, restart pods |
-| `/fix-ui` | Corriger un problème d'interface à partir d'une capture d'écran |
-| `/add-feature` | Ajouter une nouvelle fonctionnalité (frontend/backend) |
-| `/debug-api` | Diagnostiquer et corriger les erreurs API |
-| `/check-build` | Vérifier le statut du build Docker sur GitHub Actions |
-
-Les skills sont définis dans `.claude/commands/`.
-
-### Guidelines de Contribution
-
-1. **Code Style**
-   - Utiliser TypeScript strict
-   - Suivre les conventions ESLint
-   - Commenter le code complexe
-
-2. **Commits**
-   - Format: `type(scope): message`
-   - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`
-   - Exemple: `feat(frontend): add density chart`
-
-3. **Pull Requests**
-   - Fork le projet
-   - Créer une branche feature: `git checkout -b feat/new-feature`
-   - Commit: `git commit -m 'feat: add new feature'`
-   - Push: `git push origin feat/new-feature`
-   - Ouvrir une PR avec description détaillée
-
-## 🐛 Dépannage
-
-<details>
-<summary>❌ Erreur de connexion InfluxDB</summary>
-
-**Symptôme** : `Error: Failed to connect to InfluxDB`
-
-**Solutions** :
-1. Vérifier qu'InfluxDB est démarré : `docker ps | grep influx`
-2. Tester la connexion : `curl http://localhost:8086/health`
-3. Vérifier le token dans `.env`
-4. Vérifier que l'organisation et le bucket existent
-
-</details>
-
-<details>
-<summary>❌ Devices Home Assistant non trouvés</summary>
-
-**Symptôme** : Liste vide dans le sélecteur de devices
-
-**Solutions** :
-1. Vérifier le token HA dans `.env`
-2. Tester l'API : `curl -H "Authorization: Bearer YOUR_TOKEN" http://HA_URL:8123/api/states`
-3. Vérifier que les entities existent dans HA
-4. Redémarrer le backend
-
-</details>
-
-<details>
-<summary>❌ PWA ne s'installe pas sur iPhone</summary>
-
-**Symptôme** : Option "Ajouter à l'écran d'accueil" non disponible
-
-**Solutions** :
-1. Utiliser Safari (pas Chrome ou Firefox)
-2. Vider le cache Safari
-3. Recharger la page
-4. Vérifier que le manifest.json est accessible : `/manifest.json`
-
-</details>
-
-## 📊 Roadmap
-
-### ✅ Version 1.0 (Novembre 2025)
-- [x] Monitoring température en temps réel
-- [x] Contrôle automatique PID du chauffage
-- [x] Suivi de densité avec calcul ABV
-- [x] Gestion multi-projets
-- [x] Mode Admin / Lecture seule
-- [x] PWA installable
-
-### ✅ Version 1.1 (Novembre 2025)
-- [x] Gestion complète des recettes de brassage
-- [x] Journal de brassage interactif avec chronomètre
-- [x] Export PDF des rapports de brassage
-- [x] Style "Test bière" avec recette auto-remplie
-- [x] Accès au journal depuis la carte projet
-- [x] Simulation de données pour tests
-
-### ✅ Version 1.2 (Décembre 2025)
-- [x] **Générateur d'étiquettes**
-  - Éditeur drag & drop avec snap intelligent
-  - 3 thèmes : Bière, Hydromel, Koji
-  - Illustrations SVG décoratives (houblon, abeilles, koji)
-  - Affichage coordonnées et distances en temps réel
-  - Support QR Code personnalisé
-  - Export/impression optimisée
-
-### ✅ Version 1.3 (Décembre 2025)
-- [x] **Prédiction de fin de fermentation**
-  - Algorithme basé sur modèle de décroissance exponentielle
-  - Affichage FG estimé, date de fin, jours restants
-  - Courbe de prédiction sur le graphique de densité
-  - Indicateur de confiance (basé sur R²)
-
-### ✅ Version 1.4 (Décembre 2025)
-- [x] **Culture de champignons (Myciculture)**
-  - Nouveau type de projet "Champignon" avec icône 🍄
-  - Gestion des sondes d'humidité (💧) dans les appareils
-  - Suivi de l'humidité cible par projet
-  - Graphique d'évolution de l'humidité dans le récapitulatif
-  - Statistiques d'humidité (moyenne, min, max, écart-type)
-  - Données de test simulées sur 7 jours pour les projets test
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues et appréciées ! Voici comment participer :
-
-### Types de Contributions
-
-- 🐛 **Bug reports** : Ouvrir une [issue](https://github.com/TimBenedet/MyFermentLab/issues)
-- ✨ **Feature requests** : Proposer de nouvelles fonctionnalités
-- 📖 **Documentation** : Améliorer ce README ou ajouter des guides
-- 💻 **Code** : Corriger des bugs ou ajouter des features
-- 🌍 **Traductions** : Ajouter de nouvelles langues
-
-### Processus
-
-1. Fork le projet
-2. Créer une branche (`git checkout -b feat/amazing-feature`)
-3. Commit (`git commit -m 'feat: add amazing feature'`)
-4. Push (`git push origin feat/amazing-feature`)
-5. Ouvrir une Pull Request
-
-## 📄 Licence
-
-Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
-
-Vous êtes libre de :
-- ✅ Utiliser commercialement
-- ✅ Modifier le code
-- ✅ Distribuer
-- ✅ Utiliser en privé
-
-Sous condition de :
-- 📝 Inclure la licence et le copyright
-- 📝 Indiquer les changements majeurs
-
-## 👤 Auteur
-
-**Timothée Benedet**
-
-- 🐙 GitHub: [@TimBenedet](https://github.com/TimBenedet)
-- 📧 Email: [timothee.benedet@protonmail.com](mailto:timothee.benedet@protonmail.com)
-- 🌐 Projet: [MyFermentLab](https://github.com/TimBenedet/MyFermentLab)
-
-## 🙏 Remerciements
-
-Un grand merci aux projets open-source qui rendent MyFermentLab possible :
-
-- [**Home Assistant**](https://www.home-assistant.io/) - Pour l'intégration domotique complète
-- [**InfluxDB**](https://www.influxdata.com/) - Pour le stockage performant des séries temporelles
-- [**React**](https://reactjs.org/) - Pour le framework frontend moderne
-- [**Recharts**](https://recharts.org/) - Pour les graphiques interactifs
-- [**Express**](https://expressjs.com/) - Pour le backend Node.js léger
-- [**Sharp**](https://sharp.pixelplumbing.com/) - Pour le traitement d'images
-
-Et à toute la communauté homebrew pour l'inspiration et les retours !
-
----
-
-<div align="center">
-
-**Fait avec ❤️ par des passionnés, pour des passionnés**
-
-Si ce projet vous a aidé, pensez à lui donner une ⭐ !
-
-[⬆ Retour en haut](#-myfermentlab)
-
-</div>
+Le jeton Home Assistant vit dans `.env.local` (`HASS_URL` et `HASS_TOKEN`). Le serveur de
+développement relaie `/ha` vers Home Assistant en y ajoutant l'en-tête d'autorisation : le
+navigateur appelle une URL de même origine, et **le jeton n'apparaît jamais dans le
+JavaScript servi**. En production, c'est nginx qui joue ce rôle.
+
+## Structure du dépôt
+
+| Chemin | Rôle |
+|---|---|
+| `src/config/` | les données : ferments, référentiel d'ingrédients, modèles de cuve |
+| `src/lib/` | la logique pure : formatage, états, régulation, recettes, eau, matériel |
+| `src/hooks/` | l'état persisté : recettes, productions, matériel, thème, flux |
+| `src/components/` | le rendu |
+| `src/simulation/` | le moteur de simulation local |
+| `manifests/` | les manifestes Kubernetes déployés par Argo CD |
+| `argocd/` | l'Application Argo CD |
+| `.github/workflows/` | la chaîne de construction et de publication |
+| `docs/` | la documentation de fond |
+| `Prompt.md` | la spécification détaillée — elle **prime** en cas de divergence |
+| `THEME.md` | les règles visuelles |
+
+## Stockage
+
+Tout vit dans `localStorage`, sous quatre clés versionnées, relues **défensivement** : une
+entrée cassée est écartée une à une, elle ne vide jamais le magasin entier
+(`src/lib/storage.ts`).
+
+| Clé | Version | Contenu |
+|---|---|---|
+| `fermentation4.recipes` | 7 | les recettes, leurs appareils et leur volume visé |
+| `fermentation4.productions` | 2 | les lots lancés |
+| `fermentation4.equipment` | 1 | la cuve : évaporation, perte, absorption |
+| `fermentation4.theme` | — | le thème clair ou sombre |
+
+`src/types.ts` est le **seul point de synchronisation** du modèle de données.
+
+## Conventions
+
+- Interface **en français**, nombres au format `fr-FR` (virgule décimale, signe `−` U+2212,
+  espace insécable étroite avant `%`).
+- Pas de `any`, pas de `@ts-ignore`, pas de `@ts-expect-error`.
+- **Classes Tailwind littérales uniquement** : jamais construites par concaténation.
+- **Aucune couleur en dur** dans un composant : les surfaces passent par les classes du
+  thème, les valeurs brutes de Recharts par `ChartPalette` (`src/lib/theme.ts`).
+- Tailwind v4 se configure dans `@theme` (`src/index.css`) : **pas** de
+  `tailwind.config.js` ni de `postcss.config.js`.
+- **Rien ne défile** de 1024×640 à 1920×1080, colonne unique sous 640 px.
+- Le rendu est à **125 %** (`html { zoom: 1.25 }`), avec les points de rupture mis à
+  l'échelle et `calc(100dvh*0.8)` sur la coque : le `zoom` CSS n'est pas le zoom du
+  navigateur, il ne suit ni les media queries ni `dvh`.
+- Aucune API externe en dehors de Home Assistant.
+
+## Déploiement
+
+Une branche par version, **GitOps** : un `push` suffit, GitHub Actions construit l'image,
+l'épingle dans le manifeste, et Argo CD la déploie sur le cluster K3s.
+Voir [`DEPLOIEMENT.md`](DEPLOIEMENT.md) et [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
+## Ce qui reste du projet précédent
+
+`backend/`, `zigbee2mqtt/`, les `prototype-*.html`, `k8s-deployment.yaml`,
+`deploy-backend.sh`, `reset-databases.sh`, `temperature-control.html`,
+`hakko_labels-2.html`, `build-kraft-test.sh` : rien de tout cela n'est déployé ni utilisé
+par l'application actuelle. Ces fichiers sont conservés dans l'historique git ; ils
+peuvent être supprimés quand personne n'en a plus besoin.
