@@ -67,6 +67,19 @@ développement relaie `/ha` vers Home Assistant en y ajoutant l'en-tête d'autor
 navigateur appelle une URL de même origine, et **le jeton n'apparaît jamais dans le
 JavaScript servi**. En production, c'est nginx qui joue ce rôle.
 
+## Stack
+
+| Brique | Version | Rôle |
+|---|---|---|
+| React | 19.3 | le rendu |
+| Vite | 8.3 | le serveur de développement et la construction |
+| TypeScript | 7.0 | en mode `strict` |
+| Tailwind CSS | 4.3 | via `@tailwindcss/vite`, thème dans `@theme` |
+| Recharts | 3.10 | les graphes 24 h |
+
+Trois dépendances de production en tout : React, React DOM et Recharts. Aucune autre sans en
+parler d'abord — et jamais de backend.
+
 ## Structure du dépôt
 
 | Chemin | Rôle |
