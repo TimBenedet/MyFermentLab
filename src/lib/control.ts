@@ -13,11 +13,16 @@
  */
 
 /**
- * Demi-bande morte, en °C. Plus large que celle de l'affichage (0,1 °C) : c'est du
- * matériel, pas un tracé, et la sonde d'un Sonoff bruité se promène de quelques
- * dixièmes.
+ * Bande morte de l'asservissement, en °C : c'est l'écart **sous la consigne** à partir
+ * duquel on rallume. Plus large que celle de l'affichage (0,1 °C) : c'est du matériel,
+ * pas un tracé, et la sonde d'un Sonoff bruité se promène de quelques dixièmes.
+ *
+ * À 1 °C, le tapis ne se rallume que lorsque la cuve est franchement descendue : le
+ * relais est très protégé, mais la température oscille alors d'un degré entier, et
+ * l'écart affiché atteint le seuil d'alarme (1 °C) juste avant chaque rallumage.
+ * Resserrer cette bande resserre la régulation, au prix de plus de collages de relais.
  */
-export const HEAT_DEAD_BAND = 0.3;
+export const HEAT_DEAD_BAND = 1;
 
 /** Ce qu'on demande aux prises. */
 export type HeatCommand = 'heat' | 'idle';

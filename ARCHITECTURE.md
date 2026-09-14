@@ -71,8 +71,17 @@ relit sans le champ nouveau, l'absence est un état et non un manque.
 ## L'asservissement des prises
 
 Seuls les lots qui portent une prise entrent dans la boucle, et il faut **une sonde qui
-répond** pour chauffer (`src/lib/control.ts`). Sous la consigne on allume, à la consigne ou
-au-dessus on éteint — la bande morte est de 0,1 °C (`src/lib/regulation.ts`).
+répond** pour chauffer : sans mesure, les prises sont coupées — une sonde muette ne doit pas
+laisser un tapis chauffer sans surveillance (`src/lib/control.ts`).
+
+Le sens de la boucle : **sous la consigne on allume, à la consigne ou au-dessus on éteint**,
+et entre les deux on ne touche à rien. Cette bande morte est de **1 °C**, la valeur réglée
+dans `HEAT_DEAD_BAND` : elle protège le relais du bruit de la sonde, au prix d'une cuve qui
+oscille sur ce même degré.
+
+À ne pas confondre avec la bande de l'**affichage** (0,1 °C, `src/lib/regulation.ts`), qui ne
+décide que de la pastille *Chauffe / Refroidissement / À consigne* — et qu'un lot asservi ne
+montre même pas : il affiche la commande réellement envoyée.
 
 ## Le calcul d'eau de brassage
 

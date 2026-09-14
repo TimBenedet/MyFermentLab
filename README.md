@@ -65,7 +65,7 @@ par canal, graine fixe par ferment pour que l'historique soit reproductible
   matériel** commun à toutes les recettes et un catalogue de modèles de cuve.
   Le modèle est détaillé dans [`docs/eau-de-brassage.md`](docs/eau-de-brassage.md).
 - **Production** : lancer une recette crée un lot suivi sur l'accueil, dont les prises sont
-  **asservies** — sous la consigne on allume, à la consigne ou au-dessus on éteint.
+  **asservies** — elles se rallument **1 °C sous la consigne** et s'arrêtent à la consigne.
 
 Les recettes se lisent par carte, filtrées par type :
 
