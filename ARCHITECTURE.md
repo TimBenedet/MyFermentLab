@@ -75,9 +75,9 @@ répond** pour chauffer : sans mesure, les prises sont coupées — une sonde mu
 laisser un tapis chauffer sans surveillance (`src/lib/control.ts`).
 
 Le sens de la boucle : **sous la consigne on allume, à la consigne ou au-dessus on éteint**,
-et entre les deux on ne touche à rien. Cette bande morte est de **1 °C**, la valeur réglée
-dans `HEAT_DEAD_BAND` : elle protège le relais du bruit de la sonde, au prix d'une cuve qui
-oscille sur ce même degré.
+et entre les deux on ne touche à rien. Cette bande morte est de **0,3 °C**, la valeur réglée
+dans `HEAT_DEAD_BAND` : elle protège le relais du bruit de la sonde, pour une cuve qui oscille
+sur trois dixièmes.
 
 À ne pas confondre avec la bande de l'**affichage** (0,1 °C, `src/lib/regulation.ts`), qui ne
 décide que de la pastille *Chauffe / Refroidissement / À consigne* — et qu'un lot asservi ne
