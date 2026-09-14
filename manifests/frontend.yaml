@@ -24,7 +24,12 @@ spec:
       annotations:
         # Réécrit par la CI à chaque image publiée : Argo ne réagit qu'à un
         # changement de manifeste, c'est donc cette date qui fait redémarrer le pod.
-        kubectl.kubernetes.io/restartedAt: "2026-09-14T12:00:00Z"
+        #
+        # Pour faire prendre un nouveau jeton Home Assistant : mettre à jour le
+        # Secret, puis changer cette date ici. Un `kubectl rollout restart` ne
+        # servirait à rien — Argo remettrait aussitôt le modèle à ce que dit le
+        # dépôt, et le pod garderait son ancien environnement.
+        kubectl.kubernetes.io/restartedAt: "2026-09-14T10:12:49Z"
     spec:
       containers:
         - name: frontend
