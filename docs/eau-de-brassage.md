@@ -11,6 +11,11 @@ $$V_{\text{départ}} = \frac{V_{\text{final}}}{0{,}96} + V_{\text{cuve}} + D_{\t
 | **D_évap** | litres par heure | la surface de la cuve et la puissance du feu — **une grandeur absolue**, qui ne se divise pas avec la recette |
 | **a_BIAB** | litres par kilo de grain | le geste : 0,5 quand on presse le sac, 0,8 quand on se contente d'égoutter |
 
+Le calcul se fait dans le formulaire d'une recette de bière, juste sous les ingrédients — le
+grain pesé à gauche, la cuve à droite, le résultat en dessous :
+
+![Le bloc d'eau du formulaire : modèle de cuve, volume, ébullition, évaporation, perte de cuve et absorption](images/v3/recette-eau.png)
+
 ## Une seule eau, ou deux
 
 Le modèle est celui du **BIAB** : tout le volume part en une fois dans la cuve, il n'y a donc

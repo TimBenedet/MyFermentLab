@@ -9,6 +9,22 @@ commande (prises) — et son jeton ne quitte jamais le serveur.
 
 ---
 
+## Aperçu
+
+Les cinq ferments, leur consigne, leur écart et leur état. Le thème clair se bascule d'un
+clic.
+
+![L'accueil : les cinq ferments, avec consigne, écart et état](docs/images/v3/accueil-sombre.png)
+
+![Le même écran en thème clair](docs/images/v3/accueil-clair.png)
+
+La fiche d'un ferment : la cuve illustrée, la consigne réglable, l'état de la régulation et
+les deux courbes sur 24 h.
+
+![Fiche d'un ferment : cuve, régulation et courbes de température et de densité](docs/images/v3/ferment-graphes.png)
+
+---
+
 ## Les cinq ferments
 
 Source unique de vérité : `src/config/fermentations.ts`.
@@ -50,6 +66,15 @@ par canal, graine fixe par ferment pour que l'historique soit reproductible
   Le modèle est détaillé dans [`docs/eau-de-brassage.md`](docs/eau-de-brassage.md).
 - **Production** : lancer une recette crée un lot suivi sur l'accueil, dont les prises sont
   **asservies** — sous la consigne on allume, à la consigne ou au-dessus on éteint.
+
+Les recettes se lisent par carte, filtrées par type :
+
+![La bibliothèque : une carte par recette, avec ses ingrédients](docs/images/v3/bibliotheque.png)
+
+Le formulaire d'une recette — ingrédients, mesures EBC et AA, et le calcul d'eau sous les
+ingrédients :
+
+![Le formulaire d'une recette, et son calcul d'eau de brassage](docs/images/v3/recette-eau.png)
 
 ## Démarrage
 
