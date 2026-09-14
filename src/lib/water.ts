@@ -1,5 +1,5 @@
 import { NARROW_NBSP, formatCompact, formatMeasure, formatSigned } from './format';
-import type { BrewWater, RecipeIngredient } from '../types';
+import type { BrewWater, EquipmentSettings, RecipeIngredient } from '../types';
 
 /**
  * Eau de brassage : du volume voulu à l'eau à préparer.
@@ -42,17 +42,10 @@ export const MAX_KETTLE_LOSS_L = 50;
 export const MAX_ABSORPTION_L_PER_KG = 2;
 
 /**
- * Réglages d'une cuve, à défaut de les avoir mesurés : une cuve de 25 L qui évapore
- * 2,25 L/h, un litre laissé au fond, un sac qu'on presse.
- *
- * Le volume, lui, n'a pas de valeur par défaut : c'est la recette qui le pose.
+ * Durée d'ébullition, à défaut de la choisir : 90 minutes, le temps d'une bière qui
+ * veut évacuer son DMS. Une recette pâle et houblonnée se contente souvent de 60.
  */
-export const DEFAULT_WATER: Omit<BrewWater, 'volumeL'> = {
-  boilMinutes: 90,
-  boilOffLPerH: 2.25,
-  kettleLossL: 1,
-  absorptionLPerKg: 0.5,
-};
+export const DEFAULT_BOIL_MINUTES = 90;
 
 /**
  * Le grain d'une recette : **les lignes en kilos**.
@@ -106,25 +99,29 @@ export interface WaterPlan {
  * (contraction), on laisse le fond dans la cuve (perte de cuve), on a évaporé
  * (ébullition), et le grain a bu le reste.
  */
-export function computeWater(water: BrewWater, grainKg: number): WaterPlan {
+export function computeWater(
+  water: BrewWater,
+  equipment: EquipmentSettings,
+  grainKg: number,
+): WaterPlan {
   const hotL = water.volumeL / SHRINKAGE_FACTOR;
-  const boilOffL = (water.boilOffLPerH * water.boilMinutes) / 60;
-  const preBoilL = hotL + water.kettleLossL + boilOffL;
-  const absorptionL = grainKg * water.absorptionLPerKg;
+  const boilOffL = (equipment.boilOffLPerH * water.boilMinutes) / 60;
+  const preBoilL = hotL + equipment.kettleLossL + boilOffL;
+  const absorptionL = grainKg * equipment.absorptionLPerKg;
   const totalL = preBoilL + absorptionL;
   return {
     finalL: water.volumeL,
     shrinkageL: hotL - water.volumeL,
     hotL,
-    kettleLossL: water.kettleLossL,
+    kettleLossL: equipment.kettleLossL,
     boilOffL,
     preBoilL,
     absorptionL,
     totalL,
     grainKg,
     boilMinutes: water.boilMinutes,
-    boilOffLPerH: water.boilOffLPerH,
-    absorptionLPerKg: water.absorptionLPerKg,
+    boilOffLPerH: equipment.boilOffLPerH,
+    absorptionLPerKg: equipment.absorptionLPerKg,
     ratioLPerKg: grainKg > 0 ? totalL / grainKg : null,
   };
 }

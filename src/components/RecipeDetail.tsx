@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { KIND_LABELS } from '../config/fermentations';
+import { describeEquipment } from '../lib/equipment';
 import { formatClock } from '../lib/format';
 import { roleOf, ROLE_LABELS } from '../lib/homeassistant';
 import {
@@ -11,7 +12,7 @@ import {
   totalsOf,
 } from '../lib/recipes';
 import { computeWater, describeWater, formatLitres, grainMassKg, waterFootnote } from '../lib/water';
-import type { Production, Recipe, RecipeDevice } from '../types';
+import type { EquipmentProfile, Production, Recipe, RecipeDevice } from '../types';
 
 /** Rôle d'un appareil lié, tel qu'il s'affiche en tête de ligne. */
 function roleLabel(device: RecipeDevice): string {
@@ -21,6 +22,11 @@ function roleLabel(device: RecipeDevice): string {
 
 export interface RecipeDetailProps {
   readonly recipe: Recipe;
+  /**
+   * La cuve employée : elle porte l'évaporation, la perte et l'absorption. La recette,
+   * elle, ne porte que le volume visé et la durée d'ébullition.
+   */
+  readonly equipment: EquipmentProfile;
   readonly onBack: () => void;
   readonly onEdit: () => void;
   readonly onDelete: (id: string) => void;
@@ -61,6 +67,7 @@ const LAYOUT_BOTH =
  */
 export function RecipeDetail({
   recipe,
+  equipment,
   onBack,
   onEdit,
   onDelete,
@@ -78,11 +85,14 @@ export function RecipeDetail({
 
   /*
    * Le plan d'eau se recalcule à l'affichage plutôt que d'être recopié dans la recette :
-   * seuls les réglages sont stockés, le reste en découle. Une recette de miso n'en a
-   * pas, une bière écrite avant la v6 non plus — la page reste alors celle d'hier.
+   * elle ne garde que le volume et la durée d'ébullition, les réglages de la cuve vivent
+   * dans le matériel. Une recette de miso n'a pas de plan, une bière écrite avant la v6
+   * non plus — la page reste alors celle d'hier.
    */
   const waterPlan =
-    recipe.water === undefined ? null : computeWater(recipe.water, grainMassKg(ingredients));
+    recipe.water === undefined
+      ? null
+      : computeWater(recipe.water, equipment, grainMassKg(ingredients));
   const waterLines = waterPlan === null ? [] : describeWater(waterPlan);
 
   /*
@@ -252,13 +262,18 @@ export function RecipeDetail({
           )}
         </div>
 
-        {/* Le calcul d'eau n'existe que là où il y a du grain. Il n'est pas recopié dans
-            la recette : seuls les réglages le sont, le reste s'en déduit. */}
+        {/* Le calcul d'eau n'existe que là où il y a du grain. La recette ne garde que
+            le volume visé et la durée d'ébullition : le reste vient de la cuve. */}
         {waterPlan === null ? null : (
           <div className="mt-3 shrink-0 rounded-xl border border-anthracite-800 bg-anthracite-900 px-4 py-3">
             <div className="flex items-baseline justify-between gap-4 border-b border-anthracite-800 pb-1.5">
-              <span className="text-[10px] text-zinc-500">Eau de brassage · BIAB</span>
-              <span className="text-[10px] text-zinc-500">tout en une fois, sans rinçage</span>
+              <span className="text-[10px] text-zinc-500">Eau de brassage</span>
+              <span
+                className="text-[10px] text-zinc-500"
+                title={`${equipment.name} · ${describeEquipment(equipment)}`}
+              >
+                {equipment.name} · tout en une fois
+              </span>
             </div>
 
             <div className="flex items-baseline justify-between gap-4 py-1.5">

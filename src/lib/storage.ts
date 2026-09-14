@@ -56,3 +56,38 @@ export function writeStoredList(
     // Quota dépassé ou stockage refusé : la session continue.
   }
 }
+
+/**
+ * Objet unique relu, même enveloppe que les listes. Le matériel s'y range : il n'y a
+ * qu'une cuve, et elle n'a pas à être une liste d'un élément.
+ */
+export function readStoredRecord<T>(
+  key: string,
+  field: string,
+  parse: (entry: unknown) => T | null,
+  fallback: () => T,
+): T {
+  try {
+    const stored = window.localStorage.getItem(key);
+    if (stored === null) return fallback();
+    const parsed: unknown = JSON.parse(stored);
+    if (!isRecord(parsed)) return fallback();
+    return parse(parsed[field]) ?? fallback();
+  } catch {
+    return fallback();
+  }
+}
+
+/** Écriture d'un objet unique. Une écriture refusée laisse le magasin en mémoire. */
+export function writeStoredRecord(
+  key: string,
+  field: string,
+  version: number,
+  item: unknown,
+): void {
+  try {
+    window.localStorage.setItem(key, JSON.stringify({ version, [field]: item }));
+  } catch {
+    // Quota dépassé ou stockage refusé : la session continue.
+  }
+}

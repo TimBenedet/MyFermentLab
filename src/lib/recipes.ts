@@ -2,14 +2,7 @@ import { FERMENT_KINDS } from '../config/fermentations';
 import { NARROW_NBSP, formatCompact } from './format';
 import { roleOf } from './homeassistant';
 import { isRecord, readStoredList, writeStoredList } from './storage';
-import {
-  DEFAULT_WATER,
-  MAX_ABSORPTION_L_PER_KG,
-  MAX_BOIL_MINUTES,
-  MAX_BOIL_OFF_L_PER_H,
-  MAX_KETTLE_LOSS_L,
-  MAX_WATER_LITRES,
-} from './water';
+import { DEFAULT_BOIL_MINUTES, MAX_BOIL_MINUTES, MAX_WATER_LITRES } from './water';
 import type {
   BrewWater,
   FermentKind,
@@ -32,11 +25,12 @@ const STORAGE_KEY = 'fermentation4.recipes';
 const STORE_FIELD = 'recipes';
 /**
  * v2 ajoute les sondes, v3 `archived`, v4 les prises (`devices` remplace `probes`),
- * v5 les mesures d'ingrédient (`ebc`, `aaPct`), v6 le calcul d'eau (`water`) : une
- * recette antérieure se relit sans appareil, sans mesure et sans plan d'eau, elle
- * n'est pas cassée — l'absence est un état, pas un manque.
+ * v5 les mesures d'ingrédient (`ebc`, `aaPct`), v6 le calcul d'eau (`water`), v7 le
+ * **matériel** : les réglages de la cuve quittent les recettes pour `lib/equipment.ts`,
+ * elles ne gardent que le volume visé et la durée d'ébullition. Une recette antérieure
+ * se relit sans appareil, sans mesure et sans plan d'eau, elle n'est pas cassée.
  */
-const STORE_VERSION = 6;
+const STORE_VERSION = 7;
 
 /** Unités proposées. `%` sert aux proportions : part du grist, du sel… */
 export const RECIPE_UNITS: readonly RecipeUnit[] = ['g', 'kg', 'mL', 'L', '%'];
@@ -165,16 +159,12 @@ export const SEED_RECIPES: readonly Recipe[] = [
       { id: 'seed-ipa-5', name: 'Levure US-05', quantity: 11, unit: 'g' },
     ],
     /*
-     * Un plan d'eau pour l'exemple : 20 L finis sur 5,4 kg de grain. Ce sont les
-     * réglages par défaut — ceux d'une cuve BIAB de 25 L — et le formulaire les
-     * corrige dès qu'on a mesuré la sienne.
+     * Un plan d'eau pour l'exemple : 20 L finis, 90 minutes d'ébullition. C'est tout ce
+     * qu'une recette garde — le reste se lit dans la cuve, réglée dans le formulaire.
      */
     water: {
       volumeL: 20,
       boilMinutes: 90,
-      boilOffLPerH: 2.25,
-      kettleLossL: 1,
-      absorptionLPerKg: 0.5,
     },
     // Aucun appareil : leur identifiant dépend de l'installation Home Assistant,
     // un exemple ne peut pas en inventer.
@@ -312,11 +302,14 @@ export function sanitizeDevices(raw: unknown): RecipeDevice[] {
 
 /**
  * Un plan d'eau relu. Le **volume final est obligatoire** : sans lui il n'y a rien à
- * calculer, et la recette s'enregistre sans plan plutôt qu'avec un plan faux.
+ * calculer, et la recette s'enregistre sans plan plutôt qu'avec un plan faux. La durée
+ * d'ébullition, elle, retombe sur sa valeur par défaut — c'est un choix de recette, et
+ * 90 minutes est le choix courant.
  *
- * Les quatre réglages de cuve retombent sur leur valeur par défaut quand ils manquent
- * ou sont illisibles — l'inverse du volume : un champ effacé à la main ne doit pas
- * décrire une cuve qui évapore 0,00 L/h.
+ * Les réglages de la cuve ne sont plus relus ici : ils ont déménagé dans le matériel
+ * (`lib/equipment.ts`) où ils valent pour toutes les recettes. Ceux qu'une recette
+ * écrite en v6 portait encore sont donc ignorés — c'est le prix du déménagement, et
+ * l'intérêt même : une seule cuve fait foi.
  */
 function sanitizeWater(raw: unknown): BrewWater | undefined {
   if (!isRecord(raw)) return undefined;
@@ -325,14 +318,7 @@ function sanitizeWater(raw: unknown): BrewWater | undefined {
   return {
     volumeL,
     boilMinutes:
-      sanitizeMeasure(raw.boilMinutes, MAX_BOIL_MINUTES) ?? DEFAULT_WATER.boilMinutes,
-    boilOffLPerH:
-      sanitizeMeasure(raw.boilOffLPerH, MAX_BOIL_OFF_L_PER_H) ?? DEFAULT_WATER.boilOffLPerH,
-    kettleLossL:
-      sanitizeMeasure(raw.kettleLossL, MAX_KETTLE_LOSS_L) ?? DEFAULT_WATER.kettleLossL,
-    absorptionLPerKg:
-      sanitizeMeasure(raw.absorptionLPerKg, MAX_ABSORPTION_L_PER_KG) ??
-      DEFAULT_WATER.absorptionLPerKg,
+      sanitizeMeasure(raw.boilMinutes, MAX_BOIL_MINUTES) ?? DEFAULT_BOIL_MINUTES,
   };
 }
 

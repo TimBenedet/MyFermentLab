@@ -33,7 +33,7 @@ import {
 } from '../lib/recipes';
 import {
   computeWater,
-  DEFAULT_WATER,
+  DEFAULT_BOIL_MINUTES,
   formatLitres,
   grainMassKg,
   MAX_ABSORPTION_L_PER_KG,
@@ -44,6 +44,7 @@ import {
 } from '../lib/water';
 import type {
   BrewWater,
+  EquipmentProfile,
   FermentKind,
   Recipe,
   RecipeDevice,
@@ -121,6 +122,13 @@ export interface RecipeFormProps {
   readonly entities: readonly HassEntity[];
   /** Message d'erreur de Home Assistant, ou `null` si la lecture s'est bien passée. */
   readonly entitiesError: string | null;
+  /**
+   * La cuve, commune à toutes les recettes : son évaporation, sa perte et l'absorption
+   * de son grain. La corriger depuis une recette la corrige pour la bibliothèque
+   * entière — c'est tout l'intérêt de la sortir d'ici.
+   */
+  readonly equipment: EquipmentProfile;
+  readonly onEquipmentChange: (equipment: EquipmentProfile) => void;
   readonly onSave: (recipe: Recipe) => void;
   readonly onClose: () => void;
 }
@@ -149,19 +157,24 @@ function newDraft(): IngredientDraft {
   return { id: base.id, name: '', quantity: '', unit: base.unit, ebc: '', aaPct: '' };
 }
 
-/** Les réglages d'eau, texte eux aussi : le champ accepte la virgule et se relit. */
+/** Les réglages d'eau de la recette, texte eux aussi : le champ accepte la virgule. */
 interface WaterDraft {
   readonly volumeL: string;
   readonly boilMinutes: string;
+}
+
+/** Les réglages de la cuve, en texte également : ils s'écrivent et se relisent pareil. */
+interface EquipmentDraft {
+  readonly name: string;
   readonly boilOffLPerH: string;
   readonly kettleLossL: string;
   readonly absorptionLPerKg: string;
 }
 
 /**
- * Les cinq champs du calcul d'eau, dans l'ordre du raisonnement. Un tableau plutôt que
- * cinq blocs écrits à la main : c'est le même champ cinq fois, seul le libellé, l'unité
- * et l'explication changent.
+ * Les champs du calcul d'eau, dans l'ordre du raisonnement. Un tableau plutôt que deux
+ * blocs écrits à la main : c'est le même champ, seul le libellé, l'unité et
+ * l'explication changent.
  */
 const WATER_FIELDS: readonly {
   readonly key: keyof WaterDraft;
@@ -181,6 +194,20 @@ const WATER_FIELDS: readonly {
     unit: 'min',
     hint: 'Durée d’ébullition ; l’évaporation est un débit, elle s’y multiplie',
   },
+];
+
+/**
+ * Les réglages de la **cuve**, à la suite des précédents. Ils ne sont pas de la
+ * recette : ils décrivent le matériel, et valent donc pour toutes les recettes de la
+ * bibliothèque. C'est le magasin de matériel qui les porte, pas le stockage des
+ * recettes.
+ */
+const EQUIPMENT_FIELDS: readonly {
+  readonly key: 'boilOffLPerH' | 'kettleLossL' | 'absorptionLPerKg';
+  readonly label: string;
+  readonly unit: string;
+  readonly hint: string;
+}[] = [
   {
     key: 'boilOffLPerH',
     label: 'Évaporation',
@@ -197,7 +224,7 @@ const WATER_FIELDS: readonly {
     key: 'absorptionLPerKg',
     label: 'Absorption',
     unit: 'L/kg',
-    hint: 'Eau retenue par le grain — 0,5 en BIAB, quand on presse le sac',
+    hint: 'Eau retenue par le grain — 0,5 quand on presse le sac, 0,8 pour un panier égoutté',
   },
 ];
 
@@ -217,36 +244,85 @@ function readWater(draft: WaterDraft): BrewWater | null {
   if (volumeL === null || volumeL <= 0) return null;
   return {
     volumeL: Math.min(volumeL, MAX_WATER_LITRES),
-    boilMinutes: readSetting(draft.boilMinutes, DEFAULT_WATER.boilMinutes, MAX_BOIL_MINUTES),
-    boilOffLPerH: readSetting(
-      draft.boilOffLPerH,
-      DEFAULT_WATER.boilOffLPerH,
-      MAX_BOIL_OFF_L_PER_H,
-    ),
-    kettleLossL: readSetting(draft.kettleLossL, DEFAULT_WATER.kettleLossL, MAX_KETTLE_LOSS_L),
+    boilMinutes: readSetting(draft.boilMinutes, DEFAULT_BOIL_MINUTES, MAX_BOIL_MINUTES),
+  };
+}
+
+/**
+ * La cuve relue du brouillon. Un champ vidé retombe sur ce que la cuve portait déjà —
+ * jamais sur zéro, qui décrirait une cuve qui n'évapore rien. Le nom suit la même
+ * règle : un nom effacé laisse celui d'avant plutôt que de nommer la cuve « ».
+ */
+function readEquipment(draft: EquipmentDraft, current: EquipmentProfile): EquipmentProfile {
+  const name = draft.name.trim();
+  return {
+    id: current.id,
+    name: name === '' ? current.name : name,
+    boilOffLPerH: readSetting(draft.boilOffLPerH, current.boilOffLPerH, MAX_BOIL_OFF_L_PER_H),
+    kettleLossL: readSetting(draft.kettleLossL, current.kettleLossL, MAX_KETTLE_LOSS_L),
     absorptionLPerKg: readSetting(
       draft.absorptionLPerKg,
-      DEFAULT_WATER.absorptionLPerKg,
+      current.absorptionLPerKg,
       MAX_ABSORPTION_L_PER_KG,
     ),
   };
 }
 
 /**
- * Le brouillon initial : le plan de la recette, ou les réglages par défaut. Le volume,
- * lui, reste à saisir sur une recette neuve — les quatre autres décrivent la cuve, pas
- * la bière, et ne changent pas d'un brassin à l'autre.
+ * Le brouillon initial : le plan de la recette. Le volume reste vide sur une recette
+ * neuve — c'est le seul champ qui oblige à se prononcer — et la durée d'ébullition part
+ * de 90 minutes, le choix courant.
  */
 function toWaterDraft(water: BrewWater | undefined): WaterDraft {
   return {
     volumeL: water === undefined ? '' : formatQuantity(water.volumeL),
-    boilMinutes: formatQuantity(water?.boilMinutes ?? DEFAULT_WATER.boilMinutes),
-    boilOffLPerH: formatQuantity(water?.boilOffLPerH ?? DEFAULT_WATER.boilOffLPerH),
-    kettleLossL: formatQuantity(water?.kettleLossL ?? DEFAULT_WATER.kettleLossL),
-    absorptionLPerKg: formatQuantity(
-      water?.absorptionLPerKg ?? DEFAULT_WATER.absorptionLPerKg,
-    ),
+    boilMinutes: formatQuantity(water?.boilMinutes ?? DEFAULT_BOIL_MINUTES),
   };
+}
+
+/** Le brouillon de la cuve : ce que le magasin porte, mis en texte. */
+function toEquipmentDraft(equipment: EquipmentProfile): EquipmentDraft {
+  return {
+    name: equipment.name,
+    boilOffLPerH: formatQuantity(equipment.boilOffLPerH),
+    kettleLossL: formatQuantity(equipment.kettleLossL),
+    absorptionLPerKg: formatQuantity(equipment.absorptionLPerKg),
+  };
+}
+
+interface WaterFieldProps {
+  readonly label: string;
+  readonly unit: string;
+  readonly hint: string;
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  /** Écrit la cuve quand on quitte le champ — jamais à chaque frappe. */
+  readonly onBlur?: () => void;
+  readonly onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
+}
+
+/** Un champ du calcul d'eau : un libellé, un nombre, son unité. Le même cinq fois. */
+function WaterField({ label, unit, hint, value, onChange, onBlur, onKeyDown }: WaterFieldProps) {
+  return (
+    <label className="flex w-[84px] shrink-0 flex-col gap-1">
+      <span className="text-[10px] text-zinc-500">{label}</span>
+      <span className="flex items-center gap-1">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onKeyDown={onKeyDown}
+          onBlur={onBlur}
+          placeholder="—"
+          aria-label={hint}
+          title={hint}
+          className={`${FIELD_CLASS} w-full text-right tabular-nums`}
+        />
+        <span className="shrink-0 text-[10px] text-zinc-500">{unit}</span>
+      </span>
+    </label>
+  );
 }
 
 /**
@@ -296,6 +372,8 @@ export function RecipeForm({
   recipe,
   entities,
   entitiesError,
+  equipment,
+  onEquipmentChange,
   onSave,
   onClose,
 }: RecipeFormProps) {
@@ -307,10 +385,25 @@ export function RecipeForm({
   );
   const [linked, setLinked] = useState<readonly RecipeDevice[]>(() => recipe?.devices ?? []);
   const [waterDraft, setWaterDraft] = useState<WaterDraft>(() => toWaterDraft(recipe?.water));
+  const [equipmentDraft, setEquipmentDraft] = useState<EquipmentDraft>(() =>
+    toEquipmentDraft(equipment),
+  );
 
   const patchWater = (key: keyof WaterDraft, value: string): void => {
     setWaterDraft((current) => ({ ...current, [key]: value }));
   };
+
+  const patchEquipment = (key: keyof EquipmentDraft, value: string): void => {
+    setEquipmentDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  /*
+   * La cuve corrigée dans le brouillon, et son écriture. Elle s'écrit à la **sortie du
+   * champ**, pas à chaque frappe : « 0, » n'est pas encore un nombre, et le magasin ne
+   * doit pas s'en souvenir.
+   */
+  const liveEquipment = readEquipment(equipmentDraft, equipment);
+  const commitEquipment = (): void => onEquipmentChange(liveEquipment);
 
   /**
    * Appareils Home Assistant, triés par nom : les sondes qui mesurent **et** les
@@ -528,7 +621,8 @@ export function RecipeForm({
    */
   const grainKg = grainMassKg(kept);
   const liveWater = showsWater ? readWater(waterDraft) : null;
-  const livePlan = liveWater === null ? null : computeWater(liveWater, grainKg);
+  const livePlan =
+    liveWater === null ? null : computeWater(liveWater, liveEquipment, grainKg);
 
   /** Ce que le pied de page dit de la saisie, du plus urgent au plus anodin. */
   const feedback = incomplete
@@ -544,6 +638,8 @@ export function RecipeForm({
 
   const save = (): void => {
     if (!canSave) return;
+    // Enregistrer une recette enregistre aussi la cuve : les deux brouillons vont ensemble.
+    commitEquipment();
     onSave({
       id: recipe?.id ?? createId('recipe'),
       name: trimmedName,
@@ -955,25 +1051,52 @@ export function RecipeForm({
 
             <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
               {WATER_FIELDS.map((field) => (
-                <label key={field.key} className="flex w-[92px] shrink-0 flex-col gap-1">
-                  <span className="text-[10px] text-zinc-500">{field.label}</span>
-                  <span className="flex items-center gap-1">
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={waterDraft[field.key]}
-                      onChange={(event) => patchWater(field.key, event.target.value)}
-                      onKeyDown={onKeyDown}
-                      placeholder="—"
-                      aria-label={field.hint}
-                      title={field.hint}
-                      className={`${FIELD_CLASS} w-full text-right tabular-nums`}
-                    />
-                    <span className="shrink-0 text-[10px] text-zinc-500">{field.unit}</span>
-                  </span>
-                </label>
+                <WaterField
+                  key={field.key}
+                  label={field.label}
+                  unit={field.unit}
+                  hint={field.hint}
+                  value={waterDraft[field.key]}
+                  onChange={(value) => patchWater(field.key, value)}
+                  onKeyDown={onKeyDown}
+                />
+              ))}
+
+              {/* Le nom de la cuve, puis ses trois réglages : à partir d'ici, on écrit
+                  du matériel, pas de la bière. */}
+              <label className="flex w-[124px] shrink-0 flex-col gap-1">
+                <span className="text-[10px] text-zinc-500">Cuve</span>
+                <input
+                  type="text"
+                  value={equipmentDraft.name}
+                  onChange={(event) => patchEquipment('name', event.target.value)}
+                  onKeyDown={onKeyDown}
+                  onBlur={commitEquipment}
+                  placeholder="Ma cuve"
+                  aria-label="Nom de la cuve — les trois réglages qui suivent lui appartiennent"
+                  title="Nom de la cuve : c'est elle qui porte l'évaporation, la perte et l'absorption"
+                  className={`${FIELD_CLASS} w-full`}
+                />
+              </label>
+
+              {EQUIPMENT_FIELDS.map((field) => (
+                <WaterField
+                  key={field.key}
+                  label={field.label}
+                  unit={field.unit}
+                  hint={field.hint}
+                  value={equipmentDraft[field.key]}
+                  onChange={(value) => patchEquipment(field.key, value)}
+                  onBlur={commitEquipment}
+                  onKeyDown={onKeyDown}
+                />
               ))}
             </div>
+
+            <p className="text-[10px] text-zinc-600">
+              Évaporation, perte de cuve et absorption décrivent la cuve : les corriger ici
+              les corrige pour toutes les recettes.
+            </p>
 
             {livePlan === null ? (
               <p className="text-[11px] text-zinc-500">

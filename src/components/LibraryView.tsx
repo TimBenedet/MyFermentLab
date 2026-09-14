@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { FERMENT_KINDS, KIND_LABELS } from '../config/fermentations';
 import { useHomeAssistantEntities } from '../hooks/useHomeAssistantEntities';
 import type { ProductionStore } from '../hooks/useProductions';
+import { useEquipment } from '../hooks/useEquipment';
 import { useRecipes } from '../hooks/useRecipes';
 import { productionOf } from '../lib/production';
 import type { FermentKind, Recipe } from '../types';
@@ -91,6 +92,9 @@ export interface LibraryViewProps {
  */
 export function LibraryView({ productionStore }: LibraryViewProps) {
   const { recipes, save, remove } = useRecipes();
+  // Le matériel vit ici, avec les recettes : c'est le même écran qui s'en sert, à la
+  // création comme en détail. La cuve n'est pas une recette — elle est commune à toutes.
+  const equipmentStore = useEquipment();
   const { productions, start, stop, stopRecipe } = productionStore;
   const [screen, setScreen] = useState<Screen>({ mode: 'list' });
   const [filter, setFilter] = useState<KindFilter>('all');
@@ -178,6 +182,8 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
         recipe={null}
         entities={entities}
         entitiesError={entitiesError}
+        equipment={equipmentStore.equipment}
+        onEquipmentChange={equipmentStore.update}
         onSave={handleSave}
         onClose={showList}
       />
@@ -194,12 +200,15 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
           recipe={opened}
           entities={entities}
           entitiesError={entitiesError}
+          equipment={equipmentStore.equipment}
+          onEquipmentChange={equipmentStore.update}
           onSave={handleSave}
           onClose={showList}
         />
       ) : (
         <RecipeDetail
           recipe={opened}
+          equipment={equipmentStore.equipment}
           onBack={showList}
           onEdit={() => editRecipe(opened.id)}
           onDelete={handleDelete}

@@ -121,25 +121,40 @@ export interface RecipeDevice {
 }
 
 /**
- * Les réglages d'eau d'une recette de bière, menée en **BIAB** : tout le volume part
- * en une fois dans la cuve, il n'y a pas d'eau de rinçage.
+ * Les trois réglages qui décrivent une **cuve** — voir `lib/equipment.ts`.
  *
- * Le volume final est ce qu'on vise ; les quatre autres décrivent la **cuve**, pas la
- * bière — ils ne changent pas d'un brassin à l'autre. Ils restent modifiables parce
- * qu'ils dépendent du matériel : un taux d'évaporation se mesure, il ne se devine pas.
- * Le calcul lui-même vit dans `lib/water.ts`.
+ * Aucun ne dépend de la bière qu'on y brasse : ils changent quand on change de
+ * matériel ou de technique, pas quand on change de recette. C'est pourquoi ils sont
+ * rangés une seule fois, et non recopiés dans chaque recette.
+ */
+export interface EquipmentSettings {
+  /** Débit d'évaporation de la cuve, en litres par heure — il suit la surface et le feu. */
+  readonly boilOffLPerH: number;
+  /** Ce qui reste dans la cuve : trub, houblon, espace mort. En litres. */
+  readonly kettleLossL: number;
+  /** Eau retenue par le grain, en litres par kilo — 0,5 quand on presse le sac. */
+  readonly absorptionLPerKg: number;
+}
+
+/** Une cuve nommée : ce que la bibliothèque garde, et ce qu'une recette emploie. */
+export interface EquipmentProfile extends EquipmentSettings {
+  readonly id: string;
+  readonly name: string;
+}
+
+/**
+ * Le calcul d'eau d'une recette de bière, menée en **BIAB** : tout le volume part en
+ * une fois dans la cuve, il n'y a pas d'eau de rinçage.
+ *
+ * La recette ne garde que ce qui lui appartient — le volume visé et la durée
+ * d'ébullition. Les réglages de la cuve vivent dans le matériel (`EquipmentProfile`) :
+ * une recette pâle et une stout brassées dans la même marmite partagent son évaporation.
  */
 export interface BrewWater {
   /** Volume visé dans le fermenteur, à 20 °C, en litres. */
   readonly volumeL: number;
-  /** Durée d'ébullition, en minutes. */
+  /** Durée d'ébullition, en minutes : elle décide de ce qui s'évapore, et c'est un choix de recette. */
   readonly boilMinutes: number;
-  /** Débit d'évaporation de la cuve, en litres par heure — il suit la surface, pas le volume. */
-  readonly boilOffLPerH: number;
-  /** Ce qui reste dans la cuve : trub, houblon, espace mort. En litres. */
-  readonly kettleLossL: number;
-  /** Eau retenue par le grain, en litres par kilo — 0,5 en BIAB, où l'on presse le sac. */
-  readonly absorptionLPerKg: number;
 }
 
 export interface Recipe {
