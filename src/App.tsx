@@ -197,7 +197,7 @@ export default function App() {
   }, [selected]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-anthracite-950 lg:h-dvh lg:flex-row lg:overflow-hidden">
+    <div className="flex min-h-[calc(100dvh*0.8)] flex-col bg-anthracite-950 lg:h-[calc(100dvh*0.8)] lg:flex-row lg:overflow-hidden">
       <aside className="flex shrink-0 flex-col gap-3 border-b border-anthracite-800 px-4 py-3 lg:h-full lg:w-52 lg:gap-6 lg:border-r lg:border-b-0 lg:px-3 lg:py-5">
         <div className="min-w-0">
           {showDetail ? (

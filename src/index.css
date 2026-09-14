@@ -1,6 +1,39 @@
 @import "tailwindcss";
 
+/*
+ * Échelle de l'application : 125 %.
+ *
+ * `zoom` sur la racine agrandit **tout**, les valeurs en `rem` comme celles en
+ * `px` des classes littérales, et c'est ce qu'on veut ici : la typographie du
+ * projet est écrite en pixels (`text-[11px]`, `h-[30px]`), un simple changement
+ * de `font-size` de la racine ne les aurait pas suivies.
+ *
+ * Deux conséquences, traitées juste en dessous :
+ *
+ * 1. Les media queries restent évaluées sur la largeur **réelle** de la fenêtre
+ *    alors que l'espace de mise en page est divisé par l'échelle. Les points de
+ *    rupture sont donc multipliés d'autant dans `@theme`, sans quoi la
+ *    disposition se déciderait sur une largeur qui n'est plus la sienne.
+ * 2. Les unités d'écran (`dvh`) ne suivent pas `zoom` : `App.tsx` divise la
+ *    hauteur de la coquille par l'échelle pour que rien ne défile.
+ */
+html {
+  zoom: 1.25;
+}
+
 @theme {
+  /*
+   * Points de rupture × 1,25 (sm 40rem, md 48rem, lg 64rem, xl 80rem, 2xl 96rem
+   * par défaut) : avec l'échelle ci-dessus, une fenêtre de 1440 px offre
+   * exactement la place d'une fenêtre de 1152 px à 100 %, et doit donc se
+   * décider comme telle — c'est ce que fait un zoom navigateur de 125 %.
+   */
+  --breakpoint-sm: 50rem;
+  --breakpoint-md: 60rem;
+  --breakpoint-lg: 80rem;
+  --breakpoint-xl: 100rem;
+  --breakpoint-2xl: 120rem;
+
   /* Surfaces : échelle anthracite bleutée, du fond de page vers les éléments actifs. */
   --color-anthracite-950: #0b1117;
   --color-anthracite-900: #131b24;
