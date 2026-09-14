@@ -1,512 +1,208 @@
-export type FermentationType = 'beer' | 'koji' | 'kombucha' | 'mead' | 'cheese' | 'mushroom' | 'sourdough';
+export type FermentId = 'ipa' | 'hydromel' | 'koji' | 'miso' | 'garum';
+/**
+ * Famille du ferment. C'est elle qui décide des capacités de suivi, pas l'identifiant.
+ * Toutes les familles n'ont pas de ferment sur l'accueil : `soy` (sauce soja) n'existe
+ * que par les recettes de la bibliothèque — voir `FERMENTATION_BY_KIND`.
+ */
+export type FermentKind = 'beer' | 'mead' | 'koji' | 'miso' | 'garum' | 'soy';
+export type StatusLevel = 'ok' | 'warn' | 'alarm';
 
-export interface TemperatureReading {
-  timestamp: number;
-  temperature: number;
+/**
+ * Clé d'un lot suivi : les cinq ferments du tableau de bord (`FermentId`) ou une
+ * production lancée depuis la bibliothèque, qui porte l'identifiant de sa recette.
+ * Les deux se croisent dans le même flux sans se confondre.
+ */
+export type BatchId = string;
+
+export interface ChannelDynamics {
+  readonly noise: number; // écart type du bruit blanc, par racine de seconde
+  readonly cycleAmplitude: number; // amplitude du cycle lent de régulation
+  readonly burstScale: number; // amplitude des perturbations ponctuelles
+}
+export interface Setpoints {
+  readonly temperature: number;
+  readonly humidity: number | null;
+}
+export interface Dynamics {
+  readonly temperature: ChannelDynamics;
+  readonly humidity: ChannelDynamics | null;
+}
+export interface GravitySetpoint {
+  readonly original: number;
+  readonly final: number;
+  readonly elapsedHours: number;
 }
 
-export interface DensityReading {
-  timestamp: number;
-  density: number; // Densité en g/L
+export interface TankVesselConfig {
+  readonly kind: 'tank';
+  readonly label: string;
+  readonly liquid: string;
+}
+export interface KojiVesselConfig {
+  readonly kind: 'koji';
+  readonly label: string;
+  readonly substrate: string;
+  readonly spore: string;
+}
+export interface CrockVesselConfig {
+  readonly kind: 'crock';
+  readonly label: string;
+  /** Ce que la jarre contient — « pâte de soja », « moût de soja » : entre dans la
+   *  description du schéma, un miso et une sauce ne se nomment pas pareil. */
+  readonly contents: string;
+  readonly paste: readonly string[];
+}
+export type VesselConfig = TankVesselConfig | KojiVesselConfig | CrockVesselConfig;
+
+export interface FermentConfig {
+  /** Clé unique dans le flux : un ferment du tableau de bord ou une production. */
+  readonly id: BatchId;
+  readonly kind: FermentKind;
+  readonly name: string;
+  readonly context: string;
+  readonly setpoints: Setpoints;
+  readonly dynamics: Dynamics;
+  readonly gravity: GravitySetpoint | null;
+  readonly vessel: VesselConfig | null;
+  readonly seed: number; // graine du générateur, historique reproductible
+}
+export interface Sample {
+  readonly t: number;
+  readonly temperature: number;
+  readonly humidity: number | null;
+  readonly density: number | null;
+}
+export interface FermentReading {
+  readonly config: FermentConfig;
+  readonly current: Sample;
+  readonly history: readonly Sample[];
+}
+export interface Feed {
+  readonly fermentations: Record<FermentId, FermentReading>;
+  /** Lots lancés depuis la bibliothèque, dans l'ordre de lancement. */
+  readonly productions: readonly FermentReading[];
+  readonly timestamp: number;
 }
 
-export interface HumidityReading {
-  timestamp: number;
-  humidity: number; // Humidité en %
+/** Unités proposées pour un ingrédient. `%` sert aux proportions. */
+export type RecipeUnit = 'g' | 'kg' | 'mL' | 'L' | '%';
+
+/**
+ * Un ingrédient de recette : un nom libre et un poids.
+ * Le nom n'est pas un catalogue : on écrit ce qu'on veut, en autant de lignes
+ * qu'on veut, dans l'ordre qu'on veut.
+ */
+export interface RecipeIngredient {
+  /** Clé de la ligne dans le formulaire : elle survit au renommage, pas l'index. */
+  readonly id: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly unit: RecipeUnit;
+  /**
+   * Couleur du malt, en EBC. Proposée par le référentiel au choix d'un malt, puis
+   * **modifiable** : la fiche de ton sac fait foi, pas la fourchette publiée. Absente
+   * tant qu'on ne l'a pas renseignée — une recette de miso n'en a jamais.
+   */
+  readonly ebc?: number;
+  /** Acides alpha du houblon, en pourcentage. Même règle que `ebc`. */
+  readonly aaPct?: number;
 }
 
-// ========================================
-// Types pour le journal de brassage
-// ========================================
-
-export type BrewingLogCategory =
-  | 'brewing'      // Jour de brassage
-  | 'fermentation' // Fermentation
-  | 'measurement'  // Mesure (densité, pH, etc.)
-  | 'addition'     // Ajout d'ingrédient (dry-hop, sucre, etc.)
-  | 'transfer'     // Transfert
-  | 'packaging'    // Mise en bouteille/fût
-  | 'tasting'      // Dégustation
-  | 'other';       // Autre
-
-export interface BrewingLogEntry {
-  id: string;
-  timestamp: number;
-  category: BrewingLogCategory;
-  title: string;
-  notes?: string;
-  // Mesures optionnelles
-  temperature?: number;
-  density?: number;
-  ph?: number;
-  // Photo (URL ou base64)
-  photo?: string;
+/**
+ * Appareil Home Assistant lié à une recette : une **sonde** qui mesure, ou une
+ * **prise** qui commande. Le libellé est recopié au moment de la liaison : une recette
+ * reste lisible quand Home Assistant ne répond pas, et un appareil retiré de
+ * l'installation ne devient pas un identifiant opaque.
+ */
+export interface RecipeDevice {
+  /** `entity_id` Home Assistant — c'est lui qui fait foi, le libellé n'est qu'un cache. */
+  readonly entityId: string;
+  readonly label: string;
 }
 
-export interface Device {
-  id: string;
-  name: string;
-  type: 'sensor' | 'outlet' | 'humidity_sensor';
-  ip?: string;
-  entityId?: string; // Home Assistant entity ID
+export interface Recipe {
+  readonly id: string;
+  readonly name: string;
+  readonly kind: FermentKind;
+  readonly ingredients: readonly RecipeIngredient[];
+  /** Appareils liés, dans l'ordre du choix. Vide quand la recette n'en suit aucun. */
+  readonly devices: readonly RecipeDevice[];
+  /**
+   * Archivée : rangée, plus proposée dans la bibliothèque courante. Une recette
+   * archivée ne se lance pas — il faut d'abord la désarchiver.
+   */
+  readonly archived: boolean;
 }
 
-// ========================================
-// Types pour les recettes de brassage
-// ========================================
-
-export type IngredientType = 'grain' | 'hop' | 'yeast' | 'water' | 'sugar' | 'other';
-export type HopUse = 'boil' | 'dry-hop' | 'whirlpool' | 'first-wort';
-export type YeastForm = 'liquid' | 'dry' | 'slurry';
-
-export interface GrainIngredient {
-  id: string;
-  type: 'grain';
-  name: string;
-  quantity: number; // en kg
-  color?: number; // EBC
-  potential?: number; // Points de densité potentiels par kg/L
-  notes?: string;
+/**
+ * Un lot en production : une recette qu'on a lancée. La production ne porte pas de
+ * mesure — le moteur en fait un ferment comme un autre à partir de son type. Nom,
+ * type et appareils sont **recopiés** au lancement : le lot reste lisible et la recette
+ * peut être modifiée ou supprimée sans le casser.
+ *
+ * Les prises d'un lot sont **asservies** : sous la consigne on allume, à la consigne ou
+ * au-dessus on éteint (voir `lib/control.ts`).
+ */
+export interface Production {
+  readonly id: string;
+  readonly recipeId: string;
+  readonly recipeName: string;
+  readonly kind: FermentKind;
+  readonly startedAt: number;
+  readonly devices: readonly RecipeDevice[];
 }
 
-export interface HopIngredient {
-  id: string;
-  type: 'hop';
-  name: string;
-  quantity: number; // en g
-  alphaAcid: number; // % alpha acide
-  use: HopUse;
-  time: number; // minutes d'ébullition ou jours de dry-hop
-  notes?: string;
+/* ------------------------------------------------------------------------------------
+ * Référentiel d'ingrédients de brasserie
+ *
+ * Un **référentiel**, pas un modèle stocké : une recette ne garde jamais que le nom, le
+ * poids et l'unité d'une ligne. Ces entrées ne servent qu'au menu déroulant du
+ * formulaire, et c'est pour cela qu'elles portent des **fourchettes** et non des
+ * valeurs : la couleur d'un malt, le rendement d'un lot, l'alpha d'une récolte
+ * varient à l'intérieur de la fourchette publiée par le producteur.
+ * --------------------------------------------------------------------------------- */
+export type IngredientFamily = 'malt' | 'hop' | 'yeast';
+
+/** Fourchette fermée, telle que publiée : `[3, 5]` s'écrit « 3–5 ». */
+export type CatalogRange = readonly [number, number];
+
+interface CatalogBase {
+  readonly id: string;
+  /** Nom affiché **et recopié** dans la recette : « Pilsner · Weyermann ». */
+  readonly name: string;
+  /** Producteur ou pays : « Weyermann · Allemagne », « États-Unis ». */
+  readonly origin: string;
+  /** Emploi en clair, avec les arômes quand ils comptent : « Aromatique · agrumes ». */
+  readonly role: string;
+  /** Sigles et autres noms, pour la recherche : « EKG », « CTZ ». */
+  readonly aliases?: readonly string[];
 }
 
-export interface YeastIngredient {
-  id: string;
-  type: 'yeast';
-  name: string;
-  quantity: number; // en g ou paquets
-  form: YeastForm;
-  attenuation?: number; // % d'atténuation
-  tempMin?: number;
-  tempMax?: number;
-  notes?: string;
+export interface MaltCatalogEntry extends CatalogBase {
+  readonly family: 'malt';
+  readonly spec: {
+    readonly colorEbc: CatalogRange;
+    readonly yieldPct: CatalogRange;
+    /** Part maximale du grist, quand la fiche produit la donne. */
+    readonly maxPct?: number;
+  };
 }
 
-export interface WaterAddition {
-  id: string;
-  type: 'water';
-  name: string; // "Empâtage", "Rinçage", etc.
-  quantity: number; // en L
-  temperature?: number; // température cible
-  notes?: string;
+export interface HopCatalogEntry extends CatalogBase {
+  readonly family: 'hop';
+  readonly spec: {
+    readonly alphaPct: CatalogRange;
+  };
 }
 
-// Timing pour les ajouts d'ingrédients
-export type AdditionTiming = 'start' | 'during' | 'end';
-export type AdditionStep = 'mash' | 'boil' | 'fermentation' | 'packaging';
-
-export interface OtherIngredient {
-  id: string;
-  type: 'sugar' | 'other';
-  name: string;
-  quantity: number;
-  unit: string; // 'g', 'ml', 'kg', 'L', 'pcs'
-  // Nouveau système structuré
-  additionTiming?: AdditionTiming; // 'start', 'during', 'end'
-  additionStep?: AdditionStep; // 'mash', 'boil', 'fermentation', 'packaging'
-  additionMinutes?: number; // Minutes après le début (pour 'during')
-  // Ancien champ gardé pour compatibilité
-  additionTime?: string;
-  notes?: string;
+export interface YeastCatalogEntry extends CatalogBase {
+  readonly family: 'yeast';
+  readonly spec: {
+    readonly attenuationPct: CatalogRange;
+    readonly temperatureC: CatalogRange;
+    readonly form: 'sèche' | 'liquide';
+  };
 }
 
-// Labels pour les menus déroulants
-export const ADDITION_TIMING_LABELS: Record<AdditionTiming, string> = {
-  start: 'Au début',
-  during: 'Pendant',
-  end: 'À la fin'
-};
-
-export const ADDITION_STEP_LABELS: Record<AdditionStep, string> = {
-  mash: 'Empâtage',
-  boil: 'Ébullition',
-  fermentation: 'Fermentation',
-  packaging: 'Mise en bouteille'
-};
-
-export type RecipeIngredient = GrainIngredient | HopIngredient | YeastIngredient | WaterAddition | OtherIngredient;
-
-// Ajout d'ingrédient assigné à une étape
-export interface StepIngredientAddition {
-  ingredientId: string;
-  ingredientType: 'grain' | 'hop' | 'other';
-  minutes: number; // Minutes après le début de l'étape
-}
-
-export interface MashStep {
-  id: string;
-  name: string; // "Empâtage", "Saccharification", etc.
-  temperature: number;
-  duration: number; // en minutes
-  notes?: string;
-  ingredientAdditions?: StepIngredientAddition[]; // Ingrédients à ajouter pendant cette étape
-}
-
-export interface BoilStep {
-  duration: number; // en minutes
-  notes?: string;
-  ingredientAdditions?: StepIngredientAddition[]; // Ingrédients à ajouter pendant l'ébullition
-}
-
-export interface FermentationStep {
-  id: string;
-  name: string; // "Fermentation primaire", "Garde", etc.
-  temperature: number;
-  duration: number; // en jours
-  notes?: string;
-}
-
-export interface BrewingRecipe {
-  id: string;
-  name: string;
-  style?: string; // "IPA", "Stout", "Pale Ale", etc.
-  description?: string;
-
-  // Équipement
-  batchSize: number; // Volume final visé en L
-  boilVolume?: number; // Volume pré-ébullition en L
-  fermenterId?: string; // ID de la cuve utilisée
-  fermenterVolume?: number; // Volume de la cuve en L
-
-  // Ingrédients
-  grains: GrainIngredient[];
-  hops: HopIngredient[];
-  yeasts: YeastIngredient[];
-  waters: WaterAddition[];
-  others: OtherIngredient[];
-
-  // Étapes du brassage
-  mashSteps: MashStep[];
-  boilStep: BoilStep;
-  fermentationSteps: FermentationStep[];
-
-  // Valeurs calculées / cibles
-  originalGravity?: number; // Densité initiale (ex: 1.050)
-  finalGravity?: number; // Densité finale (ex: 1.010)
-  estimatedABV?: number; // % alcool estimé
-  estimatedIBU?: number; // Amertume estimée
-  estimatedColor?: number; // Couleur EBC estimée
-
-  // Métadonnées
-  createdAt: number;
-  updatedAt?: number;
-  notes?: string;
-}
-
-// Calculateurs de brassage
-export interface BrewingCalculations {
-  // Volume final en fermenteur (batchSize)
-  finalVolume: number;
-  // Volume après ébullition (avant pertes)
-  postBoilVolume: number;
-  // Volume avant ébullition
-  preBoilVolume: number;
-  // Volume d'eau total nécessaire
-  totalWaterNeeded: number;
-  // Densité initiale estimée (OG)
-  originalGravity: number;
-  // Densité finale estimée (FG)
-  finalGravity: number;
-  // % Alcool estimé
-  abv: number;
-  // Amertume en IBU
-  ibu: number;
-  // Couleur en EBC
-  colorEBC: number;
-  // Efficacité requise
-  efficiency: number;
-}
-
-// État d'une étape de brassage en cours
-export interface BrewingStepProgress {
-  stepId: string;
-  startedAt?: number;
-  completedAt?: number;
-  notes?: string;
-}
-
-// Événement pendant le brassage (note, mesure, ajout, etc.)
-export type BrewingEventType = 'note' | 'measurement' | 'addition' | 'issue' | 'photo';
-
-export interface BrewingEvent {
-  id: string;
-  timestamp: number;
-  stepId?: string; // Étape associée (optionnel)
-  type: BrewingEventType;
-  title: string;
-  description?: string;
-  // Mesures optionnelles
-  temperature?: number;
-  density?: number;
-  ph?: number;
-  volume?: number;
-  // Photo (base64 ou URL)
-  photo?: string;
-}
-
-// Session de brassage
-export interface BrewingSession {
-  startedAt: number;
-  completedAt?: number;
-  currentStepIndex: number;
-  steps: BrewingSessionStep[];
-  stepsProgress: BrewingStepProgress[];
-  events?: BrewingEvent[]; // Événements enregistrés pendant le brassage
-  completedAdditions?: string[]; // IDs des ajouts d'ingrédients validés
-}
-
-// Étape personnalisable pour la session de brassage
-export interface BrewingSessionStep {
-  id: string;
-  name: string;
-  description?: string;
-  duration: number; // en minutes
-  temperature?: number;
-  notes?: string;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  fermentationType: FermentationType;
-  sensorId: string;
-  outletId: string;
-  humiditySensorId?: string; // Sonde d'humidité (pour champignons)
-  targetTemperature: number;
-  currentTemperature: number;
-  currentHumidity?: number; // Humidité actuelle (pour champignons)
-  targetHumidity?: number; // Humidité cible (pour champignons)
-  outletActive: boolean;
-  controlMode: 'manual' | 'automatic'; // Mode de contrôle
-  archived: boolean;
-  history: TemperatureReading[];
-  densityHistory?: DensityReading[];
-  humidityHistory?: HumidityReading[]; // Historique humidité (pour champignons)
-  showDensity?: boolean;
-  mushroomType?: string; // Type de champignon
-  createdAt: number;
-  archivedAt?: number;
-
-  // Lien avec la recette
-  recipe?: BrewingRecipe;
-
-  // Journal de brassage
-  brewingLog?: BrewingLogEntry[];
-
-  // Session de brassage (jour de brassage)
-  brewingSession?: BrewingSession;
-}
-
-export const FERMENTATION_TYPES = {
-  beer: { name: 'Bière', icon: '🍺', color: '#F5A742', minTemp: 18, maxTemp: 45 },
-  koji: { name: 'Koji', icon: '🍚', color: '#4AC694', minTemp: 18, maxTemp: 45 },
-  kombucha: { name: 'Kombucha', icon: '🍵', color: '#9D7EDB', minTemp: 18, maxTemp: 45 },
-  mead: { name: 'Hydromel', icon: '🍯', color: '#E74856', minTemp: 18, maxTemp: 45 },
-  cheese: { name: 'Fromage', icon: '🧀', color: '#E9B54D', minTemp: 18, maxTemp: 45 },
-  mushroom: { name: 'Champignon', icon: '🍄', color: '#8B4513', minTemp: 18, maxTemp: 30 },
-  sourdough: { name: 'Levain', icon: '🍞', color: '#D4A574', minTemp: 20, maxTemp: 35 }
-} as const;
-
-// Styles de bière courants
-export const BEER_STYLES = [
-  '🧪 Test bière (recette auto)',
-  'Pale Ale', 'IPA', 'Double IPA', 'Session IPA',
-  'Stout', 'Porter', 'Imperial Stout',
-  'Wheat Beer', 'Witbier', 'Hefeweizen',
-  'Pilsner', 'Lager', 'Helles',
-  'Belgian Blonde', 'Belgian Tripel', 'Belgian Dubbel', 'Saison',
-  'Amber Ale', 'Red Ale', 'Brown Ale',
-  'Sour', 'Gose', 'Berliner Weisse',
-  'Barleywine', 'Scottish Ale',
-  'Autre'
-] as const;
-
-// Types de champignons
-export const MUSHROOM_TYPES = [
-  '🧪 Test champignon (données auto)',
-  'Pleurote (Oyster)',
-  'Shiitake',
-  'Lion\'s Mane (Hericium)',
-  'Reishi',
-  'Maitake',
-  'Enoki',
-  'King Oyster',
-  'Pink Oyster',
-  'Blue Oyster',
-  'Golden Oyster',
-  'Chestnut',
-  'Pioppino',
-  'Autre'
-] as const;
-
-// Recette de test pour validation rapide
-export const TEST_BEER_RECIPE: Omit<BrewingRecipe, 'id' | 'createdAt'> = {
-  name: 'Test Pale Ale',
-  style: '🧪 Test bière (recette auto)',
-  description: 'Recette de test pour validation rapide du système',
-  batchSize: 20,
-  boilVolume: 25,
-  fermenterVolume: 30,
-  grains: [
-    {
-      id: 'test-grain-1',
-      type: 'grain',
-      name: 'Malt Pale',
-      quantity: 4.5,
-      color: 6,
-      potential: 37
-    },
-    {
-      id: 'test-grain-2',
-      type: 'grain',
-      name: 'Malt Munich',
-      quantity: 0.5,
-      color: 15,
-      potential: 35
-    }
-  ],
-  hops: [
-    {
-      id: 'test-hop-1',
-      type: 'hop',
-      name: 'Cascade',
-      quantity: 30,
-      alphaAcid: 5.75,
-      use: 'boil',
-      time: 60
-    },
-    {
-      id: 'test-hop-2',
-      type: 'hop',
-      name: 'Centennial',
-      quantity: 20,
-      alphaAcid: 10,
-      use: 'boil',
-      time: 15
-    },
-    {
-      id: 'test-hop-3',
-      type: 'hop',
-      name: 'Citra',
-      quantity: 40,
-      alphaAcid: 12,
-      use: 'dry-hop',
-      time: 5
-    }
-  ],
-  yeasts: [
-    {
-      id: 'test-yeast-1',
-      type: 'yeast',
-      name: 'US-05',
-      quantity: 11,
-      form: 'dry',
-      attenuation: 81,
-      tempMin: 15,
-      tempMax: 24
-    }
-  ],
-  waters: [
-    {
-      id: 'test-water-1',
-      type: 'water',
-      name: 'Empâtage',
-      quantity: 15,
-      temperature: 68
-    },
-    {
-      id: 'test-water-2',
-      type: 'water',
-      name: 'Rinçage',
-      quantity: 12,
-      temperature: 78
-    }
-  ],
-  others: [
-    {
-      id: 'test-other-1',
-      type: 'other',
-      name: 'Whirlfloc',
-      quantity: 1,
-      unit: 'pcs',
-      additionStep: 'boil',
-      additionTiming: 'during',
-      additionMinutes: 50
-    }
-  ],
-  mashSteps: [
-    {
-      id: 'test-mash-1',
-      name: 'Empâtage',
-      temperature: 67,
-      duration: 60,
-      ingredientAdditions: [
-        { ingredientId: 'test-grain-1', ingredientType: 'grain', minutes: 0 },
-        { ingredientId: 'test-grain-2', ingredientType: 'grain', minutes: 0 }
-      ]
-    },
-    {
-      id: 'test-mash-2',
-      name: 'Mash-out',
-      temperature: 78,
-      duration: 10
-    }
-  ],
-  boilStep: {
-    duration: 60,
-    ingredientAdditions: [
-      { ingredientId: 'test-hop-1', ingredientType: 'hop', minutes: 0 },
-      { ingredientId: 'test-hop-2', ingredientType: 'hop', minutes: 45 },
-      { ingredientId: 'test-other-1', ingredientType: 'other', minutes: 50 }
-    ],
-    notes: 'Refroidir rapidement après ébullition'
-  },
-  fermentationSteps: [
-    {
-      id: 'test-ferm-1',
-      name: 'Fermentation primaire',
-      temperature: 18,
-      duration: 7
-    },
-    {
-      id: 'test-ferm-2',
-      name: 'Dry-hop',
-      temperature: 18,
-      duration: 5
-    },
-    {
-      id: 'test-ferm-3',
-      name: 'Cold crash',
-      temperature: 2,
-      duration: 3
-    }
-  ],
-  originalGravity: 1.052,
-  finalGravity: 1.010,
-  estimatedABV: 5.5,
-  estimatedIBU: 45,
-  estimatedColor: 12,
-  notes: 'Recette de test - Pale Ale américaine classique'
-};
-
-// Cuves prédéfinies
-export const FERMENTERS = [
-  { id: 'bucket-20', name: 'Seau 20L', volume: 20 },
-  { id: 'bucket-30', name: 'Seau 30L', volume: 30 },
-  { id: 'fermzilla-27', name: 'FermZilla 27L', volume: 27 },
-  { id: 'fermzilla-35', name: 'FermZilla 35L', volume: 35 },
-  { id: 'ss-brewtech-14', name: 'SS Brewtech 14 gal', volume: 53 },
-  { id: 'conical-30', name: 'Conique inox 30L', volume: 30 },
-  { id: 'conical-60', name: 'Conique inox 60L', volume: 60 },
-  { id: 'custom', name: 'Personnalisé', volume: 0 }
-] as const;
+/** Union discriminée par `family` : une famille sans forme d'entrée ne compile pas. */
+export type CatalogIngredient = MaltCatalogEntry | HopCatalogEntry | YeastCatalogEntry;

@@ -1,0 +1,82 @@
+# Frontend de la v3 — le tableau de bord.
+#
+# Le jeton Home Assistant n'est **pas** ici : il est monté depuis un Secret et
+# c'est nginx qui l'injecte dans l'en-tête d'autorisation au moment de relayer
+# /ha/. L'adresse de Home Assistant, elle, n'est pas un secret et vient d'un
+# ConfigMap, pour qu'un déménagement se règle par un manifeste sans reconstruire
+# d'image.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fermentation-v3
+  namespace: default
+  labels:
+    app: fermentation-v3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fermentation-v3
+  template:
+    metadata:
+      labels:
+        app: fermentation-v3
+      annotations:
+        # Réécrit par la CI à chaque image publiée : Argo ne réagit qu'à un
+        # changement de manifeste, c'est donc cette date qui fait redémarrer le pod.
+        kubectl.kubernetes.io/restartedAt: "2026-09-14T12:00:00Z"
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/timbenedet/myfermentlab-frontend:scada-v3
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: fermentation-v3-config
+          env:
+            - name: HASS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: fermentation-v3-ha
+                  key: HASS_TOKEN
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+# NodePort en plus de l'Ingress : l'application est joignable par l'adresse IP du
+# serveur avant même que le nom d'hôte ne soit résolu quelque part.
+apiVersion: v1
+kind: Service
+metadata:
+  name: fermentation-v3
+  namespace: default
+  labels:
+    app: fermentation-v3
+spec:
+  type: NodePort
+  selector:
+    app: fermentation-v3
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      nodePort: 30087

@@ -1,154 +1,122 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@import "tailwindcss";
 
-:root {
-  /* SCADA Design System */
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #111111;
-  --bg-card: #161616;
-  --bg-elevated: #1c1c1c;
+@theme {
+  /* Surfaces : échelle anthracite bleutée, du fond de page vers les éléments actifs. */
+  --color-anthracite-950: #0b1117;
+  --color-anthracite-900: #131b24;
+  --color-anthracite-850: #1a2431;
+  --color-anthracite-800: #223040;
+  --color-anthracite-700: #2b3a4d;
 
-  /* Accent colors */
-  --accent: #c4a574;
-  --accent-light: #d4b584;
-  --accent-dark: #a08050;
-  --accent-glow: rgba(196, 165, 116, 0.4);
+  /* Accent unique, réservé à l'interaction : onglet actif, focus, actions. */
+  --color-accent-300: #7dd3fc;
+  --color-accent-400: #38bdf8;
+  --color-accent-500: #0ea5e9;
 
-  /* Type-specific colors */
-  --beer-color: #f59e0b;
-  --beer-glow: rgba(245, 158, 11, 0.3);
-  --koji-color: #7cb342;
-  --koji-glow: rgba(124, 179, 66, 0.3);
-  --mushroom-color: #8b6914;
-  --mushroom-glow: rgba(139, 105, 20, 0.3);
-  --wine-color: #9333ea;
-  --wine-glow: rgba(147, 51, 234, 0.3);
-  --sourdough-color: #D4A574;
-  --sourdough-glow: rgba(212, 165, 116, 0.3);
+  /* Une teinte par grandeur suivie. Les consignes restent en gris neutre. */
+  --color-metric-temperature: #7fb2ff;
+  --color-metric-humidity: #4fd1c5;
+  --color-metric-density: #a78bfa;
 
-  /* Text colors */
-  --text-primary: #ffffff;
-  --text-secondary: #888888;
-  --text-muted: #555555;
+  /* Une seule animation pour tout le projet. */
+  --animate-bubble: bubble-rise 6s linear infinite;
 
-  /* Status colors */
-  --success: #10b981;
-  --success-glow: rgba(16, 185, 129, 0.3);
-  --warning: #f59e0b;
-  --warning-glow: rgba(245, 158, 11, 0.3);
-  --error: #ef4444;
-  --error-glow: rgba(239, 68, 68, 0.3);
-
-  /* Borders and glass */
-  --border: #252525;
-  --border-light: #333333;
-  --glass: rgba(255, 255, 255, 0.03);
-}
-
-body {
-  font-family: 'SF Pro Display', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: var(--bg-primary);
-  min-height: 100vh;
-  color: var(--text-primary);
-  overflow-x: hidden;
-}
-
-#root {
-  min-height: 100vh;
-  position: relative;
-}
-
-/* Animated Particles Background */
-.particles {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.particle {
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  background: var(--accent);
-  border-radius: 50%;
-  opacity: 0.15;
-  animation: float 25s infinite linear;
-}
-
-@keyframes float {
-  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.15; }
-  90% { opacity: 0.15; }
-  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
-}
-
-/* Global Animations */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 10px var(--success), 0 0 20px var(--success-glow); transform: scale(1); }
-  50% { box-shadow: 0 0 15px var(--success), 0 0 30px var(--success-glow); transform: scale(1.1); }
-}
-
-@keyframes led-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.2); }
-}
-
-@keyframes led-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
-@keyframes shine {
-  0% { transform: translateX(-100%) rotate(45deg); }
-  100% { transform: translateX(100%) rotate(45deg); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.fade-in {
-  animation: fadeIn 0.6s ease-out;
-}
-
-/* ========================================
-   Styles d'impression globaux
-   ======================================== */
-@media print {
-  *,
-  *::before,
-  *::after {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
+  @keyframes bubble-rise {
+    0% {
+      transform: translateY(0) scale(0.6);
+      opacity: 0;
+    }
+    35% {
+      opacity: 0.9;
+    }
+    70% {
+      opacity: 0.5;
+    }
+    100% {
+      transform: translateY(-86px) scale(1.15);
+      opacity: 0;
+    }
   }
+}
 
+/*
+ * Thème clair — « tons blancs ».
+ *
+ * Aucun composant ne change : les échelles de `@theme` sont simplement
+ * redéfinies sur `<html data-theme="light">`, et toutes les classes littérales
+ * (`bg-anthracite-900`, `text-zinc-100`, `text-emerald-400`…) suivent d'elles-mêmes.
+ *
+ * Trois familles de valeurs s'adaptent, et pas seulement les surfaces :
+ *
+ * 1. **anthracite** — le fond de page redevient la plus sombre des trois
+ *    surfaces et les panneaux passent au blanc pur : une carte blanche sur un
+ *    fond très légèrement bleuté, sans ombre, comme en sombre.
+ * 2. **zinc** — cette échelle porte le texte. Elle s'inverse : `100` est l'encre
+ *    la plus forte, `600` la plus effacée. Garder les valeurs de sombre donnerait
+ *    du blanc sur blanc.
+ * 3. **états, grandeurs et accent** — les teintes 300/400 sont calibrées pour un
+ *    fond anthracite. Sur blanc elles disparaissent : chaque rôle reçoit sa
+ *    déclinaison sombre, en conservant l'écart de valeurs de la rampe.
+ *
+ * Le bloc est volontairement hors couche : il doit primer sur `base`.
+ */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --color-anthracite-950: #eaeff7;
+  --color-anthracite-900: #ffffff;
+  --color-anthracite-850: #f2f5fa;
+  --color-anthracite-800: #dbe3ee;
+  --color-anthracite-700: #c8d3e6;
+
+  --color-zinc-100: #0f172a;
+  --color-zinc-200: #1e293b;
+  --color-zinc-300: #334155;
+  --color-zinc-400: #475569;
+  --color-zinc-500: #64748b;
+  --color-zinc-600: #8592a6;
+
+  --color-accent-300: #0369a1;
+  --color-accent-400: #0284c7;
+  --color-accent-500: #0ea5e9;
+
+  --color-metric-temperature: #2563eb;
+  --color-metric-humidity: #0d9488;
+  --color-metric-density: #7c3aed;
+
+  --color-teal-300: #0d9488;
+  --color-violet-300: #7c3aed;
+
+  --color-emerald-400: #047857;
+  --color-amber-400: #b45309;
+  --color-red-400: #b91c1c;
+  --color-emerald-500: #059669;
+  --color-amber-500: #d97706;
+  --color-red-500: #dc2626;
+}
+
+@layer base {
   html {
-    background: white !important;
-    background-color: white !important;
+    color-scheme: dark;
+    background-color: var(--color-anthracite-950);
   }
 
   body {
-    background: white !important;
-    background-color: white !important;
-    color: #000 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+    margin: 0;
+    background-color: var(--color-anthracite-950);
+    color: var(--color-zinc-200);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
-  #root {
-    background: white !important;
-    background-color: white !important;
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+  }
+
+  input {
+    font: inherit;
   }
 }

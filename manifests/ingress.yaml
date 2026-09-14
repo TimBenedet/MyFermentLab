@@ -1,45 +1,26 @@
+# Un hôte dédié plutôt qu'un sous-chemin : l'application sert ses fichiers sous
+# /assets/ et appelle /ha/ en absolu, donc la racine d'un hôte lui va sans
+# configuration supplémentaire.
+#
+# Le nom doit être résolu par ton DNS local (ou une ligne dans /etc/hosts) vers
+# 192.168.1.51 ; en attendant, le Service en NodePort 30087 donne le même accès
+# par l'adresse IP.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: myfermentlab-ingress
+  name: fermentation-v3
   namespace: default
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   rules:
-  # Version principale (design actuel)
-  - host: myfermentlab
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: fermentation-frontend
-            port:
-              number: 80
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: fermentation-backend
-            port:
-              number: 3001
-  # Version SCADA (nouveau design)
-  - host: scada.myfermentlab
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: fermentation-monitor-scada
-            port:
-              number: 80
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: fermentation-backend
-            port:
-              number: 3001
+    - host: ferment.myfermentlab
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fermentation-v3
+                port:
+                  number: 80

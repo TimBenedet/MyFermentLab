@@ -1,13 +1,20 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
-import { AuthProvider } from './contexts/AuthContext'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import './index.css';
+import { applyTheme, readStoredTheme } from './lib/theme';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </React.StrictMode>,
-)
+// Avant le premier rendu : le thème mémorisé est posé sur <html> sans attendre
+// React, sinon la page s'affiche un instant dans l'autre thème.
+applyTheme(readStoredTheme());
+
+const container = document.getElementById('root');
+if (container === null) {
+  throw new Error('Élément #root introuvable dans index.html');
+}
+
+createRoot(container).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);

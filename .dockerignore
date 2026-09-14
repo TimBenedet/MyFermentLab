@@ -2,9 +2,17 @@ node_modules
 dist
 .git
 .gitignore
-.env
+# Le jeton Home Assistant vit dans .env.local : il ne doit JAMAIS entrer dans une
+# couche d'image, sinon il se retrouve dans le paquet publié sur ghcr.
+.env*
 *.log
 .DS_Store
 README.md
 .claude
 ._*
+# Le dépôt cloné dans son propre dossier, et ce qui n'a rien à faire dans l'image.
+MyFermentLab/
+backend/
+zigbee2mqtt/
+argocd/
+docs/

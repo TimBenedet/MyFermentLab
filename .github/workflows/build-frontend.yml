@@ -2,7 +2,7 @@ name: Build and Push Frontend
 
 on:
   push:
-    branches: [ main, master, scada-redesign ]
+    branches: [ main, master, scada-redesign, scada-v3 ]
     paths:
       - 'src/**'
       - 'public/**'
@@ -22,7 +22,8 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # write : la dernière étape repousse le manifeste avec le tag de l'image.
+      contents: write
       packages: write
 
     steps:
@@ -46,6 +47,8 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
             # Pour la branche scada-redesign: tag 'scada'
             type=raw,value=scada,enable=${{ github.ref == 'refs/heads/scada-redesign' }}
+            # Pour la branche scada-v3: tag 'scada-v3' (image mouvante, dépannage)
+            type=raw,value=scada-v3,enable=${{ github.ref == 'refs/heads/scada-v3' }}
             # Tag avec le SHA du commit
             type=sha,prefix={{branch}}-
 
@@ -57,3 +60,20 @@ jobs:
           no-cache: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      # Argo CD ne voit que les changements de manifeste, pas une nouvelle image
+      # publiée sous un tag existant : c'est ce commit qui déclenche le
+      # déploiement. Le tag épinglé est immuable, donc un retour en arrière se
+      # fait en revenant sur ce commit.
+      - name: Épingler le tag de l'image dans le manifeste
+        run: |
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          sed -i "s|myfermentlab-frontend:scada-v3.*|myfermentlab-frontend:scada-v3-${SHORT_SHA}|" manifests/frontend.yaml
+          if git diff --quiet; then
+            echo "Manifeste déjà à jour"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore(image): scada-v3-${SHORT_SHA}"
+          git push

@@ -1,640 +1,328 @@
-// Build trigger: 2025-12-15T20:00
-import { useState, useEffect, useMemo } from 'react';
-import { HomePage } from './pages/HomePage';
-import { CreateProjectPage } from './pages/CreateProjectPage';
-import { MonitoringPage } from './pages/MonitoringPage';
-import { BrewingSessionPage } from './pages/BrewingSessionPage';
-import { DevicesPage } from './pages/DevicesPage';
-import { LoginPage } from './pages/LoginPage';
-import { SummaryPage } from './pages/SummaryPage';
-import { LabelGeneratorPage } from './pages/LabelGeneratorPage';
-import { StatsPage } from './pages/StatsPage';
-import { HealthCheckPage } from './pages/HealthCheckPage';
-import { Project, Device, FermentationType, BrewingSession, BrewingRecipe } from './types';
-import { apiService, ProjectWithHistory } from './services/api.service';
-import { useAuth } from './contexts/AuthContext';
-import './App.css';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { DevicesView } from './components/DevicesView';
+import { FermentationCard } from './components/FermentationCard';
+import { FermentationDetail } from './components/FermentationDetail';
+import { LibraryView } from './components/LibraryView';
+import { ThemeToggle } from './components/ThemeToggle';
+import { useFermentationFeed } from './hooks/useFermentationFeed';
+import { useHeatControl } from './hooks/useHeatControl';
+import { useHomeAssistantEntities } from './hooks/useHomeAssistantEntities';
+import { useProductions } from './hooks/useProductions';
+import { useTheme } from './hooks/useTheme';
+import type { HeatTarget } from './hooks/useHeatControl';
+import type { HeatLot } from './lib/control';
+import { formatClockSeconds } from './lib/format';
+import { liveReading, outletsOf, probeTemperatureOf, temperatureProbeOf } from './lib/production';
+import { assess, worstStatus } from './lib/reading';
+import { STATUS_STYLES } from './lib/status';
+import { CHART_PALETTES } from './lib/theme';
+import type { BatchId, Production, StatusLevel } from './types';
 
-type Page = 'home' | 'create-project' | 'monitoring' | 'brewing-session' | 'devices' | 'summary' | 'labels' | 'stats';
+type View = 'home' | 'library' | 'devices';
 
-function App() {
-  const { isAuthenticated, role, logout } = useAuth();
-  const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [showHealthFromLogin, setShowHealthFromLogin] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+/** Deux propositions de fiche produit, comparables sur le même ferment. */
+type PanelVariant = 'v1' | 'v2';
 
-  // États
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<ProjectWithHistory | null>(null);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface TabStyle {
+  readonly view: View;
+  readonly label: string;
+}
 
-  // DateTime pour le header SCADA
-  const [datetime, setDatetime] = useState('');
+/** Classes littérales dans les deux branches : Tailwind doit les voir écrites. */
+const TABS: readonly TabStyle[] = [
+  { view: 'home', label: 'Accueil' },
+  { view: 'library', label: 'Bibliothèque' },
+  { view: 'devices', label: 'Devices' },
+];
 
-  // Charger les projets et appareils au démarrage
-  useEffect(() => {
-    loadInitialData();
+interface CounterStyle {
+  readonly level: StatusLevel;
+  readonly numberClass: string;
+}
+
+/** Classes littérales : aucune concaténation, Tailwind doit les voir. */
+const COUNTERS: readonly CounterStyle[] = [
+  { level: 'ok', numberClass: 'text-emerald-400' },
+  { level: 'warn', numberClass: 'text-amber-400' },
+  { level: 'alarm', numberClass: 'text-red-400' },
+];
+
+export default function App() {
+  // Les productions vivent dans `localStorage`, le moteur n'en sait rien : on les lui
+  // donne à chaque changement de liste, il aligne ses lots dessus.
+  const productions = useProductions();
+  const feed = useFermentationFeed(productions.productions);
+  const { theme, toggleTheme } = useTheme();
+  const [view, setView] = useState<View>('home');
+  const [selectedId, setSelectedId] = useState<BatchId | null>(null);
+  // La variante vit ici et non dans la vue produit : elle survit au retour à
+  // l'accueil, sinon la comparaison entre les deux propositions est impossible.
+  const [panelVariant, setPanelVariant] = useState<PanelVariant>('v1');
+
+  // Le jeton Home Assistant est injecté par le proxy du serveur de dev : la lecture
+  // n'est lancée que lorsqu'elle sert — la vue Devices ouverte, ou un lot qui suit une
+  // sonde de température.
+  const watchesProbe = productions.productions.some(
+    (production) => temperatureProbeOf(production) !== null,
+  );
+  const homeAssistant = useHomeAssistantEntities(view === 'devices' || watchesProbe);
+
+  const readings = useMemo(() => Object.values(feed.fermentations), [feed.fermentations]);
+  // Index des lots par identifiant : la carte a besoin de la date de lancement pour
+  // dire depuis quand le lot tourne, le moteur ne connaît que sa config figée.
+  const productionById = useMemo(() => {
+    const index = new Map<string, Production>();
+    for (const production of productions.productions) index.set(production.id, production);
+    return index;
+  }, [productions.productions]);
+
+  /*
+   * Asservissement des prises. Seuls les lots qui en portent une entrent dans la
+   * boucle : une recette sans prise ne commande rien, une recette sans sonde qui
+   * répond ne chauffe pas (voir `decideHeat`). La consigne est celle du moteur, donc
+   * celle qu'on peut changer depuis la fiche du lot.
+   */
+  const heatTargets = useMemo<HeatTarget[]>(
+    () =>
+      feed.productions.flatMap((reading) => {
+        const production = productionById.get(reading.config.id);
+        if (production === undefined) return [];
+        const outlets = outletsOf(production);
+        if (outlets.length === 0) return [];
+        return [
+          {
+            batchId: production.id,
+            temperature: probeTemperatureOf(production, homeAssistant.entities),
+            setpoint: reading.config.setpoints.temperature,
+            outlets: outlets.map((device) => device.entityId),
+          },
+        ];
+      }),
+    [feed.productions, homeAssistant.entities, productionById],
+  );
+  const heat = useHeatControl(heatTargets, homeAssistant.entities);
+
+  /** Ce que l'asservissement commande, lot par lot : lu par la carte et par la fiche. */
+  const heatLots = useMemo(() => {
+    const lots = new Map<string, HeatLot>();
+    for (const target of heatTargets) {
+      const command = heat.commands.get(target.batchId);
+      if (command === undefined) continue;
+      lots.set(target.batchId, {
+        command,
+        outlets: target.outlets.length,
+        temperature: target.temperature,
+      });
+    }
+    return lots;
+  }, [heat.commands, heatTargets]);
+
+  /*
+   * Un lot affiche la mesure de sa sonde quand elle répond : le relevé brut du moteur
+   * — simulé — est corrigé ici, une fois pour toutes, pour que la carte de l'accueil et
+   * la fiche du lot montrent le même chiffre. `feed.timestamp` change à chaque tick,
+   * ce qui rafraîchit l'âge du lot et le nom de la sonde.
+   */
+  const running = useMemo(
+    () =>
+      feed.productions.map((reading) => {
+        const production = productionById.get(reading.config.id);
+        if (production === undefined) return reading;
+        return liveReading(
+          reading,
+          production,
+          homeAssistant.entities,
+          feed.timestamp,
+          heatLots.get(production.id) ?? null,
+        );
+      }),
+    [feed.productions, feed.timestamp, heatLots, homeAssistant.entities, productionById],
+  );
+  // Un lot lancé depuis la bibliothèque se suit comme un ferment : même carte, même
+  // fiche, mêmes graphes. C'est son identifiant qui le distingue.
+  const batches = useMemo(() => [...readings, ...running], [readings, running]);
+
+  // L'id peut survivre à un rechargement à chaud d'un ferment supprimé : on retombe
+  // alors proprement sur la vue d'ensemble au lieu de lever une erreur.
+  const selected =
+    selectedId === null
+      ? null
+      : (batches.find((reading) => reading.config.id === selectedId) ?? null);
+  // Le lot correspondant, quand c'est bien un lot et non un ferment du tableau de bord.
+  const selectedProduction =
+    productions.productions.find((production) => production.id === selectedId) ?? null;
+  // Un seul <h1> par page : celui du ferment quand une vue produit est ouverte.
+  const showDetail = view === 'home' && selected !== null;
+
+  const counts = useMemo(() => {
+    const tally: Record<StatusLevel, number> = { ok: 0, warn: 0, alarm: 0 };
+    for (const reading of batches) tally[worstStatus(assess(reading))] += 1;
+    return tally;
+  }, [batches]);
+
+  const handleOpen = useCallback((id: BatchId) => {
+    setSelectedId(id);
+    window.scrollTo({ top: 0 });
   }, []);
 
-  // Charger le projet sélectionné avec son historique
+  const handleClose = useCallback(() => {
+    setSelectedId(null);
+  }, []);
+
+  const handleToggleVariant = useCallback(() => {
+    setPanelVariant((current) => (current === 'v1' ? 'v2' : 'v1'));
+  }, []);
+
+  const handleSelectView = useCallback((next: View) => {
+    setView(next);
+    setSelectedId(null);
+    window.scrollTo({ top: 0 });
+  }, []);
+
+  const handleStopProduction = useCallback(() => {
+    if (selectedProduction === null) return;
+    // Arrêter un lot coupe ses prises : un tapis ne doit pas rester chaud tout seul.
+    heat.release(selectedProduction.devices);
+    productions.stop(selectedProduction.id);
+    setSelectedId(null);
+  }, [heat, productions, selectedProduction]);
+
   useEffect(() => {
-    if (selectedProjectId) {
-      loadProject(selectedProjectId);
-    }
-  }, [selectedProjectId]);
-
-  // Rafraîchir la température toutes les 5 secondes si on est sur la page de monitoring
-  // Utilise getLiveTemperature pour récupérer directement depuis Home Assistant
-  // ce qui permet aussi de déclencher le contrôle automatique de la prise côté backend
-  useEffect(() => {
-    if (currentPage === 'monitoring' && selectedProjectId) {
-      const refreshTemperature = async () => {
-        try {
-          const data = await apiService.getLiveTemperature(selectedProjectId);
-          setSelectedProject(prev => prev ? {
-            ...prev,
-            currentTemperature: data.temperature
-          } : null);
-          setProjects(prev => prev.map(p =>
-            p.id === selectedProjectId ? { ...p, currentTemperature: data.temperature } : p
-          ));
-
-          // Si la prise a changé d'état, recharger le projet complet pour avoir l'état à jour
-          if (data.outletChanged) {
-            loadProject(selectedProjectId);
-          }
-        } catch (err) {
-          console.error('Failed to refresh temperature:', err);
-        }
-      };
-
-      const interval = setInterval(refreshTemperature, 5000);
-
-      return () => clearInterval(interval);
-    }
-  }, [currentPage, selectedProjectId]);
-
-  // Mettre à jour la date/heure pour le header SCADA
-  useEffect(() => {
-    const updateDateTime = () => {
-      const now = new Date();
-      const options: Intl.DateTimeFormatOptions = {
-        weekday: 'short',
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      };
-      setDatetime(now.toLocaleDateString('fr-FR', options));
+    if (selected === null) return undefined;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setSelectedId(null);
     };
-    updateDateTime();
-    const interval = setInterval(updateDateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadInitialData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const [projectsData, devicesData] = await Promise.all([
-        apiService.getProjects(),
-        apiService.getDevices()
-      ]);
-      setProjects(projectsData);
-      setDevices(devicesData);
-    } catch (err) {
-      console.error('Failed to load initial data:', err);
-      setError('Impossible de charger les données. Vérifiez que le backend est accessible.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadProject = async (projectId: string) => {
-    try {
-      const projectData = await apiService.getProject(projectId);
-      setSelectedProject(projectData);
-
-      // Mettre à jour aussi dans la liste des projets
-      setProjects(prev => prev.map(p =>
-        p.id === projectId ? projectData : p
-      ));
-    } catch (err) {
-      console.error('Failed to load project:', err);
-      setError('Impossible de charger le projet');
-    }
-  };
-
-  // Gestion des projets
-  const handleCreateProject = async (data: {
-    name: string;
-    fermentationType: FermentationType;
-    sensorId: string;
-    outletId: string;
-    targetTemperature: number;
-    controlMode: 'manual' | 'automatic';
-    recipe?: BrewingRecipe;
-  }, startBrewing?: boolean) => {
-    try {
-      console.log('Creating project with data:', JSON.stringify(data, null, 2));
-      console.log('Recipe included:', !!data.recipe);
-      if (data.recipe) {
-        console.log('Recipe grains:', data.recipe.grains?.length || 0);
-        console.log('Recipe hops:', data.recipe.hops?.length || 0);
-      }
-      const newProject = await apiService.createProject(data);
-      console.log('Project created, recipe in response:', !!newProject.recipe);
-      setProjects(prev => [...prev, newProject]);
-      setSelectedProjectId(newProject.id);
-
-      // Si on démarre le brassage, aller sur la page de session de brassage
-      if (startBrewing && data.fermentationType === 'beer') {
-        setCurrentPage('brewing-session');
-      } else {
-        setCurrentPage('home');
-      }
-    } catch (err) {
-      console.error('Failed to create project:', err);
-      setError('Impossible de créer le projet');
-    }
-  };
-
-  const handleSelectProject = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
-    setSelectedProjectId(projectId);
-
-    // Déterminer la page selon l'état du projet
-    if (project?.fermentationType === 'beer') {
-      // Si le brassage a une session mais n'est pas terminé
-      if (project.brewingSession && !project.brewingSession.completedAt) {
-        setCurrentPage('brewing-session');
-      } else {
-        setCurrentPage('monitoring');
-      }
-    } else {
-      setCurrentPage('monitoring');
-    }
-  };
-
-  const handleStartBrewing = (projectId: string) => {
-    setSelectedProjectId(projectId);
-    setCurrentPage('brewing-session');
-  };
-
-  const handleViewSummary = (projectId: string) => {
-    setSelectedProjectId(projectId);
-    setCurrentPage('summary');
-  };
-
-  const handleUpdateTarget = async (temp: number) => {
-    if (!selectedProjectId) return;
-
-    try {
-      const updatedProject = await apiService.updateProjectTarget(selectedProjectId, temp);
-      setSelectedProject(prev => prev ? { ...prev, targetTemperature: temp } : null);
-      setProjects(prev => prev.map(p =>
-        p.id === selectedProjectId ? updatedProject : p
-      ));
-    } catch (err) {
-      console.error('Failed to update target:', err);
-      setError('Impossible de mettre à jour la température cible');
-    }
-  };
-
-  const handleToggleOutlet = async () => {
-    if (!selectedProjectId) return;
-
-    try {
-      const updatedProject = await apiService.toggleOutlet(selectedProjectId);
-      setSelectedProject(prev => prev ? { ...prev, outletActive: updatedProject.outletActive } : null);
-      setProjects(prev => prev.map(p =>
-        p.id === selectedProjectId ? updatedProject : p
-      ));
-    } catch (err) {
-      console.error('Failed to toggle outlet:', err);
-      setError('Impossible de contrôler la prise');
-    }
-  };
-
-  const handleAddDensity = async (density: number, timestamp: number) => {
-    if (!selectedProjectId) return;
-
-    try {
-      await apiService.addDensity(selectedProjectId, density, timestamp);
-      // Recharger le projet pour obtenir l'historique mis à jour
-      await loadProject(selectedProjectId);
-    } catch (err) {
-      console.error('Failed to add density:', err);
-      setError('Impossible d\'ajouter la mesure de densité');
-    }
-  };
-
-  const handleAddHumidity = async (humidity: number, timestamp: number) => {
-    if (!selectedProjectId) return;
-
-    try {
-      await apiService.addHumidity(selectedProjectId, humidity, timestamp);
-      // Recharger le projet pour obtenir l'historique mis à jour
-      await loadProject(selectedProjectId);
-    } catch (err) {
-      console.error('Failed to add humidity:', err);
-      setError('Impossible d\'ajouter la mesure d\'humidité');
-    }
-  };
-
-  const handleToggleControlMode = async () => {
-    if (!selectedProjectId) return;
-
-    try {
-      const updatedProject = await apiService.toggleControlMode(selectedProjectId);
-      setSelectedProject(prev => prev ? { ...prev, controlMode: updatedProject.controlMode } : null);
-      setProjects(prev => prev.map(p =>
-        p.id === selectedProjectId ? updatedProject : p
-      ));
-    } catch (err) {
-      console.error('Failed to toggle control mode:', err);
-      setError('Impossible de changer le mode de contrôle');
-    }
-  };
-
-  const handleRefreshTemperature = async () => {
-    if (!selectedProjectId) return;
-
-    try {
-      const data = await apiService.getLiveTemperature(selectedProjectId);
-      // Mettre à jour la température dans le projet sélectionné
-      setSelectedProject(prev => prev ? { ...prev, currentTemperature: data.temperature } : null);
-      setProjects(prev => prev.map(p =>
-        p.id === selectedProjectId ? { ...p, currentTemperature: data.temperature } : p
-      ));
-    } catch (err) {
-      console.error('Failed to refresh temperature:', err);
-      setError('Impossible de récupérer la température depuis Home Assistant');
-    }
-  };
-
-  const handleUpdateProject = async (projectId: string, data: {
-    name?: string;
-    fermentationType?: FermentationType;
-    sensorId?: string;
-    outletId?: string;
-  }) => {
-    try {
-      const updatedProject = await apiService.updateProject(projectId, data);
-      setProjects(prev => prev.map(p =>
-        p.id === projectId ? { ...p, ...updatedProject } : p
-      ));
-      if (selectedProjectId === projectId && selectedProject) {
-        setSelectedProject(prev => prev ? { ...prev, ...updatedProject } : null);
-      }
-    } catch (err) {
-      console.error('Failed to update project:', err);
-      throw err; // Re-throw pour que le modal puisse afficher l'erreur
-    }
-  };
-
-  // Session de brassage
-  const handleUpdateBrewingSession = async (session: BrewingSession) => {
-    if (!selectedProjectId || !selectedProject) return;
-
-    try {
-      const updatedProject = { ...selectedProject, brewingSession: session };
-      await apiService.updateProject(selectedProjectId, { brewingSession: session });
-
-      setSelectedProject(updatedProject);
-      setProjects(prev => prev.map(p =>
-        p.id === selectedProjectId ? { ...p, brewingSession: session } : p
-      ));
-    } catch (err) {
-      console.error('Failed to update brewing session:', err);
-      setError('Impossible de mettre à jour la session de brassage');
-    }
-  };
-
-  const handleFinishBrewing = async () => {
-    if (!selectedProjectId || !selectedProject?.brewingSession) return;
-
-    try {
-      const completedSession = {
-        ...selectedProject.brewingSession,
-        completedAt: Date.now()
-      };
-
-      await apiService.updateProject(selectedProjectId, { brewingSession: completedSession });
-
-      setSelectedProject(prev => prev ? { ...prev, brewingSession: completedSession } : null);
-      setProjects(prev => prev.map(p =>
-        p.id === selectedProjectId ? { ...p, brewingSession: completedSession } : p
-      ));
-
-      // Aller sur la page de monitoring
-      setCurrentPage('monitoring');
-    } catch (err) {
-      console.error('Failed to finish brewing:', err);
-      setError('Impossible de terminer le brassage');
-    }
-  };
-
-  const handleArchiveProject = async (projectId: string) => {
-    try {
-      const updatedProject = await apiService.archiveProject(projectId);
-      setProjects(prev => prev.map(p =>
-        p.id === projectId ? updatedProject : p
-      ));
-      if (selectedProjectId === projectId) {
-        setSelectedProjectId(null);
-        setSelectedProject(null);
-        setCurrentPage('home');
-      }
-    } catch (err) {
-      console.error('Failed to archive project:', err);
-      setError('Impossible d\'archiver le projet');
-    }
-  };
-
-  const handleUnarchiveProject = async (projectId: string) => {
-    try {
-      const updatedProject = await apiService.unarchiveProject(projectId);
-      setProjects(prev => prev.map(p =>
-        p.id === projectId ? updatedProject : p
-      ));
-    } catch (err: any) {
-      console.error('Failed to unarchive project:', err);
-      setError(err.message || 'Impossible de désarchiver le projet');
-    }
-  };
-
-  const handleDeleteProject = async (projectId: string) => {
-    try {
-      await apiService.deleteProject(projectId);
-      setProjects(prev => prev.filter(p => p.id !== projectId));
-      if (selectedProjectId === projectId) {
-        setSelectedProjectId(null);
-        setSelectedProject(null);
-      }
-    } catch (err) {
-      console.error('Failed to delete project:', err);
-      setError('Impossible de supprimer le projet');
-    }
-  };
-
-  // Gestion des appareils
-  const handleAddDevice = async (device: Omit<Device, 'id'>) => {
-    try {
-      const newDevice = await apiService.createDevice(device);
-      setDevices(prev => [...prev, newDevice]);
-    } catch (err) {
-      console.error('Failed to add device:', err);
-      setError('Impossible d\'ajouter l\'appareil');
-    }
-  };
-
-  const handleDeleteDevice = async (deviceId: string) => {
-    try {
-      await apiService.deleteDevice(deviceId);
-      setDevices(prev => prev.filter(d => d.id !== deviceId));
-    } catch (err) {
-      console.error('Failed to delete device:', err);
-      setError('Impossible de supprimer l\'appareil');
-    }
-  };
-
-  // Calculer les IDs des devices déjà utilisés par des projets actifs
-  const usedDeviceIds = useMemo(() => {
-    const activeProjects = projects.filter(p => !p.archived);
-    const ids: string[] = [];
-    activeProjects.forEach(p => {
-      if (p.sensorId) ids.push(p.sensorId);
-      if (p.outletId) ids.push(p.outletId);
-    });
-    return ids;
-  }, [projects]);
-
-  // Show login page if not authenticated
-  if (!isAuthenticated) {
-    if (showHealthFromLogin) {
-      return (
-        <HealthCheckPage
-          onBack={() => setShowHealthFromLogin(false)}
-        />
-      );
-    }
-    return <LoginPage onViewHealth={() => setShowHealthFromLogin(true)} />;
-  }
-
-  // Afficher une erreur si le backend n'est pas accessible
-  if (loading && projects.length === 0) {
-    return (
-      <div className="app">
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <p>Chargement...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && projects.length === 0) {
-    return (
-      <div className="app">
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <h2 style={{ color: '#EF4444' }}>Erreur de connexion</h2>
-          <p>{error}</p>
-          <button className="btn-primary" onClick={loadInitialData} style={{ marginTop: '10px' }}>
-            Réessayer
-          </button>
-        </div>
-      </div>
-    );
-  }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selected]);
 
   return (
-    <div className="scada-app">
-      <header className="scada-header">
-        <div className="scada-logo">
-          <div className="scada-logo-icon">🧪</div>
-          <div className="scada-logo-text">MyFerment<span>Lab</span></div>
+    <div className="flex min-h-dvh flex-col bg-anthracite-950 lg:h-dvh lg:flex-row lg:overflow-hidden">
+      <aside className="flex shrink-0 flex-col gap-3 border-b border-anthracite-800 px-4 py-3 lg:h-full lg:w-52 lg:gap-6 lg:border-r lg:border-b-0 lg:px-3 lg:py-5">
+        <div className="min-w-0">
+          {showDetail ? (
+            <p className="text-[15px] font-semibold leading-tight text-zinc-100">
+              Monitoring fermentation
+            </p>
+          ) : (
+            <h1 className="text-[15px] font-semibold leading-tight text-zinc-100">
+              Monitoring fermentation
+            </h1>
+          )}
+          <p className="mt-0.5 text-[11px] text-zinc-500">
+            Simulation locale · {readings.length} ferments
+          </p>
         </div>
 
-        {/* Mobile: Back button in header when not on home */}
-        {currentPage !== 'home' && (
-          <button className="scada-header-btn mobile-back-btn" onClick={() => setCurrentPage('home')}>
-            ← Accueil
-          </button>
-        )}
-
-        {/* Mobile hamburger menu button */}
-        {currentPage === 'home' && (
-          <button
-            className="mobile-menu-toggle"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Menu"
-          >
-            <span className={`hamburger ${mobileMenuOpen ? 'open' : ''}`}>
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-          </button>
-        )}
-
-        <div className={`scada-header-actions ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-          {currentPage === 'home' && (
-            <>
-              <div className="scada-system-status">
-                <div className="scada-status-dot"></div>
-                <span>Systèmes opérationnels</span>
-              </div>
-              <button className="scada-header-btn" onClick={() => { setCurrentPage('devices'); setMobileMenuOpen(false); }}>
-                <span>⚙️</span>
-                Appareils
-              </button>
-              <button className="scada-header-btn" onClick={() => { setCurrentPage('stats'); setMobileMenuOpen(false); }}>
-                <span>📊</span>
-                Statistiques
-              </button>
-              <button className="scada-header-btn" onClick={() => { setCurrentPage('labels'); setMobileMenuOpen(false); }}>
-                <span>🏷️</span>
-                Étiquettes
-              </button>
-              {role === 'admin' && (
-                <button className="scada-header-btn primary" onClick={() => { setCurrentPage('create-project'); setMobileMenuOpen(false); }}>
-                  <span>+</span>
-                  Nouveau projet
-                </button>
-              )}
-              <button className="scada-header-btn" onClick={() => { logout(); setMobileMenuOpen(false); }}>
-                Déconnexion
-              </button>
-            </>
-          )}
-          {/* Desktop only: back button */}
-          {currentPage !== 'home' && (
-            <button className="scada-header-btn desktop-back-btn" onClick={() => setCurrentPage('home')}>
-              ← Accueil
+        <nav className="flex gap-1 lg:flex-col" aria-label="Vues">
+          {TABS.map((tab) => (
+            <button
+              key={tab.view}
+              type="button"
+              onClick={() => handleSelectView(tab.view)}
+              aria-current={view === tab.view ? 'page' : undefined}
+              className={
+                view === tab.view
+                  ? 'rounded-lg bg-accent-500/15 px-3 py-2 text-left text-[13px] font-medium text-accent-300 transition-colors lg:w-full'
+                  : 'rounded-lg px-3 py-2 text-left text-[13px] font-medium text-zinc-400 transition-colors hover:bg-anthracite-900 hover:text-zinc-200 lg:w-full'
+              }
+            >
+              {tab.label}
             </button>
-          )}
-          <div className="scada-datetime">{datetime}</div>
+          ))}
+        </nav>
+
+        {view === 'home' ? (
+          <div className="flex flex-wrap items-center gap-2 lg:flex-col lg:items-stretch">
+            {COUNTERS.map((counter) => (
+              <span
+                key={counter.level}
+                className="inline-flex items-center gap-2 rounded-lg bg-anthracite-900 px-3 py-1.5 text-[11px] text-zinc-400 lg:w-full"
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${STATUS_STYLES[counter.level].dotClass}`}
+                  aria-hidden="true"
+                />
+                <span className={`font-medium tabular-nums ${counter.numberClass}`}>
+                  {counts[counter.level]}
+                </span>
+                {STATUS_STYLES[counter.level].label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-2 lg:mt-auto">
+          <p className="text-[10px] text-zinc-600">
+            rafraîchissement 2 s · acquisition {formatClockSeconds(feed.timestamp)}
+          </p>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
-      </header>
+      </aside>
 
-      {error && currentPage !== 'home' && (
-        <div style={{
-          padding: '10px',
-          background: '#EF4444',
-          color: 'white',
-          borderRadius: '4px',
-          marginBottom: '10px'
-        }}>
-          {error}
-          <button
-            onClick={() => setError(null)}
-            style={{
-              marginLeft: '10px',
-              background: 'transparent',
-              border: '1px solid white',
-              color: 'white',
-              padding: '2px 8px',
-              borderRadius: '2px',
-              cursor: 'pointer'
-            }}
-          >
-            ✕
-          </button>
+      <div className="flex min-h-0 flex-1 flex-col px-3 py-3 sm:px-6 lg:overflow-hidden">
+        <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-2.5">
+
+        {view === 'devices' ? (
+          <DevicesView
+            entities={homeAssistant.entities}
+            error={homeAssistant.error}
+            onRefresh={homeAssistant.refresh}
+          />
+        ) : view === 'library' ? (
+          <LibraryView productionStore={productions} />
+        ) : selected !== null ? (
+          <FermentationDetail
+            reading={selected}
+            onClose={handleClose}
+            windowEnd={feed.timestamp}
+            onSetpointChange={feed.setTemperatureSetpoint}
+            palette={CHART_PALETTES[theme]}
+            variant={panelVariant}
+            onToggleVariant={handleToggleVariant}
+            onStopProduction={selectedProduction === null ? undefined : handleStopProduction}
+            heat={selectedProduction === null ? null : (heatLots.get(selectedProduction.id) ?? null)}
+          />
+        ) : (
+          /* Les lots de la bibliothèque passent au-dessus des cinq ferments, dans leur
+             propre grille : les cinq gardent ainsi leur géométrie, et le défilement
+             interne — jamais la page — prend le relais au-delà de quatre lots. */
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
+            {running.length === 0 ? null : (
+              <section className="flex shrink-0 flex-col gap-2">
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <h2 className="text-[13px] font-semibold text-zinc-200">En production</h2>
+                  <p className="text-[11px] text-zinc-500">
+                    {running.length} {running.length > 1 ? 'recettes lancées' : 'recette lancée'}{' '}
+                    dont l’arrêt se commande depuis sa fiche
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                  {running.map((reading) => (
+                    <FermentationCard
+                      key={reading.config.id}
+                      reading={reading}
+                      onOpen={handleOpen}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <main className="grid min-h-0 grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {readings.map((reading) => (
+                <FermentationCard
+                  key={reading.config.id}
+                  reading={reading}
+                  onOpen={handleOpen}
+                />
+              ))}
+            </main>
+          </div>
+        )}
         </div>
-      )}
-
-      <main className="scada-main">
-        {currentPage === 'home' && (
-          <HomePage
-            projects={projects}
-            devices={devices}
-            onCreateProject={() => setCurrentPage('create-project')}
-            onSelectProject={handleSelectProject}
-            onViewSummary={handleViewSummary}
-            onViewBrewingJournal={handleViewSummary}
-            onArchiveProject={handleArchiveProject}
-            onUnarchiveProject={handleUnarchiveProject}
-            onDeleteProject={handleDeleteProject}
-            onStartBrewing={handleStartBrewing}
-            onUpdateProject={handleUpdateProject}
-            onManageDevices={() => setCurrentPage('devices')}
-            onLabelGenerator={() => setCurrentPage('labels')}
-            onViewStats={() => setCurrentPage('stats')}
-            role={role}
-          />
-        )}
-
-        {currentPage === 'create-project' && (
-          <CreateProjectPage
-            devices={devices}
-            usedDeviceIds={usedDeviceIds}
-            onCreateProject={handleCreateProject}
-            onCancel={() => setCurrentPage('home')}
-            role={role}
-          />
-        )}
-
-        {currentPage === 'monitoring' && selectedProject && (
-          <MonitoringPage
-            project={selectedProject}
-            onUpdateTarget={handleUpdateTarget}
-            onToggleOutlet={handleToggleOutlet}
-            onAddDensity={handleAddDensity}
-            onAddHumidity={handleAddHumidity}
-            onToggleControlMode={handleToggleControlMode}
-            onRefreshTemperature={handleRefreshTemperature}
-            role={role}
-          />
-        )}
-
-        {currentPage === 'brewing-session' && selectedProject && (
-          <BrewingSessionPage
-            project={selectedProject}
-            onUpdateSession={handleUpdateBrewingSession}
-            onFinishBrewing={handleFinishBrewing}
-            onBack={() => setCurrentPage('home')}
-          />
-        )}
-
-        {currentPage === 'summary' && selectedProjectId && (
-          <SummaryPage
-            projectId={selectedProjectId}
-            onBack={() => {
-              setSelectedProjectId(null);
-              setCurrentPage('home');
-            }}
-          />
-        )}
-
-        {currentPage === 'devices' && (
-          <DevicesPage
-            devices={devices}
-            onAddDevice={handleAddDevice}
-            onDeleteDevice={handleDeleteDevice}
-            onBack={() => setCurrentPage('home')}
-            role={role}
-          />
-        )}
-
-        {currentPage === 'labels' && (
-          <LabelGeneratorPage
-            onBack={() => setCurrentPage('home')}
-          />
-        )}
-
-        {currentPage === 'stats' && (
-          <StatsPage
-            projects={projects}
-            onBack={() => setCurrentPage('home')}
-          />
-        )}
-      </main>
-
+      </div>
     </div>
   );
 }
-
-export default App;
