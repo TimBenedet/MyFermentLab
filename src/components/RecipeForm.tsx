@@ -31,7 +31,25 @@ import {
   RECIPE_UNITS,
   totalsOf,
 } from '../lib/recipes';
-import type { FermentKind, Recipe, RecipeDevice, RecipeIngredient, RecipeUnit } from '../types';
+import {
+  computeWater,
+  DEFAULT_WATER,
+  formatLitres,
+  grainMassKg,
+  MAX_ABSORPTION_L_PER_KG,
+  MAX_BOIL_MINUTES,
+  MAX_BOIL_OFF_L_PER_H,
+  MAX_KETTLE_LOSS_L,
+  MAX_WATER_LITRES,
+} from '../lib/water';
+import type {
+  BrewWater,
+  FermentKind,
+  Recipe,
+  RecipeDevice,
+  RecipeIngredient,
+  RecipeUnit,
+} from '../types';
 import type { CatalogIngredient, IngredientFamily } from '../types';
 import { MetricIcon } from './MetricIcon';
 
@@ -131,6 +149,106 @@ function newDraft(): IngredientDraft {
   return { id: base.id, name: '', quantity: '', unit: base.unit, ebc: '', aaPct: '' };
 }
 
+/** Les réglages d'eau, texte eux aussi : le champ accepte la virgule et se relit. */
+interface WaterDraft {
+  readonly volumeL: string;
+  readonly boilMinutes: string;
+  readonly boilOffLPerH: string;
+  readonly kettleLossL: string;
+  readonly absorptionLPerKg: string;
+}
+
+/**
+ * Les cinq champs du calcul d'eau, dans l'ordre du raisonnement. Un tableau plutôt que
+ * cinq blocs écrits à la main : c'est le même champ cinq fois, seul le libellé, l'unité
+ * et l'explication changent.
+ */
+const WATER_FIELDS: readonly {
+  readonly key: keyof WaterDraft;
+  readonly label: string;
+  readonly unit: string;
+  readonly hint: string;
+}[] = [
+  {
+    key: 'volumeL',
+    label: 'Volume final',
+    unit: 'L',
+    hint: 'Volume visé dans le fermenteur, à 20 °C — sans lui, rien à calculer',
+  },
+  {
+    key: 'boilMinutes',
+    label: 'Ébullition',
+    unit: 'min',
+    hint: 'Durée d’ébullition ; l’évaporation est un débit, elle s’y multiplie',
+  },
+  {
+    key: 'boilOffLPerH',
+    label: 'Évaporation',
+    unit: 'L/h',
+    hint: 'Débit d’évaporation de ta cuve : il se mesure sur un brassin, il ne se devine pas',
+  },
+  {
+    key: 'kettleLossL',
+    label: 'Perte de cuve',
+    unit: 'L',
+    hint: 'Ce qui reste au fond : trub, houblon, espace mort',
+  },
+  {
+    key: 'absorptionLPerKg',
+    label: 'Absorption',
+    unit: 'L/kg',
+    hint: 'Eau retenue par le grain — 0,5 en BIAB, quand on presse le sac',
+  },
+];
+
+/** Un réglage relu : un champ vide retombe sur sa valeur par défaut, jamais sur zéro. */
+function readSetting(draft: string, fallback: number, max: number): number {
+  const parsed = parseQuantity(draft);
+  if (parsed === null || parsed < 0) return fallback;
+  return Math.min(parsed, max);
+}
+
+/**
+ * Le plan d'eau relu du brouillon. `null` tant que le volume visé n'est pas renseigné :
+ * c'est le volume qui décide si la recette enregistre un plan.
+ */
+function readWater(draft: WaterDraft): BrewWater | null {
+  const volumeL = parseQuantity(draft.volumeL);
+  if (volumeL === null || volumeL <= 0) return null;
+  return {
+    volumeL: Math.min(volumeL, MAX_WATER_LITRES),
+    boilMinutes: readSetting(draft.boilMinutes, DEFAULT_WATER.boilMinutes, MAX_BOIL_MINUTES),
+    boilOffLPerH: readSetting(
+      draft.boilOffLPerH,
+      DEFAULT_WATER.boilOffLPerH,
+      MAX_BOIL_OFF_L_PER_H,
+    ),
+    kettleLossL: readSetting(draft.kettleLossL, DEFAULT_WATER.kettleLossL, MAX_KETTLE_LOSS_L),
+    absorptionLPerKg: readSetting(
+      draft.absorptionLPerKg,
+      DEFAULT_WATER.absorptionLPerKg,
+      MAX_ABSORPTION_L_PER_KG,
+    ),
+  };
+}
+
+/**
+ * Le brouillon initial : le plan de la recette, ou les réglages par défaut. Le volume,
+ * lui, reste à saisir sur une recette neuve — les quatre autres décrivent la cuve, pas
+ * la bière, et ne changent pas d'un brassin à l'autre.
+ */
+function toWaterDraft(water: BrewWater | undefined): WaterDraft {
+  return {
+    volumeL: water === undefined ? '' : formatQuantity(water.volumeL),
+    boilMinutes: formatQuantity(water?.boilMinutes ?? DEFAULT_WATER.boilMinutes),
+    boilOffLPerH: formatQuantity(water?.boilOffLPerH ?? DEFAULT_WATER.boilOffLPerH),
+    kettleLossL: formatQuantity(water?.kettleLossL ?? DEFAULT_WATER.kettleLossL),
+    absorptionLPerKg: formatQuantity(
+      water?.absorptionLPerKg ?? DEFAULT_WATER.absorptionLPerKg,
+    ),
+  };
+}
+
 /**
  * La valeur d'un `<select>` est une chaîne quelconque : on la confronte à la liste
  * des unités plutôt que de la transtyper, sinon `RecipeUnit` ne serait plus qu'une
@@ -188,6 +306,11 @@ export function RecipeForm({
     recipe === null ? [newDraft()] : recipe.ingredients.map(toDraft),
   );
   const [linked, setLinked] = useState<readonly RecipeDevice[]>(() => recipe?.devices ?? []);
+  const [waterDraft, setWaterDraft] = useState<WaterDraft>(() => toWaterDraft(recipe?.water));
+
+  const patchWater = (key: keyof WaterDraft, value: string): void => {
+    setWaterDraft((current) => ({ ...current, [key]: value }));
+  };
 
   /**
    * Appareils Home Assistant, triés par nom : les sondes qui mesurent **et** les
@@ -271,6 +394,12 @@ export function RecipeForm({
   const anchorRef = useRef<HTMLInputElement | null>(null);
 
   const families = familiesForKind(kind);
+  /*
+   * Le calcul d'eau ne concerne que les recettes qui portent du grain : c'est la même
+   * famille que celle des colonnes de couleur, posée pour une autre question. Un
+   * hydromel, un koji, un miso, une sauce soja gardent le formulaire d'hier.
+   */
+  const showsWater = families.includes('malt');
   /*
    * Deux colonnes de mesure, et seulement quand elles ont un sens : la couleur suit le
    * malt, les acides alpha suivent le houblon. Un hydromel, un koji ou un miso n'en
@@ -392,6 +521,15 @@ export function RecipeForm({
   // `RecipeIngredient` porte déjà poids et unité : le total se calcule dessus.
   const totals = totalsOf(kept);
 
+  /*
+   * Le calcul d'eau suit la saisie : le grain se relit dans les lignes retenues, le
+   * volume dans le brouillon. Rien n'est écrit avant « Enregistrer » — la même règle
+   * que pour les ingrédients, qui ne comptent qu'une fois retenus.
+   */
+  const grainKg = grainMassKg(kept);
+  const liveWater = showsWater ? readWater(waterDraft) : null;
+  const livePlan = liveWater === null ? null : computeWater(liveWater, grainKg);
+
   /** Ce que le pied de page dit de la saisie, du plus urgent au plus anodin. */
   const feedback = incomplete
     ? 'Les lignes sans nom ou sans poids valide ne sont pas enregistrées.'
@@ -411,6 +549,9 @@ export function RecipeForm({
       name: trimmedName,
       kind,
       ingredients: kept,
+      // Un plan sans volume n'existe pas : une recette de bière dont le volume n'est pas
+      // renseigné s'enregistre sans plan d'eau, et le bloc l'aura dit.
+      ...(liveWater === null ? {} : { water: liveWater }),
       // Le libellé suit l'appareil tant qu'il est là : un renommage côté Home
       // Assistant se répercute à l'enregistrement, un appareil disparu garde le sien.
       devices: linked.map((device) => {
@@ -797,6 +938,65 @@ export function RecipeForm({
             </button>
           </div>
         </div>
+
+        {/* Le calcul d'eau ne s'affiche que là où il y a du grain. Il suit la saisie :
+            le volume se tape ici, le grain s'est pesé plus haut. */}
+        {!showsWater ? null : (
+          <div className="flex shrink-0 flex-col gap-1.5 border-t border-anthracite-800 pt-3">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="text-[10px] text-zinc-500">Eau de brassage · BIAB</span>
+              <span className="text-[10px] text-zinc-600">
+                tout le volume part en une fois · pas d’eau de rinçage
+              </span>
+              <span className="ml-auto text-[10px] text-zinc-600">
+                {grainKg === 0 ? 'aucun grain pesé' : `${formatQuantity(grainKg)} kg de grain`}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+              {WATER_FIELDS.map((field) => (
+                <label key={field.key} className="flex w-[92px] shrink-0 flex-col gap-1">
+                  <span className="text-[10px] text-zinc-500">{field.label}</span>
+                  <span className="flex items-center gap-1">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={waterDraft[field.key]}
+                      onChange={(event) => patchWater(field.key, event.target.value)}
+                      onKeyDown={onKeyDown}
+                      placeholder="—"
+                      aria-label={field.hint}
+                      title={field.hint}
+                      className={`${FIELD_CLASS} w-full text-right tabular-nums`}
+                    />
+                    <span className="shrink-0 text-[10px] text-zinc-500">{field.unit}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            {livePlan === null ? (
+              <p className="text-[11px] text-zinc-500">
+                Renseigne le volume visé : l’eau se calcule sur le volume et sur le grain
+                pesé, jamais sur un seul des deux.
+              </p>
+            ) : (
+              <p className="text-[11px] text-zinc-300">
+                Eau à préparer{' '}
+                <span className="font-semibold tabular-nums text-accent-300">
+                  {formatLitres(livePlan.totalL)}
+                </span>
+                <span className="text-zinc-500">
+                  {' · '}
+                  {formatLitres(livePlan.preBoilL)} avant ébullition
+                  {livePlan.ratioLPerKg === null
+                    ? ''
+                    : ` · ${formatLitres(livePlan.ratioLPerKg)}/kg de grain`}
+                </span>
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-anthracite-800 pt-2.5">
           <span className="text-[10px] text-zinc-500">

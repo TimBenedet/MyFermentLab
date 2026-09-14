@@ -10,6 +10,7 @@ import {
   formatQuantityWithUnit,
   totalsOf,
 } from '../lib/recipes';
+import { computeWater, describeWater, formatLitres, grainMassKg, waterFootnote } from '../lib/water';
 import type { Production, Recipe, RecipeDevice } from '../types';
 
 /** Rôle d'un appareil lié, tel qu'il s'affiche en tête de ligne. */
@@ -74,6 +75,15 @@ export function RecipeDetail({
   const devices = recipe.devices;
   const outlets = devices.filter((device) => roleOf(device.entityId) === 'outlet').length;
   const totals = totalsOf(ingredients);
+
+  /*
+   * Le plan d'eau se recalcule à l'affichage plutôt que d'être recopié dans la recette :
+   * seuls les réglages sont stockés, le reste en découle. Une recette de miso n'en a
+   * pas, une bière écrite avant la v6 non plus — la page reste alors celle d'hier.
+   */
+  const waterPlan =
+    recipe.water === undefined ? null : computeWater(recipe.water, grainMassKg(ingredients));
+  const waterLines = waterPlan === null ? [] : describeWater(waterPlan);
 
   /*
    * Les mesures ne s'affichent que si au moins une ligne en porte : une recette
@@ -241,6 +251,43 @@ export function RecipeDetail({
             </div>
           )}
         </div>
+
+        {/* Le calcul d'eau n'existe que là où il y a du grain. Il n'est pas recopié dans
+            la recette : seuls les réglages le sont, le reste s'en déduit. */}
+        {waterPlan === null ? null : (
+          <div className="mt-3 shrink-0 rounded-xl border border-anthracite-800 bg-anthracite-900 px-4 py-3">
+            <div className="flex items-baseline justify-between gap-4 border-b border-anthracite-800 pb-1.5">
+              <span className="text-[10px] text-zinc-500">Eau de brassage · BIAB</span>
+              <span className="text-[10px] text-zinc-500">tout en une fois, sans rinçage</span>
+            </div>
+
+            <div className="flex items-baseline justify-between gap-4 py-1.5">
+              <span className="text-[12px] font-medium text-zinc-100">Eau à préparer</span>
+              <span className="text-[15px] font-semibold tabular-nums text-accent-300">
+                {formatLitres(waterPlan.totalL)}
+              </span>
+            </div>
+
+            {waterLines.map((line) => (
+              <div
+                key={line.label}
+                className="flex items-baseline justify-between gap-4 border-t border-anthracite-800 py-1.5"
+              >
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-[12px] text-zinc-100">{line.label}</span>
+                  <span className="truncate text-[10px] text-zinc-500">{line.hint}</span>
+                </span>
+                <span className="shrink-0 text-[12px] font-medium tabular-nums text-zinc-300">
+                  {line.value}
+                </span>
+              </div>
+            ))}
+
+            <p className="border-t border-anthracite-800 pt-1.5 text-[10px] text-zinc-500">
+              {waterFootnote(waterPlan)}
+            </p>
+          </div>
+        )}
 
         {/* Les appareils viennent de la vue Devices : la recette n'en garde que la
             référence et un libellé lisible, recopié à la liaison. */}

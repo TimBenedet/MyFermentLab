@@ -37,6 +37,20 @@ export function formatMeasure(value: number, decimals: 0 | 1 | 2 | 3 = 1): strin
   return numberFormatter(decimals).format(value);
 }
 
+const compactFormatter = new Intl.NumberFormat('fr-FR', {
+  maximumFractionDigits: 2,
+  useGrouping: false,
+});
+
+/**
+ * Nombre sans zéro inutile : « 0,5 », « 2,25 », « 12 ». Pour les valeurs dont la
+ * précision n'est pas connue — un ratio, une absorption réglée à la main, un poids
+ * d'ingrédient — deux décimales au plus : « 0,50 » se lirait comme une mesure.
+ */
+export function formatCompact(value: number): string {
+  return compactFormatter.format(value);
+}
+
 /** Écart signé : « +0,40 » / « −1,25 ». Ne rend jamais « -0,0 ». */
 export function formatSigned(value: number, decimals: 1 | 2 | 3 = 1): string {
   const rounded = Number(value.toFixed(decimals));

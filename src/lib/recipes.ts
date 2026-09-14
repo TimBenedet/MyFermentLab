@@ -1,8 +1,23 @@
 import { FERMENT_KINDS } from '../config/fermentations';
-import { NARROW_NBSP } from './format';
+import { NARROW_NBSP, formatCompact } from './format';
 import { roleOf } from './homeassistant';
 import { isRecord, readStoredList, writeStoredList } from './storage';
-import type { FermentKind, Recipe, RecipeDevice, RecipeIngredient, RecipeUnit } from '../types';
+import {
+  DEFAULT_WATER,
+  MAX_ABSORPTION_L_PER_KG,
+  MAX_BOIL_MINUTES,
+  MAX_BOIL_OFF_L_PER_H,
+  MAX_KETTLE_LOSS_L,
+  MAX_WATER_LITRES,
+} from './water';
+import type {
+  BrewWater,
+  FermentKind,
+  Recipe,
+  RecipeDevice,
+  RecipeIngredient,
+  RecipeUnit,
+} from '../types';
 
 /**
  * Recettes : modèle, stockage et conversions.
@@ -17,10 +32,11 @@ const STORAGE_KEY = 'fermentation4.recipes';
 const STORE_FIELD = 'recipes';
 /**
  * v2 ajoute les sondes, v3 `archived`, v4 les prises (`devices` remplace `probes`),
- * v5 les mesures d'ingrédient (`ebc`, `aaPct`) : une recette antérieure se relit sans
- * appareil et sans mesure, elle n'est pas cassée.
+ * v5 les mesures d'ingrédient (`ebc`, `aaPct`), v6 le calcul d'eau (`water`) : une
+ * recette antérieure se relit sans appareil, sans mesure et sans plan d'eau, elle
+ * n'est pas cassée — l'absence est un état, pas un manque.
  */
-const STORE_VERSION = 5;
+const STORE_VERSION = 6;
 
 /** Unités proposées. `%` sert aux proportions : part du grist, du sel… */
 export const RECIPE_UNITS: readonly RecipeUnit[] = ['g', 'kg', 'mL', 'L', '%'];
@@ -62,14 +78,9 @@ export function emptyIngredient(): RecipeIngredient {
   return { id: createId('ing'), name: '', quantity: 0, unit: 'g' };
 }
 
-const quantityFormatter = new Intl.NumberFormat('fr-FR', {
-  maximumFractionDigits: 2,
-  useGrouping: false,
-});
-
-/** « 4,25 » — deux décimales au plus, virgule française. */
+/** « 4,25 » — deux décimales au plus, virgule française, sans zéro inutile. */
 export function formatQuantity(value: number): string {
-  return quantityFormatter.format(value);
+  return formatCompact(value);
 }
 
 /** « 4,25 kg », « 12 % » (espace insécable étroite avant le pourcent). */
@@ -153,6 +164,18 @@ export const SEED_RECIPES: readonly Recipe[] = [
       { id: 'seed-ipa-4', name: 'Houblon Citra (aromatique)', quantity: 60, unit: 'g' },
       { id: 'seed-ipa-5', name: 'Levure US-05', quantity: 11, unit: 'g' },
     ],
+    /*
+     * Un plan d'eau pour l'exemple : 20 L finis sur 5,4 kg de grain. Ce sont les
+     * réglages par défaut — ceux d'une cuve BIAB de 25 L — et le formulaire les
+     * corrige dès qu'on a mesuré la sienne.
+     */
+    water: {
+      volumeL: 20,
+      boilMinutes: 90,
+      boilOffLPerH: 2.25,
+      kettleLossL: 1,
+      absorptionLPerKg: 0.5,
+    },
     // Aucun appareil : leur identifiant dépend de l'installation Home Assistant,
     // un exemple ne peut pas en inventer.
     devices: [],
@@ -218,6 +241,7 @@ function seedCopy(): Recipe[] {
   return SEED_RECIPES.map((recipe) => ({
     ...recipe,
     ingredients: recipe.ingredients.map((ingredient) => ({ ...ingredient })),
+    ...(recipe.water === undefined ? {} : { water: { ...recipe.water } }),
     devices: recipe.devices.map((device) => ({ ...device })),
   }));
 }
@@ -286,6 +310,32 @@ export function sanitizeDevices(raw: unknown): RecipeDevice[] {
   return devices;
 }
 
+/**
+ * Un plan d'eau relu. Le **volume final est obligatoire** : sans lui il n'y a rien à
+ * calculer, et la recette s'enregistre sans plan plutôt qu'avec un plan faux.
+ *
+ * Les quatre réglages de cuve retombent sur leur valeur par défaut quand ils manquent
+ * ou sont illisibles — l'inverse du volume : un champ effacé à la main ne doit pas
+ * décrire une cuve qui évapore 0,00 L/h.
+ */
+function sanitizeWater(raw: unknown): BrewWater | undefined {
+  if (!isRecord(raw)) return undefined;
+  const volumeL = sanitizeMeasure(raw.volumeL, MAX_WATER_LITRES);
+  if (volumeL === undefined || volumeL <= 0) return undefined;
+  return {
+    volumeL,
+    boilMinutes:
+      sanitizeMeasure(raw.boilMinutes, MAX_BOIL_MINUTES) ?? DEFAULT_WATER.boilMinutes,
+    boilOffLPerH:
+      sanitizeMeasure(raw.boilOffLPerH, MAX_BOIL_OFF_L_PER_H) ?? DEFAULT_WATER.boilOffLPerH,
+    kettleLossL:
+      sanitizeMeasure(raw.kettleLossL, MAX_KETTLE_LOSS_L) ?? DEFAULT_WATER.kettleLossL,
+    absorptionLPerKg:
+      sanitizeMeasure(raw.absorptionLPerKg, MAX_ABSORPTION_L_PER_KG) ??
+      DEFAULT_WATER.absorptionLPerKg,
+  };
+}
+
 /** Ne garde que les recettes exploitables : le reste est ignoré, pas réparé. */
 function sanitizeRecipe(entry: unknown): Recipe | null {
   if (!isRecord(entry)) return null;
@@ -299,11 +349,14 @@ function sanitizeRecipe(entry: unknown): Recipe | null {
       if (clean !== null) kept.push(clean);
     }
   }
+  const water = sanitizeWater(entry.water);
   return {
     id: typeof id === 'string' && id !== '' ? id : createId('recipe'),
     name: name.trim(),
     kind,
     ingredients: kept,
+    // Un plan d'eau absent ne s'écrit pas du tout : la recette reste celle d'avant.
+    ...(water === undefined ? {} : { water }),
     // `probes` : nom du champ jusqu'en v4, relu pour ne pas perdre l'existant.
     devices: sanitizeDevices(devices ?? probes),
     // Seul `true` archive : un champ absent ou douteux laisse la recette active.

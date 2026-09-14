@@ -120,11 +120,38 @@ export interface RecipeDevice {
   readonly label: string;
 }
 
+/**
+ * Les réglages d'eau d'une recette de bière, menée en **BIAB** : tout le volume part
+ * en une fois dans la cuve, il n'y a pas d'eau de rinçage.
+ *
+ * Le volume final est ce qu'on vise ; les quatre autres décrivent la **cuve**, pas la
+ * bière — ils ne changent pas d'un brassin à l'autre. Ils restent modifiables parce
+ * qu'ils dépendent du matériel : un taux d'évaporation se mesure, il ne se devine pas.
+ * Le calcul lui-même vit dans `lib/water.ts`.
+ */
+export interface BrewWater {
+  /** Volume visé dans le fermenteur, à 20 °C, en litres. */
+  readonly volumeL: number;
+  /** Durée d'ébullition, en minutes. */
+  readonly boilMinutes: number;
+  /** Débit d'évaporation de la cuve, en litres par heure — il suit la surface, pas le volume. */
+  readonly boilOffLPerH: number;
+  /** Ce qui reste dans la cuve : trub, houblon, espace mort. En litres. */
+  readonly kettleLossL: number;
+  /** Eau retenue par le grain, en litres par kilo — 0,5 en BIAB, où l'on presse le sac. */
+  readonly absorptionLPerKg: number;
+}
+
 export interface Recipe {
   readonly id: string;
   readonly name: string;
   readonly kind: FermentKind;
   readonly ingredients: readonly RecipeIngredient[];
+  /**
+   * Calcul d'eau du brassin — renseigné sur une bière, absent partout ailleurs : un
+   * miso n'a pas de grain à rincer. Une recette sans plan reste une recette valide.
+   */
+  readonly water?: BrewWater;
   /** Appareils liés, dans l'ordre du choix. Vide quand la recette n'en suit aucun. */
   readonly devices: readonly RecipeDevice[];
   /**
