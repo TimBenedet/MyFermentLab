@@ -201,30 +201,40 @@ const WATER_FIELDS: readonly {
  * recette : ils décrivent le matériel, et valent donc pour toutes les recettes de la
  * bibliothèque. C'est le magasin de matériel qui les porte, pas le stockage des
  * recettes.
+ *
+ * `title` porte le **protocole de mesure** : c'est là qu'on cherche comment obtenir le
+ * chiffre au moment où on le saisit. `hint` reste court — il sert aussi de nom accessible.
  */
 const EQUIPMENT_FIELDS: readonly {
   readonly key: 'boilOffLPerH' | 'kettleLossL' | 'absorptionLPerKg';
   readonly label: string;
   readonly unit: string;
   readonly hint: string;
+  readonly title: string;
 }[] = [
   {
     key: 'boilOffLPerH',
     label: 'Évaporation',
     unit: 'L/h',
-    hint: 'Débit d’évaporation de ta cuve : il se mesure sur un brassin, il ne se devine pas',
+    hint: 'Débit d’évaporation de ta cuve, en litres par heure',
+    title:
+      'À mesurer une fois : 15 L d’eau froide dans la cuve, 60 min à ton feu habituel, sans couvercle, puis laisse refroidir. Ce qui manque est ton débit horaire. Attention, il ne dépend pas de la taille du brassin : 10 L dans cette cuve évaporent autant que 20.',
   },
   {
     key: 'kettleLossL',
     label: 'Perte de cuve',
     unit: 'L',
     hint: 'Ce qui reste au fond : trub, houblon, espace mort',
+    title:
+      'À mesurer avec 2 L d’eau que tu laisses sortir par la pompe : ce qui reste au fond est ta perte. Compte aussi le tuyau, le bras de whirlpool et, sur un vrai brassin, le houblon qui boit.',
   },
   {
     key: 'absorptionLPerKg',
     label: 'Absorption',
     unit: 'L/kg',
-    hint: 'Eau retenue par le grain — 0,5 quand on presse le sac, 0,8 pour un panier égoutté',
+    hint: 'Eau retenue par le grain — 0,5 sac pressé, 0,8 panier égoutté',
+    title:
+      'À peser : le panier égoutté (ou le sac pressé) moins la masse de grain sec, divisé par les kilos de grain. 0,5 quand tu presses, 0,8 quand tu te contentes d’égoutter — c’est le seul réglage que ton geste change.',
   },
 ];
 
@@ -293,7 +303,10 @@ function toEquipmentDraft(equipment: EquipmentProfile): EquipmentDraft {
 interface WaterFieldProps {
   readonly label: string;
   readonly unit: string;
+  /** Nom accessible, court. */
   readonly hint: string;
+  /** Infobulle : quand elle diffère de `hint`, elle porte le protocole de mesure. */
+  readonly title?: string;
   readonly value: string;
   readonly onChange: (value: string) => void;
   /** Écrit la cuve quand on quitte le champ — jamais à chaque frappe. */
@@ -302,7 +315,16 @@ interface WaterFieldProps {
 }
 
 /** Un champ du calcul d'eau : un libellé, un nombre, son unité. Le même cinq fois. */
-function WaterField({ label, unit, hint, value, onChange, onBlur, onKeyDown }: WaterFieldProps) {
+function WaterField({
+  label,
+  unit,
+  hint,
+  title,
+  value,
+  onChange,
+  onBlur,
+  onKeyDown,
+}: WaterFieldProps) {
   return (
     <label className="flex w-[84px] shrink-0 flex-col gap-1">
       <span className="text-[10px] text-zinc-500">{label}</span>
@@ -316,7 +338,7 @@ function WaterField({ label, unit, hint, value, onChange, onBlur, onKeyDown }: W
           onBlur={onBlur}
           placeholder="—"
           aria-label={hint}
-          title={hint}
+          title={title ?? hint}
           className={`${FIELD_CLASS} w-full text-right tabular-nums`}
         />
         <span className="shrink-0 text-[10px] text-zinc-500">{unit}</span>
@@ -1085,6 +1107,7 @@ export function RecipeForm({
                   label={field.label}
                   unit={field.unit}
                   hint={field.hint}
+                  title={field.title}
                   value={equipmentDraft[field.key]}
                   onChange={(value) => patchEquipment(field.key, value)}
                   onBlur={commitEquipment}
