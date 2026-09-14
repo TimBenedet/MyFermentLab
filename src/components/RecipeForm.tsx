@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import { EQUIPMENT_PRESETS } from '../config/equipment';
 import { FERMENT_KINDS, KIND_LABELS } from '../config/fermentations';
 import { FAMILY_LABELS } from '../config/ingredients';
 import {
@@ -11,6 +12,7 @@ import {
   suggestIngredients,
   unitForFamily,
 } from '../lib/catalog';
+import { equipmentFromPreset, presetIdOf } from '../lib/equipment';
 import {
   byDisplayName,
   displayName,
@@ -71,6 +73,9 @@ interface DeviceCandidate {
   readonly label: string;
   readonly missing: boolean;
 }
+
+/** Valeur du menu « Modèle » quand la cuve ne correspond à aucun modèle du catalogue. */
+const CUSTOM_PRESET = 'custom';
 
 /** Identifiant du menu de suggestions : un seul est ouvert à la fois. */
 const SUGGEST_LIST_ID = 'ingredient-suggestions';
@@ -426,6 +431,26 @@ export function RecipeForm({
    */
   const liveEquipment = readEquipment(equipmentDraft, equipment);
   const commitEquipment = (): void => onEquipmentChange(liveEquipment);
+
+  /*
+   * Le modèle dont la cuve porte les valeurs, s'il y en a un : le menu se règle sur les
+   * champs, jamais l'inverse. Corriger un champ à la main fait donc retomber le menu
+   * sur « Personnalisé » — la cuve n'est plus celle du catalogue.
+   */
+  const presetId = presetIdOf(liveEquipment);
+  const preset =
+    presetId === null
+      ? null
+      : (EQUIPMENT_PRESETS.find((item) => item.id === presetId) ?? null);
+
+  /** Choisir un modèle remplit les trois champs et les écrit tout de suite. */
+  const applyPreset = (id: string): void => {
+    const chosen = EQUIPMENT_PRESETS.find((item) => item.id === id);
+    if (chosen === undefined) return;
+    const next = equipmentFromPreset(chosen, equipment);
+    setEquipmentDraft(toEquipmentDraft(next));
+    onEquipmentChange(next);
+  };
 
   /**
    * Appareils Home Assistant, triés par nom : les sondes qui mesurent **et** les
@@ -1061,11 +1086,32 @@ export function RecipeForm({
             le volume se tape ici, le grain s'est pesé plus haut. */}
         {!showsWater ? null : (
           <div className="flex shrink-0 flex-col gap-1.5 border-t border-anthracite-800 pt-3">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span className="text-[10px] text-zinc-500">Eau de brassage · BIAB</span>
-              <span className="text-[10px] text-zinc-600">
-                tout le volume part en une fois · pas d’eau de rinçage
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="text-[10px] text-zinc-500">
+                Eau de brassage · BIAB, sans rinçage
               </span>
+
+              {/* Le modèle remplit les trois réglages de cuve avec ses valeurs
+                  moyennes. Il les remplit, il ne les remplace pas : les champs
+                  restent ouverts, et les corriger fait sortir du modèle. */}
+              <label className="flex items-baseline gap-1">
+                <span className="text-[10px] text-zinc-500">Modèle</span>
+                <select
+                  value={presetId ?? CUSTOM_PRESET}
+                  onChange={(event) => applyPreset(event.target.value)}
+                  title={preset === null ? 'Valeurs réglées à la main' : preset.note}
+                  aria-label="Modèle de cuve — remplit les trois réglages de cuve avec des valeurs moyennes"
+                  className={`${FIELD_CLASS} max-w-[230px] px-1.5 text-zinc-200`}
+                >
+                  <option value={CUSTOM_PRESET}>Personnalisé</option>
+                  {EQUIPMENT_PRESETS.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <span className="ml-auto text-[10px] text-zinc-600">
                 {grainKg === 0 ? 'aucun grain pesé' : `${formatQuantity(grainKg)} kg de grain`}
               </span>
@@ -1117,8 +1163,8 @@ export function RecipeForm({
             </div>
 
             <p className="text-[10px] text-zinc-600">
-              Évaporation, perte de cuve et absorption décrivent la cuve : les corriger ici
-              les corrige pour toutes les recettes.
+              Les trois réglages de cuve partent de moyennes de modèle, à corriger dès que tu
+              as mesuré — les corriger ici les corrige pour toutes les recettes.
             </p>
 
             {livePlan === null ? (

@@ -1,7 +1,10 @@
+import { EQUIPMENT_PRESETS } from '../config/equipment';
+import { midpoint } from './catalog';
 import { formatCompact } from './format';
 import { isRecord, readStoredRecord, writeStoredRecord } from './storage';
 import { MAX_ABSORPTION_L_PER_KG, MAX_BOIL_OFF_L_PER_H, MAX_KETTLE_LOSS_L } from './water';
-import type { EquipmentProfile } from '../types';
+import type { EquipmentPreset } from '../config/equipment';
+import type { EquipmentProfile, EquipmentSettings } from '../types';
 
 /**
  * Matériel : la cuve, décrite une fois.
@@ -22,18 +25,54 @@ const STORE_FIELD = 'equipment';
 const STORE_VERSION = 1;
 
 /**
- * La cuve de départ, telle qu'on la décrit avant de l'avoir mesurée : une cuve de
- * 25 L qui évapore 2,25 L/h, un litre laissé au fond, un sac qu'on presse. Le nom ne
- * promet rien — ces trois chiffres sont des points de départ, et les tests du
- * formulaire sont faits pour les corriger.
+ * La cuve de départ : le **premier modèle du catalogue**, au milieu de ses fourchettes.
+ * C'est un point de départ, pas une mesure — le menu « Modèle » du formulaire permet
+ * d'en changer, et les trois champs se corrigent à la main.
+ *
+ * Le catalogue est une constante du dépôt, jamais vide : sa première entrée est celle
+ * de la machine de la maison.
  */
 export const DEFAULT_EQUIPMENT: EquipmentProfile = {
   id: 'default',
-  name: 'Ma cuve',
-  boilOffLPerH: 2.25,
-  kettleLossL: 1,
-  absorptionLPerKg: 0.5,
+  name: EQUIPMENT_PRESETS[0].name,
+  ...presetSettings(EQUIPMENT_PRESETS[0]),
 };
+
+/** Ce qu'un modèle propose : le **milieu** de ses trois fourchettes. */
+export function presetSettings(preset: EquipmentPreset): EquipmentSettings {
+  return {
+    boilOffLPerH: midpoint(preset.boilOffLPerH),
+    kettleLossL: midpoint(preset.kettleLossL),
+    absorptionLPerKg: midpoint(preset.absorptionLPerKg),
+  };
+}
+
+/**
+ * Le modèle dont la cuve porte exactement les valeurs, ou `null` si elle a été réglée à
+ * la main. Comparer les valeurs plutôt que garder un identifiant évite la dérive : une
+ * cuve qui n'est plus celle du modèle ne se dit plus du modèle.
+ */
+export function presetIdOf(equipment: EquipmentSettings): string | null {
+  for (const preset of EQUIPMENT_PRESETS) {
+    const settings = presetSettings(preset);
+    if (
+      settings.boilOffLPerH === equipment.boilOffLPerH &&
+      settings.kettleLossL === equipment.kettleLossL &&
+      settings.absorptionLPerKg === equipment.absorptionLPerKg
+    ) {
+      return preset.id;
+    }
+  }
+  return null;
+}
+
+/** La cuve telle qu'un modèle la décrit : ses valeurs moyennes, et son nom. */
+export function equipmentFromPreset(
+  preset: EquipmentPreset,
+  current: EquipmentProfile,
+): EquipmentProfile {
+  return { id: current.id, name: preset.name, ...presetSettings(preset) };
+}
 
 /** Un réglage relu : absent, illisible ou négatif ⇒ la valeur de repli. */
 function readSetting(raw: unknown, fallback: number, max: number): number {
