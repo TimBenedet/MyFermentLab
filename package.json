@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:mobile": "vite --host --port 5174",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:mobile": "vite preview --host --port 4174"
   },
   "dependencies": {
     "react": "^19.3.0",

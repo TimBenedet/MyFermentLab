@@ -38,13 +38,13 @@ export interface RecipeDetailProps {
 }
 
 const HEADER_BUTTON =
-  'h-7 shrink-0 rounded-lg border border-anthracite-700 px-3 text-[11px] font-medium text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none';
+  'h-10 shrink-0 rounded-lg border border-anthracite-700 px-3 text-[11px] font-medium text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:h-7';
 
 const PRIMARY_BUTTON =
-  'h-7 shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-3 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 hover:bg-accent-500/25 focus-visible:border-accent-400 focus-visible:outline-none';
+  'h-10 shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-3 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 hover:bg-accent-500/25 focus-visible:border-accent-400 focus-visible:outline-none sm:h-7';
 
 const STOP_BUTTON =
-  'h-7 shrink-0 rounded-lg border border-red-500/40 bg-red-500/10 px-3 text-[11px] font-medium text-red-400 transition-colors hover:border-red-400 hover:bg-red-500/20 focus-visible:border-red-400 focus-visible:outline-none';
+  'h-10 shrink-0 rounded-lg border border-red-500/40 bg-red-500/10 px-3 text-[11px] font-medium text-red-400 transition-colors hover:border-red-400 hover:bg-red-500/20 focus-visible:border-red-400 focus-visible:outline-none sm:h-7';
 
 /*
  * Quatre mises en page, littérales : une recette de bière porte les deux mesures, une
@@ -116,7 +116,7 @@ export function RecipeDetail({
           type="button"
           onClick={onBack}
           title="Revenir à la bibliothèque"
-          className="w-fit shrink-0 rounded-lg border border-anthracite-700 px-3 py-1.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none"
+          className="w-fit shrink-0 rounded-lg border border-anthracite-700 px-3 py-2.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5"
         >
           ← Bibliothèque
         </button>
@@ -148,7 +148,7 @@ export function RecipeDetail({
               if (confirmingDelete) onDelete(recipe.id);
               else setConfirmingDelete(true);
             }}
-            className="h-7 shrink-0 rounded-lg border border-red-500/40 bg-red-500/10 px-3 text-[11px] font-medium text-red-400 transition-colors hover:border-red-400 hover:bg-red-500/20 focus-visible:border-red-400 focus-visible:outline-none"
+            className="h-10 shrink-0 rounded-lg border border-red-500/40 bg-red-500/10 px-3 text-[11px] font-medium text-red-400 transition-colors hover:border-red-400 hover:bg-red-500/20 focus-visible:border-red-400 focus-visible:outline-none sm:h-7"
           >
             {confirmingDelete ? 'Confirmer la suppression' : 'Supprimer'}
           </button>

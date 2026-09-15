@@ -243,8 +243,8 @@ export default function App() {
               aria-current={view === tab.view ? 'page' : undefined}
               className={
                 view === tab.view
-                  ? 'rounded-lg bg-accent-500/15 px-3 py-2 text-left text-[13px] font-medium text-accent-300 transition-colors lg:w-full'
-                  : 'rounded-lg px-3 py-2 text-left text-[13px] font-medium text-zinc-400 transition-colors hover:bg-anthracite-900 hover:text-zinc-200 lg:w-full'
+                  ? 'rounded-lg bg-accent-500/15 px-3 py-2.5 text-left text-[13px] font-medium text-accent-300 transition-colors sm:py-2 lg:w-full'
+                  : 'rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-zinc-400 transition-colors hover:bg-anthracite-900 hover:text-zinc-200 sm:py-2 lg:w-full'
               }
             >
               {tab.label}

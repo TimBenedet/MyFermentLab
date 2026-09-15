@@ -60,17 +60,17 @@ function EmptyPanel({ title, hint, children }: EmptyPanelProps) {
 }
 
 const NEW_BUTTON =
-  'shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-3 py-1.5 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 hover:bg-accent-500/25 focus-visible:border-accent-400 focus-visible:outline-none';
+  'shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-3 py-2.5 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 hover:bg-accent-500/25 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5';
 
 const SECONDARY_BUTTON =
-  'shrink-0 rounded-lg border border-anthracite-700 px-3 py-1.5 text-[11px] font-medium text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none';
+  'shrink-0 rounded-lg border border-anthracite-700 px-3 py-2.5 text-[11px] font-medium text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5';
 
 /** Jetons de filtre : deux branches littérales, Tailwind doit les voir écrites. */
 const FILTER_ACTIVE =
-  'flex items-center rounded-lg border border-accent-500/50 bg-accent-500/15 px-2.5 py-1.5 text-[11px] font-medium text-accent-300 transition-colors focus-visible:border-accent-400 focus-visible:outline-none';
+  'flex items-center rounded-lg border border-accent-500/50 bg-accent-500/15 px-2.5 py-2 text-[11px] font-medium text-accent-300 transition-colors focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5';
 
 const FILTER_IDLE =
-  'flex items-center rounded-lg border border-anthracite-700 px-2.5 py-1.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none';
+  'flex items-center rounded-lg border border-anthracite-700 px-2.5 py-2 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5';
 
 export interface LibraryViewProps {
   /**

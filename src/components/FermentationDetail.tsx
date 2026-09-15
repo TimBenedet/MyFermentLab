@@ -347,7 +347,7 @@ export function FermentationDetail({
           type="button"
           onClick={onClose}
           title="Revenir à la vue d'ensemble (Échap)"
-          className="w-fit shrink-0 rounded-lg border border-anthracite-700 px-3 py-1.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none"
+          className="w-fit shrink-0 rounded-lg border border-anthracite-700 px-3 py-2.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5"
         >
           ← Ferments
         </button>
@@ -383,7 +383,7 @@ export function FermentationDetail({
                   ? 'Relire la sonde tout de suite, sans attendre les 30 s'
                   : 'Aucune sonde liée : il n’y a rien à relire.'
               }
-              className="w-fit shrink-0 rounded-lg border border-anthracite-700 px-2.5 py-1.5 text-[12px] leading-none text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none"
+              className="w-fit shrink-0 rounded-lg border border-anthracite-700 px-3 py-2.5 text-[12px] leading-none text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:px-2.5 sm:py-1.5"
             >
               ↻
             </button>
@@ -394,7 +394,7 @@ export function FermentationDetail({
               type="button"
               onClick={onStopProduction}
               title="Arrêter ce lot et le retirer de l'accueil"
-              className="w-fit shrink-0 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-400 transition-colors hover:border-red-400 hover:bg-red-500/20 focus-visible:border-red-400 focus-visible:outline-none"
+              className="w-fit shrink-0 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-[11px] font-medium text-red-400 transition-colors hover:border-red-400 hover:bg-red-500/20 focus-visible:border-red-400 focus-visible:outline-none sm:py-1.5"
             >
               Arrêter la production
             </button>
@@ -412,8 +412,8 @@ export function FermentationDetail({
               }
               className={
                 variant === 'v2'
-                  ? 'w-fit shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-3 py-1.5 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 focus-visible:border-accent-400 focus-visible:outline-none'
-                  : 'w-fit shrink-0 rounded-lg border border-anthracite-700 px-3 py-1.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none'
+                  ? 'w-fit shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-3 py-2.5 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5'
+                  : 'w-fit shrink-0 rounded-lg border border-anthracite-700 px-3 py-2.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5'
               }
             >
               V2

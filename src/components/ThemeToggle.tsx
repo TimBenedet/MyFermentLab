@@ -20,7 +20,7 @@ export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
       onClick={onToggle}
       aria-label={label}
       title={label}
-      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-anthracite-700 text-zinc-400 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-anthracite-700 text-zinc-400 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:h-6 sm:w-6"
     >
       <svg
         viewBox="0 0 16 16"
@@ -30,7 +30,7 @@ export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden="true"
-        className="h-3.5 w-3.5"
+        className="h-5 w-5 sm:h-3.5 sm:w-3.5"
       >
         {theme === 'dark' ? (
           <>

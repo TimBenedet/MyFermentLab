@@ -362,16 +362,16 @@ function asUnit(value: string): RecipeUnit | null {
 }
 
 const FIELD_CLASS =
-  'h-[30px] shrink-0 rounded-lg border border-anthracite-700 bg-anthracite-950 px-2.5 text-[12px] text-zinc-100 placeholder:text-zinc-500 transition-colors focus:border-accent-500/60 focus:outline-none';
+  'h-10 shrink-0 rounded-lg border border-anthracite-700 bg-anthracite-950 px-2.5 text-[12px] text-zinc-100 placeholder:text-zinc-500 transition-colors focus:border-accent-500/60 focus:outline-none sm:h-[30px]';
 
 const BACK_BUTTON =
-  'w-fit shrink-0 rounded-lg border border-anthracite-700 px-3 py-1.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none';
+  'w-fit shrink-0 rounded-lg border border-anthracite-700 px-3 py-2.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5';
 
 const SECONDARY_BUTTON =
-  'h-7 shrink-0 rounded-lg border border-anthracite-700 px-3 text-[11px] font-medium text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none';
+  'h-10 shrink-0 rounded-lg border border-anthracite-700 px-3 text-[11px] font-medium text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:h-7';
 
 const PRIMARY_BUTTON =
-  'h-7 shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-3 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 hover:bg-accent-500/25 focus-visible:border-accent-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-anthracite-700 disabled:bg-transparent disabled:text-zinc-600';
+  'h-10 shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-3 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 hover:bg-accent-500/25 focus-visible:border-accent-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-anthracite-700 disabled:bg-transparent disabled:text-zinc-600 sm:h-7';
 
 /**
  * Ligne du menu déroulant — trois branches littérales (liée, libre, liée mais
@@ -908,7 +908,7 @@ export function RecipeForm({
               const alphaInvalid = row.aaPct.trim() !== '' && (aaPct === null || aaPct < 0);
               const open = suggest !== null && suggest.rowId === row.id;
               return (
-                <div key={row.id} className="flex items-center gap-2">
+                <div key={row.id} className="flex flex-wrap items-center gap-2">
                   <input
                     type="text"
                     value={row.name}
@@ -928,7 +928,7 @@ export function RecipeForm({
                     aria-expanded={open}
                     aria-controls={families.length === 0 ? undefined : SUGGEST_LIST_ID}
                     aria-autocomplete="list"
-                    className={`${FIELD_CLASS} min-w-0 flex-1`}
+                    className={`${FIELD_CLASS} w-full min-w-0 sm:w-auto sm:flex-1`}
                   />
 
                   {/* Référentiel de brasserie : malts, houblons, levures. Le menu est
@@ -1064,7 +1064,7 @@ export function RecipeForm({
                     onClick={() => removeRow(row.id)}
                     aria-label={`Supprimer la ligne ${index + 1}`}
                     title="Supprimer la ligne"
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[15px] leading-none text-zinc-500 transition-colors hover:bg-anthracite-800 hover:text-zinc-100 focus-visible:bg-anthracite-800 focus-visible:text-zinc-100 focus-visible:outline-none"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[15px] leading-none text-zinc-500 transition-colors hover:bg-anthracite-800 hover:text-zinc-100 focus-visible:bg-anthracite-800 focus-visible:text-zinc-100 focus-visible:outline-none sm:h-7 sm:w-7"
                   >
                     ×
                   </button>

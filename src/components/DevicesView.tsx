@@ -181,19 +181,19 @@ export function DevicesView({ entities, error, onRefresh }: DevicesViewProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             type="search"
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
             placeholder="Filtrer…"
             aria-label="Filtrer les objets"
-            className="w-48 rounded-lg border border-anthracite-700 bg-anthracite-900 px-3 py-1.5 text-[12px] text-zinc-200 placeholder:text-zinc-500 focus:border-accent-500/60 focus:outline-none"
+            className="w-32 rounded-lg border border-anthracite-700 bg-anthracite-900 px-3 py-2.5 text-[12px] text-zinc-200 placeholder:text-zinc-500 focus:border-accent-500/60 focus:outline-none sm:w-48 sm:py-1.5"
           />
           <button
             type="button"
             onClick={onRefresh}
-            className="rounded-lg border border-anthracite-700 px-3 py-1.5 text-[11px] font-medium text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100"
+            className="rounded-lg border border-anthracite-700 px-3 py-2.5 text-[11px] font-medium text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 sm:py-1.5"
           >
             Rafraîchir
           </button>

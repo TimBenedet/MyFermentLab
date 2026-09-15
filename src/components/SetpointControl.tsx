@@ -32,7 +32,7 @@ function clamp(value: number): number {
 }
 
 const BUTTON_CLASS =
-  'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-anthracite-700 text-[13px] leading-none text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none';
+  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-anthracite-700 text-[13px] leading-none text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:h-7 sm:w-7';
 
 /**
  * Consigne de température modifiable : champ, boutons + et −, validation.
@@ -66,7 +66,7 @@ export function SetpointControl({
   };
 
   const stepButton =
-    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[13px] leading-none ' +
+    'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] leading-none sm:h-6 sm:w-6 ' +
     'text-zinc-500 transition-colors hover:bg-anthracite-800 hover:text-zinc-100 ' +
     'focus-visible:bg-anthracite-800 focus-visible:text-zinc-100 focus-visible:outline-none ' +
     'disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent';
@@ -204,8 +204,8 @@ export function SetpointControl({
           aria-invalid={pending === null}
           className={
             pending === null
-              ? 'h-7 w-12 shrink-0 rounded-lg border border-red-500/60 bg-anthracite-950 px-1 text-center text-[12px] font-medium tabular-nums text-zinc-100 focus:outline-none'
-              : 'h-7 w-12 shrink-0 rounded-lg border border-anthracite-700 bg-anthracite-950 px-1 text-center text-[12px] font-medium tabular-nums text-zinc-100 focus:border-accent-500/60 focus:outline-none'
+              ? 'h-10 w-14 shrink-0 rounded-lg border border-red-500/60 bg-anthracite-950 px-1 text-center text-[12px] font-medium tabular-nums text-zinc-100 focus:outline-none sm:h-7 sm:w-12'
+              : 'h-10 w-14 shrink-0 rounded-lg border border-anthracite-700 bg-anthracite-950 px-1 text-center text-[12px] font-medium tabular-nums text-zinc-100 focus:border-accent-500/60 focus:outline-none sm:h-7 sm:w-12'
           }
         />
 
@@ -224,7 +224,7 @@ export function SetpointControl({
           onClick={apply}
           disabled={!dirty}
           title="Appliquer la consigne (Entrée)"
-          className="ml-auto h-7 shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-2.5 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 hover:bg-accent-500/25 focus-visible:border-accent-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-anthracite-700 disabled:bg-transparent disabled:text-zinc-600"
+          className="ml-auto h-10 shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-2.5 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 hover:bg-accent-500/25 focus-visible:border-accent-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-anthracite-700 disabled:bg-transparent disabled:text-zinc-600 sm:h-7"
         >
           Valider
         </button>
