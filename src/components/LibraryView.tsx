@@ -62,6 +62,14 @@ function EmptyPanel({ title, hint, children }: EmptyPanelProps) {
 const NEW_BUTTON =
   'shrink-0 rounded-lg border border-accent-500/50 bg-accent-500/15 px-3 py-2.5 text-[11px] font-medium text-accent-300 transition-colors hover:border-accent-400 hover:bg-accent-500/25 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5';
 
+/**
+ * Le « + » de l'en-tète : même action que « Nouvelle recette », sans la largeur d'un
+ * libellé qui mangeait la ligne du titre sur écran étroit. Le texte vit dans l'infobulle
+ * et dans `aria-label`, jamais à l'écran.
+ */
+const NEW_ICON_BUTTON =
+  'ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-accent-500/50 bg-accent-500/15 text-[18px] font-medium leading-none text-accent-300 transition-colors hover:border-accent-400 hover:bg-accent-500/25 focus-visible:border-accent-400 focus-visible:outline-none sm:h-7 sm:w-7 sm:text-[15px]';
+
 const SECONDARY_BUTTON =
   'shrink-0 rounded-lg border border-anthracite-700 px-3 py-2.5 text-[11px] font-medium text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5';
 
@@ -238,32 +246,41 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
 
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-2">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-zinc-100">Bibliothèque</h2>
-            <button
-              type="button"
-              onClick={() => setShowFilters((shown) => !shown)}
-              aria-expanded={showFilters}
-              aria-controls={FILTER_ROW_ID}
-              className="shrink-0 rounded-lg border border-anthracite-700 px-2.5 py-1.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none lg:hidden"
-            >
-              Filtrer
-            </button>
-          </div>
-          <p className="text-[11px] text-zinc-500">
-            {active.length} {active.length > 1 ? 'recettes' : 'recette'} · sondes et prises
-            Home Assistant au choix, ingrédients libres · conservées dans le navigateur
-            {archived.length === 0
-              ? ''
-              : ` · ${archived.length} archivée${archived.length > 1 ? 's' : ''}`}
-          </p>
+      {/* Un seul bloc en tête : le titre, ses deux boutons et la ligne de compte. La rangée
+          `justify-between` qui portait le gros bouton n'a plus qu'un enfant. */}
+      <div className="min-w-0">
+        {/* Le « + » vit dans la ligne du titre, poussé à droite par `ml-auto` : placé en
+            second enfant de l'en-tête, il passait à la ligne sous le titre sur téléphone. */}
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-zinc-100">Bibliothèque</h2>
+          <button
+            type="button"
+            onClick={() => setShowFilters((shown) => !shown)}
+            aria-expanded={showFilters}
+            aria-controls={FILTER_ROW_ID}
+            className="shrink-0 rounded-lg border border-anthracite-700 px-2.5 py-1.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none lg:hidden"
+          >
+            Filtrer
+          </button>
+
+          <button
+            type="button"
+            onClick={showNew}
+            aria-label="Nouvelle recette"
+            title="Nouvelle recette"
+            className={NEW_ICON_BUTTON}
+          >
+            +
+          </button>
         </div>
 
-        <button type="button" onClick={showNew} className={NEW_BUTTON}>
-          Nouvelle recette
-        </button>
+        <p className="text-[11px] text-zinc-500">
+          {active.length} {active.length > 1 ? 'recettes' : 'recette'} · sondes et prises
+          Home Assistant au choix, ingrédients libres · conservées dans le navigateur
+          {archived.length === 0
+            ? ''
+            : ` · ${archived.length} archivée${archived.length > 1 ? 's' : ''}`}
+        </p>
       </div>
 
       {recipes.length === 0 ? (
