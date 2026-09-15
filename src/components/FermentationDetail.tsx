@@ -42,6 +42,12 @@ export interface FermentationDetailProps {
    * envoyé à Home Assistant.
    */
   readonly heat?: HeatLot | null;
+  /**
+   * Relecture immédiate de la sonde liée au lot. Fourni, il ajoute un bouton à l'en-tête.
+   * La mesure se relit déjà toute seule toutes les 30 s : ce bouton ne sert qu'à ne pas
+   * attendre. Absent sur un ferment du tableau de bord, qui ne suit aucune sonde.
+   */
+  readonly onRefreshProbe?: () => void;
 }
 
 const METRIC_BANDS: Record<MetricKind, number> = {
@@ -99,6 +105,7 @@ export function FermentationDetail({
   onToggleVariant,
   onStopProduction,
   heat,
+  onRefreshProbe,
 }: FermentationDetailProps) {
   const { config, current, history } = reading;
   const assessment = assess(reading);
@@ -312,6 +319,21 @@ export function FermentationDetail({
           {config.context} · {windowLabel} glissantes · acquisition {formatClockSeconds(current.t)}
         </p>
         <div className="ml-auto flex items-center gap-2">
+          {/* Glyphe seul, et non « Rafraîchir la sonde » : mesuré, un libellé texte fait
+              passer l'en-tête de deux à trois lignes à 1024 et 1280 px (+24 px pris sur
+              la fiche), alors que ce bouton ne coûte rien. Le libellé vit dans l'infobulle. */}
+          {onRefreshProbe === undefined ? null : (
+            <button
+              type="button"
+              onClick={onRefreshProbe}
+              aria-label="Rafraîchir la sonde"
+              title="Relire la sonde tout de suite, sans attendre les 30 s"
+              className="w-fit shrink-0 rounded-lg border border-anthracite-700 px-2.5 py-1.5 text-[12px] leading-none text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none"
+            >
+              ↻
+            </button>
+          )}
+
           {onStopProduction === undefined ? null : (
             <button
               type="button"

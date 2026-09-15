@@ -151,6 +151,13 @@ export default function App() {
   // Le lot correspondant, quand c'est bien un lot et non un ferment du tableau de bord.
   const selectedProduction =
     productions.productions.find((production) => production.id === selectedId) ?? null;
+  /*
+   * La relecture manuelle de la sonde ne se propose que sur un lot qui en suit une : c'est
+   * la seule mesure qui vienne de Home Assistant, le reste de la fiche est simulé. Un
+   * ferment du tableau de bord n'a rien à relire, et sa page n'a pas de sonde à montrer.
+   */
+  const selectedHasProbe =
+    selectedProduction !== null && temperatureProbeOf(selectedProduction) !== null;
   // Un seul <h1> par page : celui du ferment quand une vue produit est ouverte.
   const showDetail = view === 'home' && selected !== null;
 
@@ -282,6 +289,7 @@ export default function App() {
             onToggleVariant={handleToggleVariant}
             onStopProduction={selectedProduction === null ? undefined : handleStopProduction}
             heat={selectedProduction === null ? null : (heatLots.get(selectedProduction.id) ?? null)}
+            onRefreshProbe={selectedHasProbe ? homeAssistant.refresh : undefined}
           />
         ) : (
           /* Les lots de la bibliothèque passent au-dessus des cinq ferments, dans leur
