@@ -5,6 +5,7 @@ import { useHomeAssistantEntities } from '../hooks/useHomeAssistantEntities';
 import type { ProductionStore } from '../hooks/useProductions';
 import { useEquipment } from '../hooks/useEquipment';
 import { useRecipes } from '../hooks/useRecipes';
+import type { LibraryFilter, LibraryScreen } from '../lib/page';
 import { productionOf } from '../lib/production';
 import type { FermentKind, Recipe } from '../types';
 import { RecipeCard } from './RecipeCard';
@@ -12,33 +13,19 @@ import { RecipeDetail } from './RecipeDetail';
 import { RecipeForm } from './RecipeForm';
 
 /**
- * Écran courant de la bibliothèque. Trois écrans, jamais deux à la fois :
- * `list` est le panneau d'entrée, `new` la page de création, `view` / `edit`
- * la page d'une recette — consultée ou modifiée.
- */
-type Screen =
-  | { readonly mode: 'list' }
-  | { readonly mode: 'new' }
-  | { readonly mode: 'view'; readonly id: string }
-  | { readonly mode: 'edit'; readonly id: string };
-
-/** Filtre du panneau : tous les types, un seul, ou les recettes archivées. */
-type KindFilter = FermentKind | 'all' | 'archived';
-
-/**
  * Tous les types sont proposés, dans l'ordre de `FERMENT_KINDS`, `Toutes` en tête et
  * `Archivée` en queue. Masquer un type vide ferait sauter la rangée de filtres dès
  * qu'on supprime la dernière recette d'un type ; mieux vaut un compte à zéro, qui se
  * voit. La rangée passe à la ligne toute seule quand les types s'ajoutent.
  */
-const FILTERS: readonly { readonly value: KindFilter; readonly label: string }[] = [
+const FILTERS: readonly { readonly value: LibraryFilter; readonly label: string }[] = [
   { value: 'all', label: 'Toutes' },
   ...FERMENT_KINDS.map((kind) => ({ value: kind, label: KIND_LABELS[kind] })),
   { value: 'archived', label: 'Archivée' },
 ];
 
 /** Libellé d'un filtre : les jetons sont la seule source, on ne le redéduit pas. */
-function labelOf(value: KindFilter): string {
+function labelOf(value: LibraryFilter): string {
   return FILTERS.find((entry) => entry.value === value)?.label ?? 'Toutes';
 }
 
@@ -97,6 +84,16 @@ export interface LibraryViewProps {
    * jamais sur l'accueil.
    */
   readonly productionStore: ProductionStore;
+  /**
+   * L'écran ouvert et le filtre du panneau. Ils vivent dans `App`, avec le reste de la
+   * page : deux `useState` ici perdraient la recette ouverte au premier F5, puisque
+   * l'onglet rechargé remonte la vue de zéro. `App` est seul à écrire la page, sinon le
+   * premier des deux écrivains effacerait l'autre.
+   */
+  readonly screen: LibraryScreen;
+  readonly onScreenChange: (screen: LibraryScreen) => void;
+  readonly filter: LibraryFilter;
+  readonly onFilterChange: (filter: LibraryFilter) => void;
 }
 
 /**
@@ -107,16 +104,21 @@ export interface LibraryViewProps {
  * modifie, on la lance en production ou on l'archive. La bibliothèque ne s'affiche
  * donc jamais à moitié : chaque écran occupe la place, comme la vue produit.
  */
-export function LibraryView({ productionStore }: LibraryViewProps) {
+export function LibraryView({
+  productionStore,
+  screen,
+  onScreenChange,
+  filter,
+  onFilterChange,
+}: LibraryViewProps) {
   const { recipes, save, remove } = useRecipes();
   // Le matériel vit ici, avec les recettes : c'est le même écran qui s'en sert, à la
   // création comme en détail. La cuve n'est pas une recette — elle est commune à toutes.
   const equipmentStore = useEquipment();
   const { productions, start, stop, stopRecipe } = productionStore;
-  const [screen, setScreen] = useState<Screen>({ mode: 'list' });
-  const [filter, setFilter] = useState<KindFilter>('all');
   // Le repli des filtres n'a de sens que sur écran étroit : au large, la rangée tient sur
-  // une ligne et reste toujours visible.
+  // une ligne et reste toujours visible. Lui reste local : replier la rangée n'est pas
+  // quitter la page, et un rechargement peut bien la remontrer telle qu'elle s'ouvre.
   const [showFilters, setShowFilters] = useState(false);
 
   /*
@@ -148,7 +150,7 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
 
   /** Nombre porté par un jeton : trois sources, une seule réponse. */
   const countOf = useCallback(
-    (value: KindFilter): number =>
+    (value: LibraryFilter): number =>
       value === 'all' ? active.length : value === 'archived' ? archived.length : counts[value],
     [active.length, archived.length, counts],
   );
@@ -160,19 +162,25 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
     return filter === 'all' ? active : active.filter((recipe) => recipe.kind === filter);
   }, [active, archived, filter]);
 
-  const showList = useCallback(() => setScreen({ mode: 'list' }), []);
-  const showNew = useCallback(() => setScreen({ mode: 'new' }), []);
-  const openRecipe = useCallback((id: string) => setScreen({ mode: 'view', id }), []);
-  const editRecipe = useCallback((id: string) => setScreen({ mode: 'edit', id }), []);
+  const showList = useCallback(() => onScreenChange({ mode: 'list' }), [onScreenChange]);
+  const showNew = useCallback(() => onScreenChange({ mode: 'new' }), [onScreenChange]);
+  const openRecipe = useCallback(
+    (id: string) => onScreenChange({ mode: 'view', id }),
+    [onScreenChange],
+  );
+  const editRecipe = useCallback(
+    (id: string) => onScreenChange({ mode: 'edit', id }),
+    [onScreenChange],
+  );
 
   const handleSave = useCallback(
     (recipe: Recipe) => {
       save(recipe);
       // Après enregistrement on revient au détail, sur la version enregistrée :
       // le brouillon n'a plus de raison d'être.
-      setScreen({ mode: 'view', id: recipe.id });
+      onScreenChange({ mode: 'view', id: recipe.id });
     },
-    [save],
+    [onScreenChange, save],
   );
 
   const handleDelete = useCallback(
@@ -181,9 +189,9 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
       // Un lot sans recette n'aurait plus rien à montrer : supprimer la recette
       // arrête d'office la production correspondante.
       stopRecipe(id);
-      setScreen({ mode: 'list' });
+      onScreenChange({ mode: 'list' });
     },
-    [remove, stopRecipe],
+    [onScreenChange, remove, stopRecipe],
   );
 
   /** Archive ou désarchive la recette ouverte, sans quitter sa page. */
@@ -304,7 +312,7 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
               <button
                 key={entry.value}
                 type="button"
-                onClick={() => setFilter(entry.value)}
+                onClick={() => onFilterChange(entry.value)}
                 aria-pressed={filter === entry.value}
                 className={filter === entry.value ? FILTER_ACTIVE : FILTER_IDLE}
               >
@@ -321,7 +329,11 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
               title={filter === 'archived' ? 'Aucune recette archivée' : 'Aucune recette de ce type'}
               hint={`Le filtre « ${labelOf(filter)} » ne retient rien pour l’instant. Les autres recettes sont toujours là.`}
             >
-              <button type="button" onClick={() => setFilter('all')} className={SECONDARY_BUTTON}>
+              <button
+                type="button"
+                onClick={() => onFilterChange('all')}
+                className={SECONDARY_BUTTON}
+              >
                 {filter === 'archived' ? 'Revenir aux recettes actives' : 'Voir toutes les recettes'}
               </button>
             </EmptyPanel>

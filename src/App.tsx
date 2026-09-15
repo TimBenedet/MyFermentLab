@@ -12,8 +12,13 @@ import { useTheme } from './hooks/useTheme';
 import type { HeatTarget } from './hooks/useHeatControl';
 import type { HeatLot } from './lib/control';
 import { formatClockSeconds } from './lib/format';
-import { readStoredPage, writeStoredPage } from './lib/page';
-import type { View } from './lib/page';
+import {
+  LIBRARY_ALL,
+  LIBRARY_LIST,
+  readStoredPage,
+  writeStoredPage,
+} from './lib/page';
+import type { LibraryFilter, LibraryScreen, View } from './lib/page';
 import { liveReading, outletsOf, probeTemperatureOf, temperatureProbeOf } from './lib/production';
 import { assess, worstStatus } from './lib/reading';
 import { STATUS_STYLES } from './lib/status';
@@ -79,11 +84,16 @@ export default function App() {
   const feed = useFermentationFeed(productions.productions);
   const { theme, toggleTheme } = useTheme();
   // La page quittée est relue **une fois**, avant le premier rendu : recharger l'onglet ne
-  // doit pas ramener à l'accueil quand on lisait une cuve. Deux lectures séparées pour
-  // `view` et `selectedId` donneraient deux objets distincts pour la même intention.
+  // doit pas ramener à l'accueil quand on lisait une cuve — ni refermer la recette ouverte
+  // dans la bibliothèque, qui a ses propres écrans. Une lecture par état donnerait quatre
+  // objets distincts pour la même intention, d'où le `useState` unique qui porte la page.
   const [restoredPage] = useState(readStoredPage);
   const [view, setView] = useState<View>(restoredPage.view);
   const [selectedId, setSelectedId] = useState<BatchId | null>(restoredPage.selectedId);
+  // L'écran de la bibliothèque et son filtre vivent ici, pas dans `LibraryView` : c'est
+  // `App` qui écrit la page, et deux écrivains se marcheraient dessus au rechargement.
+  const [libraryScreen, setLibraryScreen] = useState<LibraryScreen>(restoredPage.library);
+  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>(restoredPage.libraryFilter);
   // La variante vit ici et non dans la vue produit : elle survit au retour à
   // l'accueil, sinon la comparaison entre les deux propositions est impossible.
   const [panelVariant, setPanelVariant] = useState<PanelVariant>('v1');
@@ -209,9 +219,16 @@ export default function App() {
     setPanelVariant((current) => (current === 'v1' ? 'v2' : 'v1'));
   }, []);
 
+  /*
+   * Changer d'onglet referme ce que l'onglet quitté détaillait : la fiche d'un ferment
+   * comme la recette ouverte dans la bibliothèque, et le filtre du panneau avec elle.
+   * Cliquer l'onglet déjà actif fait de même — c'est le retour de la vue.
+   */
   const handleSelectView = useCallback((next: View) => {
     setView(next);
     setSelectedId(null);
+    setLibraryScreen(LIBRARY_LIST);
+    setLibraryFilter(LIBRARY_ALL);
     window.scrollTo({ top: 0 });
   }, []);
 
@@ -233,13 +250,19 @@ export default function App() {
   }, [selected]);
 
   /*
-   * La page se mémorise à chaque changement, d'où qu'il vienne. Un seul effet couvre les
-   * cinq endroits qui la déplacent — choix d'un onglet, ouverture d'une fiche, retour,
-   * Échap, arrêt d'un lot — là où un appel dans chacun finirait par en oublier un.
+   * La page se mémorise à chaque changement, d'où qu'il vienne. Un seul effet couvre tous
+   * les endroits qui la déplacent — choix d'un onglet, ouverture d'une fiche ou d'une
+   * recette, retour, Échap, arrêt d'un lot, filtre du panneau — là où un appel dans chacun
+   * finirait par en oublier un.
    */
   useEffect(() => {
-    writeStoredPage({ view, selectedId });
-  }, [view, selectedId]);
+    writeStoredPage({
+      view,
+      selectedId,
+      library: libraryScreen,
+      libraryFilter,
+    });
+  }, [view, selectedId, libraryScreen, libraryFilter]);
 
   return (
     <div className="flex min-h-[calc(100dvh*0.8)] flex-col bg-anthracite-950 lg:h-[calc(100dvh*0.8)] lg:flex-row lg:overflow-hidden">
@@ -315,7 +338,13 @@ export default function App() {
             onRefresh={homeAssistant.refresh}
           />
         ) : view === 'library' ? (
-          <LibraryView productionStore={productions} />
+          <LibraryView
+            productionStore={productions}
+            screen={libraryScreen}
+            onScreenChange={setLibraryScreen}
+            filter={libraryFilter}
+            onFilterChange={setLibraryFilter}
+          />
         ) : selected !== null ? (
           <FermentationDetail
             reading={selected}
