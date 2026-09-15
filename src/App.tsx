@@ -12,13 +12,13 @@ import { useTheme } from './hooks/useTheme';
 import type { HeatTarget } from './hooks/useHeatControl';
 import type { HeatLot } from './lib/control';
 import { formatClockSeconds } from './lib/format';
+import { readStoredPage, writeStoredPage } from './lib/page';
+import type { View } from './lib/page';
 import { liveReading, outletsOf, probeTemperatureOf, temperatureProbeOf } from './lib/production';
 import { assess, worstStatus } from './lib/reading';
 import { STATUS_STYLES } from './lib/status';
 import { CHART_PALETTES } from './lib/theme';
 import type { BatchId, Production, StatusLevel } from './types';
-
-type View = 'home' | 'library' | 'devices';
 
 /** Deux propositions de fiche produit, comparables sur le même ferment. */
 type PanelVariant = 'v1' | 'v2';
@@ -53,8 +53,12 @@ export default function App() {
   const productions = useProductions();
   const feed = useFermentationFeed(productions.productions);
   const { theme, toggleTheme } = useTheme();
-  const [view, setView] = useState<View>('home');
-  const [selectedId, setSelectedId] = useState<BatchId | null>(null);
+  // La page quittée est relue **une fois**, avant le premier rendu : recharger l'onglet ne
+  // doit pas ramener à l'accueil quand on lisait une cuve. Deux lectures séparées pour
+  // `view` et `selectedId` donneraient deux objets distincts pour la même intention.
+  const [restoredPage] = useState(readStoredPage);
+  const [view, setView] = useState<View>(restoredPage.view);
+  const [selectedId, setSelectedId] = useState<BatchId | null>(restoredPage.selectedId);
   // La variante vit ici et non dans la vue produit : elle survit au retour à
   // l'accueil, sinon la comparaison entre les deux propositions est impossible.
   const [panelVariant, setPanelVariant] = useState<PanelVariant>('v1');
@@ -202,6 +206,15 @@ export default function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [selected]);
+
+  /*
+   * La page se mémorise à chaque changement, d'où qu'il vienne. Un seul effet couvre les
+   * cinq endroits qui la déplacent — choix d'un onglet, ouverture d'une fiche, retour,
+   * Échap, arrêt d'un lot — là où un appel dans chacun finirait par en oublier un.
+   */
+  useEffect(() => {
+    writeStoredPage({ view, selectedId });
+  }, [view, selectedId]);
 
   return (
     <div className="flex min-h-[calc(100dvh*0.8)] flex-col bg-anthracite-950 lg:h-[calc(100dvh*0.8)] lg:flex-row lg:overflow-hidden">
