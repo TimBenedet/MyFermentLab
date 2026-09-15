@@ -72,6 +72,15 @@ const FILTER_ACTIVE =
 const FILTER_IDLE =
   'flex items-center rounded-lg border border-anthracite-700 px-2.5 py-2 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none sm:py-1.5';
 
+const FILTER_ROW_ID = 'library-filters';
+
+/**
+ * Rangée des filtres : dépliée d'emblée au large, repliée derrière « Filtrer » sur écran
+ * étroit. Deux littéraux — Tailwind doit voir les classes écrites.
+ */
+const FILTER_ROW_SHOWN = 'flex flex-wrap items-center gap-1.5';
+const FILTER_ROW_FOLDED = 'hidden flex-wrap items-center gap-1.5 lg:flex';
+
 export interface LibraryViewProps {
   /**
    * Magasin des lots en production. Il vit dans `App` et non ici : c'est `App` qui
@@ -98,6 +107,9 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
   const { productions, start, stop, stopRecipe } = productionStore;
   const [screen, setScreen] = useState<Screen>({ mode: 'list' });
   const [filter, setFilter] = useState<KindFilter>('all');
+  // Le repli des filtres n'a de sens que sur écran étroit : au large, la rangée tient sur
+  // une ligne et reste toujours visible.
+  const [showFilters, setShowFilters] = useState(false);
 
   /*
    * Les sondes qu'une recette peut lier viennent de Home Assistant : la liste n'est
@@ -228,7 +240,18 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
     <section className="flex min-h-0 flex-1 flex-col gap-2">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-zinc-100">Bibliothèque</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-zinc-100">Bibliothèque</h2>
+            <button
+              type="button"
+              onClick={() => setShowFilters((shown) => !shown)}
+              aria-expanded={showFilters}
+              aria-controls={FILTER_ROW_ID}
+              className="shrink-0 rounded-lg border border-anthracite-700 px-2.5 py-1.5 text-[11px] text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none lg:hidden"
+            >
+              Filtrer
+            </button>
+          </div>
           <p className="text-[11px] text-zinc-500">
             {active.length} {active.length > 1 ? 'recettes' : 'recette'} · sondes et prises
             Home Assistant au choix, ingrédients libres · conservées dans le navigateur
@@ -254,7 +277,12 @@ export function LibraryView({ productionStore }: LibraryViewProps) {
         </EmptyPanel>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrer par type de ferment">
+          <div
+            id={FILTER_ROW_ID}
+            className={showFilters ? FILTER_ROW_SHOWN : FILTER_ROW_FOLDED}
+            role="group"
+            aria-label="Filtrer par type de ferment"
+          >
             {FILTERS.map((entry) => (
               <button
                 key={entry.value}

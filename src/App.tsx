@@ -18,6 +18,7 @@ import { liveReading, outletsOf, probeTemperatureOf, temperatureProbeOf } from '
 import { assess, worstStatus } from './lib/reading';
 import { STATUS_STYLES } from './lib/status';
 import { CHART_PALETTES } from './lib/theme';
+import type { ThemeName } from './lib/theme';
 import type { BatchId, Production, StatusLevel } from './types';
 
 /** Deux propositions de fiche produit, comparables sur le même ferment. */
@@ -46,6 +47,30 @@ const COUNTERS: readonly CounterStyle[] = [
   { level: 'warn', numberClass: 'text-amber-400' },
   { level: 'alarm', numberClass: 'text-red-400' },
 ];
+
+/**
+ * Bandeau d'état : la cadence d'acquisition et la bascule de thème.
+ *
+ * Il vit dans la barre latérale sur écran large, et collé au bas de l'écran sur téléphone —
+ * d'où ce composant, plutôt que deux copies du même bloc à tenir à jour de pair.
+ */
+interface StatusStripProps {
+  readonly timestamp: number;
+  readonly theme: ThemeName;
+  readonly onToggleTheme: () => void;
+  readonly className: string;
+}
+
+function StatusStrip({ timestamp, theme, onToggleTheme, className }: StatusStripProps) {
+  return (
+    <div className={className}>
+      <p className="text-[10px] text-zinc-600">
+        rafraîchissement 2 s · acquisition {formatClockSeconds(timestamp)}
+      </p>
+      <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+    </div>
+  );
+}
 
 export default function App() {
   // Les productions vivent dans `localStorage`, le moteur n'en sait rien : on les lui
@@ -272,12 +297,12 @@ export default function App() {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between gap-2 lg:mt-auto">
-          <p className="text-[10px] text-zinc-600">
-            rafraîchissement 2 s · acquisition {formatClockSeconds(feed.timestamp)}
-          </p>
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
-        </div>
+        <StatusStrip
+          className="hidden items-center justify-between gap-2 lg:mt-auto lg:flex"
+          timestamp={feed.timestamp}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
       </aside>
 
       <div className="flex min-h-0 flex-1 flex-col px-3 py-3 sm:px-6 lg:overflow-hidden">
@@ -345,6 +370,18 @@ export default function App() {
         )}
         </div>
       </div>
+
+      {/*
+       * Sur téléphone, le bandeau d'état passe en bas : il colle au bas de la fenêtre
+       * pendant qu'on fait défiler, et se pose à la fin de la page une fois arrivé. À
+       * partir de `lg` il retrouve la barre latérale, où il ne prend pas de place.
+       */}
+      <StatusStrip
+        className="sticky bottom-0 z-20 flex items-center justify-between gap-2 border-t border-anthracite-800 bg-anthracite-950 px-4 py-2 lg:hidden"
+        timestamp={feed.timestamp}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
     </div>
   );
 }
