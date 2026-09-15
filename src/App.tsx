@@ -153,8 +153,8 @@ export default function App() {
     productions.productions.find((production) => production.id === selectedId) ?? null;
   /*
    * Le bouton de relecture est présent sur toutes les fiches — y compris les cinq ferments,
-   * dont la température est simulée. Il n'est actif que là où il y a une mesure réelle à
-   * relire, et `probeLinked` commande à la fois cela et le bandeau rouge de la fiche.
+   * dont la température est simulée. `probeLinked` dit s'il y a une mesure réelle à relire :
+   * sans sonde, le clic n'envoie aucune requête et la fiche l'explique quelques secondes.
    */
   const selectedHasProbe =
     selectedProduction !== null && temperatureProbeOf(selectedProduction) !== null;

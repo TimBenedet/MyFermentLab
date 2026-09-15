@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { FERMENTATION_BY_KIND } from '../config/fermentations';
 import type { HeatLot } from '../lib/control';
 import {
@@ -50,9 +51,9 @@ export interface FermentationDetailProps {
   /**
    * Une sonde de température est liée et la lecture Home Assistant tourne pour cette
    * fiche. Faux sur un ferment du tableau de bord, qui n'a pas de sonde, et sur un lot
-   * dont la recette n'en a pas lié : le bouton reste affiché mais **inactif**, et un
-   * bandeau rouge dit que la température affichée est simulée. Un bouton qui relirait
-   * rien serait un bouton qui ment.
+   * dont la recette n'en a pas lié : cliquer sur `↻` ne peut alors rien relire, et la
+   * fiche le dit — un message rouge qui s'efface au bout de quelques secondes, plutôt
+   * qu'un bouton grisé qui n'explique rien.
    */
   readonly probeLinked?: boolean;
 }
@@ -74,6 +75,13 @@ const DECIMALS: Record<MetricKind, 1 | 2 | 3> = {
   humidity: 1,
   density: 3,
 };
+
+/**
+ * Durée d'affichage du message « aucune sonde liée », en millisecondes. Le clic sur `↻`
+ * ne peut rien relire : plutôt qu'un bouton grisé qui n'explique rien, il le dit — puis
+ * se taît. Assez long pour être lu, assez court pour ne pas encombrer l'en-tête.
+ */
+const PROBE_NOTICE_MS = 5000;
 
 interface ChannelStats {
   readonly min: number;
@@ -115,6 +123,28 @@ export function FermentationDetail({
   onRefreshProbe,
   probeLinked = false,
 }: FermentationDetailProps) {
+  /*
+   * Le message « aucune sonde liée » vit ici et non dans `App` : il appartient au clic qui
+   * vient d'être fait, et il doit s'effacer tout seul. Un compteur plutôt qu'un booléen,
+   * sans quoi un second clic pendant l'affichage ne relancerait pas le compte à rebours.
+   */
+  const [probeNotice, setProbeNotice] = useState(0);
+
+  useEffect(() => {
+    if (probeNotice === 0) return undefined;
+    const timerId = window.setTimeout(() => setProbeNotice(0), PROBE_NOTICE_MS);
+    return () => window.clearTimeout(timerId);
+  }, [probeNotice]);
+
+  /** Relire la sonde, ou dire pourquoi il n'y a rien à relire. */
+  const handleRefreshProbe = (): void => {
+    if (probeLinked) {
+      onRefreshProbe?.();
+      return;
+    }
+    setProbeNotice((count) => count + 1);
+  };
+
   const { config, current, history } = reading;
   const assessment = assess(reading);
   const status = worstStatus(assessment);
@@ -326,6 +356,19 @@ export function FermentationDetail({
         <p className="text-[11px] text-zinc-500">
           {config.context} · {windowLabel} glissantes · acquisition {formatClockSeconds(current.t)}
         </p>
+        {/*
+         * Le message du clic sans sonde. Transitoire, il ne pousse que lui-même : le groupe
+         * `ml-auto` garde les boutons à droite, et la place libérée est reprise telle quelle.
+         */}
+        {probeNotice === 0 ? null : (
+          <span
+            role="status"
+            className="shrink-0 rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-[11px] leading-none text-red-400"
+          >
+            Aucune sonde liée · la température affichée est simulée
+          </span>
+        )}
+
         <div className="ml-auto flex items-center gap-2">
           {/* Glyphe seul, et non « Rafraîchir la sonde » : mesuré, un libellé texte fait
               passer l'en-tête de deux à trois lignes à 1024 et 1280 px (+24 px pris sur
@@ -333,15 +376,14 @@ export function FermentationDetail({
           {onRefreshProbe === undefined ? null : (
             <button
               type="button"
-              onClick={onRefreshProbe}
-              disabled={!probeLinked}
+              onClick={handleRefreshProbe}
               aria-label="Rafraîchir la sonde"
               title={
                 probeLinked
                   ? 'Relire la sonde tout de suite, sans attendre les 30 s'
                   : 'Aucune sonde liée : il n’y a rien à relire.'
               }
-              className="w-fit shrink-0 rounded-lg border border-anthracite-700 px-2.5 py-1.5 text-[12px] leading-none text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-anthracite-800 disabled:text-zinc-600"
+              className="w-fit shrink-0 rounded-lg border border-anthracite-700 px-2.5 py-1.5 text-[12px] leading-none text-zinc-300 transition-colors hover:border-accent-500/50 hover:text-zinc-100 focus-visible:border-accent-400 focus-visible:outline-none"
             >
               ↻
             </button>
@@ -379,21 +421,6 @@ export function FermentationDetail({
           )}
         </div>
       </header>
-
-      {/*
-       * Les cinq ferments du tableau de bord n'ont pas de sonde, et un lot peut n'en avoir
-       * aucune : leur température est alors **simulée**. Le dire en haut de la fiche, en
-       * rouge — un chiffre inventé ne doit pas ressembler à une mesure.
-       */}
-      {probeLinked ? null : (
-        <p
-          className="flex shrink-0 items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1 text-[11px] leading-tight text-red-400"
-          title="Lier une sonde de température : Bibliothèque, « Modifier » une recette, section « Sondes et prises », puis lancer la recette en production."
-        >
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" aria-hidden="true" />
-          Aucune sonde liée · la température affichée est simulée
-        </p>
-      )}
 
       {variant === 'v2' ? (
         /* V2 — minimaliste. Plus de colonne du tout : la fiche tient sur un
