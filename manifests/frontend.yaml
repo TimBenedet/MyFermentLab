@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/timbenedet/myfermentlab-frontend:scada-v3-a794ddb
+          image: ghcr.io/timbenedet/myfermentlab-frontend:scada-v3-a496828
           imagePullPolicy: Always
           ports:
             - name: http
