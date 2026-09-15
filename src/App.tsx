@@ -152,9 +152,9 @@ export default function App() {
   const selectedProduction =
     productions.productions.find((production) => production.id === selectedId) ?? null;
   /*
-   * La relecture manuelle de la sonde ne se propose que sur un lot qui en suit une : c'est
-   * la seule mesure qui vienne de Home Assistant, le reste de la fiche est simulé. Un
-   * ferment du tableau de bord n'a rien à relire, et sa page n'a pas de sonde à montrer.
+   * Le bouton de relecture est présent sur toutes les fiches — y compris les cinq ferments,
+   * dont la température est simulée. Il n'est actif que là où il y a une mesure réelle à
+   * relire, et `probeLinked` commande à la fois cela et le bandeau rouge de la fiche.
    */
   const selectedHasProbe =
     selectedProduction !== null && temperatureProbeOf(selectedProduction) !== null;
@@ -289,7 +289,8 @@ export default function App() {
             onToggleVariant={handleToggleVariant}
             onStopProduction={selectedProduction === null ? undefined : handleStopProduction}
             heat={selectedProduction === null ? null : (heatLots.get(selectedProduction.id) ?? null)}
-            onRefreshProbe={selectedHasProbe ? homeAssistant.refresh : undefined}
+            onRefreshProbe={homeAssistant.refresh}
+            probeLinked={selectedHasProbe}
           />
         ) : (
           /* Les lots de la bibliothèque passent au-dessus des cinq ferments, dans leur
