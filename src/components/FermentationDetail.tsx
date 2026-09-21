@@ -11,7 +11,9 @@ import {
 import { assess, coversFullWindow, windowStartOf, worstStatus } from '../lib/reading';
 import { HUMIDITY_NOMINAL_BAND, NOMINAL_BAND } from '../lib/status';
 import type { ChartPalette } from '../lib/theme';
-import type { BatchId, FermentReading } from '../types';
+import type { HassEntity } from '../lib/homeassistant';
+import type { BatchId, FermentReading, RecipeDevice } from '../types';
+import { DevicePicker } from './DevicePicker';
 import { MetricChart } from './MetricChart';
 import type { MetricKind } from './MetricChart';
 import { MetricRow } from './MetricRow';
@@ -61,6 +63,14 @@ export interface FermentationDetailProps {
    * bord, recette sans consigne), la consigne du type fait foi pour « rétablir ».
    */
   readonly fallbackSetpoint?: number;
+  /**
+   * Appareils d'un lot en cours : le sélecteur les lit et les modifie sans arrêter la
+   * production. Absent sur les cinq ferments du tableau de bord, qui n'ont pas de lot.
+   */
+  readonly entities?: readonly HassEntity[];
+  readonly entitiesError?: string | null;
+  readonly devices?: readonly RecipeDevice[];
+  readonly onChangeDevices?: (devices: readonly RecipeDevice[]) => void;
 }
 
 const METRIC_BANDS: Record<MetricKind, number> = {
@@ -128,6 +138,10 @@ export function FermentationDetail({
   onRefreshProbe,
   probeLinked = false,
   fallbackSetpoint,
+  entities,
+  entitiesError,
+  devices,
+  onChangeDevices,
 }: FermentationDetailProps) {
   /*
    * Le message « aucune sonde liée » vit ici et non dans `App` : il appartient au clic qui
@@ -394,6 +408,15 @@ export function FermentationDetail({
             >
               ↻
             </button>
+          )}
+
+          {onChangeDevices === undefined ? null : (
+            <DevicePicker
+              entities={entities ?? []}
+              devices={devices ?? []}
+              onChange={onChangeDevices}
+              entitiesError={entitiesError ?? null}
+            />
           )}
 
           {onStopProduction === undefined ? null : (

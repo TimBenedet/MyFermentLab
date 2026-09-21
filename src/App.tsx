@@ -31,7 +31,7 @@ import { assess, worstStatus } from './lib/reading';
 import { STATUS_STYLES } from './lib/status';
 import { CHART_PALETTES } from './lib/theme';
 import type { ThemeName } from './lib/theme';
-import type { BatchId, Production, StatusLevel } from './types';
+import type { BatchId, Production, RecipeDevice, StatusLevel } from './types';
 
 /** Deux propositions de fiche produit, comparables sur le même ferment. */
 type PanelVariant = 'v1' | 'v2';
@@ -108,13 +108,21 @@ export default function App() {
   // l'accueil, sinon la comparaison entre les deux propositions est impossible.
   const [panelVariant, setPanelVariant] = useState<PanelVariant>('v1');
 
+  // Le lot correspondant à la fiche ouverte, quand c'est bien un lot et non un ferment.
+  // Calculé tôt : la lecture Home Assistant doit tourner quand on l'ouvre, ne serait-ce
+  // que pour lier des appareils à un lot qui n'en a encore aucun.
+  const selectedProduction =
+    productions.productions.find((production) => production.id === selectedId) ?? null;
+
   // Le jeton Home Assistant est injecté par le proxy du serveur de dev : la lecture
-  // n'est lancée que lorsqu'elle sert — la vue Devices ouverte, ou un lot qui suit une
-  // sonde de température.
+  // n'est lancée que lorsqu'elle sert — la vue Devices ouverte, un lot qui suit une
+  // sonde de température, ou la fiche d'un lot ouverte.
   const watchesProbe = productions.productions.some(
     (production) => temperatureProbeOf(production) !== null,
   );
-  const homeAssistant = useHomeAssistantEntities(view === 'devices' || watchesProbe);
+  const homeAssistant = useHomeAssistantEntities(
+    view === 'devices' || watchesProbe || selectedProduction !== null,
+  );
 
   /*
    * Journal des mesures réelles. À chaque relevé Home Assistant (toutes les 30 s),
@@ -223,9 +231,6 @@ export default function App() {
     selectedId === null
       ? null
       : (batches.find((reading) => reading.config.id === selectedId) ?? null);
-  // Le lot correspondant, quand c'est bien un lot et non un ferment du tableau de bord.
-  const selectedProduction =
-    productions.productions.find((production) => production.id === selectedId) ?? null;
   /*
    * Le bouton de relecture est présent sur toutes les fiches — y compris les cinq ferments,
    * dont la température est simulée. `probeLinked` dit s'il y a une mesure réelle à relire :
@@ -295,6 +300,25 @@ export default function App() {
       }
     },
     [feed.setTemperatureSetpoint, productions, selectedProduction],
+  );
+
+  /*
+   * Lier ou délier des appareils sur un lot en cours : le magasin est la source de
+   * vérité, l'asservissement et l'affichage suivent aussitôt.
+   */
+  const handleChangeDevices = useCallback(
+    (devices: readonly RecipeDevice[]) => {
+      if (selectedProduction === null) return;
+      // Une prise retirée de la boucle ne doit pas rester allumée toute seule : on la
+      // coupe avant de l'oublier. Les sondes retirées n'ont, elles, rien à couper.
+      const nextIds = new Set(devices.map((device) => device.entityId));
+      const removed = selectedProduction.devices.filter(
+        (device) => !nextIds.has(device.entityId),
+      );
+      if (removed.length > 0) heat.release(removed);
+      productions.setDevices(selectedProduction.id, devices);
+    },
+    [heat, productions, selectedProduction],
   );
 
   useEffect(() => {
@@ -416,6 +440,10 @@ export default function App() {
             onRefreshProbe={homeAssistant.refresh}
             probeLinked={selectedHasProbe}
             fallbackSetpoint={selectedProduction?.setpoint ?? undefined}
+            entities={homeAssistant.entities}
+            entitiesError={homeAssistant.error}
+            devices={selectedProduction?.devices ?? []}
+            onChangeDevices={selectedProduction === null ? undefined : handleChangeDevices}
           />
         ) : (
           /* Les lots de la bibliothèque passent au-dessus des cinq ferments, dans leur

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createProduction, productionOf, readProductions, writeProductions } from '../lib/production';
-import type { Production, Recipe } from '../types';
+import type { Production, Recipe, RecipeDevice } from '../types';
 
 export interface ProductionStore {
   /** Lots en production, dans l'ordre de lancement. */
@@ -12,6 +12,8 @@ export interface ProductionStore {
   readonly stopRecipe: (recipeId: string) => void;
   /** Enregistre la consigne choisie sur la fiche d'un lot : elle survit au rechargement. */
   readonly setSetpoint: (id: string, setpoint: number) => void;
+  /** Remplace les appareils liés d'un lot en cours — sondes et prises, sans l'arrêter. */
+  readonly setDevices: (id: string, devices: readonly RecipeDevice[]) => void;
 }
 
 /**
@@ -52,5 +54,13 @@ export function useProductions(): ProductionStore {
     );
   }, []);
 
-  return { productions, start, stop, stopRecipe, setSetpoint };
+  const setDevices = useCallback((id: string, devices: readonly RecipeDevice[]) => {
+    setProductions((current) =>
+      current.map((production) =>
+        production.id === id ? { ...production, devices: [...devices] } : production,
+      ),
+    );
+  }, []);
+
+  return { productions, start, stop, stopRecipe, setSetpoint, setDevices };
 }
