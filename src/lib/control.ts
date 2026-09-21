@@ -52,16 +52,15 @@ export interface HeatLot {
  * Commande à appliquer. `previous` est la commande en cours : c'est elle qui est
  * maintenue dans la bande morte, et c'est ce qui empêche les allers-retours.
  *
- * Sans mesure (`temperature === null`), on **coupe**. Une sonde muette ne doit pas
- * laisser un tapis chauffer sans surveillance : c'est le seul défaut qui s'aggrave
- * tout seul.
+ * Sans mesure (`temperature === null`) **ou sans consigne** (`setpoint === null`), on
+ * coupe : un tapis ne doit pas chauffer sans surveillance ni sans cible.
  */
 export function decideHeat(
   temperature: number | null,
-  setpoint: number,
+  setpoint: number | null,
   previous: HeatCommand,
 ): HeatCommand {
-  if (temperature === null) return 'idle';
+  if (temperature === null || setpoint === null) return 'idle';
   if (temperature >= setpoint) return 'idle';
   if (temperature < setpoint - HEAT_DEAD_BAND) return 'heat';
   return previous;

@@ -7,7 +7,7 @@ import type { Sample } from '../types';
  * (`classifyRegulation`). `muted` ne se déduit de rien : il dit qu'un lot asservi
  * n'a **plus de mesure** — la seule information qui ne doit pas être devinée.
  */
-export type RegulationState = 'heating' | 'cooling' | 'holding' | 'muted';
+export type RegulationState = 'heating' | 'cooling' | 'holding' | 'muted' | 'untargeted';
 
 /** Demi-bande morte : en deçà, la boucle est considérée au repos. */
 export const REGULATION_DEADBAND = 0.1;
@@ -57,6 +57,13 @@ export const REGULATION_STYLES: Record<RegulationState, RegulationStyle> = {
     pillClass: 'bg-amber-500/10 ring-1 ring-amber-500/30 text-amber-400',
     dotClass: 'bg-amber-500',
     textClass: 'text-amber-400',
+  },
+  untargeted: {
+    label: 'Sans consigne',
+    description: 'Aucune consigne de température : la chauffe n’est pas asservie',
+    pillClass: 'bg-zinc-500/10 ring-1 ring-zinc-500/30 text-zinc-400',
+    dotClass: 'bg-zinc-500',
+    textClass: 'text-zinc-400',
   },
 };
 

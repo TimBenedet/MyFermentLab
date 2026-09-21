@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { EQUIPMENT_PRESETS } from '../config/equipment';
-import { FERMENT_KINDS, FERMENTATION_BY_KIND, KIND_LABELS } from '../config/fermentations';
+import { FERMENT_KINDS, KIND_LABELS, tracksGravity } from '../config/fermentations';
 import { FAMILY_LABELS } from '../config/ingredients';
 import { SETPOINT_MAX, SETPOINT_MIN } from '../lib/control';
 import {
@@ -30,6 +30,7 @@ import {
   formatQuantity,
   MAX_ALPHA_PCT,
   MAX_EBC,
+  MAX_GRAVITY,
   MAX_QUANTITY,
   RECIPE_UNITS,
   totalsOf,
@@ -49,6 +50,7 @@ import type {
   BrewWater,
   EquipmentProfile,
   FermentKind,
+  GravityTarget,
   Recipe,
   RecipeDevice,
   RecipeIngredient,
@@ -152,6 +154,14 @@ function readSetpoint(draft: string): number | null {
   const parsed = parseQuantity(draft);
   if (parsed === null || parsed < SETPOINT_MIN) return null;
   return Math.min(parsed, SETPOINT_MAX);
+}
+
+/** Densité relue du brouillon : départ et arrivée valides, sinon `null`. */
+function readGravity(draft: { readonly original: string; readonly final: string }): GravityTarget | null {
+  const original = parseQuantity(draft.original);
+  const final = parseQuantity(draft.final);
+  if (original === null || original <= 0 || final === null || final <= 0) return null;
+  return { original: Math.min(original, MAX_GRAVITY), final: Math.min(final, MAX_GRAVITY) };
 }
 
 function toDraft(ingredient: RecipeIngredient): IngredientDraft {
@@ -418,6 +428,11 @@ export function RecipeForm({
   const [setpointDraft, setSetpointDraft] = useState(() =>
     recipe?.setpoint === undefined ? '' : formatQuantity(recipe.setpoint),
   );
+  const [gravityDraft, setGravityDraft] = useState<{ original: string; final: string }>(() =>
+    recipe?.gravity === undefined
+      ? { original: '', final: '' }
+      : { original: formatQuantity(recipe.gravity.original), final: formatQuantity(recipe.gravity.final) },
+  );
   const [ingredients, setIngredients] = useState<readonly IngredientDraft[]>(() =>
     recipe === null ? [newDraft()] : recipe.ingredients.map(toDraft),
   );
@@ -551,6 +566,7 @@ export function RecipeForm({
    * hydromel, un koji, un miso, une sauce soja gardent le formulaire d'hier.
    */
   const showsWater = families.includes('malt');
+  const showsGravity = tracksGravity(kind);
   /*
    * Deux colonnes de mesure, et seulement quand elles ont un sens : la couleur suit le
    * malt, les acides alpha suivent le houblon. Un hydromel, un koji ou un miso n'en
@@ -699,6 +715,7 @@ export function RecipeForm({
     // Enregistrer une recette enregistre aussi la cuve : les deux brouillons vont ensemble.
     commitEquipment();
     const setpoint = readSetpoint(setpointDraft);
+    const gravity = readGravity(gravityDraft);
     onSave({
       id: recipe?.id ?? createId('recipe'),
       name: trimmedName,
@@ -707,8 +724,10 @@ export function RecipeForm({
       // Un plan sans volume n'existe pas : une recette de bière dont le volume n'est pas
       // renseigné s'enregistre sans plan d'eau, et le bloc l'aura dit.
       ...(liveWater === null ? {} : { water: liveWater }),
-      // Une consigne vide ne s'écrit pas : le type décide, comme avant.
+      // Une consigne vide ne s'écrit pas : aucune cible par défaut.
       ...(setpoint === null ? {} : { setpoint }),
+      // Une densité vide ne s'écrit pas : le lot ne suit alors pas de densité.
+      ...(gravity === null ? {} : { gravity }),
       // Le libellé suit l'appareil tant qu'il est là : un renommage côté Home
       // Assistant se répercute à l'enregistrement, un appareil disparu garde le sien.
       devices: linked.map((device) => {
@@ -816,9 +835,9 @@ export function RecipeForm({
                 value={setpointDraft}
                 onChange={(event) => setSetpointDraft(event.target.value)}
                 onKeyDown={onKeyDown}
-                placeholder={formatQuantity(FERMENTATION_BY_KIND[kind].setpoints.temperature)}
+                placeholder="—"
                 aria-label="Consigne de température en degrés Celsius"
-                title={`Consigne de température en °C — vide : consigne du type (${formatQuantity(FERMENTATION_BY_KIND[kind].setpoints.temperature)} °C)`}
+                title="Consigne de température en °C — vide : aucune consigne"
                 className={`${FIELD_CLASS} w-16 text-right tabular-nums`}
               />
               <span className="shrink-0 text-[10px] text-zinc-500">°C</span>
@@ -918,6 +937,50 @@ export function RecipeForm({
             )}
           </div>
         </div>
+
+        {!showsGravity ? null : (
+          <div className="flex shrink-0 flex-col gap-1.5 border-t border-anthracite-800 pt-3">
+            <span className="text-[10px] text-zinc-500">Densité</span>
+            <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+              <label className="flex w-[120px] shrink-0 flex-col gap-1">
+                <span className="text-[10px] text-zinc-500">Densité initiale</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={gravityDraft.original}
+                  onChange={(event) =>
+                    setGravityDraft((current) => ({ ...current, original: event.target.value }))
+                  }
+                  onKeyDown={onKeyDown}
+                  placeholder="—"
+                  aria-label="Densité initiale"
+                  title="Densité de départ (OG), indiquée par toi — vide : pas de suivi de densité"
+                  className={`${FIELD_CLASS} w-full text-right tabular-nums`}
+                />
+              </label>
+              <label className="flex w-[120px] shrink-0 flex-col gap-1">
+                <span className="text-[10px] text-zinc-500">Densité finale</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={gravityDraft.final}
+                  onChange={(event) =>
+                    setGravityDraft((current) => ({ ...current, final: event.target.value }))
+                  }
+                  onKeyDown={onKeyDown}
+                  placeholder="—"
+                  aria-label="Densité finale"
+                  title="Densité d'arrivée (FG), indiquée par toi — vide : pas de suivi de densité"
+                  className={`${FIELD_CLASS} w-full text-right tabular-nums`}
+                />
+              </label>
+            </div>
+            <p className="text-[10px] text-zinc-600">
+              Renseignées, la densité est suivie du départ à l'arrivée ; vides, le lot ne
+              suit pas de densité.
+            </p>
+          </div>
+        )}
 
         <div className="flex min-h-0 flex-1 flex-col gap-1.5 border-t border-anthracite-800 pt-3">
           <span className="text-[10px] text-zinc-500">

@@ -40,7 +40,7 @@ for (let index = 0; index < 10; index += 1) {
     `${formatClock(reading.current.t)}  ` +
       `T ${formatMeasure(reading.current.temperature, 2)}  ` +
       `HR ${formatMeasure(reading.current.humidity ?? Number.NaN, 1)}  ` +
-      `ΔT ${formatSigned(a.temperatureDelta, 2)}  ` +
+      `ΔT ${formatSigned(a.temperatureDelta ?? 0, 2)}  ` +
       `ΔHR ${formatSigned(a.humidityDelta ?? Number.NaN, 2)}  ` +
       `densité ${Number.isNaN(density) ? '—' : formatMeasure(density, 3)}  ` +
       `${a.temperatureStatus}/${String(a.humidityStatus)}`,
@@ -54,13 +54,13 @@ for (const reading of Object.values(feed.fermentations)) {
     Number.isFinite(reading.current.temperature) &&
     (reading.current.humidity === null || Number.isFinite(reading.current.humidity)) &&
     (reading.current.density === null || Number.isFinite(reading.current.density));
-  const spread = Math.abs(a.temperatureDelta);
+  const spread = Math.abs(a.temperatureDelta ?? 0);
   console.log(
     `${reading.config.id.padEnd(9)} ` +
       `type=${reading.config.kind.padEnd(6)} ` +
       `densité=${tracksGravity(reading.config.kind) ? 'suivie' : 'ignorée'} ` +
       `fini=${String(finite).padEnd(5)} ` +
-      `écart T ${formatSigned(a.temperatureDelta, 2)} °C  ` +
+      `écart T ${formatSigned(a.temperatureDelta ?? 0, 2)} °C  ` +
       `|écart| max sur 24 h ~ ${spread.toFixed(2)}  ` +
       `hist=${reading.history.length}`,
   );

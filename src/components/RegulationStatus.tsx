@@ -30,16 +30,19 @@ function describeHeat(heat: HeatLot): string {
 /** État de la boucle de régulation : chauffe, refroidissement, repos — ou sonde muette. */
 export function RegulationStatus({ reading, variant = 'pill', heat }: RegulationStatusProps) {
   const { config, current, history } = reading;
-  const state: RegulationState =
-    heat == null
-      ? classifyRegulation(current.temperature - config.setpoints.temperature)
-      : heat.temperature === null
-        ? 'muted'
-        : heat.command === 'heat'
-          ? 'heating'
-          : 'holding';
+  const setpoint = config.setpoints.temperature;
+  let state: RegulationState;
+  if (setpoint === null) {
+    // Sans consigne, la boucle n'a pas de cible : rien n'est asservi.
+    state = 'untargeted';
+  } else if (heat != null) {
+    state = heat.temperature === null ? 'muted' : heat.command === 'heat' ? 'heating' : 'holding';
+  } else {
+    state = classifyRegulation(current.temperature - setpoint);
+  }
   const style = REGULATION_STYLES[state];
-  const description = heat == null ? style.description : describeHeat(heat);
+  const description =
+    heat == null || state === 'untargeted' ? style.description : describeHeat(heat);
   const rate = temperatureRate(history, current.t);
 
   if (variant === 'inline') {

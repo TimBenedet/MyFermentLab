@@ -40,8 +40,8 @@ export function coversFullWindow(history: readonly Sample[], windowEnd: number):
 }
 
 export interface Assessment {
-  readonly temperatureDelta: number;
-  readonly temperatureStatus: StatusLevel;
+  readonly temperatureDelta: number | null;
+  readonly temperatureStatus: StatusLevel | null;
   readonly humidityDelta: number | null;
   readonly humidityStatus: StatusLevel | null;
   readonly density: number | null;
@@ -54,8 +54,11 @@ const HUNDRED = 100;
 export function assess(reading: FermentReading): Assessment {
   const { config, current } = reading;
 
-  const temperatureDelta = current.temperature - config.setpoints.temperature;
-  const temperatureStatus = classify(temperatureDelta, NOMINAL_BAND, ALARM_THRESHOLD);
+  const temperatureTarget = config.setpoints.temperature;
+  const temperatureDelta =
+    temperatureTarget === null ? null : current.temperature - temperatureTarget;
+  const temperatureStatus =
+    temperatureDelta === null ? null : classify(temperatureDelta, NOMINAL_BAND, ALARM_THRESHOLD);
 
   const humiditySetpoint = config.setpoints.humidity;
   const humidityDelta =
@@ -81,12 +84,12 @@ const SEVERITY: Record<StatusLevel, number> = { ok: 0, warn: 1, alarm: 2 };
 
 /**
  * État de synthèse d'un ferment : le plus sévère des canaux instrumentés.
- * L'humidité compte donc autant que la température sur le tableau de bord.
+ * Sans consigne de température ni humidité, il n'y a rien à comparer : nominal.
  */
 export function worstStatus(assessment: Assessment): StatusLevel {
+  const temperature = assessment.temperatureStatus;
   const humidity = assessment.humidityStatus;
-  if (humidity === null) return assessment.temperatureStatus;
-  return SEVERITY[humidity] > SEVERITY[assessment.temperatureStatus]
-    ? humidity
-    : assessment.temperatureStatus;
+  if (temperature === null) return humidity ?? 'ok';
+  if (humidity === null) return temperature;
+  return SEVERITY[humidity] > SEVERITY[temperature] ? humidity : temperature;
 }

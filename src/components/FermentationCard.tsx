@@ -18,8 +18,10 @@ export function FermentationCard({ reading, onOpen }: FermentationCardProps) {
 
   const ariaLabel =
     `${config.name} : ${formatMeasure(current.temperature, 1)} degrés, ` +
-    `consigne ${formatMeasure(config.setpoints.temperature, 1)} degrés, ` +
-    `écart ${formatSigned(assessment.temperatureDelta, 2)} degré, ` +
+    (config.setpoints.temperature === null
+      ? 'aucune consigne, '
+      : `consigne ${formatMeasure(config.setpoints.temperature, 1)} degrés, ` +
+        `écart ${formatSigned(assessment.temperatureDelta ?? 0, 2)} degré, `) +
     `état ${STATUS_STYLES[status].label.toLowerCase()}`;
 
   return (
@@ -57,13 +59,15 @@ export function FermentationCard({ reading, onOpen }: FermentationCardProps) {
           <span className="text-[11px] text-zinc-500">°C</span>
         </span>
         <span className="text-[12px] tabular-nums text-zinc-400">
-          {formatSigned(assessment.temperatureDelta, 2)}
+          {assessment.temperatureDelta === null ? '—' : formatSigned(assessment.temperatureDelta, 2)}
         </span>
       </span>
 
       <span className="flex flex-col">
         <MetricRow label="Consigne">
-          {formatMeasure(config.setpoints.temperature, 1)} °C
+          {config.setpoints.temperature === null
+            ? '—'
+            : `${formatMeasure(config.setpoints.temperature, 1)} °C`}
         </MetricRow>
 
         {humiditySetpoint !== null && current.humidity !== null ? (

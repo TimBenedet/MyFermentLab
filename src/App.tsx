@@ -439,7 +439,7 @@ export default function App() {
             heat={selectedProduction === null ? null : (heatLots.get(selectedProduction.id) ?? null)}
             onRefreshProbe={homeAssistant.refresh}
             probeLinked={selectedHasProbe}
-            fallbackSetpoint={selectedProduction?.setpoint ?? undefined}
+            fallbackSetpoint={selectedProduction === null ? undefined : selectedProduction.setpoint}
             entities={homeAssistant.entities}
             entitiesError={homeAssistant.error}
             devices={selectedProduction?.devices ?? []}

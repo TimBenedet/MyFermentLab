@@ -20,7 +20,8 @@ export interface ChannelDynamics {
   readonly burstScale: number; // amplitude des perturbations ponctuelles
 }
 export interface Setpoints {
-  readonly temperature: number;
+  /** Consigne de température, en °C — `null` : aucune consigne, pas de cible. */
+  readonly temperature: number | null;
   readonly humidity: number | null;
 }
 export interface Dynamics {
@@ -31,6 +32,12 @@ export interface GravitySetpoint {
   readonly original: number;
   readonly final: number;
   readonly elapsedHours: number;
+}
+
+/** Densités voulues d'une recette : départ et arrivée, indiquées par l'utilisateur. */
+export interface GravityTarget {
+  readonly original: number;
+  readonly final: number;
 }
 
 export interface TankVesselConfig {
@@ -168,11 +175,15 @@ export interface Recipe {
    */
   readonly water?: BrewWater;
   /**
-   * Consigne de température de la recette, en °C. Absente, le lot hérite de la
-   * consigne du ferment de référence de son type ; renseignée, c'est elle qui fait
-   * foi au lancement — une eau à chauffer à 60 °C n'est pas une fermentation.
+   * Consigne de température de la recette, en °C. Absente, le lot n'a **pas de cible**
+   * — rien n'est pré-rempli, c'est l'utilisateur qui l'indique.
    */
   readonly setpoint?: number;
+  /**
+   * Densité de départ et d'arrivée, indiquées par l'utilisateur pour une bière ou un
+   * hydromel. Absente, le lot ne suit pas de densité.
+   */
+  readonly gravity?: GravityTarget;
   /** Appareils liés, dans l'ordre du choix. Vide quand la recette n'en suit aucun. */
   readonly devices: readonly RecipeDevice[];
   /**
@@ -207,6 +218,8 @@ export interface Production {
    * `null` tant que rien n'a été changé : la consigne de la recette fait foi.
    */
   readonly overrideSetpoint: number | null;
+  /** Densité recopiée de la recette au lancement — `null` : pas de suivi de densité. */
+  readonly gravity: GravityTarget | null;
   readonly devices: readonly RecipeDevice[];
 }
 

@@ -6,10 +6,10 @@ import { formatMeasure } from '../lib/format';
 export const SETPOINT_STEP = 0.5;
 
 export interface SetpointControlProps {
-  /** Consigne actuellement appliquée par le moteur. */
-  readonly value: number;
-  /** Consigne d'origine de `src/config/fermentations.ts`, pour le rétablissement. */
-  readonly fallback: number;
+  /** Consigne actuellement appliquée par le moteur — `null` : aucune consigne. */
+  readonly value: number | null;
+  /** Consigne d'origine pour « rétablir » — `null` : rien à rétablir. */
+  readonly fallback: number | null;
   readonly onApply: (value: number) => void;
   /** `boxed` : bloc titré, champ encadré, bouton `Valider` toujours visible.
    *  `bare` : une ligne de la liste, boutons ronds nus, validation à la demande. */
@@ -43,19 +43,24 @@ export function SetpointControl({
   onApply,
   variant = 'boxed',
 }: SetpointControlProps) {
-  const [draft, setDraft] = useState(() => formatMeasure(value, 1));
+  const [draft, setDraft] = useState(() => (value === null ? '' : formatMeasure(value, 1)));
 
   // Une consigne validée ailleurs (ou par le rétablissement) réaligne le champ.
   useEffect(() => {
-    setDraft(formatMeasure(value, 1));
+    setDraft(value === null ? '' : formatMeasure(value, 1));
   }, [value]);
 
   const parsed = parseDraft(draft);
   const pending = parsed === null ? null : clamp(parsed);
   const dirty = pending !== null && pending !== value;
+  // Point de départ des boutons +/− quand le champ est vide ou sans consigne.
+  const base = pending ?? value ?? fallback ?? 20;
+  // Rouge uniquement quand on a tapé quelque chose qui n'est pas un nombre : un
+  // champ vide ne dit pas « erreur », il dit « pas encore de consigne ».
+  const invalid = draft.trim() !== '' && parsed === null;
 
   const step = (delta: number): void => {
-    setDraft(formatMeasure(clamp((pending ?? value) + delta), 1));
+    setDraft(formatMeasure(clamp(base + delta), 1));
   };
 
   const apply = (): void => {
@@ -78,7 +83,7 @@ export function SetpointControl({
             <button
               type="button"
               onClick={() => step(-SETPOINT_STEP)}
-              disabled={pending === null || pending <= SETPOINT_MIN}
+              disabled={base <= SETPOINT_MIN}
               aria-label={`Diminuer la consigne de ${formatMeasure(SETPOINT_STEP, 1)} degré`}
               className={stepButton}
             >
@@ -97,14 +102,15 @@ export function SetpointControl({
                 }
                 if (event.key === 'Escape') {
                   event.stopPropagation();
-                  setDraft(formatMeasure(value, 1));
+                  setDraft(value === null ? '' : formatMeasure(value, 1));
                 }
               }}
               aria-label="Consigne de température en degrés Celsius"
-              aria-invalid={pending === null}
+              aria-invalid={invalid}
               title="Consigne de température en °C"
+              placeholder="—"
               className={
-                pending === null
+                invalid
                   ? 'h-6 w-12 shrink-0 rounded-md bg-transparent px-1 text-right text-[12px] font-medium tabular-nums text-red-400 focus:bg-anthracite-800 focus:outline-none'
                   : 'h-6 w-12 shrink-0 rounded-md bg-transparent px-1 text-right text-[12px] font-medium tabular-nums text-zinc-100 transition-colors hover:bg-anthracite-800 focus:bg-anthracite-800 focus:outline-none'
               }
@@ -113,7 +119,7 @@ export function SetpointControl({
             <button
               type="button"
               onClick={() => step(SETPOINT_STEP)}
-              disabled={pending === null || pending >= SETPOINT_MAX}
+              disabled={base >= SETPOINT_MAX}
               aria-label={`Augmenter la consigne de ${formatMeasure(SETPOINT_STEP, 1)} degré`}
               className={stepButton}
             >
@@ -122,9 +128,9 @@ export function SetpointControl({
           </span>
         </div>
 
-        {dirty || value !== fallback ? (
+        {dirty || (fallback !== null && value !== fallback) ? (
           <span className="flex items-center justify-end gap-3">
-            {value === fallback ? null : (
+            {fallback !== null && value !== fallback ? (
               <button
                 type="button"
                 onClick={() => onApply(fallback)}
@@ -133,7 +139,7 @@ export function SetpointControl({
               >
                 rétablir
               </button>
-            )}
+            ) : null}
             {dirty ? (
               <button
                 type="button"
@@ -155,7 +161,7 @@ export function SetpointControl({
       <span className="flex items-baseline justify-between gap-2">
         <span className="text-[10px] text-zinc-500">Consigne</span>
         <span className="flex items-baseline gap-2">
-          {value === fallback ? null : (
+          {fallback !== null && value !== fallback ? (
             <button
               type="button"
               onClick={() => onApply(fallback)}
@@ -164,7 +170,7 @@ export function SetpointControl({
             >
               rétablir
             </button>
-          )}
+          ) : null}
           <span className="text-[10px] text-zinc-600">°C</span>
         </span>
       </span>
@@ -173,7 +179,7 @@ export function SetpointControl({
         <button
           type="button"
           onClick={() => step(-SETPOINT_STEP)}
-          disabled={pending === null || pending <= SETPOINT_MIN}
+          disabled={base <= SETPOINT_MIN}
           aria-label={`Diminuer la consigne de ${formatMeasure(SETPOINT_STEP, 1)} degré`}
           className={`${BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-40`}
         >
@@ -195,13 +201,14 @@ export function SetpointControl({
             }
             if (event.key === 'Escape') {
               event.stopPropagation();
-              setDraft(formatMeasure(value, 1));
+              setDraft(value === null ? '' : formatMeasure(value, 1));
             }
           }}
           aria-label="Consigne de température en degrés Celsius"
-          aria-invalid={pending === null}
+          aria-invalid={invalid}
+          placeholder="—"
           className={
-            pending === null
+            invalid
               ? 'h-10 w-14 shrink-0 rounded-lg border border-red-500/60 bg-anthracite-950 px-1 text-center text-[12px] font-medium tabular-nums text-zinc-100 focus:outline-none sm:h-7 sm:w-12'
               : 'h-10 w-14 shrink-0 rounded-lg border border-anthracite-700 bg-anthracite-950 px-1 text-center text-[12px] font-medium tabular-nums text-zinc-100 focus:border-accent-500/60 focus:outline-none sm:h-7 sm:w-12'
           }
@@ -210,7 +217,7 @@ export function SetpointControl({
         <button
           type="button"
           onClick={() => step(SETPOINT_STEP)}
-          disabled={pending === null || pending >= SETPOINT_MAX}
+          disabled={base >= SETPOINT_MAX}
           aria-label={`Augmenter la consigne de ${formatMeasure(SETPOINT_STEP, 1)} degré`}
           className={`${BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-40`}
         >

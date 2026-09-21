@@ -7,6 +7,7 @@ import { DEFAULT_BOIL_MINUTES, MAX_BOIL_MINUTES, MAX_WATER_LITRES } from './wate
 import type {
   BrewWater,
   FermentKind,
+  GravityTarget,
   Recipe,
   RecipeDevice,
   RecipeIngredient,
@@ -30,10 +31,10 @@ const STORE_FIELD = 'recipes';
  * **matériel** : les réglages de la cuve quittent les recettes pour `lib/equipment.ts`,
  * elles ne gardent que le volume visé et la durée d'ébullition. v8 la **consigne de
  * température** (`setpoint`), libre — une recette qui chauffe de l'eau à 60 °C ne
- * s'appelle plus une fermentation. Une recette antérieure se relit sans appareil, sans
- * mesure, sans plan d'eau et sans consigne, elle n'est pas cassée.
+ * s'appelle plus une fermentation. v9 la **densité** (`gravity`), indiquée par
+ * l'utilisateur : une recette relue sans densité n'en suit pas, elle n'est pas cassée.
  */
-const STORE_VERSION = 8;
+const STORE_VERSION = 9;
 
 /** Unités proposées. `%` sert aux proportions : part du grist, du sel… */
 export const RECIPE_UNITS: readonly RecipeUnit[] = ['g', 'kg', 'mL', 'L', '%'];
@@ -44,6 +45,9 @@ export const MAX_QUANTITY = 1_000_000;
 /** Bornes des mesures annexes : au-delà, c'est une saisie dans la mauvaise colonne. */
 export const MAX_EBC = 2_000;
 export const MAX_ALPHA_PCT = 50;
+
+/** Densité : au-delà, ce n'est plus un moût mais une erreur de saisie. */
+export const MAX_GRAVITY = 1.5;
 
 /**
  * Gardes de type plutôt que `Set<string>` : `has()` ne rétrécit pas une union,
@@ -174,6 +178,11 @@ export const SEED_RECIPES: readonly Recipe[] = [
       volumeL: 20,
       boilMinutes: 90,
     },
+    // La densité est celle de la bière d'exemple : l'utilisateur la remplace par la sienne.
+    gravity: {
+      original: 1.06,
+      final: 1.012,
+    },
     // Aucun appareil : leur identifiant dépend de l'installation Home Assistant,
     // un exemple ne peut pas en inventer.
     devices: [],
@@ -259,6 +268,15 @@ function sanitizeSetpoint(raw: unknown): number | undefined {
   if (typeof raw !== 'number' || !Number.isFinite(raw)) return undefined;
   if (raw < SETPOINT_MIN) return undefined;
   return Math.min(raw, SETPOINT_MAX);
+}
+
+/** Une densité relue : départ et arrivée finis et bornés, sinon rien. */
+function sanitizeGravity(raw: unknown): GravityTarget | undefined {
+  if (!isRecord(raw)) return undefined;
+  const original = sanitizeMeasure(raw.original, MAX_GRAVITY);
+  const final = sanitizeMeasure(raw.final, MAX_GRAVITY);
+  if (original === undefined || final === undefined) return undefined;
+  return { original, final };
 }
 
 /** Nom non vide, unité connue, poids fini et positif. Une ligne sinon `null`. */
@@ -352,6 +370,7 @@ function sanitizeRecipe(entry: unknown): Recipe | null {
   }
   const water = sanitizeWater(entry.water);
   const setpoint = sanitizeSetpoint(entry.setpoint);
+  const gravity = sanitizeGravity(entry.gravity);
   return {
     id: typeof id === 'string' && id !== '' ? id : createId('recipe'),
     name: name.trim(),
@@ -359,8 +378,10 @@ function sanitizeRecipe(entry: unknown): Recipe | null {
     ingredients: kept,
     // Un plan d'eau absent ne s'écrit pas du tout : la recette reste celle d'avant.
     ...(water === undefined ? {} : { water }),
-    // Une consigne absente ne s'écrit pas non plus : le type décide, comme avant.
+    // Une consigne absente ne s'écrit pas non plus : aucune cible par défaut.
     ...(setpoint === undefined ? {} : { setpoint }),
+    // Une densité absente ne s'écrit pas : le lot ne suit alors pas de densité.
+    ...(gravity === undefined ? {} : { gravity }),
     // `probes` : nom du champ jusqu'en v4, relu pour ne pas perdre l'existant.
     devices: sanitizeDevices(devices ?? probes),
     // Seul `true` archive : un champ absent ou douteux laisse la recette active.

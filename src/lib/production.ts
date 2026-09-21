@@ -13,11 +13,12 @@ import type { HassEntity } from './homeassistant';
 import { samplesOf } from './probeLog';
 import type { ProbeSample } from './probeLog';
 import { hashSeed } from './random';
-import { createId, isFermentKind, sanitizeDevices } from './recipes';
+import { createId, isFermentKind, MAX_GRAVITY, sanitizeDevices } from './recipes';
 import { isRecord, readStoredList, writeStoredList } from './storage';
 import type {
   FermentConfig,
   FermentReading,
+  GravityTarget,
   Production,
   Recipe,
   RecipeDevice,
@@ -45,9 +46,10 @@ const STORE_FIELD = 'productions';
 /**
  * v2 : `devices` remplace `probes` — un lot peut commander des prises. v3 :
  * `overrideSetpoint` — la consigne choisie sur la fiche d'un lot survit au
- * rechargement, alors que `setpoint` reste celle de la recette au lancement.
+ * rechargement, alors que `setpoint` reste celle de la recette au lancement. v4 :
+ * `gravity` — la densité de la recette, indiquée par l'utilisateur, recopiée au lancement.
  */
-const STORE_VERSION = 3;
+const STORE_VERSION = 4;
 
 /** Configuration de simulation d'un lot : la référence de son type, réidentifiée. */
 export function configForProduction(production: Production): FermentConfig {
@@ -57,17 +59,16 @@ export function configForProduction(production: Production): FermentConfig {
     kind: production.kind,
     name: production.recipeName,
     context: `Production · lancée à ${formatClock(production.startedAt)}`,
-    // La consigne suit d'abord ce qu'on a choisi sur la fiche, puis la recette,
-    // puis le type.
+    // La consigne suit ce qu'on a choisi sur la fiche, puis la recette ; sans l'une
+    // ni l'autre, il n'y a **pas de cible** — rien n'est inventé par défaut.
     setpoints: {
       ...reference.setpoints,
-      temperature:
-        production.overrideSetpoint ?? production.setpoint ?? reference.setpoints.temperature,
+      temperature: production.overrideSetpoint ?? production.setpoint,
     },
     dynamics: reference.dynamics,
-    // `elapsedHours` de la référence décrit la cuve du tableau de bord, déjà lancée :
-    // un lot qui démarre repart de la densité d'origine.
-    gravity: reference.gravity === null ? null : { ...reference.gravity, elapsedHours: 0 },
+    // La densité vient de la recette, pas du type : sans elle, pas de suivi de densité.
+    // `elapsedHours` repart de zéro, le lot démarre maintenant.
+    gravity: production.gravity === null ? null : { ...production.gravity, elapsedHours: 0 },
     vessel: reference.vessel,
     seed: hashSeed(production.id),
   };
@@ -83,6 +84,7 @@ export function createProduction(recipe: Recipe, startedAt: number): Production 
     startedAt,
     setpoint: recipe.setpoint ?? null,
     overrideSetpoint: null,
+    gravity: recipe.gravity ?? null,
     devices: recipe.devices.map((device) => ({ ...device })),
   };
 }
@@ -104,9 +106,25 @@ function sanitizeSetpointValue(raw: unknown): number | null {
   return Math.min(raw, SETPOINT_MAX);
 }
 
+/** Densité relue : départ et arrivée finis et positifs, sinon `null`. */
+function sanitizeGravityValue(raw: unknown): GravityTarget | null {
+  if (!isRecord(raw)) return null;
+  const { original, final } = raw;
+  if (
+    typeof original !== 'number' || !Number.isFinite(original) || original <= 0 ||
+    typeof final !== 'number' || !Number.isFinite(final) || final <= 0
+  ) {
+    return null;
+  }
+  return {
+    original: Math.min(original, MAX_GRAVITY),
+    final: Math.min(final, MAX_GRAVITY),
+  };
+}
+
 function sanitizeProduction(raw: unknown): Production | null {
   if (!isRecord(raw)) return null;
-  const { id, recipeId, recipeName, kind, startedAt, devices, probes, setpoint, overrideSetpoint } =
+  const { id, recipeId, recipeName, kind, startedAt, devices, probes, setpoint, overrideSetpoint, gravity } =
     raw;
   if (typeof recipeName !== 'string' || recipeName.trim() === '') return null;
   if (!isFermentKind(kind)) return null;
@@ -119,6 +137,7 @@ function sanitizeProduction(raw: unknown): Production | null {
     startedAt,
     setpoint: sanitizeSetpointValue(setpoint),
     overrideSetpoint: sanitizeSetpointValue(overrideSetpoint),
+    gravity: sanitizeGravityValue(gravity),
     // `probes` : nom du champ jusqu'en v2 du magasin de productions.
     devices: sanitizeDevices(devices ?? probes),
   };

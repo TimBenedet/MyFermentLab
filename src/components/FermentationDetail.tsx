@@ -59,10 +59,11 @@ export interface FermentationDetailProps {
    */
   readonly probeLinked?: boolean;
   /**
-   * Consigne d'origine d'un lot : celle de sa recette. Absente (ferment du tableau de
-   * bord, recette sans consigne), la consigne du type fait foi pour « rétablir ».
+   * Consigne d'origine : celle de la recette pour un lot, celle du ferment pour les
+   * cinq du tableau de bord. `null` : aucune consigne d'origine, rien à rétablir.
+   * Absente (undefined), la consigne du type fait foi.
    */
-  readonly fallbackSetpoint?: number;
+  readonly fallbackSetpoint?: number | null;
   /**
    * Appareils d'un lot en cours : le sélecteur les lit et les modifie sans arrêter la
    * production. Absent sur les cinq ferments du tableau de bord, qui n'ont pas de lot.
@@ -183,11 +184,13 @@ export function FermentationDetail({
   const windowLabel = coversFullWindow(history, windowEnd)
     ? '24 h'
     : formatElapsed(windowEnd - windowStartOf(history, windowEnd));
-  // Valeur d'origine de la consigne : celle de la recette pour un lot, sinon celle du
-  // ferment de référence du type. Les cinq ferments du tableau de bord sont leur propre
-  // référence ; un lot lancé depuis la bibliothèque hérite de sa recette, ou du type.
+  // Valeur d'origine de la consigne : celle de la recette pour un lot, celle du ferment
+  // pour les cinq du tableau de bord. `undefined` : la consigne du type fait foi ; `null` :
+  // aucune consigne d'origine, donc rien à rétablir.
   const defaultSetpoint =
-    fallbackSetpoint ?? FERMENTATION_BY_KIND[config.kind].setpoints.temperature;
+    fallbackSetpoint === undefined
+      ? FERMENTATION_BY_KIND[config.kind].setpoints.temperature
+      : fallbackSetpoint;
 
   const readings = (
     <>
@@ -237,13 +240,17 @@ export function FermentationDetail({
         metric="temperature"
         data={history}
         target={config.setpoints.temperature}
-        targetLabel={`consigne ${formatMeasure(config.setpoints.temperature, 1)} °C`}
+        targetLabel={
+          config.setpoints.temperature === null
+            ? 'sans consigne'
+            : `consigne ${formatMeasure(config.setpoints.temperature, 1)} °C`
+        }
         palette={palette}
         decimals={DECIMALS.temperature}
         minPadding={MIN_PADDING.temperature}
         bandHalfWidth={METRIC_BANDS.temperature}
         windowEnd={windowEnd}
-        footnote={`${compact ? `moy ${formatMeasure(temperatureStats.mean, 1)} °C · amp ${formatMeasure(temperatureStats.amplitude, 1)} °C · ` : ''}min ${formatMeasure(temperatureStats.min, 1)} °C · max ${formatMeasure(temperatureStats.max, 1)} °C · écart ${formatSigned(assessment.temperatureDelta, 2)} °C`}
+        footnote={`${compact ? `moy ${formatMeasure(temperatureStats.mean, 1)} °C · amp ${formatMeasure(temperatureStats.amplitude, 1)} °C · ` : ''}min ${formatMeasure(temperatureStats.min, 1)} °C · max ${formatMeasure(temperatureStats.max, 1)} °C · écart ${assessment.temperatureDelta === null ? '—' : formatSigned(assessment.temperatureDelta, 2)} °C`}
       />
 
       {humiditySetpoint !== null ? (
@@ -294,7 +301,7 @@ export function FermentationDetail({
         <span className="text-[11px] text-zinc-500">°C</span>
       </span>
       <span className="text-[12px] tabular-nums text-zinc-400">
-        {formatSigned(assessment.temperatureDelta, 2)}
+        {assessment.temperatureDelta === null ? '—' : formatSigned(assessment.temperatureDelta, 2)}
       </span>
     </span>
   );

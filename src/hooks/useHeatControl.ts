@@ -10,7 +10,8 @@ export interface HeatTarget {
   readonly batchId: string;
   /** Mesure de la sonde, `null` si elle ne répond pas. */
   readonly temperature: number | null;
-  readonly setpoint: number;
+  /** Consigne, `null` quand le lot n'en a pas : on coupe alors sans chauffer. */
+  readonly setpoint: number | null;
   readonly outlets: readonly string[];
 }
 

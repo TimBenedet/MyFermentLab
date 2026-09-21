@@ -32,6 +32,9 @@ const MS_PER_SECOND = 1_000;
 const MS_PER_HOUR = 3_600_000;
 const HALF_LIFE = Math.LN2;
 
+/** Base de simulation quand un lot n'a pas de consigne : la cible n'est pas affichée. */
+const UNTARGETED_TEMPERATURE = 20;
+
 /**
  * Canal de mesure : processus d'Ornstein-Uhlenbeck autour d'une consigne,
  * avec cycle de régulation lent, ondulation plus courte et perturbations
@@ -121,7 +124,7 @@ class FermentState {
     const random = mulberry32(config.seed);
     this.temperature = new MeasurementChannel(
       config.dynamics.temperature,
-      config.setpoints.temperature,
+      config.setpoints.temperature ?? UNTARGETED_TEMPERATURE,
       random,
       INITIAL_SPREAD_TEMPERATURE,
       startMs,
