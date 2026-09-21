@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { EQUIPMENT_PRESETS } from '../config/equipment';
-import { FERMENT_KINDS, KIND_LABELS } from '../config/fermentations';
+import { FERMENT_KINDS, FERMENTATION_BY_KIND, KIND_LABELS } from '../config/fermentations';
 import { FAMILY_LABELS } from '../config/ingredients';
+import { SETPOINT_MAX, SETPOINT_MIN } from '../lib/control';
 import {
   defaultAlpha,
   defaultEbc,
@@ -144,6 +145,13 @@ function parseQuantity(draft: string): number | null {
   if (normalized === '') return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+/** Consigne relue du brouillon : vide ou hors plage ⇒ la recette n'en porte pas. */
+function readSetpoint(draft: string): number | null {
+  const parsed = parseQuantity(draft);
+  if (parsed === null || parsed < SETPOINT_MIN) return null;
+  return Math.min(parsed, SETPOINT_MAX);
 }
 
 function toDraft(ingredient: RecipeIngredient): IngredientDraft {
@@ -407,6 +415,9 @@ export function RecipeForm({
   const isNew = recipe === null;
   const [name, setName] = useState(recipe?.name ?? '');
   const [kind, setKind] = useState<FermentKind>(recipe?.kind ?? 'beer');
+  const [setpointDraft, setSetpointDraft] = useState(() =>
+    recipe?.setpoint === undefined ? '' : formatQuantity(recipe.setpoint),
+  );
   const [ingredients, setIngredients] = useState<readonly IngredientDraft[]>(() =>
     recipe === null ? [newDraft()] : recipe.ingredients.map(toDraft),
   );
@@ -687,6 +698,7 @@ export function RecipeForm({
     if (!canSave) return;
     // Enregistrer une recette enregistre aussi la cuve : les deux brouillons vont ensemble.
     commitEquipment();
+    const setpoint = readSetpoint(setpointDraft);
     onSave({
       id: recipe?.id ?? createId('recipe'),
       name: trimmedName,
@@ -695,6 +707,8 @@ export function RecipeForm({
       // Un plan sans volume n'existe pas : une recette de bière dont le volume n'est pas
       // renseigné s'enregistre sans plan d'eau, et le bloc l'aura dit.
       ...(liveWater === null ? {} : { water: liveWater }),
+      // Une consigne vide ne s'écrit pas : le type décide, comme avant.
+      ...(setpoint === null ? {} : { setpoint }),
       // Le libellé suit l'appareil tant qu'il est là : un renommage côté Home
       // Assistant se répercute à l'enregistrement, un appareil disparu garde le sien.
       devices: linked.map((device) => {
@@ -792,6 +806,24 @@ export function RecipeForm({
               ))}
             </div>
           </div>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[10px] text-zinc-500">Consigne</span>
+            <span className="flex items-center gap-1">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={setpointDraft}
+                onChange={(event) => setSetpointDraft(event.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder={formatQuantity(FERMENTATION_BY_KIND[kind].setpoints.temperature)}
+                aria-label="Consigne de température en degrés Celsius"
+                title={`Consigne de température en °C — vide : consigne du type (${formatQuantity(FERMENTATION_BY_KIND[kind].setpoints.temperature)} °C)`}
+                className={`${FIELD_CLASS} w-16 text-right tabular-nums`}
+              />
+              <span className="shrink-0 text-[10px] text-zinc-500">°C</span>
+            </span>
+          </label>
         </div>
 
         <div className="relative flex flex-col gap-1.5 border-t border-anthracite-800 pt-3">

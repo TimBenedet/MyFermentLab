@@ -167,6 +167,12 @@ export interface Recipe {
    * miso n'a pas de grain à rincer. Une recette sans plan reste une recette valide.
    */
   readonly water?: BrewWater;
+  /**
+   * Consigne de température de la recette, en °C. Absente, le lot hérite de la
+   * consigne du ferment de référence de son type ; renseignée, c'est elle qui fait
+   * foi au lancement — une eau à chauffer à 60 °C n'est pas une fermentation.
+   */
+  readonly setpoint?: number;
   /** Appareils liés, dans l'ordre du choix. Vide quand la recette n'en suit aucun. */
   readonly devices: readonly RecipeDevice[];
   /**
@@ -191,6 +197,11 @@ export interface Production {
   readonly recipeName: string;
   readonly kind: FermentKind;
   readonly startedAt: number;
+  /**
+   * Consigne recopiée de la recette au lancement, en °C — `null` quand la recette
+   * n'en portait pas : le lot retombe alors sur la consigne du type.
+   */
+  readonly setpoint: number | null;
   readonly devices: readonly RecipeDevice[];
 }
 

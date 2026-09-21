@@ -1,5 +1,6 @@
 import { FERMENTATION_BY_KIND } from '../config/fermentations';
 import type { HeatCommand, HeatLot } from './control';
+import { SETPOINT_MAX, SETPOINT_MIN } from './control';
 import { formatClock, formatElapsed } from './format';
 import {
   displayName,
@@ -9,6 +10,8 @@ import {
   trackedFamilyOf,
 } from './homeassistant';
 import type { HassEntity } from './homeassistant';
+import { samplesOf } from './probeLog';
+import type { ProbeSample } from './probeLog';
 import { hashSeed } from './random';
 import { createId, isFermentKind, sanitizeDevices } from './recipes';
 import { isRecord, readStoredList, writeStoredList } from './storage';
@@ -50,7 +53,11 @@ export function configForProduction(production: Production): FermentConfig {
     kind: production.kind,
     name: production.recipeName,
     context: `Production · lancée à ${formatClock(production.startedAt)}`,
-    setpoints: reference.setpoints,
+    // La consigne suit d'abord la recette ; sans consigne de recette, celle du type.
+    setpoints: {
+      ...reference.setpoints,
+      temperature: production.setpoint ?? reference.setpoints.temperature,
+    },
     dynamics: reference.dynamics,
     // `elapsedHours` de la référence décrit la cuve du tableau de bord, déjà lancée :
     // un lot qui démarre repart de la densité d'origine.
@@ -68,6 +75,7 @@ export function createProduction(recipe: Recipe, startedAt: number): Production 
     recipeName: recipe.name,
     kind: recipe.kind,
     startedAt,
+    setpoint: recipe.setpoint ?? null,
     devices: recipe.devices.map((device) => ({ ...device })),
   };
 }
@@ -85,16 +93,23 @@ export function productionOf(
 
 function sanitizeProduction(raw: unknown): Production | null {
   if (!isRecord(raw)) return null;
-  const { id, recipeId, recipeName, kind, startedAt, devices, probes } = raw;
+  const { id, recipeId, recipeName, kind, startedAt, devices, probes, setpoint } = raw;
   if (typeof recipeName !== 'string' || recipeName.trim() === '') return null;
   if (!isFermentKind(kind)) return null;
   if (typeof startedAt !== 'number' || !Number.isFinite(startedAt)) return null;
+  const keptSetpoint =
+    typeof setpoint === 'number' &&
+    Number.isFinite(setpoint) &&
+    setpoint >= SETPOINT_MIN
+      ? Math.min(setpoint, SETPOINT_MAX)
+      : null;
   return {
     id: typeof id === 'string' && id !== '' ? id : createId('batch'),
     recipeId: typeof recipeId === 'string' ? recipeId : '',
     recipeName: recipeName.trim(),
     kind,
     startedAt,
+    setpoint: keptSetpoint,
     // `probes` : nom du champ jusqu'en v2 du magasin de productions.
     devices: sanitizeDevices(devices ?? probes),
   };
@@ -162,13 +177,50 @@ function describeHeat(outlets: number, temperature: number | null, command: Heat
 }
 
 /**
+ * Fusionne les mesures réelles de la sonde sur la grille simulée : la température
+ * vient du journal réel, l'humidité et la densité — que la sonde ne mesure pas —
+ * sont reprises du point simulé le plus proche dans le temps. Les deux chronologies
+ * ne se touchent pas (archivage de 30 s d'un côté, ticks de 2 s de l'autre), d'où ce
+ * plus proche voisin à deux curseurs, linéaire.
+ */
+function mergeRealHistory(simulated: readonly Sample[], log: readonly ProbeSample[]): Sample[] {
+  if (simulated.length === 0) {
+    return log.map((real) => ({
+      t: real.t,
+      temperature: real.temperature,
+      humidity: null,
+      density: null,
+    }));
+  }
+  const result: Sample[] = [];
+  let cursor = 0;
+  for (const real of log) {
+    while (
+      cursor + 1 < simulated.length &&
+      Math.abs(simulated[cursor + 1].t - real.t) <= Math.abs(simulated[cursor].t - real.t)
+    ) {
+      cursor += 1;
+    }
+    const nearest = simulated[cursor];
+    result.push({
+      t: real.t,
+      temperature: real.temperature,
+      humidity: nearest.humidity,
+      density: nearest.density,
+    });
+  }
+  return result;
+}
+
+/**
  * Relevé d'un lot tel qu'il doit s'afficher : la température de la sonde liée quand
  * elle répond, la température simulée sinon. Le contexte dit **toujours** d'où vient
  * le chiffre, et ce que l'asservissement commande — une mesure réelle, une mesure
  * simulée et une chaufferie ne doivent pas se ressembler.
  *
- * L'historique suit : son dernier point est remplacé par la mesure réelle, sinon la
- * courbe finirait ailleurs que sur le chiffre affiché juste au-dessus d'elle.
+ * L'historique suit la sonde : quand un journal réel existe (`probeLog`), la courbe
+ * de température est celle des mesures enregistrées, plus la valeur courante — la
+ * simulation ne fournit alors que l'humidité et la densité, par plus proche voisin.
  */
 export function liveReading(
   reading: FermentReading,
@@ -176,6 +228,7 @@ export function liveReading(
   entities: readonly HassEntity[],
   now: number,
   heat: HeatLot | null = null,
+  probeLog: ReadonlyMap<string, readonly ProbeSample[]> = new Map(),
 ): FermentReading {
   const age = `Production · depuis ${formatElapsed(now - production.startedAt)}`;
   const probe = temperatureProbeOf(production);
@@ -195,14 +248,15 @@ export function liveReading(
   if (value === null) return { ...reading, config };
 
   const current: Sample = { ...reading.current, temperature: value };
-  const history = reading.history;
-  const last = history[history.length - 1];
-  // La mesure courante est déjà le dernier point archivé : on le corrige au lieu
-  // d'empiler un doublon au même instant.
-  const samples =
+  const log = samplesOf(probeLog, production.id);
+  const base = log.length === 0 ? reading.history : mergeRealHistory(reading.history, log);
+  // La mesure courante est le dernier point de la courbe : on la soude à l'archive au
+  // lieu d'empiler un doublon au même instant.
+  const last = base[base.length - 1];
+  const history =
     last !== undefined && last.t === current.t
-      ? [...history.slice(0, -1), current]
-      : [...history, current];
+      ? [...base.slice(0, -1), current]
+      : [...base, current];
 
-  return { config, current, history: samples };
+  return { config, current, history };
 }

@@ -56,6 +56,11 @@ export interface FermentationDetailProps {
    * qu'un bouton grisé qui n'explique rien.
    */
   readonly probeLinked?: boolean;
+  /**
+   * Consigne d'origine d'un lot : celle de sa recette. Absente (ferment du tableau de
+   * bord, recette sans consigne), la consigne du type fait foi pour « rétablir ».
+   */
+  readonly fallbackSetpoint?: number;
 }
 
 const METRIC_BANDS: Record<MetricKind, number> = {
@@ -122,6 +127,7 @@ export function FermentationDetail({
   heat,
   onRefreshProbe,
   probeLinked = false,
+  fallbackSetpoint,
 }: FermentationDetailProps) {
   /*
    * Le message « aucune sonde liée » vit ici et non dans `App` : il appartient au clic qui
@@ -163,10 +169,11 @@ export function FermentationDetail({
   const windowLabel = coversFullWindow(history, windowEnd)
     ? '24 h'
     : formatElapsed(windowEnd - windowStartOf(history, windowEnd));
-  // Valeur d'origine de la consigne : celle du ferment de référence du type. Les cinq
-  // ferments du tableau de bord sont leur propre référence ; un lot lancé depuis la
-  // bibliothèque hérite donc de la consigne de son type.
-  const defaultSetpoint = FERMENTATION_BY_KIND[config.kind].setpoints.temperature;
+  // Valeur d'origine de la consigne : celle de la recette pour un lot, sinon celle du
+  // ferment de référence du type. Les cinq ferments du tableau de bord sont leur propre
+  // référence ; un lot lancé depuis la bibliothèque hérite de sa recette, ou du type.
+  const defaultSetpoint =
+    fallbackSetpoint ?? FERMENTATION_BY_KIND[config.kind].setpoints.temperature;
 
   const readings = (
     <>

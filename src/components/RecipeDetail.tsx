@@ -6,6 +6,7 @@ import { roleOf, ROLE_LABELS } from '../lib/homeassistant';
 import {
   describeDevices,
   describeRecipe,
+  describeSetpoint,
   describeTotals,
   formatQuantity,
   formatQuantityWithUnit,
@@ -82,6 +83,7 @@ export function RecipeDetail({
   const devices = recipe.devices;
   const outlets = devices.filter((device) => roleOf(device.entityId) === 'outlet').length;
   const totals = totalsOf(ingredients);
+  const setpoint = describeSetpoint(recipe);
 
   /*
    * Le plan d'eau se recalcule à l'affichage plutôt que d'être recopié dans la recette :
@@ -129,6 +131,7 @@ export function RecipeDetail({
 
         <p className="text-[11px] text-zinc-500">
           {describeRecipe(recipe)}
+          {setpoint === null ? '' : ` · ${setpoint}`}
         </p>
 
         {!recipe.archived ? null : (

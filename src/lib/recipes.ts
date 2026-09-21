@@ -1,4 +1,5 @@
 import { FERMENT_KINDS } from '../config/fermentations';
+import { SETPOINT_MAX, SETPOINT_MIN } from './control';
 import { NARROW_NBSP, formatCompact } from './format';
 import { roleOf } from './homeassistant';
 import { isRecord, readStoredList, writeStoredList } from './storage';
@@ -27,10 +28,12 @@ const STORE_FIELD = 'recipes';
  * v2 ajoute les sondes, v3 `archived`, v4 les prises (`devices` remplace `probes`),
  * v5 les mesures d'ingrédient (`ebc`, `aaPct`), v6 le calcul d'eau (`water`), v7 le
  * **matériel** : les réglages de la cuve quittent les recettes pour `lib/equipment.ts`,
- * elles ne gardent que le volume visé et la durée d'ébullition. Une recette antérieure
- * se relit sans appareil, sans mesure et sans plan d'eau, elle n'est pas cassée.
+ * elles ne gardent que le volume visé et la durée d'ébullition. v8 la **consigne de
+ * température** (`setpoint`), libre — une recette qui chauffe de l'eau à 60 °C ne
+ * s'appelle plus une fermentation. Une recette antérieure se relit sans appareil, sans
+ * mesure, sans plan d'eau et sans consigne, elle n'est pas cassée.
  */
-const STORE_VERSION = 7;
+const STORE_VERSION = 8;
 
 /** Unités proposées. `%` sert aux proportions : part du grist, du sel… */
 export const RECIPE_UNITS: readonly RecipeUnit[] = ['g', 'kg', 'mL', 'L', '%'];
@@ -140,6 +143,11 @@ export function describeRecipe(recipe: Recipe): string {
   return `${head} · ${describeDevices(recipe.devices)}`;
 }
 
+/** « consigne 60 °C », ou `null` quand la recette laisse la consigne du type. */
+export function describeSetpoint(recipe: Recipe): string | null {
+  return recipe.setpoint === undefined ? null : `consigne ${formatCompact(recipe.setpoint)} °C`;
+}
+
 /**
  * Recettes d'exemple, installées au **premier lancement** seulement : une
  * bibliothèque vide ne montre rien de ce qu'elle sait faire. Elles ne
@@ -246,6 +254,13 @@ function sanitizeMeasure(raw: unknown, max: number): number | undefined {
   return Math.round(Math.min(raw, max) * 100) / 100;
 }
 
+/** Une consigne relue : finie et dans la plage admise. Absente ou hors plage : rien. */
+function sanitizeSetpoint(raw: unknown): number | undefined {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return undefined;
+  if (raw < SETPOINT_MIN) return undefined;
+  return Math.min(raw, SETPOINT_MAX);
+}
+
 /** Nom non vide, unité connue, poids fini et positif. Une ligne sinon `null`. */
 function sanitizeIngredient(raw: unknown): RecipeIngredient | null {
   if (!isRecord(raw)) return null;
@@ -336,6 +351,7 @@ function sanitizeRecipe(entry: unknown): Recipe | null {
     }
   }
   const water = sanitizeWater(entry.water);
+  const setpoint = sanitizeSetpoint(entry.setpoint);
   return {
     id: typeof id === 'string' && id !== '' ? id : createId('recipe'),
     name: name.trim(),
@@ -343,6 +359,8 @@ function sanitizeRecipe(entry: unknown): Recipe | null {
     ingredients: kept,
     // Un plan d'eau absent ne s'écrit pas du tout : la recette reste celle d'avant.
     ...(water === undefined ? {} : { water }),
+    // Une consigne absente ne s'écrit pas non plus : le type décide, comme avant.
+    ...(setpoint === undefined ? {} : { setpoint }),
     // `probes` : nom du champ jusqu'en v4, relu pour ne pas perdre l'existant.
     devices: sanitizeDevices(devices ?? probes),
     // Seul `true` archive : un champ absent ou douteux laisse la recette active.

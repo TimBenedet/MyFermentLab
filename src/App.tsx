@@ -20,6 +20,13 @@ import {
 } from './lib/page';
 import type { LibraryFilter, LibraryScreen, View } from './lib/page';
 import { liveReading, outletsOf, probeTemperatureOf, temperatureProbeOf } from './lib/production';
+import {
+  appendProbeSample,
+  pruneProbeLog,
+  readProbeLog,
+  removeProbeLogEntry,
+  writeProbeLog,
+} from './lib/probeLog';
 import { assess, worstStatus } from './lib/reading';
 import { STATUS_STYLES } from './lib/status';
 import { CHART_PALETTES } from './lib/theme';
@@ -83,6 +90,9 @@ export default function App() {
   const productions = useProductions();
   const feed = useFermentationFeed(productions.productions);
   const { theme, toggleTheme } = useTheme();
+  // Journal des mesures réelles, relu une fois : les courbes des lots qui suivent une
+  // sonde en dépendent, et il survit au rechargement comme le reste du stockage.
+  const [probeLog, setProbeLog] = useState(readProbeLog);
   // La page quittée est relue **une fois**, avant le premier rendu : recharger l'onglet ne
   // doit pas ramener à l'accueil quand on lisait une cuve — ni refermer la recette ouverte
   // dans la bibliothèque, qui a ses propres écrans. Une lecture par état donnerait quatre
@@ -105,6 +115,31 @@ export default function App() {
     (production) => temperatureProbeOf(production) !== null,
   );
   const homeAssistant = useHomeAssistantEntities(view === 'devices' || watchesProbe);
+
+  /*
+   * Journal des mesures réelles. À chaque relevé Home Assistant (toutes les 30 s),
+   * chaque lot qui suit une sonde de température y dépose la mesure reçue : c'est
+   * elle qui devient sa courbe, pas la simulation. On n'écrit que quand le journal
+   * change — une température stable ne crée pas de point redondant.
+   */
+  useEffect(() => {
+    if (homeAssistant.entities.length === 0) return;
+    setProbeLog((current) => {
+      const next = new Map(current);
+      const now = Date.now();
+      const activeIds = new Set(productions.productions.map((production) => production.id));
+      let changed = pruneProbeLog(next, activeIds, now);
+      for (const production of productions.productions) {
+        const probe = temperatureProbeOf(production);
+        if (probe === null) continue;
+        const value = probeTemperatureOf(production, homeAssistant.entities);
+        if (value === null) continue;
+        if (appendProbeSample(next, production.id, now, value)) changed = true;
+      }
+      if (changed) writeProbeLog(next);
+      return changed ? next : current;
+    });
+  }, [homeAssistant.entities, productions.productions]);
 
   const readings = useMemo(() => Object.values(feed.fermentations), [feed.fermentations]);
   // Index des lots par identifiant : la carte a besoin de la date de lancement pour
@@ -173,9 +208,10 @@ export default function App() {
           homeAssistant.entities,
           feed.timestamp,
           heatLots.get(production.id) ?? null,
+          probeLog,
         );
       }),
-    [feed.productions, feed.timestamp, heatLots, homeAssistant.entities, productionById],
+    [feed.productions, feed.timestamp, heatLots, homeAssistant.entities, productionById, probeLog],
   );
   // Un lot lancé depuis la bibliothèque se suit comme un ferment : même carte, même
   // fiche, mêmes graphes. C'est son identifiant qui le distingue.
@@ -236,6 +272,13 @@ export default function App() {
     if (selectedProduction === null) return;
     // Arrêter un lot coupe ses prises : un tapis ne doit pas rester chaud tout seul.
     heat.release(selectedProduction.devices);
+    // Le journal du lot n'a plus d'avenir : on le retire.
+    setProbeLog((current) => {
+      const next = new Map(current);
+      const changed = removeProbeLogEntry(next, selectedProduction.id);
+      if (changed) writeProbeLog(next);
+      return changed ? next : current;
+    });
     productions.stop(selectedProduction.id);
     setSelectedId(null);
   }, [heat, productions, selectedProduction]);
@@ -358,6 +401,7 @@ export default function App() {
             heat={selectedProduction === null ? null : (heatLots.get(selectedProduction.id) ?? null)}
             onRefreshProbe={homeAssistant.refresh}
             probeLinked={selectedHasProbe}
+            fallbackSetpoint={selectedProduction?.setpoint ?? undefined}
           />
         ) : (
           /* Les lots de la bibliothèque passent au-dessus des cinq ferments, dans leur

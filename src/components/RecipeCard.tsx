@@ -1,5 +1,11 @@
 import { KIND_LABELS } from '../config/fermentations';
-import { describeRecipe, describeTotals, formatQuantityWithUnit, totalsOf } from '../lib/recipes';
+import {
+  describeRecipe,
+  describeSetpoint,
+  describeTotals,
+  formatQuantityWithUnit,
+  totalsOf,
+} from '../lib/recipes';
 import type { Recipe } from '../types';
 
 /** Nombre d'ingrédients montrés sur la carte ; les autres sont comptés. */
@@ -21,6 +27,7 @@ export function RecipeCard({ recipe, onOpen }: RecipeCardProps) {
   const preview = ingredients.slice(0, PREVIEW_ROWS);
   const rest = count - preview.length;
   const totals = describeTotals(totalsOf(ingredients));
+  const setpoint = describeSetpoint(recipe);
 
   const ariaLabel =
     `${recipe.name}, ${KIND_LABELS[recipe.kind]}, ${describeRecipe(recipe)}` +
@@ -52,6 +59,7 @@ export function RecipeCard({ recipe, onOpen }: RecipeCardProps) {
 
       <span className="text-[10px] text-zinc-500">
         {describeRecipe(recipe)}
+        {setpoint === null ? '' : ` · ${setpoint}`}
       </span>
 
       <span className="flex flex-col">

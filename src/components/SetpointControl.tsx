@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
+import { SETPOINT_MAX, SETPOINT_MIN } from '../lib/control';
 import { formatMeasure } from '../lib/format';
 
-/** Bornes de sécurité : hors de cette plage, une fermentation n'a plus de sens. */
-export const SETPOINT_MIN = 4;
-export const SETPOINT_MAX = 45;
 /** Pas des boutons + et −. La bande nominale fait 0,2 °C : 0,1 serait trop fin. */
 export const SETPOINT_STEP = 0.5;
 

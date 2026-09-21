@@ -23,6 +23,15 @@
  */
 export const HEAT_DEAD_BAND = 0.3;
 
+/**
+ * Plage de consigne admise par l'interface. La consigne n'est plus réservée à la
+ * fermentation : chauffer de l'eau à 60 °C, ou tenir une pièce froide, doit rester
+ * possible. De la glace fondante à au-delà de l'ébullition, on laisse la main —
+ * c'est l'utilisateur qui sait ce qu'il chauffe, et avec quoi.
+ */
+export const SETPOINT_MIN = 0;
+export const SETPOINT_MAX = 150;
+
 /** Ce qu'on demande aux prises. */
 export type HeatCommand = 'heat' | 'idle';
 
