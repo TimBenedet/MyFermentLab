@@ -10,6 +10,8 @@ export interface ProductionStore {
   readonly stop: (id: string) => void;
   /** Arrête le lot d'une recette donnée, s'il existe. */
   readonly stopRecipe: (recipeId: string) => void;
+  /** Enregistre la consigne choisie sur la fiche d'un lot : elle survit au rechargement. */
+  readonly setSetpoint: (id: string, setpoint: number) => void;
 }
 
 /**
@@ -42,5 +44,13 @@ export function useProductions(): ProductionStore {
     );
   }, []);
 
-  return { productions, start, stop, stopRecipe };
+  const setSetpoint = useCallback((id: string, setpoint: number) => {
+    setProductions((current) =>
+      current.map((production) =>
+        production.id === id ? { ...production, overrideSetpoint: setpoint } : production,
+      ),
+    );
+  }, []);
+
+  return { productions, start, stop, stopRecipe, setSetpoint };
 }

@@ -202,6 +202,11 @@ export interface Production {
    * n'en portait pas : le lot retombe alors sur la consigne du type.
    */
   readonly setpoint: number | null;
+  /**
+   * Consigne choisie sur la fiche du lot, persistée pour survivre au rechargement.
+   * `null` tant que rien n'a été changé : la consigne de la recette fait foi.
+   */
+  readonly overrideSetpoint: number | null;
   readonly devices: readonly RecipeDevice[];
 }
 

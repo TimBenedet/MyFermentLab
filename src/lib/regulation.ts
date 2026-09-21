@@ -78,6 +78,9 @@ export function temperatureRate(history: readonly Sample[], nowMs: number): numb
   if (last === undefined) return null;
 
   const cutoff = nowMs - RATE_WINDOW_MS;
+  // Moins de 15 min d'historique : une pente mesurée sur un point ou deux n'est que
+  // du bruit amplifié par un dénominateur minuscule — on ne l'affiche pas.
+  if (history[0].t > cutoff) return null;
   let reference = history[0];
   for (let index = history.length - 1; index >= 0; index -= 1) {
     if (history[index].t <= cutoff) {

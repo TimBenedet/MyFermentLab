@@ -83,9 +83,16 @@ function prune(samples: readonly ProbeSample[], now: number): ProbeSample[] {
 }
 
 /**
+ * Seuil sous lequel une variation n'est pas enregistrée : la sonde d'un Sonoff se
+ * promène de quelques dixièmes, et un point par battement ferait danser la courbe.
+ */
+export const MIN_RECORD_DELTA = 0.2;
+
+/**
  * Ajoute un relevé au journal **passé en paramètre** (une copie, côté appelant).
- * Un point identique au précédent n'apprend rien : on ne l'écrit pas, le journal
- * ne grossit donc que quand la température bouge réellement.
+ * Un point qui s'écarte de moins de `MIN_RECORD_DELTA` du précédent n'apprend
+ * rien : on ne l'écrit pas — le journal ne grossit que quand la température bouge
+ * vraiment, et la courbe ne zigzague pas à chaque relevé bruité.
  */
 export function appendProbeSample(
   log: Map<string, ProbeSample[]>,
@@ -95,8 +102,12 @@ export function appendProbeSample(
 ): boolean {
   const current = log.get(batchId) ?? [];
   const last = current[current.length - 1];
-  if (last !== undefined && last.temperature === temperature) return false;
-  log.set(batchId, [...prune(current, t), { t, temperature }]);
+  if (last !== undefined && Math.abs(temperature - last.temperature) < MIN_RECORD_DELTA) {
+    return false;
+  }
+  // Arrondi au dixième : l'affichage n'a qu'une décimale, le journal non plus.
+  const rounded = Math.round(temperature * 10) / 10;
+  log.set(batchId, [...prune(current, t), { t, temperature: rounded }]);
   return true;
 }
 

@@ -42,8 +42,12 @@ import type {
 
 const STORAGE_KEY = 'fermentation4.productions';
 const STORE_FIELD = 'productions';
-/** v2 : `devices` remplace `probes` — un lot peut commander des prises. */
-const STORE_VERSION = 2;
+/**
+ * v2 : `devices` remplace `probes` — un lot peut commander des prises. v3 :
+ * `overrideSetpoint` — la consigne choisie sur la fiche d'un lot survit au
+ * rechargement, alors que `setpoint` reste celle de la recette au lancement.
+ */
+const STORE_VERSION = 3;
 
 /** Configuration de simulation d'un lot : la référence de son type, réidentifiée. */
 export function configForProduction(production: Production): FermentConfig {
@@ -53,10 +57,12 @@ export function configForProduction(production: Production): FermentConfig {
     kind: production.kind,
     name: production.recipeName,
     context: `Production · lancée à ${formatClock(production.startedAt)}`,
-    // La consigne suit d'abord la recette ; sans consigne de recette, celle du type.
+    // La consigne suit d'abord ce qu'on a choisi sur la fiche, puis la recette,
+    // puis le type.
     setpoints: {
       ...reference.setpoints,
-      temperature: production.setpoint ?? reference.setpoints.temperature,
+      temperature:
+        production.overrideSetpoint ?? production.setpoint ?? reference.setpoints.temperature,
     },
     dynamics: reference.dynamics,
     // `elapsedHours` de la référence décrit la cuve du tableau de bord, déjà lancée :
@@ -76,6 +82,7 @@ export function createProduction(recipe: Recipe, startedAt: number): Production 
     kind: recipe.kind,
     startedAt,
     setpoint: recipe.setpoint ?? null,
+    overrideSetpoint: null,
     devices: recipe.devices.map((device) => ({ ...device })),
   };
 }
@@ -91,25 +98,27 @@ export function productionOf(
   return productions.find((production) => production.recipeId === recipeId) ?? null;
 }
 
+/** Consigne relue : finie et bornée, sinon `null`. */
+function sanitizeSetpointValue(raw: unknown): number | null {
+  if (typeof raw !== 'number' || !Number.isFinite(raw) || raw < SETPOINT_MIN) return null;
+  return Math.min(raw, SETPOINT_MAX);
+}
+
 function sanitizeProduction(raw: unknown): Production | null {
   if (!isRecord(raw)) return null;
-  const { id, recipeId, recipeName, kind, startedAt, devices, probes, setpoint } = raw;
+  const { id, recipeId, recipeName, kind, startedAt, devices, probes, setpoint, overrideSetpoint } =
+    raw;
   if (typeof recipeName !== 'string' || recipeName.trim() === '') return null;
   if (!isFermentKind(kind)) return null;
   if (typeof startedAt !== 'number' || !Number.isFinite(startedAt)) return null;
-  const keptSetpoint =
-    typeof setpoint === 'number' &&
-    Number.isFinite(setpoint) &&
-    setpoint >= SETPOINT_MIN
-      ? Math.min(setpoint, SETPOINT_MAX)
-      : null;
   return {
     id: typeof id === 'string' && id !== '' ? id : createId('batch'),
     recipeId: typeof recipeId === 'string' ? recipeId : '',
     recipeName: recipeName.trim(),
     kind,
     startedAt,
-    setpoint: keptSetpoint,
+    setpoint: sanitizeSetpointValue(setpoint),
+    overrideSetpoint: sanitizeSetpointValue(overrideSetpoint),
     // `probes` : nom du champ jusqu'en v2 du magasin de productions.
     devices: sanitizeDevices(devices ?? probes),
   };
@@ -247,8 +256,15 @@ export function liveReading(
   const config: FermentConfig = { ...reading.config, context: parts.join(' · ') };
   if (value === null) return { ...reading, config };
 
-  const current: Sample = { ...reading.current, temperature: value };
   const log = samplesOf(probeLog, production.id);
+  const lastLog = log[log.length - 1];
+  /*
+   * Tant qu'un journal existe, la pointe de la courbe suit le dernier relevé
+   * enregistré — déjà amorti — et non la lecture brute : une sonde bruitée ne doit
+   * pas faire danser le chiffre affiché entre deux relevés.
+   */
+  const liveTemperature = lastLog === undefined ? value : lastLog.temperature;
+  const current: Sample = { ...reading.current, temperature: liveTemperature };
   const base = log.length === 0 ? reading.history : mergeRealHistory(reading.history, log);
   // La mesure courante est le dernier point de la courbe : on la soude à l'archive au
   // lieu d'empiler un doublon au même instant.

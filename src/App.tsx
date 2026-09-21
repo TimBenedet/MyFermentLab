@@ -283,6 +283,20 @@ export default function App() {
     setSelectedId(null);
   }, [heat, productions, selectedProduction]);
 
+  /*
+   * Changer la consigne sur la fiche la change dans le moteur **et** la persiste sur
+   * le lot : sans cela, un rechargement la ramènerait à la consigne de la recette.
+   */
+  const handleSetpointChange = useCallback(
+    (id: BatchId, value: number) => {
+      feed.setTemperatureSetpoint(id, value);
+      if (selectedProduction !== null && selectedProduction.id === id) {
+        productions.setSetpoint(id, value);
+      }
+    },
+    [feed.setTemperatureSetpoint, productions, selectedProduction],
+  );
+
   useEffect(() => {
     if (selected === null) return undefined;
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -393,7 +407,7 @@ export default function App() {
             reading={selected}
             onClose={handleClose}
             windowEnd={feed.timestamp}
-            onSetpointChange={feed.setTemperatureSetpoint}
+            onSetpointChange={handleSetpointChange}
             palette={CHART_PALETTES[theme]}
             variant={panelVariant}
             onToggleVariant={handleToggleVariant}
