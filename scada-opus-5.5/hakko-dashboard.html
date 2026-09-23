@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-version="hk-1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,6 +7,30 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+/* ---------- Vue téléphone ----------
+   « vue-tel » : présentation téléphone forcée par le bouton (cadre de 430 px).
+   « tactile » : cibles et champs agrandis, sous 900 px ou en vue forcée.
+   Posées ici, avant la feuille de style, pour que la première image soit la bonne. */
+const VUE_CLE = 'hakko-vue';
+const HAKKO_VERSION = 'hk-1'; window.HAKKO_VERSION = HAKKO_VERSION;
+const vueEtroite = matchMedia('(max-width: 900px)');
+let vueForcee = false; try { vueForcee = localStorage.getItem(VUE_CLE) === 'tel'; } catch(e) {}
+function appliquerVue(){
+  const h = document.documentElement;
+  h.classList.toggle('vue-tel', vueForcee);
+  h.classList.toggle('tactile', vueForcee || vueEtroite.matches);
+  const b = document.getElementById('vueBtn');
+  if (b) b.setAttribute('aria-pressed', vueForcee ? 'true' : 'false');
+}
+function basculerVue(){
+  vueForcee = !vueForcee;
+  try { if (vueForcee) localStorage.setItem(VUE_CLE, 'tel'); else localStorage.removeItem(VUE_CLE); } catch(e) {}
+  appliquerVue();
+}
+vueEtroite.addEventListener('change', appliquerVue);
+appliquerVue();
+</script>
 <style>
 :root{
   --bg:#F4F5F7; --surface:#FFFFFF; --surface2:#F7F8FA; --hover:#F1F3F6;
@@ -490,6 +514,133 @@ input[type=datetime-local]{height:36px;background:var(--surface);border:1px soli
 @media (max-width:1180px){.home-grid{grid-template-columns:1fr}.home .feed-card{max-height:360px}.home .lots.scroll{overflow:visible}}
 .home .lots{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
 @media (max-width:1360px){.home-grid{grid-template-columns:minmax(0,1fr) 300px}}
+/* ===== Vue téléphone forcée (bouton) : cadre de 430 px et recopie des @media =====
+   Chaque règle porte la valeur NETTE qu'obtient une fenêtre de 430 px après cascade.
+   Rien ici ne s'applique sans la classe vue-tel. */
+html.vue-tel{--cadre-tel:430px}
+html.vue-tel body{max-width:var(--cadre-tel);margin:0 auto;box-shadow:0 0 0 1px var(--line)}
+html.vue-tel dialog{width:min(calc(var(--cadre-tel) - 32px),calc(100vw - 32px))}
+
+/* recopie de @media (max-width:900px), l. 89-100 : coquille */
+html.vue-tel .app{grid-template-columns:1fr}
+html.vue-tel .side{display:none}
+html.vue-tel .topbar{padding:0 16px}
+html.vue-tel .m-brand{display:grid}
+html.vue-tel .sync-txt{display:none}
+html.vue-tel .content{padding:20px 16px calc(84px + env(safe-area-inset-bottom,0px))}
+html.vue-tel .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;max-width:var(--cadre-tel);margin:0 auto;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+html.vue-tel .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:var(--muted);font-size:11.5px;font-weight:500}
+html.vue-tel .tabbar a svg{width:20px;height:20px}
+html.vue-tel .tabbar a[aria-current="page"]{color:var(--accent)}
+
+/* recopie de @media (max-width:900px), l. 209-218 : tableaux en fiches */
+html.vue-tel table.data.stack thead{display:none}
+html.vue-tel table.data.stack,html.vue-tel table.data.stack tbody,html.vue-tel table.data.stack tr{display:block}
+html.vue-tel table.data.stack tr{padding:12px 16px;border-bottom:1px solid var(--line)}
+html.vue-tel table.data.stack tr:last-child{border-bottom:0}
+html.vue-tel table.data.stack td{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:4px 0;border:0;text-align:right}
+html.vue-tel table.data.stack td[data-l]::before{content:attr(data-l);color:var(--muted);font-size:12.5px;text-align:left}
+html.vue-tel table.data.stack td.first{justify-content:flex-start;text-align:left;padding-bottom:8px}
+html.vue-tel table.data.stack .ctl{justify-content:flex-end}
+
+/* recopie de @media (max-width:1180px), l. 184 et l. 490 */
+html.vue-tel .ov{grid-template-columns:1fr}
+html.vue-tel .home .feed-card{max-height:360px}
+html.vue-tel .home .lots.scroll{overflow:visible}
+
+/* recopie de @media (max-width:1100px), l. 306, 393-404, 421, 434 */
+html.vue-tel .rf{grid-template-columns:1fr}
+html.vue-tel .sticky{position:static}
+html.vue-tel .dp-grid{grid-template-columns:1fr;grid-template-rows:none}
+html.vue-tel .dp-chart,html.vue-tel .dp-journal,html.vue-tel .dp-devs,html.vue-tel .dp-side{grid-column:auto;grid-row:auto}
+html.vue-tel .dp-chart{height:380px}
+html.vue-tel .dp-journal{height:420px}
+html.vue-tel .dp-side>.dp-params{flex:none}
+html.vue-tel .dp-chart-body.with-side{flex-direction:column}
+html.vue-tel .dp-chart.dp-chart:has(.with-side){height:auto}
+html.vue-tel .dp-chart-body.with-side .dp-plot{height:260px;flex:none}
+html.vue-tel .grav-side{width:auto;border-left:0;padding-left:0}
+html.vue-tel .grav-list{max-height:240px}
+html.vue-tel .dp-grid.arch .arch-2{height:320px}
+html.vue-tel .dp-grid.arch .dp-devs{height:360px}
+
+/* recopie de ≤ 1250 (3 col.), ≤ 760 (2 col.), ≤ 440 (1 col.) : valeur nette à 430 px */
+html.vue-tel .outlets{grid-template-columns:1fr}
+
+/* recopie de @media (max-width:640px) : seulement ce qui est vivant à 430 px */
+html.vue-tel .fgrid{grid-template-columns:1fr}
+html.vue-tel .types{grid-template-columns:1fr 1fr}
+html.vue-tel .rrow:not(.step),html.vue-tel .rows-h{grid-template-columns:minmax(0,1fr) 96px 34px}
+html.vue-tel .journal li.jl time{grid-column:1/-1}
+
+/* neutralisation de @media (min-width:1101px) and (min-height:640px), l. 388-392 et 487-489 :
+   à 1440 × 900 ce verrou fixerait .dp à la hauteur de la fenêtre */
+html.vue-tel .dp{height:auto;min-height:0;display:block}
+
+/* bouton enfoncé */
+html.vue-tel #vueBtn{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+/* ===== Tactile : téléphone (≤ 900 px, classe posée par le script) ou vue forcée ===== */
+html:is(.tactile,.vue-tel){--cible:44px;--police-champ:16px}
+
+html:is(.tactile,.vue-tel) .home-grid{grid-template-columns:minmax(0,1fr)}
+html:is(.tactile,.vue-tel) .home .lots{grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr))}
+
+html:is(.tactile,.vue-tel) .tabs{gap:0;padding:0 4px;overflow-x:auto;overflow-y:hidden;border-bottom:0;box-shadow:inset 0 -1px 0 var(--line);scrollbar-width:none}
+html:is(.tactile,.vue-tel) .tabs::-webkit-scrollbar{display:none}
+html:is(.tactile,.vue-tel) .tabs>button{flex:1 0 auto;height:auto;min-height:var(--cible);align-self:stretch;padding:0 8px;margin-bottom:0;white-space:nowrap}
+html:is(.tactile,.vue-tel) .tabs .cnt{margin-left:4px}
+
+html:is(.tactile,.vue-tel) .switch{width:56px;height:32px}
+html:is(.tactile,.vue-tel) .switch::after{width:28px;height:28px}
+html:is(.tactile,.vue-tel) .switch[aria-checked="true"]::after{transform:translateX(24px)}
+html:is(.tactile,.vue-tel) .switch::before{content:"";position:absolute;left:0;right:0;top:calc((32px - var(--cible)) / 2);bottom:calc((32px - var(--cible)) / 2)}
+html:is(.tactile,.vue-tel) .ctl{gap:16px}
+
+html:is(.tactile,.vue-tel) .icon-btn{position:relative}
+/* Les insets d'un pseudo-élément absolu se comptent sur la boîte de REMBOURRAGE : la
+   bordure de 1 px du bouton se perd de chaque côté, et inset:-5px ne donne que 42 px.
+   On retire donc la bordure (1 px) pour atteindre réellement 44 × 44. */
+html:is(.tactile,.vue-tel) .icon-btn::before{content:"";position:absolute;inset:calc((34px - var(--cible)) / 2 - 1px)}
+html:is(.tactile,.vue-tel) .m-brand{position:relative}
+html:is(.tactile,.vue-tel) .m-brand::before{content:"";position:absolute;inset:calc((28px - var(--cible)) / 2)}
+html:is(.tactile,.vue-tel) .btn:not(.sm){height:var(--cible)}
+html:is(.tactile,.vue-tel) .btn.sm{position:relative}
+html:is(.tactile,.vue-tel) .btn.sm::before{content:"";position:absolute;left:0;right:0;top:calc((30px - var(--cible)) / 2 - 1px);bottom:calc((30px - var(--cible)) / 2 - 1px)}
+/* min-width : la hauteur seule ne suffit pas. Un bouton de segments à libellé court
+   (« 7 j ») ne fait que 37 px de large, sous la cible de 44 × 44. */
+html:is(.tactile,.vue-tel) .seg button{height:var(--cible);min-width:var(--cible)}
+html:is(.tactile,.vue-tel) .stepper button{width:var(--cible);height:var(--cible)}
+html:is(.tactile,.vue-tel) .crumbs a{display:inline-flex;align-items:center;min-height:var(--cible)}
+/* L'insigne de marque tient sa largeur de son texte : 43,4 px mesurés, à six dixièmes du seuil. */
+html:is(.tactile,.vue-tel) .m-brand{min-width:var(--cible)}
+
+html:is(.tactile,.vue-tel) :is(input[type=text],input[type=number],input[type=search],input[type=datetime-local],select){height:var(--cible)}
+html:is(.tactile,.vue-tel) :is(input[type=text],input[type=number],input[type=search],input[type=datetime-local],select,textarea){font-size:var(--police-champ)}
+html:is(.tactile,.vue-tel) .stepper input[type=number]{font-size:18px}
+
+html:is(.tactile,.vue-tel) #journal-list li.jl{grid-template-columns:auto minmax(0,1fr);row-gap:4px}
+html:is(.tactile,.vue-tel) #journal-list li.jl time{grid-column:1/-1}
+
+@media (max-width:900px){
+  /* la marge basse de sécurité est déjà dans .content (l. 95) : ne pas la compter deux fois */
+  :root{padding-bottom:0}
+  /* paysage : l'îlot dynamique et les bords arrondis mordent à gauche et à droite */
+  .topbar{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .content{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .tabbar{padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+}
+
+/* Le bouton ne sert qu'à entrer dans la vue téléphone ou à en sortir. Sur un appareil
+   tactile, la vue mobile s'applique d'elle-même : le bouton n'a rien à y faire, et le masquer
+   évite d'ajouter une cible sans fonction au-dessus des pouces. Au-dessus de 1100 px (hors
+   vue forcée), c'est l'identité du bureau qui l'exige : sans cette règle, le bouton
+   élargirait la zone de droite de 48 px. Il reste donc visible dans la fenêtre étroite d'un
+   ordinateur (900–1100 px) et dans la vue forcée, pour pouvoir en sortir. */
+html.tactile:not(.vue-tel) #vueBtn{display:none}
+@media (min-width:1101px){
+  html:not(.vue-tel) #vueBtn{display:none}
+}
 </style>
 </head>
 <body>
@@ -508,6 +659,7 @@ input[type=datetime-local]{height:36px;background:var(--surface);border:1px soli
       <div class="crumbs" id="crumbs"></div>
       <div class="top-right">
         <span class="sync"><span class="pulse"></span><span class="sync-txt num" id="syncTop">En direct</span></span>
+        <button class="icon-btn" data-action="vue" id="vueBtn" aria-pressed="false" aria-label="Vue téléphone" title="Vue téléphone"></button>
         <button class="icon-btn" data-action="theme" id="themeBtn" aria-label="Changer de thème"></button>
       </div>
     </header>
@@ -622,14 +774,22 @@ function seed(){
      gravity:[[b0s,1.064],[b0s+2*DAY,1.040],[b0s+5*DAY,1.018],[b0s+9*DAY,1.012],[b0s+13*DAY,1.011]],
      notes:[{t:b0s+7*DAY,x:'Dry hop 120 g Citra.'}]},
   ];
+  /* Les trois prises reliées à un lot sont marquées « demo » : ce sont des liens de
+     démonstration hérités de la maquette, pas des liens que l'utilisateur a faits. La page
+     ne fait PAS réguler une prise marquée ainsi — sinon un navigateur neuf, dont l'état part
+     de ces données, commanderait les vraies prises en parallèle de l'ordinateur qui régule
+     déjà, et les deux se contrediraient. Dès que l'utilisateur relie lui-même un lot à une
+     prise, ou change son mode, la marque tombe (gestionnaire « assign » / « plug-mode ») et
+     la régulation s'applique. Un état enregistré avant cette marque n'en porte pas : il
+     continue de réguler, comme avant. */
   const D = [
     {id:'s1', eid:'sensor.sonde_sonoff_1_temperature', name:'Sonde-Sonoff-1 Température', kind:'temp', batch:'b1', battery:100, online:true, value:21.3},
     {id:'s2', eid:'sensor.sonde_sonoff_2_temperature', name:'Sonde-Sonoff-2 Température', kind:'temp', batch:'b2', battery:78, online:true, value:21.4},
     {id:'s3', eid:'sensor.sonde_sonoff_3_temperature', name:'Sonde-Sonoff-3 Température', kind:'temp', batch:'b3', battery:100, online:true, value:26.9},
     {id:'h1', eid:'sensor.humidity_1', name:'sonde-sonoff-humidité-1', kind:'hum', batch:'b3', battery:100, online:true, value:56.9},
-    {id:'o1', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_1', name:'Multiprise Tim Outlet 1', kind:'plug', batch:'b1', mode:'auto', on:false, online:true, slot:1},
-    {id:'o2', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_2', name:'Multiprise Tim Outlet 2', kind:'plug', batch:'b3', mode:'auto', on:false, online:true, slot:2},
-    {id:'o3', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_3', name:'Multiprise Tim Outlet 3', kind:'plug', batch:'b4', mode:'auto', on:false, online:true, slot:3},
+    {id:'o1', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_1', name:'Multiprise Tim Outlet 1', kind:'plug', batch:'b1', mode:'auto', on:false, online:true, slot:1, demo:true},
+    {id:'o2', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_2', name:'Multiprise Tim Outlet 2', kind:'plug', batch:'b3', mode:'auto', on:false, online:true, slot:2, demo:true},
+    {id:'o3', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_3', name:'Multiprise Tim Outlet 3', kind:'plug', batch:'b4', mode:'auto', on:false, online:true, slot:3, demo:true},
     {id:'o4', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_4', name:'Multiprise Tim Outlet 4', kind:'plug', batch:null, mode:'manuel', on:false, online:true, slot:4},
     {id:'o5', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_5', name:'Multiprise Tim Outlet 5', kind:'plug', batch:null, mode:'manuel', on:false, online:true, slot:5},
   ];
@@ -699,7 +859,12 @@ function tick(){
           // contente pas d'allumer une icône, et ne réclame aucun jeton — une
           // régulation n'a personne à qui le demander. Hors pont (maquette file://),
           // la simulation reprend la main : là, aucun réseau n'est joignable.
-          if (PONT.actif && d.eid && maitreRegul) regulerPont(d, b, tp, voulu);
+          /* Les prises reliées à un lot par les données de démonstration portent « demo » :
+             la régulation ne les commande pas. Sinon un navigateur neuf — un téléphone ouvert
+             sur la page — commanderait les vraies prises en parallèle de l'ordinateur qui
+             régule déjà. Un clic manuel, lui, n'est jamais filtré : c'est une décision
+             humaine, et dès que l'utilisateur relie un lot lui-même la marque tombe. */
+          if (PONT.actif && d.eid && maitreRegul && !d.demo) regulerPont(d, b, tp, voulu);
           else { d.on = voulu; logHeat(d, b, tp, false); }
         }
       }
@@ -863,6 +1028,7 @@ function gravCfg(b){
 /* ---------- Extra icons ---------- */
 const svgI = p => `<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 Object.assign(IC, {
+  tel: svgI('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>'),
   grid: svgI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
   jar: svgI('<path d="M8 3h8M9 3v3.2C6.6 7.2 5 9.4 5 12v6a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-6c0-2.6-1.6-4.8-4-5.8V3"/><path d="M5.5 13.5c2 .9 4 .9 6.5 0s4.5-.9 6.5 0"/>'),
   book: svgI('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>'),
@@ -1666,6 +1832,7 @@ document.addEventListener('click', e => {
   const a = e.target.closest('[data-action]'); if (!a) return;
   const act = a.dataset.action, id = a.dataset.id;
   if (act === 'theme') return cycleTheme();
+  if (act === 'vue') return basculerVue();
   if (act === 'range'){ detailRange = a.dataset.r; a.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === a)); drawChart(document.getElementById('chart-main')); return; }
   if (act === 'ctab'){ detailChart = a.dataset.v; render(); return; }
   if (act === 'finish'){
@@ -1705,8 +1872,8 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => {
   const t = e.target;
-  if (t.matches('[data-action="assign"]')){ const d = S.devices.find(x => x.id === t.dataset.id); d.batch = t.value || null; if (!d.batch && d.kind === 'plug') d.on = false; tick(); save(); render(); }
-  if (t.matches('[data-action="plug-mode"]')){ const d = S.devices.find(x => x.id === t.dataset.id); d.mode = t.value; tick(); save(); render(); }
+  if (t.matches('[data-action="assign"]')){ const d = S.devices.find(x => x.id === t.dataset.id); d.batch = t.value || null; delete d.demo; if (!d.batch && d.kind === 'plug') d.on = false; tick(); save(); render(); }
+  if (t.matches('[data-action="plug-mode"]')){ const d = S.devices.find(x => x.id === t.dataset.id); d.mode = t.value; delete d.demo; tick(); save(); render(); }
   if (t.name === 'type' && t.closest('#rform')) t.closest('#rform').dataset.type = t.value;
 });
 document.addEventListener('input', e => {
@@ -1771,6 +1938,8 @@ function cycleTheme(){ theme = themes[(themes.indexOf(theme) + 1) % 3]; try { lo
 /* ---------- Boot ---------- */
 document.querySelectorAll('.brand-mark').forEach(e => e.innerHTML = MARK);
 applyTheme();
+document.getElementById('vueBtn').innerHTML = IC.tel;
+appliquerVue();
 tick();
 render();
 refreshLive();
