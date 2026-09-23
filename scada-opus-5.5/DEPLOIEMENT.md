@@ -92,6 +92,17 @@ Le pont ne peut commander **que** les prises de la liste blanche `PONT_PRISES` :
 liste → 403, corps invalide → 400, requête sans jeton → 401. Le nom du service appelé chez Home
 Assistant (`switch.turn_on` / `switch.turn_off`) est choisi par le pont, jamais par l'appelant.
 
+Deux garde-fous supplémentaires, issus de la revue de sécurité : tout `Content-Type` autre que
+`application/json` est refusé (415) — une requête « simple » en `text/plain` échappe au pré-vol
+CORS et suffirait à commander une prise depuis une page hostile — et une `Origin` différente de
+l'hôte appelé est refusée (403). Le pont **refuse de démarrer** sans `PONT_JETON` d'au moins
+32 caractères : sans jeton, il n'y a pas de mode dégradé.
+
+Enfin, la multiprise annonce encore l'ancien état une à trois secondes après une commande : le
+pont relit jusqu'à six fois (environ quatre secondes) et renvoie un champ `confirme`. Si la
+confirmation manque, la page revérifie à 1,5 / 3,5 / 6 s — jamais d'état affiché que Home
+Assistant n'a pas confirmé.
+
 ### Créer le secret (une fois, avant le premier déploiement du pont)
 
 Un jeton ne se commite pas : le secret est créé hors GitOps, sur le serveur.
@@ -130,8 +141,19 @@ alors plus d'authentification — à éviter, toute machine du réseau pourrait 
 ```bash
 curl -s  http://192.168.1.51:30090/api/sante; echo                                  # ok
 curl -s -o /dev/null -w '%{http_code}\n' http://192.168.1.51:30090/api/etat          # 401 sans jeton
-cd scada-opus-5.5/_verify && JETON_PONT="$(…)" node verif-pont-bout-en-bout.mjs       # clique pour de vrai : allume, vérifie, éteint
+bash _verify/verif-pont.sh --url http://192.168.1.51:30090 --jeton "$JETON" --ecriture   # 10 contrôles
 ```
+
+Et le test qui clique pour de vrai (il allume une prise, vérifie dans Home Assistant, puis
+l'éteint — et la remet toujours à l'arrêt, quoi qu'il arrive) :
+
+```bash
+JETON_PONT="$(kubectl -n scada-opus get secret pont-ha -o jsonpath='{.data.PONT_JETON}' | base64 -d)" \
+BASE_PONT="http://192.168.1.51:30090" PRISE=4 node _verify/verif-pont-bout-en-bout.mjs
+```
+
+Il demande `puppeteer-core` et un navigateur Edge : l'exécuter depuis le dossier `_verify/` du
+poste qui a ces dépendances (c'est le cas du dossier de mesures `FermentationLab2/_verify`).
 
 ## Revenir en arrière
 
