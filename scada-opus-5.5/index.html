@@ -56,6 +56,7 @@
     de fabrication (partition + transcription par agents + assemblage), le harnais de vérification
     headless et tous ses résultats, ainsi que la revue qualité.
     <span class="pill ok">livrable à l'identique</span>
+    <span class="pill">déployé par GitOps</span>
   </p>
 
   <div class="cta">
@@ -121,6 +122,17 @@
         <li><a href="_build/parts/">Les 8 modules transcrits</a></li>
         <li><a href="_build/assemblage.py">assemblage.py</a> · <a href="_build/serve.py">serve.py</a></li>
         <li><a href="_build/logs/">Traces des agents</a></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="t">Déploiement</div>
+      <div class="d">Servi par le cluster k3s du homelab, mis à jour par ArgoCD à chaque push sur git.</div>
+      <ul>
+        <li><a href="DEPLOIEMENT.md">Comment la chaîne fonctionne</a></li>
+        <li>Application ArgoCD <code>scada-opus-5.5</code>, namespace <code>scada-opus</code></li>
+        <li>Accès direct : <a href="http://192.168.1.51:30090/">http://192.168.1.51:30090/</a></li>
+        <li>Ingress : <code>hakko.myfermentlab</code></li>
+        <li><a href="http://192.168.1.51:8090/">Autre instance (serveur statique, port 8090)</a></li>
       </ul>
     </div>
   </div>
