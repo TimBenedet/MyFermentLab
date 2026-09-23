@@ -1,0 +1,102 @@
+name: Build & Push — Scada-opus-5.5
+
+# Chaîne GitOps complète :
+#   1. push sur scada-opus-5.5/  →  2. l'image est construite et publiée sur GHCR
+#   →  3. le tag de l'image est écrit dans scada-opus-5.5/k8s/kustomization.yaml
+#   →  4. ArgoCD voit ce nouveau commit et déploie.
+# Le commit de l'étape 3 ne relance pas la CI (paths-ignore + [skip ci]).
+
+on:
+  push:
+    branches: [Scada-opus-5.5]
+    paths:
+      - 'scada-opus-5.5/**'
+      - '.github/workflows/build-scada-opus.yml'
+    paths-ignore:
+      - 'scada-opus-5.5/k8s/**'   # évite la boucle : c'est ce que la CI écrit elle-même
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/myfermentlab-scada
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write    # pour committer la mise à jour du tag (GitOps write-back)
+      packages: write    # pour publier l'image sur GHCR
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Calculer le tag (branche + sha court)
+        id: tag
+        run: echo "value=scada-opus-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Se connecter à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Préparer Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construire et publier l'image
+        uses: docker/build-push-action@v6
+        with:
+          # Le contexte est le dossier du projet : il porte son propre .dockerignore,
+          # l'image ne dépend donc pas des réglages de la racine du dépôt.
+          context: scada-opus-5.5
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=Scada-opus-5.5 (dashboard Hakko)
+          build-args: |
+            VERSION=${{ steps.tag.outputs.value }}
+
+      - name: Épingler le tag dans le manifeste (déclenche ArgoCD)
+        env:
+          TAG: ${{ steps.tag.outputs.value }}
+        run: |
+          set -euo pipefail
+          FILE=scada-opus-5.5/k8s/kustomization.yaml
+
+          if grep -q "newTag: $TAG" "$FILE"; then
+            echo "::notice::Le manifeste référence déjà $TAG, rien à faire."
+            exit 0
+          fi
+
+          sed -i -E "s|^(\s*newTag: ).*$|\1$TAG|" "$FILE"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$FILE"
+
+          if git diff --cached --quiet; then
+            echo "::notice::Aucune modification du manifeste."
+            exit 0
+          fi
+
+          git commit -m "chore(scada): déploie l'image $TAG [skip ci]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo "::notice::Manifeste mis à jour vers $TAG — ArgoCD va synchroniser."
+
+      - name: Résumé
+        run: |
+          {
+            echo "### Scada-opus-5.5 déployé par GitOps"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Image | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}\` |"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| ArgoCD | application \`scada-opus-5.5\` → namespace \`scada-opus\` |"
+            echo "| Accès | http://192.168.1.51:30090/ · http://hakko.myfermentlab/ |"
+          } >> "$GITHUB_STEP_SUMMARY"

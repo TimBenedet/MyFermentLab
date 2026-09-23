@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: scada-opus
+  namespace: scada-opus
+  labels:
+    app: scada-opus
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    # `scada.myfermentlab` est déjà utilisé par manifests/ingress.yaml (app scada-redesign) :
+    # on prend un hôte distinct pour ne pas entrer en conflit.
+    - host: hakko.myfermentlab
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: scada-opus
+                port:
+                  name: http

@@ -1,0 +1,4 @@
+# Contexte de build = ce dossier. On n'y écarte que ce qui ne doit pas être servi
+# publiquement : la recette de l'image elle-même.
+Dockerfile
+.dockerignore

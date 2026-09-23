@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scada-opus
+  labels:
+    app.kubernetes.io/name: scada-opus
+    app.kubernetes.io/part-of: myfermentlab

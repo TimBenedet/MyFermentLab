@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scada-opus
+  namespace: scada-opus
+  labels:
+    app: scada-opus
+spec:
+  type: NodePort
+  selector:
+    app: scada-opus
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      # Accès direct par IP, sans DNS : http://192.168.1.51:30090/
+      # (30080/30081 = manga, 30087 = fermentation-v3, 30090 libre)
+      nodePort: 30090

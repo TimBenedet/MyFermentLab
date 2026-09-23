@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scada-opus
+  namespace: scada-opus
+  labels:
+    app: scada-opus
+    app.kubernetes.io/part-of: myfermentlab
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: scada-opus
+  template:
+    metadata:
+      labels:
+        app: scada-opus
+    spec:
+      containers:
+        - name: nginx
+          # Le tag est réécrit automatiquement par la CI (voir .github/workflows/build-scada-opus.yml)
+          # puis appliqué par ArgoCD : ne pas modifier à la main.
+          image: ghcr.io/timbenedet/myfermentlab-scada:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 300m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault

@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Ce dossier est LA référence déployée : ArgoCD applique exactement ce qui est ici.
+# Le tag de l'image ci-dessous est mis à jour automatiquement par la CI
+# (.github/workflows/build-scada-opus.yml) à chaque push qui modifie le dossier
+# scada-opus-5.5/ — le commit de mise à jour est ce qu'ArgoCD voit pour redéployer.
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+
+images:
+  - name: ghcr.io/timbenedet/myfermentlab-scada
+    # Valeur initiale : « latest » existe dès que la première CI a publié l'image.
+    # Ensuite la CI épingle ici un tag immuable scada-opus-<sha> à chaque build.
+    newTag: latest
