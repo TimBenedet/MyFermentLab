@@ -1024,10 +1024,16 @@ async function pontSynchro(silencieux){
   return true;
 }
 async function pontBascule(d){
-  // On repart de l'état réel juste avant de commander : l'état affiché peut dater
-  // (page restée ouverte, prise changée ailleurs), et inverser une valeur périmée
-  // enverrait la commande opposée à celle voulue.
-  await pontSynchro(true);
+  // Sans jeton enregistré, on le demande tout de suite : envoyer la commande d'abord
+  // ne produirait qu'un 401 inutile.
+  if (PONT.jetonRequis){
+    if (!await pontSynchro(false)) return false;
+  } else {
+    // On repart de l'état réel juste avant de commander : l'état affiché peut dater
+    // (page restée ouverte, prise changée ailleurs), et inverser une valeur périmée
+    // enverrait la commande opposée à celle voulue.
+    await pontSynchro(true);
+  }
   const voulu = !d.on;
   let r;
   try { r = await pontRequete('prise', { entite: d.eid, allume: voulu }); }
@@ -1055,6 +1061,11 @@ async function pontBascule(d){
     d.batch || null);
   PONT.dernier = new Date();
   save(); render(); pontSynchro(true);
+  if (j.confirme === false){
+    // La multiprise n'avait pas encore confirmé : on revérifie à quelques reprises
+    // plutôt que de laisser à l'écran un état que Home Assistant n'a pas confirmé.
+    [1500, 3500, 6000].forEach(ms => setTimeout(() => pontSynchro(true), ms));
+  }
   return true;
 }
 

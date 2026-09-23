@@ -18,6 +18,18 @@ const controle = (nom, attendu, obtenu) => {
   return bon;
 };
 
+// Attend qu'une lecture atteigne la valeur voulue : la première commande inclut la
+// saisie du jeton (dialogue du navigateur), une durée fixe est donc trop fragile.
+const attendre = async (lire, voulu, maxMs = 8000) => {
+  const t0 = Date.now();
+  let vu = await lire();
+  while (vu !== voulu && Date.now() - t0 < maxMs) {
+    await new Promise(r => setTimeout(r, 250));
+    vu = await lire();
+  }
+  return vu;
+};
+
 const b = await puppeteer.launch({ executablePath: EDGE, headless: 'shell', args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars'] });
 const p = await b.newPage();
 await p.setViewport({ width: 1440, height: 1000 });
@@ -93,12 +105,11 @@ try {
     return tr?.querySelector('button.switch');
   }, PRISE);
   await bouton.asElement().click();
-  await new Promise(x => setTimeout(x, ATTENTE));
-  controle(`Home Assistant voit outlet_${PRISE} allumée`, 'on', await etatPont());
-  controle(`la page affiche outlet_${PRISE} allumée`, 'on', await etatPage());
+  controle(`Home Assistant voit outlet_${PRISE} allumée`, 'on', await attendre(() => etatPont(), 'on'));
+  controle(`la page affiche outlet_${PRISE} allumée`, 'on', await attendre(() => etatPage(), 'on'));
   controle('le jeton a été demandé (une fois)', 1, demandeJeton);
-  const allumees = await p.evaluate(() => document.querySelectorAll('#view tbody tr button.switch[aria-checked="true"]').length);
-  controle('une seule prise allumée', 1, allumees);
+  controle('une seule prise allumée', 1, await attendre(
+    () => p.evaluate(() => document.querySelectorAll('#view tbody tr button.switch[aria-checked="true"]').length), 1));
 
   console.log(`\n=== 4. commande inverse : éteindre la prise ${PRISE} ===`);
   const bouton2 = await p.evaluateHandle((prise) => {
@@ -107,16 +118,15 @@ try {
     return tr?.querySelector('button.switch');
   }, PRISE);
   await bouton2.asElement().click();
-  await new Promise(x => setTimeout(x, ATTENTE));
-  controle(`Home Assistant voit outlet_${PRISE} éteinte`, 'off', await etatPont());
-  controle(`la page affiche outlet_${PRISE} éteinte`, 'off', await etatPage());
+  controle(`Home Assistant voit outlet_${PRISE} éteinte`, 'off', await attendre(() => etatPont(), 'off'));
+  controle(`la page affiche outlet_${PRISE} éteinte`, 'off', await attendre(() => etatPage(), 'off'));
   controle('le jeton n\'est plus redemandé', 1, demandeJeton);
 
   console.log('\n=== 5. après rechargement, l\'état réel est conservé ===');
   await p.reload({ waitUntil: 'domcontentloaded' });
   await p.evaluate(() => { location.hash = '#/appareils'; });
   await new Promise(x => setTimeout(x, 1800));
-  controle(`outlet_${PRISE} toujours éteinte à l'écran`, 'off', await etatPage());
+  controle(`outlet_${PRISE} toujours éteinte à l'écran`, 'off', await attendre(() => etatPage(), 'off'));
   const stocke = await p.evaluate(() => !!localStorage.getItem('hakko-pont-jeton'));
   controle('jeton conservé pour la prochaine visite', true, stocke);
 

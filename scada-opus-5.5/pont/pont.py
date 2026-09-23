@@ -230,17 +230,20 @@ def commander(entite, allume):
     # été validée contre la liste blanche : aucune injection possible.
     appel_ha("/api/services/switch/" + service, "POST", {"entity_id": entite})
     attendu = "on" if allume else "off"
-    etat = None
-    for essai in range(3):
+    etat, confirme = None, False
+    # Les multiprises Tuya continuent d'annoncer l'ancien état une à trois secondes :
+    # on relit donc jusqu'à six fois, sans quoi l'interface affiche un état faux.
+    for essai in range(6):
         e = appel_ha("/api/states/" + entite)
         etat = str((e or {}).get("state", "inconnu"))
         if etat == attendu:
+            confirme = True
             break
-        if essai < 2:
-            time.sleep(0.6)
+        if essai < 5:
+            time.sleep(0.7)
     with _verrou_etat:
         _cache["donnees"] = None
-    return {"ok": True, "entite": entite, "etat": etat}
+    return {"ok": True, "entite": entite, "etat": etat, "confirme": confirme}
 
 
 class Handler(BaseHTTPRequestHandler):
