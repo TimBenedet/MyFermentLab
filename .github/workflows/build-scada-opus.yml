@@ -11,9 +11,12 @@ on:
     branches: [Scada-opus-5.5]
     paths:
       - 'scada-opus-5.5/**'
+      # Les changements de manifestes ne nécessitent pas de rebuild :
+      # ArgoCD les applique directement. (paths et paths-ignore ne peuvent pas
+      # coexister sur le même événement, d'où la négation.)
+      - '!scada-opus-5.5/k8s/**'
+      - '!scada-opus-5.5/argocd/**'
       - '.github/workflows/build-scada-opus.yml'
-    paths-ignore:
-      - 'scada-opus-5.5/k8s/**'   # évite la boucle : c'est ce que la CI écrit elle-même
   workflow_dispatch:
 
 env:
