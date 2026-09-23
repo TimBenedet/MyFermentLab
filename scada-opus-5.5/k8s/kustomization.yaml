@@ -16,4 +16,4 @@ images:
   - name: ghcr.io/timbenedet/myfermentlab-scada
     # Valeur initiale : « latest » existe dès que la première CI a publié l'image.
     # Ensuite la CI épingle ici un tag immuable scada-opus-<sha> à chaque build.
-    newTag: scada-opus-e3d4020
+    newTag: scada-opus-1ae83be
