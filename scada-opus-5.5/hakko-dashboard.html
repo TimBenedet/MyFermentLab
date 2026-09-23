@@ -561,7 +561,7 @@ const IC = {
 };
 
 /* ---------- Data ---------- */
-const STORE = 'hakko-dashboard-v1';
+const STORE = 'hakko-dashboard-v2';
 function seed(){
   const t = now();
   const R = [
@@ -607,15 +607,15 @@ function seed(){
      notes:[{t:b0s+7*DAY,x:'Dry hop 120 g Citra.'}]},
   ];
   const D = [
-    {id:'t1', name:'Sonde fermenteur Saison', kind:'temp', batch:'b1', battery:82, online:true},
-    {id:'p1', name:'Ceinture chauffante', kind:'plug', batch:'b1', mode:'auto', on:false, online:true},
-    {id:'t2', name:'Sonde cellier miso', kind:'temp', batch:'b2', battery:64, online:true},
-    {id:'t3', name:'Sonde chambre koji', kind:'temp', batch:'b3', battery:91, online:true},
-    {id:'h1', name:'Hygromètre chambre koji', kind:'hum', batch:'b3', battery:77, online:true},
-    {id:'p2', name:'Tapis chauffant koji', kind:'plug', batch:'b3', mode:'auto', on:true, online:true},
-    {id:'t4', name:'Sonde étuve garum', kind:'temp', batch:'b4', battery:55, online:true},
-    {id:'p3', name:'Prise étuve garum', kind:'plug', batch:'b4', mode:'auto', on:true, online:true},
-    {id:'t5', name:'Sonde cave', kind:'temp', batch:null, battery:8, online:false, seen:t - 2.2*HOUR, value:14.6},
+    {id:'s1', eid:'sensor.sonde_sonoff_1_temperature', name:'Sonde-Sonoff-1 Température', kind:'temp', batch:'b1', battery:100, online:true, value:21.3},
+    {id:'s2', eid:'sensor.sonde_sonoff_2_temperature', name:'Sonde-Sonoff-2 Température', kind:'temp', batch:'b2', battery:78, online:true, value:21.4},
+    {id:'s3', eid:'sensor.sonde_sonoff_3_temperature', name:'Sonde-Sonoff-3 Température', kind:'temp', batch:'b3', battery:100, online:true, value:26.9},
+    {id:'h1', eid:'sensor.humidity_1', name:'sonde-sonoff-humidité-1', kind:'hum', batch:'b3', battery:100, online:true, value:56.9},
+    {id:'o1', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_1', name:'Multiprise Tim Outlet 1', kind:'plug', batch:'b1', mode:'auto', on:false, online:true, slot:1},
+    {id:'o2', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_2', name:'Multiprise Tim Outlet 2', kind:'plug', batch:'b3', mode:'auto', on:false, online:true, slot:2},
+    {id:'o3', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_3', name:'Multiprise Tim Outlet 3', kind:'plug', batch:'b4', mode:'auto', on:false, online:true, slot:3},
+    {id:'o4', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_4', name:'Multiprise Tim Outlet 4', kind:'plug', batch:null, mode:'manuel', on:false, online:true, slot:4},
+    {id:'o5', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_5', name:'Multiprise Tim Outlet 5', kind:'plug', batch:null, mode:'manuel', on:false, online:true, slot:5},
   ];
   return {recipes:R, batches:B, devices:D};
 }
@@ -672,7 +672,7 @@ function tick(){
       const tp = currentTemp(b), tg = b.recipe.temp;
       if (tp != null){ const was = d.on; if (tp < tg - HYST) d.on = true; else if (tp > tg + HYST) d.on = false; if (was !== d.on) logHeat(d, b, tp, false); }
     }
-    d.power = d.on ? (d.id === 'p3' ? 410 : 160) + Math.random() * 12 : 0.4;
+    d.power = d.on ? (d.id === 'o3' ? 410 : 160) + Math.random() * 12 : 0.4;
   }
 }
 function status(b){
@@ -862,14 +862,12 @@ if (!S.stripSeeded){
 }
 const outlets = () => S.devices.filter(d => d.kind === 'plug' && d.slot).sort((a, c) => a.slot - c.slot);
 /* ---------- Events log ---------- */
-S.batches.forEach(b => { if (b.status === 'done' && !b.devSnap) b.devSnap = [{name:'Sonde fermenteur', kind:'temp'}, {name:'Ceinture chauffante', kind:'plug'}]; });
+S.batches.forEach(b => { if (b.status === 'done' && !b.devSnap) b.devSnap = [{name:'Sonde-Sonoff-1 Température', kind:'temp'}, {name:'Multiprise Tim Outlet 1', kind:'plug'}]; });
 if (!S.events){
   const t = now();
   S.events = [
-    {t:t - 12*60e3, k:'heat-on', x:'Prise étuve garum allumée à 59,8 °C', b:'b4'},
     {t:t - 48*60e3, k:'note', x:'Note ajoutée sur Koji de riz — amazake', b:'b3'},
-    {t:t - 2.2*HOUR, k:'alert', x:'Sonde cave hors ligne, batterie à 8 %', b:null},
-    {t:t - 5*HOUR, k:'heat-off', x:'Ceinture chauffante éteinte à 24,2 °C', b:'b1'},
+    {t:t - 2.2*HOUR, k:'alert', x:'switch.shellyazplug_e4b3232e116c indisponible dans Home Assistant', b:null},
     {t:t - 26*HOUR, k:'batch', x:'Fermentation lancée : Koji de riz — amazake', b:'b3'},
   ];
 }
@@ -1259,7 +1257,7 @@ function devices(){
     const ctl = d.kind === 'plug' ? `<select data-action="plug-mode" data-id="${d.id}" aria-label="Mode" style="width:auto"><option value="auto" ${d.mode === 'auto' ? 'selected' : ''}>Auto</option><option value="manuel" ${d.mode === 'manuel' ? 'selected' : ''}>Manuel</option></select>
       <button class="switch" role="switch" aria-checked="${d.on}" aria-label="Allumer ou éteindre ${esc(d.name)}" data-action="toggle-plug" data-id="${d.id}" data-plug="${d.id}" ${d.online ? '' : 'disabled'}></button>` : '';
     return `<tr>
-      <td class="first"><div class="dev-cell"><span class="dev-ic">${IC[d.kind]}</span><div><div class="nm">${esc(d.name)}</div><div class="sm num">${d.slot ? 'Multiprise, prise ' + d.slot : d.id.toUpperCase()}</div></div></div></td>
+      <td class="first"><div class="dev-cell"${d.eid ? ` title="${esc(d.eid)}"` : ''}><span class="dev-ic">${IC[d.kind]}</span><div><div class="nm">${esc(d.name)}</div><div class="sm num">${d.slot ? 'Multiprise, prise ' + d.slot : d.id.toUpperCase()}</div></div></div></td>
       <td data-l="Type">${KL[d.kind]}</td>
       <td data-l="Mesure" class="num nm" data-live="dev:${d.id}">${live('dev:' + d.id)}</td>
       <td data-l="Fermentation"><select data-action="assign" data-id="${d.id}" aria-label="Fermentation reliée">${opt(d.batch)}</select></td>

@@ -435,8 +435,8 @@ async function passeFonctionnelle(cible) {
       return f;
     };
     const avantRel = await faits();
-    const stockage = await page.evaluate(() => { try { const s = JSON.parse(localStorage.getItem('hakko-dashboard-v1')); return { lots: s.batches.length, b4: s.batches.find(b => b.id === 'b4')?.status }; } catch (e) { return { erreur: String(e) }; } });
-    V('§1', 'localStorage « hakko-dashboard-v1 » lisible et à jour', { b4: 'done' }, stockage, stockage.b4 === 'done');
+    const stockage = await page.evaluate(() => { try { const s = JSON.parse(localStorage.getItem('hakko-dashboard-v2')); return { lots: s.batches.length, b4: s.batches.find(b => b.id === 'b4')?.status }; } catch (e) { return { erreur: String(e) }; } });
+    V('§1', 'localStorage « hakko-dashboard-v2 » lisible et à jour', { b4: 'done' }, stockage, stockage.b4 === 'done');
     await page.reload({ waitUntil: 'load' });
     await attendreTick(page);
     const apresRel = await faits();
