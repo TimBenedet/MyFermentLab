@@ -94,7 +94,15 @@ try {
   await new Promise(x => setTimeout(x, 1200));
   const tp = await temperatureLot();
   console.log(`  température réelle du lot ${LOT} : ${tp} °C`);
-  controle(`Home Assistant dit outlet_${PRISE}`, 'off', await etatPont());
+  // La prise n'est pas forcément éteinte au départ : la page ouverte ailleurs régule
+  // peut-être déjà. On la met à l'arrêt (jamais en chauffe) avant de commencer.
+  await p.evaluate(async (prise) => {
+    await fetch('api/prise', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entite: 'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_' + prise, allume: false }),
+    });
+  }, PRISE);
+  controle(`Home Assistant dit outlet_${PRISE}`, 'off', await attendre(() => etatPont(), 'off', 12000));
   controle('aucun dialogue à l\'ouverture', 0, dialogues);
 
   // Le profil du test ne régule que la prise éprouvée : sans cela, la page mettrait en
@@ -105,12 +113,21 @@ try {
       .forEach(x => { x.mode = 'manuel'; x.on = false; });
     localStorage.setItem(cle, JSON.stringify(s));
   }, CLE, PRISE);
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  await new Promise(x => setTimeout(x, 2000));
+  await p.evaluate(() => { location.hash = '#/appareils'; });
+  await new Promise(x => setTimeout(x, 1000));
 
   console.log(`\n=== 2. allumage manuel de la prise ${PRISE} (clic) ===`);
   await cliquerPrise();
   controle(`HA voit outlet_${PRISE} allumée`, 'on', await attendre(() => etatPont(), 'on'));
-  controle('une seule prise allumée', 1, await attendre(
-    () => p.evaluate(() => document.querySelectorAll('#view tbody tr button.switch[aria-checked="true"]').length), 1));
+  const accord = await attendre(async () => {
+    const page = await p.evaluate(() => document.querySelectorAll('#view tbody tr button.switch[aria-checked="true"]').length);
+    const ha = await p.evaluate(async () => (await (await fetch('api/etat', { cache: 'no-store' })).json())
+      .appareils.filter(a => a.domaine === 'switch' && a.etat === 'on').length);
+    return page === ha ? String(page) + ' prises, page=HA' : null;
+  }, null, 20000);
+  controle('la page compte autant de prises allumées que Home Assistant', 'oui', accord ? 'oui' : 'non');
 
   console.log(`\n=== 3. consigne passée sous la température mesurée (profil du test seulement) ===`);
   const avant = await p.evaluate((lot, cle, prise) => {
@@ -140,12 +157,14 @@ try {
   controle(`la page affiche outlet_${PRISE} éteinte`, 'off', await attendre(() => etatPage(), 'off', 20000));
 
   console.log('\n=== 5. l\'action est attribuée à la régulation, pas à un clic ===');
+  // Le clic écrit un événement sans champ « manual » ; logHeat, utilisé par la
+  // régulation, l'écrit explicitement à false. C'est ce marqueur qui distingue les deux.
   const journal = await p.evaluate((cle) => {
     const s = JSON.parse(localStorage.getItem(cle) || '{}');
-    const e = (s.events || []).filter(x => x.k === 'heat-off').slice(0, 3);
-    return e.map(x => ({ manual: !!x.manual, texte: String(x.x).slice(0, 60) }));
+    return (s.events || []).filter(x => x.k === 'heat-off').slice(0, 5)
+      .map(x => ({ auto: ('manual' in x) && x.manual === false, texte: String(x.x).slice(0, 70) }));
   }, CLE);
-  const auto = journal.find(e => !e.manual);
+  const auto = journal.find(e => e.auto);
   controle('une entrée de journal automatique (sans « manuel »)', 'oui', auto ? 'oui' : JSON.stringify(journal));
   if (auto) console.log(`     « ${auto.texte} »`);
   controle('aucun dialogue pendant tout le test', 0, dialogues);

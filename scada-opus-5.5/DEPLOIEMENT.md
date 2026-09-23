@@ -125,8 +125,39 @@ le retient ensuite :
 kubectl -n scada-opus get secret pont-ha -o jsonpath="{.data.PONT_JETON}" | base64 -d; echo
 ```
 
-Pour ne plus le demander : recréer le secret **sans** la clé `PONT_JETON`. Le pont n'exigera
-alors plus d'authentification — à éviter, toute machine du réseau pourrait commander les prises.
+Pour ne plus le demander : le pont tourne en `PONT_AUTH=aucune` (voir ci-dessous). Remettre
+`PONT_AUTH=jeton` dans `deployment.yaml` réactive la demande de jeton, sans autre changement.
+
+### Authentification : deux modes, choisis explicitement
+
+| `PONT_AUTH` | Comportement | Risque |
+|---|---|---|
+| `aucune` (déployé) | le dashboard ne demande rien ; le jeton du pont n'est plus exigé | toute machine du réseau local peut commander les prises — les gardes d'origine et de type de contenu, elles, restent en place (une page web hostile ne peut pas) |
+| `jeton` | `/api/etat` et `/api/prise` exigent `Authorization: Bearer …` ; le pont **refuse de démarrer** sans jeton d'au moins 32 caractères | le jeton est saisi une fois par navigateur et conservé dans son `localStorage` |
+
+Une valeur inconnue (`PONT_AUTH=non`) fait échouer le démarrage : une faute de frappe ne doit
+pas ouvrir les prises en silence.
+
+### Régulation automatique par consigne
+
+La page ne se contente pas d'allumer une icône : pour une prise reliée à un lot actif **en mode
+« auto »**, elle commande réellement la prise, avec la température lue par le pont.
+
+- Décision : allume si `T < consigne − 0,2 °C`, éteint si `T > consigne + 0,2 °C`, sinon rien.
+  La consigne est celle de la recette du lot, la température celle de la sonde du lot.
+- **Un clic sur une prise la passe en mode manuel** : la régulation ne la reprend plus tant
+  qu'elle n'est pas remise en « Auto (consigne) ». C'est l'utilisateur qui décide.
+- Freins, dans l'ordre où ils s'appliquent : une seule commande à la fois · au plus une par
+  minute sur la même prise · arrêt de sécurité après **45 min** de chauffe continue (page) ·
+  pause de 15 min avant de pouvoir réarmer · 5 min de silence après un refus du pont.
+- **Le pont tient la dernière ligne de défense** : une commande marquée `"auto": true` arme une
+  échéance, et si personne ne décommande la prise, le pont la coupe lui-même au bout de
+  `PONT_CHAUFFE_MAX` minutes (90 par défaut, 0 = désactivé). Une page qui se ferme, un onglet
+  tué, un réseau coupé ne peuvent donc pas laisser un relais collé. Une commande **manuelle**
+  n'est jamais coupée : c'est vous qui décidez, même pour deux heures.
+- Deux onglets du **même** navigateur ne régulent pas ensemble (bail dans le `localStorage`).
+  Deux appareils différents, si — gardez une seule page ouverte si vous changez une consigne
+  d'un côté seulement.
 
 ### Rotation du jeton Home Assistant
 
@@ -161,26 +192,33 @@ sinon le jeton du fichier n'est pas celui que le pont utilise.
 |---|---|
 | Page ouverte directement (`file://`) | maquette pure : aucune requête réseau, aucune commande — le fichier reste utilisable seul |
 | Servie par le cluster, pont injoignable | le clic affiche « Pont Home Assistant injoignable » et **ne simule rien** : on n'affiche jamais une prise allumée qui ne l'est pas |
-| Pont joignable | la démonstration de chauffe se tait sur les appareils réels : Home Assistant fait foi, et le dashboard **n'allume rien de lui-même** — seuls tes clics commandent |
+| Pont joignable | Home Assistant fait foi : la démonstration de chauffe se tait sur les appareils réels, et la **régulation par consigne** commande les prises reliées à un lot actif en mode « auto ». Un clic reste toujours maître : il passe la prise en manuel |
 
 ### Vérifier après déploiement
 
 ```bash
 curl -s  http://192.168.1.51:30090/api/sante; echo                                  # ok
-curl -s -o /dev/null -w '%{http_code}\n' http://192.168.1.51:30090/api/etat          # 401 sans jeton
-bash _verify/verif-pont.sh --url http://192.168.1.51:30090 --jeton "$JETON" --ecriture   # 10 contrôles
+curl -s -o /dev/null -w '%{http_code}\n' http://192.168.1.51:30090/api/etat          # 200, aucun jeton exigé
+bash _verify/verif-pont.sh --url http://192.168.1.51:30090 --ecriture                # 10 contrôles
 ```
 
-Et le test qui clique pour de vrai (il allume une prise, vérifie dans Home Assistant, puis
-l'éteint — et la remet toujours à l'arrêt, quoi qu'il arrive) :
+Le test qui clique pour de vrai (il allume une prise, vérifie dans Home Assistant, puis
+l'éteint — et la remet toujours à l'arrêt, quoi qu'il arrive), celui qui éprouve la régulation
+automatique, et celui qui éprouve la surveillance du pont **sans toucher à une prise** (un faux
+Home Assistant répond ; c'est le seul des trois qui ne peut rien allumer de réel) :
 
 ```bash
-JETON_PONT="$(kubectl -n scada-opus get secret pont-ha -o jsonpath='{.data.PONT_JETON}' | base64 -d)" \
-BASE_PONT="http://192.168.1.51:30090" PRISE=4 node _verify/verif-pont-bout-en-bout.mjs
+cd _verify
+BASE_PONT=http://192.168.1.51:30090 PRISE=5 node verif-pont-bout-en-bout.mjs
+BASE_PONT=http://192.168.1.51:30090 PRISE=2 LOT=b3 node verif-auto.mjs
+bash verif-surveillance.sh
 ```
 
-Il demande `puppeteer-core` et un navigateur Edge : l'exécuter depuis le dossier `_verify/` du
-poste qui a ces dépendances (c'est le cas du dossier de mesures `FermentationLab2/_verify`).
+Les deux premiers demandent `puppeteer-core` et un navigateur Edge : les exécuter depuis le
+dossier `_verify/` du poste qui a ces dépendances (c'est le cas du dossier de mesures
+`FermentationLab2/_verify`). Le troisième est autonome : il lui faut seulement un interpréteur
+python 3 (attention sur Windows, l'alias `python3` du Microsoft Store existe comme chemin mais
+échoue à l'exécution — le script teste donc chaque candidat).
 
 ## Revenir en arrière
 
