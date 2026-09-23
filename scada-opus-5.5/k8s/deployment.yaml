@@ -94,18 +94,20 @@ spec:
               value: "sensor.sonde_sonoff_1_temperature=sensor.sonde_sonoff_1_battery,sensor.sonde_sonoff_2_temperature=sensor.0xa4c13804e325ffff_battery,sensor.sonde_sonoff_3_temperature=sensor.sonde_sonoff_3_battery,sensor.humidity_1=sensor.0x187a3efffe7aea6b_battery"
           # Le pont écoute sur la boucle locale du pod : la sonde, qui vient du réseau
           # du nœud, doit donc passer par nginx — ce qui vérifie du même coup le chemin
-          # réellement emprunté par la page.
+          # réellement emprunté par la page. Port NUMÉRIQUE obligatoire : un port nommé
+          # ne se résout que dans le conteneur qui le déclare (mesuré : le kubelet répond
+          # « strconv.Atoi: parsing "http": invalid syntax » et la sonde reste inconnue).
           readinessProbe:
             httpGet:
               path: /api/sante
-              port: http
+              port: 80
             initialDelaySeconds: 2
             periodSeconds: 10
             timeoutSeconds: 3
           livenessProbe:
             httpGet:
               path: /api/sante
-              port: http
+              port: 80
             initialDelaySeconds: 5
             periodSeconds: 20
             timeoutSeconds: 3
