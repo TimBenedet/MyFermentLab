@@ -1,0 +1,11 @@
+--- a/hakko-dashboard.html
++++ b/hakko-dashboard.html
+@@ -700,7 +700,7 @@
+ function niceStep(r){ const p = 10 ** Math.floor(Math.log10(r)); const n = r / p; return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * p; }
+ function drawChart(el){
+   const c = el._cfg && el._cfg(); if (!c) return;
+-  const fill = el.classList.contains('fill'); const W = Math.max(200, el.clientWidth), H = fill ? Math.max(120, el.clientHeight) : (c.h || 220);
++  const fill = el.classList.contains('fill'); const W = Math.max(200, el.clientWidth), H = fill ? Math.max(60, el.clientHeight) : (c.h || 220);
+   const L = 46, R = 14, T = 14, B = 28, iw = W - L - R, ih = H - T - B;
+   const xs = [], ys = [];
+   c.series.forEach(s => s.pts.forEach(p => { xs.push(p[0]); ys.push(p[1]); }));

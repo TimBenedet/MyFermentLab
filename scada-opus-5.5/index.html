@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scada-opus-5.5 — dashboard Hakko</title>
+<style>
+  :root{
+    --bg:#0E1116; --surface:#161A21; --surface2:#1A1F27; --line:#262C36;
+    --ink:#E6EAF0; --ink2:#C4CAD3; --muted:#8C95A3; --accent:#7FA2EC;
+    --accent-soft:#1C2740; --ok:#5CC486; --biere:#E3A53A; --koji:#8DBE5C;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 80px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+  .logo{width:40px;height:40px;border-radius:10px;background:#fff;display:grid;place-items:center;flex:none}
+  .logo svg{width:24px;height:24px;color:#111827}
+  h1{margin:0;font-size:24px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:13px}
+  .lead{color:var(--ink2);margin:22px 0 26px;max-width:70ch}
+  .cta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:34px}
+  .btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:8px;background:var(--accent);color:#0E1116;font-weight:600}
+  .btn.sec{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+  h2{font-size:15px;font-weight:600;margin:30px 0 10px;color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .card .t{font-weight:600;margin-bottom:4px}
+  .card .d{color:var(--muted);font-size:12.5px;margin-bottom:8px}
+  .card ul{margin:0;padding-left:16px}
+  .card li{margin:3px 0;font-size:13px}
+  code,kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--ink2)}
+  .note{background:var(--accent-soft);border:1px solid #2b3a5c;border-radius:10px;padding:12px 16px;color:var(--ink2);font-size:13px}
+  footer{margin-top:40px;color:var(--faint,#6B7380);font-size:12.5px;border-top:1px solid var(--line);padding-top:16px}
+  .pill{display:inline-block;height:22px;line-height:20px;padding:0 8px;border-radius:5px;font-size:12px;background:var(--surface2);border:1px solid var(--line);color:var(--ink2)}
+  .ok{color:var(--ok)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3h8M9 3v3.2C6.6 7.2 5 9.4 5 12v6a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-6c0-2.6-1.6-4.8-4-5.8V3"/><circle cx="10" cy="15" r="1.3" fill="currentColor"/><circle cx="14.5" cy="12.5" r="1" fill="currentColor"/></svg>
+    </span>
+    <div>
+      <h1>Scada-opus-5.5</h1>
+      <div class="sub">Reconstruction du dashboard Hakko — travail complet, preuves et outils</div>
+    </div>
+  </header>
+
+  <p class="lead">
+    Ce dossier contient le dashboard reconstruit à l'identique depuis la spécification, la chaîne
+    de fabrication (partition + transcription par agents + assemblage), le harnais de vérification
+    headless et tous ses résultats, ainsi que la revue qualité.
+    <span class="pill ok">livrable à l'identique</span>
+  </p>
+
+  <div class="cta">
+    <a class="btn" href="hakko-dashboard.html">Ouvrir le dashboard</a>
+    <a class="btn sec" href="RAPPORT-FINAL.txt">Lire le rapport final</a>
+    <a class="btn sec" href="README.md">La spécification</a>
+  </div>
+
+  <h2>Le livrable</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="t">hakko-dashboard.html</div>
+      <div class="d">Un seul fichier autonome : HTML, CSS et JavaScript inline. Aucun build, aucune dépendance, 100 % local. 7 pages, thème clair et sombre, données simulées rafraîchies toutes les 3 s, état dans <code>localStorage</code>.</div>
+      <ul>
+        <li><a href="hakko-dashboard.html">Ouvrir le dashboard</a></li>
+        <li><a href="hakko-dashboard.html#/recettes">Recettes</a> · <a href="hakko-dashboard.html#/appareils">Appareils</a> · <a href="hakko-dashboard.html#/archive/b0">Fiche d'archive</a></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="t">Documentation</div>
+      <div class="d">Rapport, contrat de fabrication et spécification d'origine.</div>
+      <ul>
+        <li><a href="RAPPORT-FINAL.txt">Rapport final (lisible en ligne)</a></li>
+        <li><a href="_build/RAPPORT-FINAL.md">Rapport final (markdown)</a></li>
+        <li><a href="README.md">Spécification complète</a></li>
+        <li><a href="_build/CONTRAT.md">Contrat de reconstruction</a></li>
+        <li><a href="_build/PARTITIONS.md">Partition en 8 modules</a></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="t">Vérification</div>
+      <div class="d">365 assertions headless en A/B, plus la revue qualité.</div>
+      <ul>
+        <li><a href="_verify/RAPPORT.txt">Rapport du harnais (lisible en ligne)</a></li>
+        <li><a href="_verify/verifie.mjs">Harnais <code>verifie.mjs</code></a></li>
+        <li><a href="_verify/revue-opus.md">Revue qualité (Opus 5.5)</a></li>
+        <li><a href="_verify/reference-original.html">Référence conservée</a></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="t">Preuves</div>
+      <div class="d">Captures et rapports JSON de chaque exécution.</div>
+      <ul>
+        <li><a href="_verify/sortie-parent/">A contre B (67 fichiers)</a></li>
+        <li><a href="_verify/captures-parent/">7 routes × 2 thèmes (14 captures)</a></li>
+        <li><a href="_verify/sortie-apres/">Contrôle après correction de largeur</a></li>
+        <li><a href="_verify/captures-largeur/">Mesures 1440 → 3440 px</a></li>
+        <li><a href="_verify/sortie-casse/">Contrôle négatif (harnais rouge)</a></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="t">Correctifs prêts</div>
+      <div class="d">Non appliqués : le livrable reste à l'identique de la référence.</div>
+      <ul>
+        <li><a href="_build/fix-densite.patch">fix-densite.patch</a> — débordement de la carte Densité en 1280 × 720</li>
+        <li><a href="_build/pleine-largeur.patch">pleine-largeur.patch</a> — <span class="ok">déjà appliqué</span> (contenu pleine largeur)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="t">Fabrication</div>
+      <div class="d">Le code qui a produit le livrable.</div>
+      <ul>
+        <li><a href="_build/parts/">Les 8 modules transcrits</a></li>
+        <li><a href="_build/assemblage.py">assemblage.py</a> · <a href="_build/serve.py">serve.py</a></li>
+        <li><a href="_build/logs/">Traces des agents</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Lancer ou arrêter le service</h2>
+  <pre>/home/homelab/Scada-opus-5.5/servir.sh     # démarre le serveur statique (port 8090)
+/home/homelab/Scada-opus-5.5/arreter.sh    # l'arrête</pre>
+  <div class="note">
+    Servi par <code>python3 -m http.server 8090</code> sur <code>0.0.0.0</code>, journal dans
+    <code>.serveur.log</code>. Il n'y a ni <code>sudo</code> ni service systemd possible sur cette
+    machine (et le <em>linger</em> du compte est désactivé) : le processus est détaché avec
+    <code>setsid nohup</code>, il survit à la déconnexion mais pas au redémarrage.
+    Pour l'automatiser au démarrage, une ligne de <code>crontab -e</code> suffit :
+    <code>@reboot /home/homelab/Scada-opus-5.5/servir.sh</code>.
+  </div>
+
+  <h2>Ce que ce dossier ne contient pas</h2>
+  <p class="lead" style="margin-top:0">
+    Les <code>node_modules</code> du harnais (29 Mo, réinstallables par
+    <code>npm i puppeteer-core</code>) et le fichier de mots de passe du serveur, volontairement
+    exclu. Le harnais s'exécute depuis le PC Windows : il lui faut Node et Microsoft Edge, et il
+    pilote le navigateur, ce qui n'a pas de sens depuis le serveur lui-même. Ses résultats sont
+    inclus ici.
+  </p>
+
+  <footer>
+    Scada-opus-5.5 — reconstruction du dashboard Hakko · livrable vérifié octet pour octet contre la
+    référence, puis mesuré dans un vrai navigateur sur 7 routes, 2 thèmes et 6 tailles de fenêtre.
+  </footer>
+</div>
+</body>
+</html>

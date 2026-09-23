@@ -1,0 +1,290 @@
+[
+ {
+  "route": "#/",
+  "theme": "dark",
+  "fichier": "captures-parent/dark-__.png",
+  "titre": "Vue d’ensemble",
+  "thème": "dark",
+  "fond": "rgb(14, 17, 22)",
+  "scrollY": 0,
+  "scrollX": 0,
+  "cartes": 7,
+  "lignesTableau": 0,
+  "kpis": [
+   "Lots en cours44 recettes disponibles",
+   "Écarts de température1À vérifier",
+   "Appareils en ligne10/111 hors ligne",
+   "Chauffe active0prises0 W consommés"
+  ],
+  "onglets": [],
+  "active": null
+ },
+ {
+  "route": "#/f/b1",
+  "theme": "dark",
+  "fichier": "captures-parent/dark-__f_b1.png",
+  "titre": "Saison du Nord #3",
+  "thème": "dark",
+  "fond": "rgb(14, 17, 22)",
+  "scrollY": 0,
+  "scrollX": 0,
+  "cartes": 11,
+  "lignesTableau": 2,
+  "kpis": [
+   "Température23,8°C−0,2 °C vs cible",
+   "Consigne24,0°CTolérance ±0,5 °C",
+   "Densité1,008Visée 1,006",
+   "Alcool estimé6,6%Atténuation 86 %",
+   "ChauffageVeilleHystérésis ±0,2 °C"
+  ],
+  "onglets": [
+   "Température",
+   "Densité"
+  ],
+  "active": "Température"
+ },
+ {
+  "route": "#/archive",
+  "theme": "dark",
+  "fichier": "captures-parent/dark-__archive.png",
+  "titre": "Archive",
+  "thème": "dark",
+  "fond": "rgb(14, 17, 22)",
+  "scrollY": 0,
+  "scrollX": 0,
+  "cartes": 1,
+  "lignesTableau": 1,
+  "kpis": [],
+  "onglets": [],
+  "active": null
+ },
+ {
+  "route": "#/archive/b0",
+  "theme": "dark",
+  "fichier": "captures-parent/dark-__archive_b0.png",
+  "titre": "IPA Citra #2",
+  "thème": "dark",
+  "fond": "rgb(14, 17, 22)",
+  "scrollY": 0,
+  "scrollX": 0,
+  "cartes": 10,
+  "lignesTableau": 0,
+  "kpis": [
+   "Durée totale14 joursPrévue 14 jours",
+   "Température moyenne19,2°CÉcart-type 0,44 °C",
+   "Min / max18,7 / 20,6°CAmplitude 1,9 °C",
+   "Dans la plage82%Consigne ±0,5 °C",
+   "Densité finale1,0117,0 % vol., att. 83 %",
+   "Chauffe114h34 activations, 34 %"
+  ],
+  "onglets": [],
+  "active": null
+ },
+ {
+  "route": "#/recettes",
+  "theme": "dark",
+  "fichier": "captures-parent/dark-__recettes.png",
+  "titre": "Recettes",
+  "thème": "dark",
+  "fond": "rgb(14, 17, 22)",
+  "scrollY": 0,
+  "scrollX": 0,
+  "cartes": 1,
+  "lignesTableau": 4,
+  "kpis": [],
+  "onglets": [
+   "Actives4",
+   "Archivées2"
+  ],
+  "active": "Actives4"
+ },
+ {
+  "route": "#/recettes/new",
+  "theme": "dark",
+  "fichier": "captures-parent/dark-__recettes_new.png",
+  "titre": "Nouvelle recette",
+  "thème": "dark",
+  "fond": "rgb(14, 17, 22)",
+  "scrollY": 684,
+  "scrollX": 0,
+  "cartes": 5,
+  "lignesTableau": 0,
+  "kpis": [],
+  "onglets": [],
+  "active": null
+ },
+ {
+  "route": "#/appareils",
+  "theme": "dark",
+  "fichier": "captures-parent/dark-__appareils.png",
+  "titre": "Appareils",
+  "thème": "dark",
+  "fond": "rgb(14, 17, 22)",
+  "scrollY": 335,
+  "scrollX": 0,
+  "cartes": 5,
+  "lignesTableau": 11,
+  "kpis": [
+   "En ligne10/111 hors ligne",
+   "Batterie faible1Sous 20 %",
+   "Prises allumées0Sur 5 prises",
+   "Puissance instantanée0WHystérésis auto ±0,2 °C"
+  ],
+  "onglets": [
+   "Tous11",
+   "Température5",
+   "Humidité1",
+   "Prises5"
+  ],
+  "active": "Tous11"
+ },
+ {
+  "theme": "dark",
+  "erreurs": [
+   "console: Failed to load resource: the server responded with a status of 404 (File not found)"
+  ]
+ },
+ {
+  "route": "#/",
+  "theme": "light",
+  "fichier": "captures-parent/light-__.png",
+  "titre": "Vue d’ensemble",
+  "thème": "light",
+  "fond": "rgb(244, 245, 247)",
+  "scrollY": 0,
+  "scrollX": 0,
+  "cartes": 7,
+  "lignesTableau": 0,
+  "kpis": [
+   "Lots en cours44 recettes disponibles",
+   "Écarts de température1À vérifier",
+   "Appareils en ligne10/111 hors ligne",
+   "Chauffe active0prises0 W consommés"
+  ],
+  "onglets": [],
+  "active": null
+ },
+ {
+  "route": "#/f/b1",
+  "theme": "light",
+  "fichier": "captures-parent/light-__f_b1.png",
+  "titre": "Saison du Nord #3",
+  "thème": "light",
+  "fond": "rgb(244, 245, 247)",
+  "scrollY": 0,
+  "scrollX": 0,
+  "cartes": 11,
+  "lignesTableau": 2,
+  "kpis": [
+   "Température23,8°C−0,2 °C vs cible",
+   "Consigne24,0°CTolérance ±0,5 °C",
+   "Densité1,008Visée 1,006",
+   "Alcool estimé6,6%Atténuation 86 %",
+   "ChauffageVeilleHystérésis ±0,2 °C"
+  ],
+  "onglets": [
+   "Température",
+   "Densité"
+  ],
+  "active": "Température"
+ },
+ {
+  "route": "#/archive",
+  "theme": "light",
+  "fichier": "captures-parent/light-__archive.png",
+  "titre": "Archive",
+  "thème": "light",
+  "fond": "rgb(244, 245, 247)",
+  "scrollY": 0,
+  "scrollX": 0,
+  "cartes": 1,
+  "lignesTableau": 1,
+  "kpis": [],
+  "onglets": [],
+  "active": null
+ },
+ {
+  "route": "#/archive/b0",
+  "theme": "light",
+  "fichier": "captures-parent/light-__archive_b0.png",
+  "titre": "IPA Citra #2",
+  "thème": "light",
+  "fond": "rgb(244, 245, 247)",
+  "scrollY": 0,
+  "scrollX": 0,
+  "cartes": 10,
+  "lignesTableau": 0,
+  "kpis": [
+   "Durée totale14 joursPrévue 14 jours",
+   "Température moyenne19,2°CÉcart-type 0,44 °C",
+   "Min / max18,7 / 20,6°CAmplitude 1,9 °C",
+   "Dans la plage82%Consigne ±0,5 °C",
+   "Densité finale1,0117,0 % vol., att. 83 %",
+   "Chauffe114h34 activations, 34 %"
+  ],
+  "onglets": [],
+  "active": null
+ },
+ {
+  "route": "#/recettes",
+  "theme": "light",
+  "fichier": "captures-parent/light-__recettes.png",
+  "titre": "Recettes",
+  "thème": "light",
+  "fond": "rgb(244, 245, 247)",
+  "scrollY": 0,
+  "scrollX": 0,
+  "cartes": 1,
+  "lignesTableau": 4,
+  "kpis": [],
+  "onglets": [
+   "Actives4",
+   "Archivées2"
+  ],
+  "active": "Actives4"
+ },
+ {
+  "route": "#/recettes/new",
+  "theme": "light",
+  "fichier": "captures-parent/light-__recettes_new.png",
+  "titre": "Nouvelle recette",
+  "thème": "light",
+  "fond": "rgb(244, 245, 247)",
+  "scrollY": 684,
+  "scrollX": 0,
+  "cartes": 5,
+  "lignesTableau": 0,
+  "kpis": [],
+  "onglets": [],
+  "active": null
+ },
+ {
+  "route": "#/appareils",
+  "theme": "light",
+  "fichier": "captures-parent/light-__appareils.png",
+  "titre": "Appareils",
+  "thème": "light",
+  "fond": "rgb(244, 245, 247)",
+  "scrollY": 335,
+  "scrollX": 0,
+  "cartes": 5,
+  "lignesTableau": 11,
+  "kpis": [
+   "En ligne10/111 hors ligne",
+   "Batterie faible1Sous 20 %",
+   "Prises allumées0Sur 5 prises",
+   "Puissance instantanée0WHystérésis auto ±0,2 °C"
+  ],
+  "onglets": [
+   "Tous11",
+   "Température5",
+   "Humidité1",
+   "Prises5"
+  ],
+  "active": "Tous11"
+ },
+ {
+  "theme": "light",
+  "erreurs": []
+ }
+]

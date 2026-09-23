@@ -1,0 +1,11 @@
+--- a/hakko-dashboard.html
++++ b/hakko-dashboard.html
+@@ -83,7 +83,7 @@
+ .icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink2)}
+ .icon-btn:hover{background:var(--hover)}
+ .icon-btn.bare{border-color:transparent;background:none}
+-.content{padding:28px 32px 64px;max-width:1440px;width:100%}
++.content{padding:28px 32px 64px;width:100%}
+ .tabbar{display:none}
+ .m-brand{display:none}
+ @media (max-width:900px){
