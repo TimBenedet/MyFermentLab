@@ -523,6 +523,18 @@ const DAY = 864e5, HOUR = 36e5, HYST = 0.2;
    après 45 min de chauffe continue, 15 min de pause avant de pouvoir réarmer, et 5 min
    de silence après un refus du pont. */
 const AUTO_COOLDOWN = 60e3, AUTO_MAX_ON = 45 * 60e3, AUTO_PAUSE = 15 * 60e3, AUTO_REFUS = 5 * 60e3;
+/* Deux onglets du même navigateur ne régulent pas ensemble : ils prendraient la même
+   décision, mais se contrediraient dès que l'un des deux a des données différentes
+   (une consigne changée la veille). Le premier onglet garde la main tant qu'il bat. */
+const REGUL_CLE = 'hakko-regul';
+const regulId = Math.random().toString(36).slice(2, 8);
+function regulMaitre(){
+  const t = now();
+  let vu = null; try { vu = JSON.parse(localStorage.getItem(REGUL_CLE) || 'null'); } catch(e){}
+  if (vu && vu.id !== regulId && t - vu.t < 10000) return false;
+  try { localStorage.setItem(REGUL_CLE, JSON.stringify({ id: regulId, t })); } catch(e){}
+  return true;
+}
 const now = () => Date.now();
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (n, d = 1) => (n == null || isNaN(n)) ? '—' : Number(n).toFixed(d).replace('.', ',');
@@ -671,6 +683,7 @@ function tick(){
     if (d.kind === 'temp') d.value = b ? model(b, t).temp + (Math.random() - .5) * .05 : 17.6 + Math.sin(t/DAY*6.28) * .6;
     if (d.kind === 'hum') { const m = b && model(b, t).hum; d.value = m != null ? m + (Math.random() - .5) * .4 : 64 + (Math.random() - .5); }
   }
+  const maitreRegul = PONT.actif && regulMaitre();
   for (const d of S.devices){
     if (d.kind !== 'plug' || !d.online) continue;
     const b = S.batches.find(x => x.id === d.batch && x.status === 'active');
@@ -686,7 +699,7 @@ function tick(){
           // contente pas d'allumer une icône, et ne réclame aucun jeton — une
           // régulation n'a personne à qui le demander. Hors pont (maquette file://),
           // la simulation reprend la main : là, aucun réseau n'est joignable.
-          if (PONT.actif && d.eid) regulerPont(d, b, tp, voulu);
+          if (PONT.actif && d.eid && maitreRegul) regulerPont(d, b, tp, voulu);
           else { d.on = voulu; logHeat(d, b, tp, false); }
         }
       }
@@ -1104,7 +1117,8 @@ async function regulerPont(d, b, tp, voulu, securite){
   }
   regulEnCours = true; d.regulT = t;
   try {
-    const r = await pontRequete('prise', { entite: d.eid, allume: voulu });
+    // « auto » : le pont arme sa surveillance et coupera lui-même si la page disparaît.
+    const r = await pontRequete('prise', { entite: d.eid, allume: voulu, auto: true });
     const j = await r.json().catch(() => null);
     if (!r.ok || !j || j.ok === false) throw new Error('HTTP ' + r.status);
     d.on = (j.etat === 'on'); d.regulDepuis = d.on ? t : null;

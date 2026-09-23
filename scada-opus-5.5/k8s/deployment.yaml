@@ -90,6 +90,10 @@ spec:
                   name: pont-ha
                   key: PONT_JETON
                   optional: true
+            # Le pont coupe lui-même une chauffe automatique que personne n'a
+            # décommandée (page fermée) : 90 minutes, puis arrêt forcé.
+            - name: PONT_CHAUFFE_MAX
+              value: "90"
             # Liste blanche : le pont refuse toute commande hors de ces prises.
             - name: PONT_PRISES
               value: "switch.smart_switch_25021462413795540601c4e7ae132658_outlet_1,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_2,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_3,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_4,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_5"

@@ -24,6 +24,11 @@ Configuration par variables d'environnement :
   PONT_BATTERIES  correspondance « mesure=batterie », séparée par des virgules
   PONT_ADRESSE    adresse d'écoute (défaut 127.0.0.1 : boucle locale du pod)
   PONT_PORT       port d'écoute (défaut 8080)
+  PONT_CHAUFFE_MAX  durée maximale, en minutes, d'une chauffe commandée par la
+                  régulation automatique : passé ce délai, le pont coupe lui-même la
+                  prise. Défaut 90, 0 = surveillance désactivée. La page qui a
+                  commandé peut disparaître (onglet fermé, réseau coupé), le pont
+                  non : c'est lui qui garantit l'arrêt.
 
 Bibliothèque standard uniquement : aucune dépendance à installer.
 """
@@ -78,6 +83,16 @@ class Config:
         )
         self.adresse = os.environ.get("PONT_ADRESSE") or "127.0.0.1"
         self.port = int(os.environ.get("PONT_PORT") or 8080)
+        try:
+            self.chauffe_max = int(os.environ.get("PONT_CHAUFFE_MAX") or 90)
+        except ValueError:
+            raise SystemExit(
+                "pont : PONT_CHAUFFE_MAX doit être un nombre de minutes (0 = désactivé)."
+            )
+        if self.chauffe_max < 0:
+            raise SystemExit(
+                "pont : PONT_CHAUFFE_MAX doit être positif (0 = surveillance désactivée)."
+            )
 
     def verifier(self):
         """Refuse de démarrer dans une configuration dangereuse ou inutilisable."""
@@ -125,6 +140,11 @@ class Config:
 
 CFG = Config()
 _verrou_etat = threading.Lock()
+# Échéances des chauffes automatiques à couper (entité -> horodatage), et la période de
+# surveillance : quinze secondes suffisent largement pour une consigne en minutes.
+_verrou_echeances = threading.Lock()
+_echeances = {}
+PERIODE_SURVEILLANCE = 15
 _cache = {"t": 0.0, "donnees": None}
 # Plafonne les appels simultanés vers Home Assistant : si celui-ci pend, les threads
 # du serveur s'accumulent jusqu'au plafond mémoire du conteneur, sinon.
@@ -234,7 +254,7 @@ def etat_appareils():
     return donnees
 
 
-def commander(entite, allume):
+def commander(entite, allume, auto=False):
     """Commande une prise de la liste blanche, puis relit son état réel.
 
     Les multiprises Tuya renvoient souvent l'ancien état juste après la commande :
@@ -259,7 +279,61 @@ def commander(entite, allume):
             time.sleep(0.7)
     with _verrou_etat:
         _cache["donnees"] = None
+    # Sécurité : une chauffe commandée par la régulation automatique est coupée par le
+    # pont lui-même si personne ne la décommande — page fermée, onglet tué, réseau
+    # coupé. Une commande manuelle, elle, n'est jamais coupée : c'est l'utilisateur
+    # qui décide, y compris de laisser chauffer deux heures.
+    if CFG.chauffe_max > 0:
+        with _verrou_echeances:
+            if allume and auto:
+                _echeances[entite] = time.time() + CFG.chauffe_max * 60
+            else:
+                _echeances.pop(entite, None)
     return {"ok": True, "entite": entite, "etat": etat, "confirme": confirme}
+
+
+def surveillance():
+    """Coupe les chauffes automatiques que personne n'a décommandées.
+
+    Sans cette surveillance, une chauffe lancée par une page resterait allumée pour
+    toujours si cette page disparaît : c'est le seul défaut qu'une page ne peut pas
+    corriger, le pont si.
+    """
+    if CFG.chauffe_max <= 0:
+        print("pont : surveillance des chauffes désactivée (PONT_CHAUFFE_MAX=0)", flush=True)
+        return
+    print(
+        "pont : surveillance des chauffes automatiques — arrêt forcé après %d min"
+        % CFG.chauffe_max,
+        flush=True,
+    )
+    while True:
+        maintenant = time.time()
+        for entite, echeance in list(_echeances.items()):
+            if maintenant < echeance:
+                continue
+            with _verrou_echeances:
+                if _echeances.get(entite) != echeance:
+                    continue
+                _echeances.pop(entite, None)
+            try:
+                r = commander(entite, False)
+                print(
+                    "pont : chauffe automatique de %s interrompue après %d min (état relu : %s)"
+                    % (entite, CFG.chauffe_max, r.get("etat")),
+                    flush=True,
+                )
+            except Exception as e:
+                # Home Assistant muet : on retente dans deux minutes plutôt que de
+                # perdre l'échéance et de laisser la prise allumée.
+                with _verrou_echeances:
+                    _echeances[entite] = time.time() + 120
+                print(
+                    "pont : arrêt de sécurité de %s impossible (%s) — nouvelle tentative dans 2 min"
+                    % (entite, raison(e)),
+                    flush=True,
+                )
+        time.sleep(PERIODE_SURVEILLANCE)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -368,14 +442,17 @@ class Handler(BaseHTTPRequestHandler):
         if entite not in CFG.prises:
             # Liste blanche : le pont ne peut commander que les prises déclarées.
             return self.repond(403, {"ok": False, "erreur": "entité non autorisée"})
+        # « auto » : la commande vient de la régulation du dashboard, pas d'un clic.
+        # Seules celles-là sont coupées par la surveillance si elles traînent.
+        auto = corps.get("auto") is True
         try:
-            reponse = commander(entite, allume)
+            reponse = commander(entite, allume, auto)
         except Exception as e:
             self.journal("échec commande %s : %s" % (entite, raison(e)))
             return self.repond(502, {"ok": False, "erreur": "Home Assistant " + raison(e)})
         self.journal(
-            "commande %s → %s (état relu : %s)"
-            % (entite, "on" if allume else "off", reponse["etat"])
+            "commande %s%s → %s (état relu : %s)"
+            % (entite, " (auto)" if auto else "", "on" if allume else "off", reponse["etat"])
         )
         return self.repond(200, reponse)
 
@@ -386,11 +463,18 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     CFG.verifier()
     print(
-        "pont : écoute sur %s:%d — %d prise(s), %d sonde(s), authentification : jeton partagé "
-        "(%d caractères)"
-        % (CFG.adresse, CFG.port, len(CFG.prises), len(CFG.sondes), len(CFG.pont_jeton)),
+        "pont : écoute sur %s:%d — %d prise(s), %d sonde(s), authentification : %s"
+        % (
+            CFG.adresse,
+            CFG.port,
+            len(CFG.prises),
+            len(CFG.sondes),
+            "aucune (PONT_AUTH=aucune)" if CFG.auth == "aucune"
+            else "jeton partagé (%d caractères)" % len(CFG.pont_jeton),
+        ),
         flush=True,
     )
+    threading.Thread(target=surveillance, daemon=True).start()
     serveur = ThreadingHTTPServer((CFG.adresse, CFG.port), Handler)
     serveur.daemon_threads = True
     try:
