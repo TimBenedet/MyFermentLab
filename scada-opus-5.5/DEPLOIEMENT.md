@@ -51,7 +51,8 @@ scada-redesign) : l'hôte retenu ici est **`hakko.myfermentlab`**.
 
 ```bash
 # 1. éditer par exemple scada-opus-5.5/hakko-dashboard.html
-git add scada-opus-5.5/ && git commit -m "…" && git push
+git add scada-opus-5.5/ && git commit -m "…"
+git pull --rebase && git push      # la CI commite aussi sur cette branche : rebaser avant de pousser
 # 2. suivre la chaîne :
 #    - l'image se construit :  https://github.com/TimBenedet/MyFermentLab/actions
 #    - le tag est mis à jour : le commit « chore(scada): déploie l'image … »
@@ -86,9 +87,32 @@ n'importe quelle version peut être réépinglée en changeant `newTag` dans `ku
 - **namespace dédié** : `scada-opus`, pour que `prune: true` ne puisse jamais toucher aux
   ressources de `default` ou `manga`.
 
-## Si la CI ne peut pas pousser le tag
+## Amorçage — la toute première mise en route
 
-L'étape 3 a besoin que le `GITHUB_TOKEN` puisse écrire dans le dépôt. Si le job échoue sur
-`git push` avec un 403, il faut autoriser les workflows à écrire, une seule fois :
-dépôt → **Settings** → **Actions** → **General** → *Workflow permissions* →
-**Read and write permissions**, puis relancer le workflow (*Re-run jobs*).
+Une seule fois, dans cet ordre :
+
+1. **Premier build vert.** Le pipeline démarre tout seul au premier push qui touche
+   `scada-opus-5.5/`. Vérifier que l'étape *Publier l'image sur GHCR* passe, puis que le
+   commit `chore(scada): déploie l'image …` apparaît sur la branche.
+2. **Rendre le paquet public** (sinon le cluster reçoit un 401 au tirage) :
+   `https://github.com/users/TimBenedet/packages/container/myfermentlab-scada/settings` →
+   *Change visibility* → **Public**. C'est le réglage déjà en place pour
+   `myfermentlab-frontend`.
+3. **Appliquer l'Application ArgoCD**, une fois, à la main :
+   ```bash
+   kubectl apply -f scada-opus-5.5/argocd/application.yaml
+   kubectl -n argocd get app scada-opus-5.5 -w
+   ```
+   ArgoCD crée le namespace `scada-opus` et déploie. Ensuite, plus rien à faire à la main :
+   tout passe par git.
+
+## Si la CI échoue à pousser le tag
+
+L'étape d'épinglage a besoin d'écrire sur la branche. Le workflow déclare
+`permissions: contents: write`, ce qui **prime** sur le réglage par défaut du dépôt
+(*Settings → Actions → Workflow permissions*) : inutile de le modifier. Si un 403 apparaît
+malgré tout, c'est une **protection de branche ou un ruleset** qui refuse le push du
+`github-actions[bot]` — autoriser ce robots à écrire sur `Scada-opus-5.5` (ou retirer la
+règle le temps du premier passage). Le job devient rouge et prévient par courriel ;
+les images, elles, sont déjà publiées, donc le cluster reste simplement sur le tag
+précédent : rien ne casse.

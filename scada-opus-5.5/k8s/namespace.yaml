@@ -5,3 +5,8 @@ metadata:
   labels:
     app.kubernetes.io/name: scada-opus
     app.kubernetes.io/part-of: myfermentlab
+  annotations:
+    # ArgoCD gère ce Namespace : sans cette annotation, supprimer l'Application (finalizer
+    # + prune) supprimerait « scada-opus » et tout ce qu'il contient, y compris des objets
+    # créés à la main.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false

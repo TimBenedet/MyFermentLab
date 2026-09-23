@@ -1,4 +1,12 @@
-# Contexte de build = ce dossier. On n'y écarte que ce qui ne doit pas être servi
-# publiquement : la recette de l'image elle-même.
+# Contexte de build = ce dossier (scada-opus-5.5/), pas la racine du dépôt :
+# le .dockerignore de la racine exclut « README.md », dont l'image a besoin.
+#
+# On n'exclut PAS le Dockerfile : BuildKit (celui des runners GitHub) refuse de lire un
+# Dockerfile écarté par .dockerignore. Il est retiré de la racine web par un RUN du Dockerfile.
 Dockerfile
 .dockerignore
+
+# Le dossier de déploiement n'a rien à faire dans un site public (et sa copie servie
+# serait de toute façon périmée à chaque synchronisation ArgoCD).
+k8s/
+argocd/

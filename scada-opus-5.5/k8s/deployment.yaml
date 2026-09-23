@@ -26,7 +26,10 @@ spec:
           # Le tag est réécrit automatiquement par la CI (voir .github/workflows/build-scada-opus.yml)
           # puis appliqué par ArgoCD : ne pas modifier à la main.
           image: ghcr.io/timbenedet/myfermentlab-scada:latest
-          imagePullPolicy: Always
+          # IfNotPresent : une fois le tag immuable épinglé par la CI, un redémarrage de pod
+          # ne dépend plus de la disponibilité de GHCR. (« latest » n'est là que pour
+          # amorcer le tout premier déploiement.)
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 80
