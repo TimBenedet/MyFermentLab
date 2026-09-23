@@ -1,5 +1,5 @@
-# Contexte de build = ce dossier (scada-opus-5.5/), pas la racine du dépôt :
-# le .dockerignore de la racine exclut « README.md », dont l'image a besoin.
+# Contexte de build = ce dossier (scada-opus-5.5/), pas la racine du dépôt : l'image ne
+# dépend ainsi d'aucun réglage de la racine, et le contexte transféré reste petit.
 #
 # On n'exclut PAS le Dockerfile : BuildKit (celui des runners GitHub) refuse de lire un
 # Dockerfile écarté par .dockerignore. Il est retiré de la racine web par un RUN du Dockerfile.

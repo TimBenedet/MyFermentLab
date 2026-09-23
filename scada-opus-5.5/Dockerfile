@@ -3,9 +3,10 @@
 #
 # Contexte de build = CE dossier (scada-opus-5.5/), pas la racine du dépôt :
 #   docker build -t scada-opus-5.5 scada-opus-5.5
-# Raison : le .dockerignore de la racine du dépôt exclut « README.md », dont l'image a
-# besoin. Ici le contexte est le dossier lui-même, avec son propre .dockerignore : l'image
-# ne dépend donc d'aucun réglage extérieur.
+# L'image ne dépend ainsi d'aucun réglage de la racine (le .dockerignore du dépôt peut
+# changer sans l'affecter) et le contexte transféré reste petit.
+# Note : les motifs d'un .dockerignore sont ancrés à la racine du contexte — le « README.md »
+# listé dans celui du dépôt n'écarte PAS scada-opus-5.5/README.md (vérifié par sonde de build).
 
 FROM nginx:1.29-alpine
 
