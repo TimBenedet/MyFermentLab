@@ -186,6 +186,27 @@ Vérifier dans cet ordre : `/api/sante` (200 `ok`), `/api/etat` avec le jeton du
 commande sur une prise déjà éteinte (`allume:false`) — la réponse doit porter `"confirme": true`,
 sinon le jeton du fichier n'est pas celui que le pont utilise.
 
+### Ce que la multiprise peut mesurer : rien
+
+La multiprise est une **Meross MSS425f** (intégration `meross_lan`). Son inventaire de
+capacités, lu depuis l'appareil (`Appliance.System.Ability`) ne contient ni
+`Appliance.Control.Electricity` ni `Appliance.Control.Consumption*` : l'appareil **ne
+mesure pas** la puissance. Aucune requête ne peut donc en tirer des watts ou des
+wattheures — il ne remonte que l'état des prises, le signal, le mode « dnd » et ses
+minuteries.
+
+Les watts affichés par le dashboard sont une valeur de maquette, calculée dans la boucle
+d'animation (`hakko-dashboard.html` : 410 W pour la prise 3, 160 W pour les autres, plus
+un bruit aléatoire) — **une information inventée, pas une mesure**. Depuis que les prises
+sont reliées au pont, cette simulation ne s'exécute même plus pour elles : le nombre reste
+figé sur la dernière valeur chargée.
+
+Pour du réel, il faut un appareil qui mesure : la prise **Shelly** de l'installation
+publie `sensor.shellyazplug_…_power` (W) et `_energy` (kWh) — ce sont les seules sources
+de puissance de l'installation — mais elle est en `setup_retry`, donc indisponible. Y
+ajouter une mesure de puissance dans le pont est direct une fois l'appareil joignable :
+déclarer l'entité dans `PONT_SONDES` suffit à la faire remonter au dashboard.
+
 ### Ce que fait le dashboard quand le pont n'est pas là
 
 | Situation | Comportement |

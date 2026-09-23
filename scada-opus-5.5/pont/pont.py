@@ -257,7 +257,7 @@ def etat_appareils():
 def commander(entite, allume, auto=False):
     """Commande une prise de la liste blanche, puis relit son état réel.
 
-    Les multiprises Tuya renvoient souvent l'ancien état juste après la commande :
+    La multiprise (Meross MSS425f) peut renvoyer l'ancien état juste après la commande :
     on relit donc jusqu'à trois fois, et on n'invalide le cache qu'après coup (un
     /api/etat concurrent pourrait sinon le regarnir avec l'état d'avant).
     """
@@ -267,7 +267,7 @@ def commander(entite, allume, auto=False):
     appel_ha("/api/services/switch/" + service, "POST", {"entity_id": entite})
     attendu = "on" if allume else "off"
     etat, confirme = None, False
-    # Les multiprises Tuya continuent d'annoncer l'ancien état une à trois secondes :
+    # La multiprise peut annoncer l'ancien état une à trois secondes après la commande :
     # on relit donc jusqu'à six fois, sans quoi l'interface affiche un état faux.
     for essai in range(6):
         e = appel_ha("/api/states/" + entite)
