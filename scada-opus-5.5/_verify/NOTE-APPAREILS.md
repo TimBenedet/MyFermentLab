@@ -25,12 +25,23 @@ Aucun autre fichier de données n'est touché : les lots, les recettes, les grap
 le design restent ceux de la référence. L'identifiant d'entité est porté par un nouveau champ
 `eid` et affiché en **infobulle** de la cellule « Appareil ».
 
-**Pourquoi pas sous le nom, comme dans l'ancien dashboard ?** Mesuré : afficher
-`sensor.sonde_sonoff_1_temperature` sous le nom élargit la colonne « Appareil » de 200 à 283 px
-et comprime « Fermentation » de 175 à 117 px, ce qui tronque le nom des lots. La consigne
-« pas de changement de design » l'interdisait ; l'infobulle donne l'information sans coût de
-mise en page (colonnes ramenées à 212 / 169 px, soit ≤ 12 px d'écart avec la référence,
-rien de tronqué).
+**Pourquoi pas sous le nom, comme dans l'ancien dashboard ?** Mesuré à 1440 px : afficher
+`sensor.sonde_sonoff_1_temperature` sous le nom élargit la colonne « Appareil » de 200 à 278 px
+et comprime « Fermentation » de 175 à 117 px. La consigne « pas de changement de design »
+l'interdisait ; l'infobulle donne l'information sans coût de mise en page.
+
+| Largeur et version | Appareil | Type | Mesure | Fermentation | Batterie | Dern. remontée | État | Contrôle |
+|---|---|---|---|---|---|---|---|---|
+| 1440 px — référence (noms de démo) | 200 | 110 | 82 | 175 | 115 | 140 | 117 | 199 |
+| 1440 px — livrable (noms réels) | 212 | 110 | 81 | 169 | 122 | 140 | 106 | 199 |
+| 1280 px — référence | 145 | 110 | 74 | 109 | 104 | 140 | 117 | 199 |
+| 1280 px — livrable | 152 | 110 | 74 | 109 | 112 | 140 | 106 | 199 |
+
+Écart maximal 12 px sur une colonne, dû aux noms réels plus longs que ceux de la maquette.
+Le passage des noms sur deux lignes **n'est pas** un effet de ce changement : la référence le
+fait déjà à 1440 px comme à 1280 px. Le seul effet visible est que le sélecteur « Fermentation »
+dispose de 135 px au lieu de 141 à 1440 px, ce qui coupe la fin de « Saison du Nord #3 » — nom
+complet lisible dans la liste déroulante et sur la page du lot.
 
 ## Mesures de non-régression
 
