@@ -1,0 +1,178 @@
+revue du pont — 2026-09-23 11:45:26
+Ignoring 55 permissions.allow entries from .claude/settings.local.json: this workspace has not been trusted. Run Claude Code interactively here once and accept the trust dialog, or set projects["/mnt/c/Users/Timothée/Documents/IA/Hermes/MyFermentLab"].hasTrustDialogAccepted: true in /home/TimBenedet/.claude.json.
+# Revue sécurité et robustesse du pont Home Assistant
+
+## Constat préalable (bloquant pour la revue)
+
+Le bloc `/* ---------- Pont Home Assistant (même origine : /api/) ---------- */` **n'existe pas** dans `hakko-dashboard.html` sur disque (1586 lignes). Aucune occurrence de `/api/etat`, `/api/prise` ni `fetch` : la seule mention est dans `_verify/brief-revue-pont.md`.
+
+- `toggle-plug` (l. 1508) inverse seulement `d.on` en local.
+- `tick()` (l. 659-677) ne fait que simuler.
+
+La partie « navigateur » n'a donc pas pu être relue : soit elle n'a pas été écrite, soit elle n'a pas été enregistrée dans ce fichier. La revue ci-dessous porte sur `pont.py`, `nginx.conf` et `deployment.yaml`. Pour le futur code du dashboard, je donne des exigences plutôt qu'un audit.
+
+---
+
+## 1. Failles
+
+### BLOQUANT
+
+**B1. L'authentification est désactivée si le secret manque**
+- **Où :** `Handler.autentifie()` (l. 194 : `if not CFG.pont_jeton: return True`), et `optional: true` sur `PONT_JETON` dans `deployment.yaml`.
+- **Scénario :** le secret `pont-ha` est créé avec `HASS_TOKEN` mais sans `PONT_JETON`, ce qui est probable puisque le dashboard ne sait pas l'envoyer aujourd'hui.
+  - Le pod démarre sans erreur.
+  - La seule trace est une ligne sur stderr.
+  - N'importe quel appareil du réseau local peut alors envoyer : `curl -X POST http://<nœud>:30090/api/prise -d '{"entite":"switch…outlet_3","allume":true}'`.
+  - Les identifiants d'entités sont publics : ils sont en clair dans le HTML (l. 614-618) et dans `/api/etat`.
+- **Correction :**
+  - Dans `verifier()`, faire un `raise SystemExit` si `PONT_JETON` est vide ou fait moins de 32 caractères.
+  - Retirer `optional: true`.
+  - Remplacer la comparaison par `hmac.compare_digest(entete.strip(), "Bearer " + CFG.pont_jeton)`.
+
+**B2. CSRF et DNS rebinding tant que B1 n'est pas corrigé**
+- **Où :** `do_POST`. Ni `Content-Type`, ni `Origin`, ni `Host` ne sont contrôlés.
+- **Scénario CSRF :** une page hostile exécute `fetch("http://hakko.myfermentlab/api/prise", {method:"POST", mode:"no-cors", headers:{"Content-Type":"text/plain"}, body:'{"entite":"switch…outlet_1","allume":true}'})`.
+  - C'est une requête « simple », donc sans pré-vol CORS.
+  - `json.loads` l'accepte et la prise s'allume.
+  - L'attaquant ne peut pas lire la réponse, mais il n'en a pas besoin.
+- **Scénario DNS rebinding :** un nom contrôlé par l'attaquant est redirigé vers `192.168.1.x:30090`. La page peut alors aussi lire `/api/etat`, car nginx a `server_name _` et ne contrôle pas `Host`.
+- **Correction :**
+  - Rendre le jeton obligatoire (B1). L'en-tête `Authorization` force alors un pré-vol, qui échoue faute de CORS, et une page ayant fait du rebinding n'a pas accès au `localStorage` de la vraie origine.
+  - En plus, pour une défense en profondeur :
+    - refuser tout `Content-Type` autre que `application/json` (réponse 415) ;
+    - refuser un `Origin` présent et différent de `http://hakko.myfermentlab` ou `http://<nœud>:30090` ;
+    - côté nginx, n'accepter que ces `Host` (réponse 421 ou 444 sinon).
+
+### MAJEUR
+
+**M1. Le pont est joignable sans passer par nginx**
+- **Où :** `PONT_ADRESSE=0.0.0.0` (Dockerfile, l. 20) et aucune NetworkPolicy.
+- **Scénario :** n'importe quel pod du cluster (par exemple le backend MyFermentLab s'il est compromis) appelle directement `http://<IP-pod>:8080/api/prise`. Depuis le réseau local, l'IP du pod n'est normalement pas routée, donc le risque est surtout interne au cluster.
+- **Justification à corriger :** celle du Dockerfile est trompeuse. La sonde peut passer par nginx.
+- **Correction :**
+  - Mettre `PONT_ADRESSE=127.0.0.1`.
+  - Remplacer les sondes du conteneur `pont` par `httpGet: {path: /api/sante, port: http}` (nginx → boucle locale → pont), et supprimer `containerPort: 8080`.
+  - À défaut, ajouter une NetworkPolicy n'autorisant que le port 80 vers ce pod.
+
+**M2. Le jeton circule en clair**
+- **Où :** l'ingress utilise l'entrypoint `web` (HTTP), et le NodePort 30090 est aussi en HTTP.
+- **Scénario :** un objet connecté compromis sur le même Wi-Fi fait de l'usurpation ARP et capture `Authorization: Bearer …`. Il obtient alors un contrôle permanent des prises.
+- **Correction :**
+  - Passer en TLS (`websecure` avec un certificat local).
+  - Ou, au minimum, faire tourner le jeton régulièrement et accepter le risque en le documentant.
+
+**M3. Exigences pour le futur code du dashboard (modèle de menace 5)**
+
+Le pont lui-même n'allume jamais rien seul : aucun démarrage actif, aucun rejeu, aucune boucle, et les services `turn_on`/`turn_off` sont explicites et idempotents, sans `toggle`. C'est correct.
+
+En revanche, la maquette contient trois chemins qui deviendraient des allumages sans clic si on les branche tels quels :
+- **Le thermostat simulé de `tick()` (l. 671-673)** passe `d.on = true` pour les prises en mode `'auto'` (o1 à o3 dans les données initiales), à partir de températures **simulées** par `model()`. Branché sur `/api/prise`, il allumerait des chauffages réels toutes les 3 s, depuis chaque onglet ouvert, et chaque onglet agirait en parallèle.
+- **`toggle-plug` fait `d.on = !d.on`** sur un état qui peut être périmé, restauré depuis `localStorage`. Envoyer `allume: d.on` après cette inversion peut allumer une prise que l'utilisateur croyait éteindre.
+- **Une « resynchronisation » au chargement** qui pousserait `S.devices[].on` (restauré de `localStorage`) vers le pont rallumerait les prises après chaque rechargement.
+
+Les exigences :
+- Aucun `POST` en dehors du gestionnaire de clic.
+- `allume` doit être calculé à partir du dernier état **réel** reçu de `/api/etat`.
+- Le bouton est désactivé si l'état réel est inconnu.
+- Home Assistant est la seule source de vérité : `GET` au démarrage, jamais de `POST`.
+- Le mode `'auto'` est neutralisé pour toute prise réelle.
+
+### MINEUR
+
+- **Échappement (menace 3) : correct.** `esc()` (l. 523) couvre `& < > " '`, donc aussi les attributs. Il faudra l'appliquer à `friendly_name` et à `unite`, qui viennent de Home Assistant. `data-id="${d.id}"` n'est pas échappé mais reste interne.
+- **Aucune CSP.** Ajouter côté nginx `Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:`. C'est une limite partielle : cela bloque `fetch` vers une autre origine en cas de XSS, pas la navigation.
+- **Pas de limite de débit sur les 401.** C'est acceptable avec un jeton aléatoire de 32 caractères ou plus.
+- **Nom de l'exception renvoyé dans les 502** (`HTTPError`, `URLError`). La fuite est mineure, mais on ne distingue pas « jeton Home Assistant révoqué » (401 amont) de « Home Assistant éteint ». Il vaudrait mieux renvoyer `{"amont": 401}` ou `"timeout"`.
+- **Tag introuvable.** `kustomization.yaml` pointe `newTag: scada-pont-latest`, que la CI ne publie jamais (elle publie `scada-pont-<sha>` et `latest`). Le pod reste en `ImagePullBackOff` jusqu'au premier passage de la CI. C'est sans danger grâce à `maxUnavailable: 0`, mais cela induit en erreur.
+
+---
+
+## 2. Robustesse
+
+**Home Assistant éteint**
+- `URLError` au bout de 8 s au plus → 502. Pas de cache négatif : chaque requête de chaque onglet refait l'attente de 8 s.
+- C'est tolérable, mais il est préférable de garder une erreur en cache pendant environ 5 s.
+
+**Home Assistant lent**
+- `timeout=8` s'applique à **chaque opération de socket**, pas au total. Une réponse qui arrive au goutte-à-goutte peut bloquer un thread sans limite.
+- `ThreadingHTTPServer` crée des threads sans plafond. L'accès direct est possible tant que M1 n'est pas corrigé, avec la limite de 64 Mi : cela mène à un OOMKill.
+- Pire, `BaseHTTPRequestHandler.timeout = None` : un client direct qui annonce `Content-Length: 4000` puis n'envoie rien bloque `rfile.read` indéfiniment.
+- **Correction :** `timeout = 10` sur `Handler`, et un sémaphore limitant les appels à Home Assistant à 4 en parallèle. nginx protège le chemin normal, puisqu'il met les corps en tampon.
+
+**Valeurs non numériques**
+- `"unknown"`, `"unavailable"` et `"abc"` donnent `valeur: null` et `disponible: false` : correct.
+- **Mais** `"nan"`, `"inf"` et `"-inf"` passent `float()`, puis `json.dumps` produit `NaN` ou `Infinity`, qui ne sont pas du JSON valide. `JSON.parse` échoue alors dans le navigateur, et c'est **tout l'état** qui tombe, pas une seule sonde. Home Assistant peut réellement renvoyer `nan` pour certains capteurs.
+- **Correction :** dans `nombre()`, renvoyer `v if math.isfinite(v) else None`, et appeler `json.dumps(..., allow_nan=False)`.
+
+**Données inattendues**
+- `attributes` non-dict (par exemple une liste) → `.get` lève `AttributeError` → 502 pour tout l'état. Il faut un `isinstance(attrs, dict)`.
+- `friendly_name` ou `unit_of_measurement` non-chaîne → à forcer avec `str()`.
+- `/api/states` renvoie un dict au lieu d'une liste → toutes les entités passent en « inconnu » avec `ok: true`. Ce n'est pas faux, mais c'est silencieux.
+
+**Entité disparue**
+- En lecture : `disponible: false`, correct.
+- En commande : Home Assistant répond 200 à `turn_on`, puis `GET /api/states/<e>` renvoie 404, d'où un 502. C'est correct, mais le message est trompeur (« injoignable »).
+
+**État faux renvoyé à l'interface**
+- `commander()` relit l'état **immédiatement** après le `POST`. Avec une multiprise Tuya, Home Assistant renvoie souvent encore l'ancien état, et l'interface affiche « off » juste après un « on » réussi.
+- Il y a aussi une course : un `/api/etat` concurrent, lancé juste avant le `POST`, peut remettre l'ancien état en cache pour 2 s après l'invalidation.
+- **Correction :** relire jusqu'à 3 fois sur environ 2 s jusqu'à ce que l'état relu corresponde à la commande, puis invalider le cache **après** la commande.
+- Si le `POST` expire alors que Home Assistant l'a exécuté, on obtient un 502 avec une prise basculée. L'idempotence de `turn_on`/`turn_off` rend la nouvelle tentative sûre, mais l'interface doit relire `/api/etat` après tout 502.
+
+**Mémoire**
+- Aucune fuite : une seule entrée de cache. Le seul risque est le nombre de threads (voir « Home Assistant lent »).
+
+**Redémarrages et 2 réplicas**
+- Le pont est sans état et nginx ne rejoue pas les `POST` (`proxy_next_upstream` ne rejoue pas les méthodes non idempotentes). C'est correct.
+
+---
+
+## 3. Vérifications à exécuter
+
+Préparation : `J=<PONT_JETON>`, `N=<IP d'un nœud>`, `E=switch.smart_switch_25021462413795540601c4e7ae132658_outlet_4`. Toutes les commandes envoient `allume: false`, donc sans risque.
+
+**1. Le jeton est-il vraiment exigé ? (B1 et B2)** Si le code est 200, le pont est ouvert à tout le réseau local et au CSRF.
+```
+curl -s -o /dev/null -w '%{http_code}\n' -X POST "http://$N:30090/api/prise" \
+  -H 'Content-Type: text/plain' --data "{\"entite\":\"$E\",\"allume\":false}"
+```
+Attendu : `401`. Complément :
+```
+kubectl -n scada-opus logs deploy/scada-opus -c pont | grep authentification
+```
+Attendu : `jeton partagé`, et non `AUCUNE`.
+
+**2. Le CSRF « simple » est-il refusé même avec le jeton ?** Aujourd'hui, la réponse sera 200 ; après correction, elle doit être 415.
+```
+curl -s -w '\n%{http_code}\n' -X POST "http://hakko.myfermentlab/api/prise" \
+  -H "Authorization: Bearer $J" -H 'Content-Type: text/plain' \
+  -H 'Origin: http://evil.example' --data "{\"entite\":\"$E\",\"allume\":false}"
+```
+
+**3. Le Host est-il contrôlé (DNS rebinding) ?** Aujourd'hui 200 ; après correction, 421 ou connexion fermée.
+```
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: rebind.attacker.example' \
+  -H "Authorization: Bearer $J" "http://$N:30090/api/etat"
+```
+
+**4. Peut-on contourner nginx depuis un autre pod ? (M1)** Aujourd'hui 401 ; après correction, `connection refused`.
+```
+IP=$(kubectl -n scada-opus get pod -l app=scada-opus -o jsonpath='{.items[0].status.podIP}')
+kubectl run t --rm -i --restart=Never --image=curlimages/curl -- \
+  curl -s -m 3 -w '%{http_code}\n' "http://$IP:8080/api/etat"
+```
+
+**5. L'état relu est-il juste après une commande ?** Comparer le champ `etat` de la réponse du `POST` avec `/api/etat` 3 s plus tard, sur une prise allumée à la main dans Home Assistant.
+```
+curl -s -X POST "http://hakko.myfermentlab/api/prise" -H "Authorization: Bearer $J" \
+  -H 'Content-Type: application/json' --data "{\"entite\":\"$E\",\"allume\":false}"; sleep 3; \
+curl -s -H "Authorization: Bearer $J" "http://hakko.myfermentlab/api/etat" | grep -o "\"$E\"[^}]*"
+```
+
+---
+
+## 4. Verdict
+
+On peut laisser le pont en service sur un réseau domestique **uniquement après** trois corrections : le jeton obligatoire en mode fermé (B1, qui neutralise aussi B2), l'écoute sur 127.0.0.1 (M1) et le filtrage de NaN. En revanche, le dashboard ne doit pas être branché sur `/api/prise` tant que le thermostat simulé de `tick()` et l'inversion locale de `toggle-plug` n'ont pas été neutralisés pour les prises réelles (M3), puisque le code navigateur annoncé n'existe pas encore dans le fichier.
+
+--- fin de revue (code 0) ---

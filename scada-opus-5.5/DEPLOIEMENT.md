@@ -42,7 +42,7 @@ scada-redesign) : l'hôte retenu ici est **`hakko.myfermentlab`**.
 | Fichier | Rôle |
 |---|---|
 | `namespace.yaml` | namespace `scada-opus` (isolé du `default` et de `manga`) |
-| `deployment.yaml` | 2 réplicas nginx, sondes `/healthz`, rolling update sans coupure (`maxUnavailable: 0`) |
+| `deployment.yaml` | 2 réplicas nginx (sondes `/healthz`, rolling update sans coupure) + le conteneur `pont` (sidecar, voir plus bas) |
 | `service.yaml` | NodePort **30090** (30080/30081 = manga, 30087 = fermentation-v3) |
 | `ingress.yaml` | Traefik, hôte `hakko.myfermentlab` |
 | `kustomization.yaml` | la référence appliquée par Argo ; **le tag d'image y est écrit par la CI** |
@@ -63,6 +63,75 @@ kubectl -n scada-opus get pods -w
 ArgoCD *poll* le dépôt toutes les 3 minutes environ : compter jusqu'à 3 minutes entre
 le commit de mise à jour du tag et le déploiement (immédiat si on clique sur *Refresh*
 dans l'interface ArgoCD, ou via `kubectl -n argocd annotate app scada-opus-5.5 argocd.argoproj.io/refresh=hard --overwrite`).
+
+## Le pont Home Assistant — les boutons pilotent vraiment les prises
+
+La page « Appareils » commande les 5 prises de la multiprise pilotée par Home Assistant. Un
+navigateur ne peut pas appeler l'API de Home Assistant directement : elle n'envoie **aucun**
+en-tête CORS (mesuré), et le jeton ne doit pas se retrouver dans la page — quiconque l'ouvre
+pourrait alors piloter la maison. Le pont résout les deux :
+
+```
+   navigateur ──HTTP──► nginx (pod scada-opus) ──/api/──► pont Python ──jeton──► Home Assistant
+     même origine, aucun CORS                          127.0.0.1:8080        192.168.1.51:8123
+```
+
+- `pont` tourne dans **le même pod** que nginx (conteneur *sidecar*) : même espace réseau, donc
+  `127.0.0.1:8080` — et **le port du pont n'est pas publié** par le Service (seul le port 80 l'est).
+- Le dashboard appelle `/api/etat` et `/api/prise` **sur sa propre origine** : ni CORS, ni jeton
+  côté client, et rien de nouveau à autoriser dans Home Assistant.
+- Le jeton vit dans le secret `scada-opus/pont-ha`, monté dans le pod, et n'est jamais journalisé.
+
+| Route | Rôle |
+|---|---|
+| `GET /api/sante` | renvoie `ok`, **sans** authentification : c'est la sonde de Kubernetes |
+| `GET /api/etat` | état des 5 prises + 4 sondes (valeur, unité, batterie, disponibilité) |
+| `POST /api/prise` | `{"entite": "switch.…_outlet_N", "allume": true}` → commande puis **relit** l'état réel |
+
+Le pont ne peut commander **que** les prises de la liste blanche `PONT_PRISES` : entité hors
+liste → 403, corps invalide → 400, requête sans jeton → 401. Le nom du service appelé chez Home
+Assistant (`switch.turn_on` / `switch.turn_off`) est choisi par le pont, jamais par l'appelant.
+
+### Créer le secret (une fois, avant le premier déploiement du pont)
+
+Un jeton ne se commite pas : le secret est créé hors GitOps, sur le serveur.
+
+```bash
+TOKEN=$(kubectl -n default get secret fermentation-v3-ha -o jsonpath='{.data.HASS_TOKEN}' | base64 -d)
+JETON=$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | cut -c1-24)
+kubectl -n scada-opus create secret generic pont-ha \
+  --from-literal=HASS_TOKEN="$TOKEN" --from-literal=PONT_JETON="$JETON" \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Sans ce secret le pod ne démarre pas (`secretKeyRef` non optionnel) : **créer le secret avant de
+pousser** le déploiement du pont.
+
+**Le jeton du pont** se lit sur le serveur. Il se saisit une seule fois par navigateur, la page
+le retient ensuite :
+
+```bash
+kubectl -n scada-opus get secret pont-ha -o jsonpath="{.data.PONT_JETON}" | base64 -d; echo
+```
+
+Pour ne plus le demander : recréer le secret **sans** la clé `PONT_JETON`. Le pont n'exigera
+alors plus d'authentification — à éviter, toute machine du réseau pourrait commander les prises.
+
+### Ce que fait le dashboard quand le pont n'est pas là
+
+| Situation | Comportement |
+|---|---|
+| Page ouverte directement (`file://`) | maquette pure : aucune requête réseau, aucune commande — le fichier reste utilisable seul |
+| Servie par le cluster, pont injoignable | le clic affiche « Pont Home Assistant injoignable » et **ne simule rien** : on n'affiche jamais une prise allumée qui ne l'est pas |
+| Pont joignable | la démonstration de chauffe se tait sur les appareils réels : Home Assistant fait foi, et le dashboard **n'allume rien de lui-même** — seuls tes clics commandent |
+
+### Vérifier après déploiement
+
+```bash
+curl -s  http://192.168.1.51:30090/api/sante; echo                                  # ok
+curl -s -o /dev/null -w '%{http_code}\n' http://192.168.1.51:30090/api/etat          # 401 sans jeton
+cd scada-opus-5.5/_verify && JETON_PONT="$(…)" node verif-pont-bout-en-bout.mjs       # clique pour de vrai : allume, vérifie, éteint
+```
 
 ## Revenir en arrière
 

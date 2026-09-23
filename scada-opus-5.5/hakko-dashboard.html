@@ -659,6 +659,8 @@ function currentHum(b){
 function tick(){
   const t = now();
   for (const d of S.devices){
+    // Appareil relié au pont : c'est Home Assistant qui fait foi, la simulation se tait.
+    if (PONT.actif && d.eid) continue;
     if (!d.online) continue;
     d.seen = t;
     const b = S.batches.find(x => x.id === d.batch && x.status === 'active');
@@ -666,6 +668,7 @@ function tick(){
     if (d.kind === 'hum') { const m = b && model(b, t).hum; d.value = m != null ? m + (Math.random() - .5) * .4 : 64 + (Math.random() - .5); }
   }
   for (const d of S.devices){
+    if (PONT.actif && d.eid) continue;
     if (d.kind !== 'plug' || !d.online) continue;
     const b = S.batches.find(x => x.id === d.batch && x.status === 'active');
     if (d.mode === 'auto' && b){
@@ -942,13 +945,109 @@ function refreshLive(){
   const jl = document.getElementById('journal-list');
   if (jl){ const b = S.batches.find(x => x.id === jl.dataset.b); const h = journalHTML(b); if (jl._h !== h){ jl.innerHTML = h; jl._h = h; } }
   const feed = document.getElementById('feed'); if (feed){ const h = feedHTML(S.events.slice(0, 30)); if (feed._h !== h){ const st = feed.scrollTop; feed.innerHTML = feed._h = h; feed.scrollTop = st; } }
-  const st = new Date().toLocaleTimeString('fr-FR');
+  const st = (PONT.actif && PONT.dernier ? PONT.dernier : new Date()).toLocaleTimeString('fr-FR');
   document.getElementById('syncTxt').textContent = 'Dernière synchro ' + st;
   document.getElementById('syncTop').textContent = 'En direct, ' + st;
 }
 function stateBadge(b, liveAttr){
   const [c, t] = status(b);
   return `<span class="badge ${c}" ${liveAttr && b.status === 'active' ? `data-state="${b.id}"` : ''}><span class="dot"></span>${t}</span>`;
+}
+
+/* ---------- Pont Home Assistant (même origine : /api/) ----------
+   Le dashboard est servi par le cluster : nginx y expose /api/, qui parle à Home
+   Assistant avec un jeton gardé dans le pod. Ouvert directement en local (file://)
+   ou sans pont, rien ne répond : le dashboard garde alors exactement son
+   comportement de maquette, valeurs simulées comprises. Aucune prise n'est
+   commandée sans un clic explicite — le pont ne fait pas de régulation. */
+const PONT = { actif: false, disponible: null, dernier: null, jeton: null };
+const PONT_CLE = 'hakko-pont-jeton';
+// Page ouverte directement (file://) : maquette pure, on ne tente aucune requête.
+// Servie par le cluster, en revanche, l'état réel fait foi — et si le pont ne
+// répond pas, le clic le dit au lieu de simuler une commande.
+const PONT_LOCAL = location.protocol === 'file:';
+const PONT_AIDE = 'Jeton du pont Home Assistant. Sur le serveur :\n'
+  + 'kubectl -n scada-opus get secret pont-ha -o jsonpath="{.data.PONT_JETON}" | base64 -d';
+function pontJeton(reinit){
+  if (reinit){ try { localStorage.removeItem(PONT_CLE); } catch(e){} PONT.jeton = ''; }
+  if (PONT.jeton == null){ try { PONT.jeton = localStorage.getItem(PONT_CLE) || ''; } catch(e){ PONT.jeton = ''; } }
+  return PONT.jeton;
+}
+function pontDisponible(){ return PONT.disponible !== false; }
+async function pontRequete(chemin, corps){
+  const h = { 'Accept': 'application/json' };
+  const j = pontJeton(); if (j) h['Authorization'] = 'Bearer ' + j;
+  if (corps) h['Content-Type'] = 'application/json';
+  return fetch('api/' + chemin, {
+    method: corps ? 'POST' : 'GET', headers: h, cache: 'no-store',
+    body: corps ? JSON.stringify(corps) : undefined,
+  });
+}
+function pontApplique(reponse){
+  let bascule = false;
+  (reponse.appareils || []).forEach(a => {
+    const d = S.devices.find(x => x.eid === a.entite); if (!d) return;
+    const enLigne = a.disponible !== false;
+    if (d.online !== enLigne){ d.online = enLigne; bascule = true; }
+    if (d.kind === 'plug') d.on = (a.etat === 'on');
+    else if (a.valeur != null) d.value = a.valeur;
+    if (a.batterie != null) d.battery = Math.round(a.batterie);
+  });
+  PONT.actif = true; PONT.disponible = true;
+  PONT.dernier = new Date((reponse.horodatage || 0) * 1000 || Date.now());
+  return bascule;
+}
+async function pontSynchro(silencieux){
+  if (PONT_LOCAL) return false;
+  let r;
+  try { r = await pontRequete('etat'); }
+  catch(e){ PONT.actif = false; PONT.disponible = false; refreshLive(); return false; }
+  if (r.status === 401 || r.status === 403){
+    PONT.actif = false; PONT.disponible = true;
+    if (silencieux) return false;
+    const saisi = prompt(PONT_AIDE);
+    if (!saisi || !saisi.trim()) return false;
+    pontJeton(true); PONT.jeton = saisi.trim();
+    try { localStorage.setItem(PONT_CLE, PONT.jeton); } catch(e){}
+    return pontSynchro(true);
+  }
+  if (!r.ok){ PONT.actif = false; PONT.disponible = true; refreshLive(); return false; }
+  let d = null; try { d = await r.json(); } catch(e){ return false; }
+  if (!d || d.ok === false){ PONT.actif = false; return false; }
+  const bascule = pontApplique(d);
+  save();
+  if (bascule || !silencieux) render(); else refreshLive();
+  return true;
+}
+async function pontBascule(d){
+  // On repart de l'état réel juste avant de commander : l'état affiché peut dater
+  // (page restée ouverte, prise changée ailleurs), et inverser une valeur périmée
+  // enverrait la commande opposée à celle voulue.
+  await pontSynchro(true);
+  const voulu = !d.on;
+  let r;
+  try { r = await pontRequete('prise', { entite: d.eid, allume: voulu }); }
+  catch(e){
+    alert('Pont Home Assistant injoignable : « ' + d.name + ' » n\'a pas été commandée.');
+    return true;
+  }
+  if (r.status === 401 || r.status === 403){
+    if (!await pontSynchro(false)) return false;
+    try { r = await pontRequete('prise', { entite: d.eid, allume: voulu }); }
+    catch(e){ return false; }
+  }
+  let j = null; try { j = await r.json(); } catch(e){}
+  if (!r.ok || !j || j.ok === false){
+    logEvent('alert', d.name + ' : commande refusée par le pont (HTTP ' + r.status + ')', d.batch || null);
+    save(); render(); return true;
+  }
+  d.on = (j.etat === 'on'); d.mode = 'manuel';
+  logEvent(d.on ? 'heat-on' : 'heat-off',
+    d.name + ' : ' + (d.on ? 'activation' : 'désactivation') + ' de la prise depuis le dashboard',
+    d.batch || null);
+  PONT.dernier = new Date();
+  save(); render(); pontSynchro(true);
+  return true;
 }
 
 /* ---------- Router ---------- */
@@ -1505,7 +1604,13 @@ document.addEventListener('click', e => {
   }
   if (act === 'add-dev') return openAddDevice();
   if (act === 'close-dlg') return document.getElementById('dlg').close();
-  if (act === 'toggle-plug'){ const d = S.devices.find(x => x.id === id); if (!d.online) return; d.on = !d.on; d.mode = 'manuel'; const b = S.batches.find(x => x.id === d.batch && x.status === 'active'); logHeat(d, b, b ? currentTemp(b) : null, true); tick(); save(); render(); return; }
+  if (act === 'toggle-plug'){
+    const p = S.devices.find(x => x.id === id); if (!p.online) return;
+    // Prise reliée à Home Assistant : la commande part vers le pont, l'état affiché
+    // est celui que Home Assistant renvoie. Sans pont joignable (page ouverte en
+    // local), on retombe sur le comportement de la maquette.
+    if (p.eid && !PONT_LOCAL){ pontBascule(p); return; }
+    const d = p; d.on = !d.on; d.mode = 'manuel'; const b = S.batches.find(x => x.id === d.batch && x.status === 'active'); logHeat(d, b, b ? currentTemp(b) : null, true); tick(); save(); render(); return; }
   if (act === 'rm-dev'){ const d = S.devices.find(x => x.id === id); if (!confirm(`Retirer « ${d.name} » ?`)) return; S.devices = S.devices.filter(x => x.id !== id); save(); render(); return; }
 });
 document.addEventListener('change', e => {
@@ -1579,7 +1684,9 @@ applyTheme();
 tick();
 render();
 refreshLive();
-setInterval(() => { tick(); save(); refreshLive(); }, 3000);
+pontSynchro(true);   // si un pont répond, les appareils réels prennent la main
+let ticPont = 0;
+setInterval(() => { tick(); save(); refreshLive(); if (++ticPont % 5 === 0) pontSynchro(true); }, 3000);
 
 </script>
 </body>

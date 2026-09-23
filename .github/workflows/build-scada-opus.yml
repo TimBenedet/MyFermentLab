@@ -1,8 +1,8 @@
 name: Build & Push — Scada-opus-5.5
 
 # Chaîne GitOps complète :
-#   1. push sur scada-opus-5.5/  →  2. l'image est construite et publiée sur GHCR
-#   →  3. le tag de l'image est écrit dans scada-opus-5.5/k8s/kustomization.yaml
+#   1. push sur scada-opus-5.5/  →  2. les DEUX images (site + pont) sont construites et publiées sur GHCR
+#   →  3. les tags des deux images sont écrits dans scada-opus-5.5/k8s/kustomization.yaml
 #   →  4. ArgoCD voit ce nouveau commit et déploie.
 # Le commit de l'étape 3 ne relance pas la CI (négation de chemin + [skip ci]).
 #
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write    # pour committer la mise à jour du tag (GitOps write-back)
-      packages: write    # pour publier l'image sur GHCR
+      packages: write    # pour publier les images sur GHCR
     # Deux pushes rapprochés ne doivent pas se marcher dessus : on fait la queue.
     concurrency:
       group: scada-opus-deploy
@@ -40,21 +40,26 @@ jobs:
       - name: Récupérer le code
         uses: actions/checkout@v4
 
-      - name: Calculer le nom d'image et le tag
+      - name: Calculer les noms d'image et les tags
         id: meta
         run: |
           set -euo pipefail
           # GHCR refuse les majuscules dans le nom du dépôt : « TimBenedet » → « timbenedet ».
-          # (docker/metadata-action le faisait pour build-frontend.yml ; ici la commande est
-          # écrite à la main, donc la conversion est explicite.)
+          # (docker/metadata-action le faisait pour build-frontend.yml ; ici les commandes sont
+          # écrites à la main, donc la conversion est explicite.)
           owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+          sha=$(git rev-parse --short=7 HEAD)
+          # Image du site (nginx) et image du pont (service Python Home Assistant) : même révision,
+          # préfixes de tag distincts pour qu'on lise le rôle depuis le tag seul.
           echo "image=${owner}/myfermentlab-scada" >> "$GITHUB_OUTPUT"
-          echo "tag=scada-opus-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+          echo "tag=scada-opus-${sha}" >> "$GITHUB_OUTPUT"
+          echo "pont-image=${owner}/myfermentlab-pont" >> "$GITHUB_OUTPUT"
+          echo "pont-tag=scada-pont-${sha}" >> "$GITHUB_OUTPUT"
 
       - name: Se connecter à GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login "$REGISTRY" -u "${{ github.actor }}" --password-stdin
 
-      - name: Construire l'image
+      - name: Construire l'image du site
         working-directory: scada-opus-5.5
         run: |
           set -euo pipefail
@@ -67,46 +72,161 @@ jobs:
             --tag "$IMG:latest" \
             .
 
-      - name: Publier l'image sur GHCR
+      - name: Construire l'image du pont
+        working-directory: scada-opus-5.5/pont
+        run: |
+          set -euo pipefail
+          IMG="$REGISTRY/${{ steps.meta.outputs.pont-image }}"
+          docker build \
+            --progress=plain \
+            --file Dockerfile \
+            --tag "$IMG:${{ steps.meta.outputs.pont-tag }}" \
+            --tag "$IMG:latest" \
+            .
+
+      - name: Publier l'image du site sur GHCR
         run: |
           set -euo pipefail
           IMG="$REGISTRY/${{ steps.meta.outputs.image }}"
           docker push "$IMG:${{ steps.meta.outputs.tag }}"
           docker push "$IMG:latest"
 
-      - name: Épingler le tag dans le manifeste (déclenche ArgoCD)
-        if: github.ref == 'refs/heads/Scada-opus-5.5'
-        env:
-          TAG: ${{ steps.meta.outputs.tag }}
+      - name: Publier l'image du pont sur GHCR
         run: |
           set -euo pipefail
-          FILE=scada-opus-5.5/k8s/kustomization.yaml
+          IMG="$REGISTRY/${{ steps.meta.outputs.pont-image }}"
+          docker push "$IMG:${{ steps.meta.outputs.pont-tag }}"
+          docker push "$IMG:latest"
 
-          if grep -qE "^\s*newTag: $TAG\s*$" "$FILE"; then
-            echo "::notice::Le manifeste référence déjà $TAG, rien à faire."
-            exit 0
-          fi
-          if ! grep -qE "^\s*newTag:" "$FILE"; then
-            echo "::error::$FILE ne contient aucune ligne newTag à mettre à jour."
-            exit 1
-          fi
+      - name: Épingler les tags des deux images dans le manifeste (déclenche ArgoCD)
+        if: github.ref == 'refs/heads/Scada-opus-5.5'
+        env:
+          FILE: scada-opus-5.5/k8s/kustomization.yaml
+          SITE_IMAGE: ${{ steps.meta.outputs.image }}
+          SITE_TAG: ${{ steps.meta.outputs.tag }}
+          PONT_IMAGE: ${{ steps.meta.outputs.pont-image }}
+          PONT_TAG: ${{ steps.meta.outputs.pont-tag }}
+        run: |
+          set -euo pipefail
 
-          sed -i -E "s|^(\s*newTag: ).*$|\1$TAG|" "$FILE"
+          # Édition CONSCIENTE DU NOM D'IMAGE : un « sed » global sur les lignes newTag
+          # écraserait les deux entrées avec le même tag. Le script ne met à jour que le
+          # newTag de l'image dont le « name » correspond, préserve commentaires et fins de
+          # ligne, ne réécrit le fichier que s'il change (idempotence) et échoue explicitement
+          # si un nom d'image est absent du manifeste.
+          python3 - "$FILE" "${REGISTRY}/${SITE_IMAGE}=${SITE_TAG}" "${REGISTRY}/${PONT_IMAGE}=${PONT_TAG}" <<'PY'
+          import re
+          import sys
+
+          ITEM_RE = re.compile(r'^(\s*)-\s')
+          NAME_RE = re.compile(r'^\s*(?:-\s+)?name:\s*(.+?)\s*$')
+          TAG_RE = re.compile(r'^(\s*newTag:)(\s+)(\S+)(.*)$')
+
+
+          def clean(value):
+              return value.strip().strip('"').strip("'")
+
+
+          def main():
+              if len(sys.argv) < 3:
+                  print('::error::usage : pin_tag.py FICHIER nom=tag [nom=tag ...]', file=sys.stderr)
+                  return 2
+
+              path = sys.argv[1]
+              wanted = []
+              for arg in sys.argv[2:]:
+                  name, sep, tag = arg.partition('=')
+                  if not sep or not name or not tag:
+                      print('::error::argument invalide (attendu nom=tag) : %s' % arg, file=sys.stderr)
+                      return 2
+                  wanted.append((name, tag))
+
+              # newline='' : on garde les fins de ligne telles quelles (LF sur le runner).
+              with open(path, encoding='utf-8', newline='') as handle:
+                  lines = handle.readlines()
+
+              # Découpage de la liste `images:` en entrées : une entrée va du « - » de tête
+              # jusqu'au prochain « - » de même indentation (ou la fin du fichier).
+              items = []
+              index = 0
+              while index < len(lines):
+                  start = ITEM_RE.match(lines[index])
+                  if not start:
+                      index += 1
+                      continue
+                  end = index + 1
+                  while end < len(lines):
+                      nxt = ITEM_RE.match(lines[end])
+                      if nxt and len(nxt.group(1)) <= len(start.group(1)):
+                          break
+                      end += 1
+                  items.append((index, end))
+                  index = end
+
+              changed = False
+              for name, tag in wanted:
+                  target = None
+                  for start, end in items:
+                      if any(NAME_RE.match(lines[pos]) and
+                             clean(NAME_RE.match(lines[pos]).group(1)) == name
+                             for pos in range(start, end)):
+                          target = (start, end)
+                          break
+                  if target is None:
+                      print('::error::%s : aucune entrée d\'image nommée « %s ».' % (path, name),
+                            file=sys.stderr)
+                      return 1
+
+                  start, end = target
+                  tag_line = None
+                  for pos in range(start, end):
+                      if TAG_RE.match(lines[pos]):
+                          tag_line = pos
+                          break
+                  if tag_line is None:
+                      print('::error::%s : l\'entrée « %s » n\'a pas de ligne newTag.' % (path, name),
+                            file=sys.stderr)
+                      return 1
+
+                  current = TAG_RE.match(lines[tag_line]).group(3)
+                  if current == tag:
+                      print('%s : déjà épinglé sur %s (inchangé).' % (name, tag))
+                      continue
+
+                  lines[tag_line] = TAG_RE.sub(
+                      lambda m: '%s%s%s%s' % (m.group(1), m.group(2), tag, m.group(4)),
+                      lines[tag_line], count=1)
+                  print('%s : %s -> %s' % (name, current, tag))
+                  changed = True
+
+              if changed:
+                  with open(path, 'w', encoding='utf-8', newline='') as handle:
+                      handle.writelines(lines)
+
+              return 0
+
+
+          if __name__ == '__main__':
+              sys.exit(main())
+          PY
+
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$FILE"
 
+          # Idempotence : si les deux tags sont déjà ceux attendus, le script n'a rien
+          # réécrit et il n'y a donc rien à committer.
           if git diff --cached --quiet; then
-            echo "::notice::Aucune modification du manifeste."
+            echo "::notice::Aucune modification du manifeste : les deux tags sont déjà épinglés."
             exit 0
           fi
 
-          git commit -m "chore(scada): déploie l'image $TAG [skip ci]"
+          git commit -m "chore(scada): déploie les images $SITE_TAG et $PONT_TAG [skip ci]"
           # La CI écrit sur la même branche que le poste local : on se remet à jour avant
           # de pousser, sinon un push local concurrent fait échouer le job.
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
-          echo "::notice::Manifeste mis à jour vers $TAG — ArgoCD va synchroniser."
+          echo "::notice::Manifeste mis à jour ($SITE_TAG, $PONT_TAG) — ArgoCD va synchroniser."
 
       - name: Résumé
         run: |
@@ -115,7 +235,8 @@ jobs:
             echo ""
             echo "| | |"
             echo "|---|---|"
-            echo "| Image | \`$REGISTRY/${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}\` |"
+            echo "| Image site | \`$REGISTRY/${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}\` |"
+            echo "| Image pont | \`$REGISTRY/${{ steps.meta.outputs.pont-image }}:${{ steps.meta.outputs.pont-tag }}\` |"
             echo "| Commit | \`${{ github.sha }}\` |"
             echo "| ArgoCD | application \`scada-opus-5.5\` → namespace \`scada-opus\` |"
             echo "| Accès | http://192.168.1.51:30090/ · http://hakko.myfermentlab/ |"
@@ -126,4 +247,5 @@ jobs:
         run: |
           echo "::error::Étape en échec. Pour reproduire en local :"
           echo "  cd scada-opus-5.5 && docker build --file Dockerfile --build-arg VERSION=dev -t test ."
+          echo "  cd scada-opus-5.5/pont && docker build --file Dockerfile -t test-pont ."
           docker images | head -5 || true

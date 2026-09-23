@@ -58,3 +58,66 @@ spec:
             allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
+        # Le « pont » : seul composant qui connaît le jeton de Home Assistant.
+        # Il n'est pas exposé par le Service (seul le port 80 de nginx l'est) :
+        # on n'y accède que par nginx, donc sur /api/ et sur la même origine.
+        - name: pont
+          # Tag réécrit automatiquement par la CI, comme celui du site.
+          image: ghcr.io/timbenedet/myfermentlab-pont:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HASS_URL
+              value: http://192.168.1.51:8123
+            # Le secret est créé hors GitOps (voir DEPLOIEMENT.md) : un jeton ne se
+            # commite pas. Créé avant le premier déploiement du pont, sinon le pod
+            # ne démarre pas (secretKeyRef non optionnel).
+            - name: HASS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: pont-ha
+                  key: HASS_TOKEN
+            # Obligatoire (revue de sécurité) : le pont refuse de démarrer sans jeton,
+            # puisqu'il commande des prises physiques. La clé n'est donc pas optionnelle.
+            - name: PONT_JETON
+              valueFrom:
+                secretKeyRef:
+                  name: pont-ha
+                  key: PONT_JETON
+            # Liste blanche : le pont refuse toute commande hors de ces prises.
+            - name: PONT_PRISES
+              value: "switch.smart_switch_25021462413795540601c4e7ae132658_outlet_1,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_2,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_3,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_4,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_5"
+            - name: PONT_SONDES
+              value: "sensor.sonde_sonoff_1_temperature,sensor.sonde_sonoff_2_temperature,sensor.sonde_sonoff_3_temperature,sensor.humidity_1"
+            # Correspondance explicite mesure -> batterie : les entités de batterie
+            # n'ont pas de nom déductible (adresses Zigbee).
+            - name: PONT_BATTERIES
+              value: "sensor.sonde_sonoff_1_temperature=sensor.sonde_sonoff_1_battery,sensor.sonde_sonoff_2_temperature=sensor.0xa4c13804e325ffff_battery,sensor.sonde_sonoff_3_temperature=sensor.sonde_sonoff_3_battery,sensor.humidity_1=sensor.0x187a3efffe7aea6b_battery"
+          # Le pont écoute sur la boucle locale du pod : la sonde, qui vient du réseau
+          # du nœud, doit donc passer par nginx — ce qui vérifie du même coup le chemin
+          # réellement emprunté par la page.
+          readinessProbe:
+            httpGet:
+              path: /api/sante
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /api/sante
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 24Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
