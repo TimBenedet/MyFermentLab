@@ -24,7 +24,14 @@ await p.setViewport({ width: 1440, height: 1000 });
 await p.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
 const erreurs = [];
 p.on('pageerror', e => erreurs.push('pageerror: ' + e.message));
-p.on('console', m => { if (m.type() === 'error' && !/favicon/.test(m.text())) erreurs.push('console: ' + m.text()); });
+p.on('console', m => {
+  if (m.type() === 'error' && !/favicon|fonts\.(googleapis|gstatic)/.test(m.text())) erreurs.push('console: ' + m.text());
+});
+// Les polices du design viennent de Google : si le réseau ne les atteint pas, l'échec
+// n'a rien à voir avec le pont et ne doit pas être compté comme une erreur de la page.
+p.on('requestfailed', r => {
+  if (!/favicon|fonts\.(googleapis|gstatic)/.test(r.url())) erreurs.push('requête échouée: ' + r.url());
+});
 
 // La page demande le jeton une fois : on répond automatiquement par la valeur fournie.
 let demandeJeton = 0;
@@ -47,14 +54,16 @@ const etatPage = async () => p.evaluate((prise) => {
 
 try {
   console.log(`\n=== 1. le pont répond sur la même origine (${BASE}) ===`);
-  await p.goto(BASE + '/hakko-dashboard.html', { waitUntil: 'networkidle0' });
-  await new Promise(x => setTimeout(x, 1500));
+  // « networkidle0 » est inatteignable ici : la page interroge le pont toutes les 15 s
+  // et charge les polices du design depuis Internet.
+  await p.goto(BASE + '/hakko-dashboard.html', { waitUntil: 'domcontentloaded' });
+  await new Promise(x => setTimeout(x, 2500));
   const sante = await p.evaluate(async () => {
     const r = await fetch('api/sante', { cache: 'no-store' }); return r.status + ' ' + (await r.text()).trim();
   });
   controle('/api/sante', '200 ok', sante);
-  const sansJeton = await p.evaluate(async () => (await fetch('api/etat', { cache: 'no-store' })).status);
-  controle('/api/etat sans jeton refusé', 401, sansJeton);
+  // Le refus sans jeton (401) est vérifié par verif-pont.sh (contrôle 4) ; ici, toute
+  // erreur console doit donc signaler un vrai défaut, sans sonde volontaire qui la pollue.
 
   console.log('\n=== 2. page Appareils : états réels ===');
   await p.evaluate(() => { location.hash = '#/appareils'; });
@@ -94,7 +103,7 @@ try {
   controle('le jeton n\'est plus redemandé', 1, demandeJeton);
 
   console.log('\n=== 5. après rechargement, l\'état réel est conservé ===');
-  await p.reload({ waitUntil: 'networkidle0' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
   await p.evaluate(() => { location.hash = '#/appareils'; });
   await new Promise(x => setTimeout(x, 1800));
   controle(`outlet_${PRISE} toujours éteinte à l'écran`, 'off', await etatPage());

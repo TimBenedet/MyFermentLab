@@ -1038,7 +1038,11 @@ async function pontBascule(d){
   }
   let j = null; try { j = await r.json(); } catch(e){}
   if (!r.ok || !j || j.ok === false){
+    // Une commande refusée doit se voir tout de suite : l'utilisateur vient de
+    // cliquer sur une prise, il ne doit pas croire qu'elle a changé d'état.
     logEvent('alert', d.name + ' : commande refusée par le pont (HTTP ' + r.status + ')', d.batch || null);
+    alert('Commande refusée par le pont Home Assistant (HTTP ' + r.status + ').\n'
+      + "La prise « " + d.name + " » n'a pas changé d'état.");
     save(); render(); return true;
   }
   d.on = (j.etat === 'on'); d.mode = 'manuel';

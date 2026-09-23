@@ -46,6 +46,20 @@ def liste(valeur):
     return [x.strip() for x in (valeur or "").split(",") if x.strip()]
 
 
+def sans_port_defaut(hote, scheme):
+    """Retire le port par défaut (80 en http, 443 en https) d'un « hote[:port] ».
+
+    Le navigateur écrit « http://hote » (sans port) là où l'en-tête Host porte
+    parfois « hote:80 » : sans cette normalisation, une requête parfaitement
+    légitime serait refusée comme une origine étrangère.
+    """
+    h = (hote or "").strip()
+    defaut = "80" if scheme == "http" else "443"
+    if h.endswith(":" + defaut):
+        h = h[: -(len(defaut) + 1)]
+    return h
+
+
 class Config:
     def __init__(self):
         self.url = (os.environ.get("HASS_URL") or "").rstrip("/")
@@ -266,11 +280,14 @@ class Handler(BaseHTTPRequestHandler):
         connaître à l'avance l'adresse utilisée (IP:30090 ou nom d'hôte).
         """
         origine = self.headers.get("Origin")
-        if not origine or origine in ("null",):
+        if not origine or origine == "null":
             return True
-        hote = (origine.split("//", 1)[-1]).rstrip("/")
-        return hmac.compare_digest(hote.encode("utf-8"),
-                                   (self.headers.get("Host") or "").encode("utf-8"))
+        scheme = origine.split("://", 1)[0].lower()
+        # Le port par défaut s'omet des deux côtés : le navigateur écrit
+        # « http://hote » là où l'en-tête Host porte parfois « hote:80 ».
+        hote_origine = sans_port_defaut(origine.split("//", 1)[-1].rstrip("/"), scheme)
+        hote_appele = sans_port_defaut(self.headers.get("Host") or "", scheme)
+        return hmac.compare_digest(hote_origine.encode("utf-8"), hote_appele.encode("utf-8"))
 
     def journal(self, message):
         print("%s %s" % (time.strftime("%H:%M:%S"), message), flush=True)
