@@ -94,10 +94,12 @@ Une seule fois, dans cet ordre :
 1. **Premier build vert.** Le pipeline démarre tout seul au premier push qui touche
    `scada-opus-5.5/`. Vérifier que l'étape *Publier l'image sur GHCR* passe, puis que le
    commit `chore(scada): déploie l'image …` apparaît sur la branche.
-2. **Rendre le paquet public** (sinon le cluster reçoit un 401 au tirage) :
+2. **Paquet public.** Vérifié le 23/09 : les paquets publiés depuis ce dépôt public le sont
+   aussi — `myfermentlab-scada` se tire sans authentification, comme `myfermentlab-frontend`.
+   Si le réglage changeait un jour :
    `https://github.com/users/TimBenedet/packages/container/myfermentlab-scada/settings` →
-   *Change visibility* → **Public**. C'est le réglage déjà en place pour
-   `myfermentlab-frontend`.
+   *Change visibility* → **Public**. Sans cela, le cluster reçoit un 401 et reste en
+   `ImagePullBackOff`.
 3. **Appliquer l'Application ArgoCD**, une fois, à la main :
    ```bash
    kubectl apply -f scada-opus-5.5/argocd/application.yaml
@@ -116,3 +118,28 @@ malgré tout, c'est une **protection de branche ou un ruleset** qui refuse le pu
 règle le temps du premier passage). Le job devient rouge et prévient par courriel ;
 les images, elles, sont déjà publiées, donc le cluster reste simplement sur le tag
 précédent : rien ne casse.
+
+## La chaîne a été exercée de bout en bout
+
+Test réel du 23 septembre 2026, sans aucune intervention manuelle entre le push et le site à jour :
+
+| Étape | Constat mesuré |
+|---|---|
+| `git push` du commit `aa19100` (modification de `index.html`) | déclenche le workflow tout seul |
+| GitHub Actions (run `35840478416`) | vert : image `ghcr.io/timbenedet/myfermentlab-scada:scada-opus-aa19100` publiée |
+| écriture dans git | commit `1b591d2 chore(scada): déploie l'image scada-opus-aa19100 [skip ci]` — et **aucun** nouveau run déclenché |
+| ArgoCD | révision passée à `1b591d2`, rolling update terminé, application `Synced` / `Healthy` |
+| site | nouvelle page servie sur `:30090` **et** via `hakko.myfermentlab` ; dashboard inchangé (`sha256 477502b6…`) |
+
+Délai observé entre le `git push` et le site à jour : **environ deux minutes**, dont l'attente
+du cycle de réconciliation d'ArgoCD (~3 min au pire sans rafraîchissement forcé).
+
+## Ce qui n'est pas en place
+
+- **Pas de webhook ArgoCD** : le cluster est sur une IP privée, GitHub ne peut pas l'atteindre,
+  ArgoCD *poll* donc le dépôt toutes les ~3 minutes. Baisser `timeout.reconciliation` à `60s`
+  dans `argocd-cm` accélère **toutes** les applications du cluster.
+- **Pas d'alerte** si l'application passe en `Degraded` (le contrôleur de notifications ArgoCD
+  est pourtant installé dans le cluster).
+- Le tag est épinglé par un `sed` avec ancrage, plutôt que par `kustomize edit set image`
+  (kustomize n'est pas installé sur les runners GitHub).
