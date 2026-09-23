@@ -128,6 +128,33 @@ kubectl -n scada-opus get secret pont-ha -o jsonpath="{.data.PONT_JETON}" | base
 Pour ne plus le demander : recréer le secret **sans** la clé `PONT_JETON`. Le pont n'exigera
 alors plus d'authentification — à éviter, toute machine du réseau pourrait commander les prises.
 
+### Rotation du jeton Home Assistant
+
+Le jeton peut aussi venir d'un fichier, plutôt que du secret de `fermentation-v3`. Il doit vivre
+**hors du dossier servi** : `~/Scada-opus-5.5/` est exposé en HTTP sur le port 8090, un
+`HA_Token.txt` déposé là est téléchargeable par n'importe quelle machine du réseau (vérifié :
+HTTP 200 avant déplacement, 404 après).
+
+```bash
+install -d -m 700 ~/.secrets && chmod 600 ~/.secrets/HA_Token.txt
+
+# remplacer la seule clé HASS_TOKEN, en conservant PONT_JETON, puis redémarrer
+T=$(tr -d '[:space:]' < ~/.secrets/HA_Token.txt)   # le fichier finit par un saut de ligne
+J=$(kubectl -n scada-opus get secret pont-ha -o jsonpath='{.data.PONT_JETON}' | base64 -d)
+kubectl -n scada-opus create secret generic pont-ha \
+  --from-literal=HASS_TOKEN="$T" --from-literal=PONT_JETON="$J" \
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n scada-opus rollout restart deploy/scada-opus     # un secret n'est relu qu'au démarrage
+```
+
+Le retour à la ligne final compte : un fichier de 184 octets pour un jeton de 183 caractères fait
+refuser l'en-tête `Authorization`. Et avant d'écraser, garder de quoi revenir :
+`kubectl -n scada-opus get secret pont-ha -o yaml > ~/.secrets/pont-ha-avant.yaml && chmod 600 …`.
+
+Vérifier dans cet ordre : `/api/sante` (200 `ok`), `/api/etat` avec le jeton du pont, puis **une**
+commande sur une prise déjà éteinte (`allume:false`) — la réponse doit porter `"confirme": true`,
+sinon le jeton du fichier n'est pas celui que le pont utilise.
+
 ### Ce que fait le dashboard quand le pont n'est pas là
 
 | Situation | Comportement |
