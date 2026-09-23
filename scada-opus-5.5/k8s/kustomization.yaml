@@ -16,9 +16,9 @@ images:
   - name: ghcr.io/timbenedet/myfermentlab-scada
     # Valeur initiale : « latest » existe dès que la première CI a publié l'image.
     # Ensuite la CI épingle ici un tag immuable scada-opus-<sha> à chaque build.
-    newTag: scada-opus-187e10b
+    newTag: scada-opus-ba3469f
   - name: ghcr.io/timbenedet/myfermentlab-pont
     # Seconde image : le pont Home Assistant (scada-opus-5.5/pont/Dockerfile).
     # Même mécanique, tags immuables scada-pont-<sha7>, épinglés par la CI.
     # Valeur d'amorçage, remplacée dès le premier build du pont.
-    newTag: scada-pont-187e10b
+    newTag: scada-pont-ba3469f
