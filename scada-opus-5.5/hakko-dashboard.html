@@ -519,6 +519,10 @@ input[type=datetime-local]{height:36px;background:var(--surface);border:1px soli
 <script>
 /* ---------- Utils ---------- */
 const DAY = 864e5, HOUR = 36e5, HYST = 0.2;
+/* Régulation automatique : au plus une commande par minute sur une même prise, coupure
+   après 45 min de chauffe continue, 15 min de pause avant de pouvoir réarmer, et 5 min
+   de silence après un refus du pont. */
+const AUTO_COOLDOWN = 60e3, AUTO_MAX_ON = 45 * 60e3, AUTO_PAUSE = 15 * 60e3, AUTO_REFUS = 5 * 60e3;
 const now = () => Date.now();
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (n, d = 1) => (n == null || isNaN(n)) ? '—' : Number(n).toFixed(d).replace('.', ',');
@@ -668,14 +672,26 @@ function tick(){
     if (d.kind === 'hum') { const m = b && model(b, t).hum; d.value = m != null ? m + (Math.random() - .5) * .4 : 64 + (Math.random() - .5); }
   }
   for (const d of S.devices){
-    if (PONT.actif && d.eid) continue;
     if (d.kind !== 'plug' || !d.online) continue;
     const b = S.batches.find(x => x.id === d.batch && x.status === 'active');
+    // Coupure de sécurité : une chauffe automatique qui n'atteint jamais sa consigne
+    // (sonde qui décroche, étuve vide) s'arrête au bout de AUTO_MAX_ON minutes.
+    if (PONT.actif && d.eid && d.on && d.regulDepuis && now() - d.regulDepuis > AUTO_MAX_ON){ regulerSecurite(d, b); continue; }
     if (d.mode === 'auto' && b){
       const tp = currentTemp(b), tg = b.recipe.temp;
-      if (tp != null){ const was = d.on; if (tp < tg - HYST) d.on = true; else if (tp > tg + HYST) d.on = false; if (was !== d.on) logHeat(d, b, tp, false); }
+      if (tp != null){
+        const voulu = tp < tg - HYST ? true : tp > tg + HYST ? false : null;
+        if (voulu !== null && voulu !== d.on){
+          // Prise reliée au pont : la décision part vers Home Assistant. Elle ne se
+          // contente pas d'allumer une icône, et ne réclame aucun jeton — une
+          // régulation n'a personne à qui le demander. Hors pont (maquette file://),
+          // la simulation reprend la main : là, aucun réseau n'est joignable.
+          if (PONT.actif && d.eid) regulerPont(d, b, tp, voulu);
+          else { d.on = voulu; logHeat(d, b, tp, false); }
+        }
+      }
     }
-    d.power = d.on ? (d.id === 'o3' ? 410 : 160) + Math.random() * 12 : 0.4;
+    if (!(PONT.actif && d.eid)) d.power = d.on ? (d.id === 'o3' ? 410 : 160) + Math.random() * 12 : 0.4;
   }
 }
 function status(b){
@@ -959,7 +975,9 @@ function stateBadge(b, liveAttr){
    Assistant avec un jeton gardé dans le pod. Ouvert directement en local (file://)
    ou sans pont, rien ne répond : le dashboard garde alors exactement son
    comportement de maquette, valeurs simulées comprises. Aucune prise n'est
-   commandée sans un clic explicite — le pont ne fait pas de régulation. */
+   commandée sans décision explicite : un clic de l'utilisateur, ou la régulation
+   automatique par consigne (regulerPont) quand la prise est reliée à un lot actif et
+   en mode « auto ». Rien d'autre ne touche aux relais. */
 const PONT = { actif: false, disponible: null, dernier: null, jeton: null, jetonRequis: false };
 const PONT_CLE = 'hakko-pont-jeton';
 // Page ouverte directement (file://) : maquette pure, on ne tente aucune requête.
@@ -1067,6 +1085,45 @@ async function pontBascule(d){
     [1500, 3500, 6000].forEach(ms => setTimeout(() => pontSynchro(true), ms));
   }
   return true;
+}
+/* ---------- Régulation automatique (consigne) ---------- */
+/* La page décide, le pont exécute. Trois freins, parce qu'il s'agit d'un relais réel :
+   une seule commande à la fois, au plus une par minute sur la même prise (un relais qui
+   claque use ses contacts sans jamais atteindre sa consigne), et une coupure de sécurité
+   après AUTO_MAX_ON minutes de chauffe continue — une sonde qui décroche ne doit pas
+   transformer l'étuve en four. Une commande refusée ou un pont injoignable ne se réessaie
+   pas en boucle : c'est écrit dans le journal du dashboard et visible à l'écran. */
+let regulEnCours = false;
+async function regulerPont(d, b, tp, voulu, securite){
+  const t = now();
+  if (regulEnCours) return;
+  if (securite !== true){
+    if (d.regulPause && t < d.regulPause) return;
+    if (d.regulRefus && t - d.regulRefus < AUTO_REFUS) return;
+    if (d.regulT && t - d.regulT < AUTO_COOLDOWN) return;
+  }
+  regulEnCours = true; d.regulT = t;
+  try {
+    const r = await pontRequete('prise', { entite: d.eid, allume: voulu });
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j || j.ok === false) throw new Error('HTTP ' + r.status);
+    d.on = (j.etat === 'on'); d.regulDepuis = d.on ? t : null;
+    logHeat(d, b, tp, false);
+    if (securite === true) logEvent('alert', d.name + ' : chauffe automatique interrompue après '
+      + Math.round(AUTO_MAX_ON / 60000) + ' min sans atteindre la consigne', b ? b.id : null);
+    save(); render();
+    if (j.confirme === false) [1500, 3500].forEach(ms => setTimeout(() => pontSynchro(true), ms));
+  } catch(e){
+    d.regulRefus = t;
+    logEvent('alert', d.name + ' : régulation automatique sans effet (' + e.message + ')', b ? b.id : null);
+    save(); render();
+  } finally { regulEnCours = false; }
+}
+function regulerSecurite(d, b){
+  // Le relais retombe tout de suite (on ne poireaute pas une minute de plus), puis la
+  // régulation se tait un moment au lieu de relancer aussitôt un cycle identique.
+  d.regulPause = now() + AUTO_PAUSE; d.regulDepuis = null;
+  regulerPont(d, b, currentTemp(b), false, true);
 }
 
 /* ---------- Router ---------- */

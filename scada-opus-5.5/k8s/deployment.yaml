@@ -76,13 +76,20 @@ spec:
                 secretKeyRef:
                   name: pont-ha
                   key: HASS_TOKEN
-            # Obligatoire (revue de sécurité) : le pont refuse de démarrer sans jeton,
+            # PONT_AUTH=aucune : le dashboard ne demande plus rien. Les gardes d'origine
+            # et de type de contenu restent appliquées, mais toute machine du réseau local
+            # peut commander les prises — remettre « jeton » pour revenir au jeton partagé.
+            - name: PONT_AUTH
+              value: "aucune"
+            # Fourni mais ignoré tant que PONT_AUTH=aucune ; sans lui, le pod refuse de
+            # démarrer en mode jeton.
             # puisqu'il commande des prises physiques. La clé n'est donc pas optionnelle.
             - name: PONT_JETON
               valueFrom:
                 secretKeyRef:
                   name: pont-ha
                   key: PONT_JETON
+                  optional: true
             # Liste blanche : le pont refuse toute commande hors de ces prises.
             - name: PONT_PRISES
               value: "switch.smart_switch_25021462413795540601c4e7ae132658_outlet_1,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_2,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_3,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_4,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_5"

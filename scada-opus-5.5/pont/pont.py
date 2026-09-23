@@ -11,9 +11,14 @@ Configuration par variables d'environnement :
 
   HASS_URL        URL de base de Home Assistant, ex. http://192.168.1.51:8123
   HASS_TOKEN      jeton d'accès longue durée (jamais journalisé, jamais renvoyé)
-  PONT_JETON      secret partagé exigé sur /api/etat et /api/prise : OBLIGATOIRE,
-                  au moins 32 caractères. Sans lui, n'importe quel appareil du
-                  réseau — ou une page hostile — pourrait commander les prises.
+  PONT_JETON      secret partagé exigé sur /api/etat et /api/prise quand
+                  PONT_AUTH=jeton (défaut) : au moins 32 caractères. Sans lui,
+                  n'importe quel appareil du réseau pourrait commander les prises.
+  PONT_AUTH       « jeton » (défaut) : authentification exigée, refus de démarrer
+                  sans jeton. « aucune » : le dashboard ne demande rien ; les gardes
+                  d'origine et de type de contenu restent appliquées (une page
+                  hostile ne peut pas commander), mais toute machine du réseau
+                  local le peut — c'est un choix d'installation, jamais un défaut.
   PONT_PRISES     liste blanche des prises commandables, séparées par des virgules
   PONT_SONDES     appareils de mesure remontés, séparés par des virgules
   PONT_BATTERIES  correspondance « mesure=batterie », séparée par des virgules
@@ -65,6 +70,7 @@ class Config:
         self.url = (os.environ.get("HASS_URL") or "").rstrip("/")
         self.jeton = os.environ.get("HASS_TOKEN") or ""
         self.pont_jeton = os.environ.get("PONT_JETON") or ""
+        self.auth = (os.environ.get("PONT_AUTH") or "jeton").strip().lower()
         self.prises = liste(os.environ.get("PONT_PRISES"))
         self.sondes = liste(os.environ.get("PONT_SONDES"))
         self.batteries = dict(
@@ -84,15 +90,25 @@ class Config:
             raise SystemExit(
                 "pont : variable(s) d'environnement manquante(s) : " + ", ".join(manquants)
             )
-        # Le mode « sans jeton » n'existe plus : il ouvrait la commande des prises à
-        # tout le réseau local, y compris à une page web hostile (requête simple,
-        # sans pré-vol CORS). Un jeton absent est une erreur de configuration, pas
-        # un mode de fonctionnement.
-        if len(self.pont_jeton) < JETON_MIN:
+        # Deux modes, et un seul est le défaut. « aucune » doit être écrit noir sur
+        # blanc dans le manifeste : une faute de frappe sur PONT_AUTH ne doit pas
+        # ouvrir la commande des prises en silence.
+        if self.auth not in ("jeton", "aucune"):
+            raise SystemExit(
+                "pont : PONT_AUTH=%r inconnu — valeurs acceptées : jeton, aucune." % self.auth
+            )
+        if self.auth == "aucune":
+            print(
+                "pont : PONT_AUTH=aucune — aucune authentification exigée "
+                "(toute machine du réseau local peut commander les prises).",
+                file=sys.stderr,
+            )
+        elif len(self.pont_jeton) < JETON_MIN:
             raise SystemExit(
                 "pont : PONT_JETON est absent ou trop court (%d caractères, %d exigés). "
                 "Le pont commande des prises physiques : refus de démarrer sans "
-                "authentification." % (len(self.pont_jeton), JETON_MIN)
+                "authentification (PONT_AUTH=aucune pour l'assumer sans jeton)."
+                % (len(self.pont_jeton), JETON_MIN)
             )
         if not self.prises:
             raise SystemExit(
@@ -271,6 +287,9 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(corps)
 
     def autentifie(self):
+        # Mode sans authentification, choisi explicitement (PONT_AUTH=aucune).
+        if CFG.auth == "aucune":
+            return True
         entete = self.headers.get("Authorization") or ""
         # Comparaison à temps constant : le jeton ne se devine pas caractère par caractère.
         return hmac.compare_digest(entete.strip().encode("utf-8"),
