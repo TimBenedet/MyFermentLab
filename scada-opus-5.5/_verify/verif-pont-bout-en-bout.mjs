@@ -24,13 +24,23 @@ await p.setViewport({ width: 1440, height: 1000 });
 await p.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
 const erreurs = [];
 p.on('pageerror', e => erreurs.push('pageerror: ' + e.message));
+// Les 401 sur /api/etat sont attendus tant que le navigateur n'a pas enregistré le
+// jeton du pont ; les polices viennent de Google et peuvent être inaccessibles sans
+// que cela concerne le pont. Tout le reste est un vrai défaut.
+const attendues = [], inattendues = [];
+const horsSujet = s => /favicon|fonts\.(googleapis|gstatic)/.test(s);
 p.on('console', m => {
-  if (m.type() === 'error' && !/favicon|fonts\.(googleapis|gstatic)/.test(m.text())) erreurs.push('console: ' + m.text());
+  if (m.type() !== 'error') return;
+  const t = m.text(), u = (m.location() && m.location().url) || '';
+  if (horsSujet(t) || horsSujet(u)) return;
+  if (/401|403/.test(t) && /\/api\/etat/.test(u)) { attendues.push(t + ' — ' + u); return; }
+  inattendues.push('console: ' + t + ' — ' + u);
+  ko++;
 });
-// Les polices du design viennent de Google : si le réseau ne les atteint pas, l'échec
-// n'a rien à voir avec le pont et ne doit pas être compté comme une erreur de la page.
 p.on('requestfailed', r => {
-  if (!/favicon|fonts\.(googleapis|gstatic)/.test(r.url())) erreurs.push('requête échouée: ' + r.url());
+  if (horsSujet(r.url())) return;
+  inattendues.push('requête échouée: ' + r.url());
+  ko++;
 });
 
 // La page demande le jeton une fois : on répond automatiquement par la valeur fournie.
@@ -110,8 +120,9 @@ try {
   const stocke = await p.evaluate(() => !!localStorage.getItem('hakko-pont-jeton'));
   controle('jeton conservé pour la prochaine visite', true, stocke);
 
-  console.log('\nERREURS JS :', erreurs.length ? erreurs : 'aucune');
-  if (erreurs.length) ko++;
+  console.log('\nERREURS JS INATTENDUES :', inattendues.length ? inattendues : 'aucune');
+  console.log('ERREURS JS ATTENDUES   :', attendues.length ? attendues : 'aucune');
+  if (erreurs.length) { console.log('ERREURS DE PAGE        :', erreurs); ko += erreurs.length; }
 } finally {
   // Quoi qu'il arrive, on ne laisse pas une prise allumée.
   const restant = await etatPont().catch(() => '?');

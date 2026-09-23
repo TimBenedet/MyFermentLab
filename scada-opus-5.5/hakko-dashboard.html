@@ -960,7 +960,7 @@ function stateBadge(b, liveAttr){
    ou sans pont, rien ne répond : le dashboard garde alors exactement son
    comportement de maquette, valeurs simulées comprises. Aucune prise n'est
    commandée sans un clic explicite — le pont ne fait pas de régulation. */
-const PONT = { actif: false, disponible: null, dernier: null, jeton: null };
+const PONT = { actif: false, disponible: null, dernier: null, jeton: null, jetonRequis: false };
 const PONT_CLE = 'hakko-pont-jeton';
 // Page ouverte directement (file://) : maquette pure, on ne tente aucune requête.
 // Servie par le cluster, en revanche, l'état réel fait foi — et si le pont ne
@@ -999,15 +999,19 @@ function pontApplique(reponse){
 }
 async function pontSynchro(silencieux){
   if (PONT_LOCAL) return false;
+  // Sans jeton enregistré, inutile de réessayer toutes les quinze secondes : on attend
+  // le clic de l'utilisateur, qui déclenchera la demande de jeton. Cela évite aussi de
+  // remplir la console de 401 alors que rien n'est cassé.
+  if (silencieux && PONT.jetonRequis) return false;
   let r;
   try { r = await pontRequete('etat'); }
   catch(e){ PONT.actif = false; PONT.disponible = false; refreshLive(); return false; }
   if (r.status === 401 || r.status === 403){
     PONT.actif = false; PONT.disponible = true;
-    if (silencieux) return false;
+    if (silencieux){ PONT.jetonRequis = true; return false; }
     const saisi = prompt(PONT_AIDE);
     if (!saisi || !saisi.trim()) return false;
-    pontJeton(true); PONT.jeton = saisi.trim();
+    pontJeton(true); PONT.jeton = saisi.trim(); PONT.jetonRequis = false;
     try { localStorage.setItem(PONT_CLE, PONT.jeton); } catch(e){}
     return pontSynchro(true);
   }
