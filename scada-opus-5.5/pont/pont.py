@@ -348,6 +348,10 @@ _verrou_plan = threading.Lock()
 _plan = {"lots": [], "recu": 0.0, "sans_mesure_max": 0}
 _decisions = []
 _derniere_commande = {}
+# Ce que le pont a lui-même allumé, et pour quel lot. Sans cette mémoire, une prise
+# allumée par la régulation dont le lot disparaît du plan (recette annulée ou archivée)
+# devenait invisible : allumée, et plus personne ne la commandait. Constaté en service.
+_allumees_par_pont = {}
 PERIODE_REGULATION = 20
 DECISIONS_MAX = 60
 # Une mesure disponible mais plus rafraîchie n'est pas la même chose qu'une sonde que
@@ -390,6 +394,7 @@ def sauver_etat():
         "recu": _plan["recu"],
         "sans_mesure_max": _plan["sans_mesure_max"],
         "dernieres": _derniere_commande,
+        "allumees": _allumees_par_pont,
     }
     try:
         tmp = CFG.etat + ".tmp"
@@ -422,6 +427,11 @@ def charger_etat():
             for entite, t in dernieres.items():
                 if isinstance(t, (int, float)):
                     _derniere_commande[entite] = float(t)
+        allumees = charge.get("allumees")
+        if isinstance(allumees, dict):
+            for entite, memo in allumees.items():
+                if isinstance(memo, dict):
+                    _allumees_par_pont[entite] = memo
     # Les échéances se reconstruisent depuis l'heure de la dernière commande : un
     # redémarrage ne remet donc pas le compteur à zéro, il le laisse courir.
     if CFG.chauffe_max > 0:
@@ -545,9 +555,66 @@ def commander_regule(lot, entite, allume, motif):
             return False
         _derniere_commande[entite] = maintenant
     r = commander(entite, allume, auto=True)
+    ok = r.get("etat") == ("on" if allume else "off")
+    if ok:
+        # On retient ce qu'on a allumé soi-même : c'est ce qui permet de le couper si
+        # le lot quitte le plan, plutôt que de le laisser chauffer sans témoin.
+        with _verrou_plan:
+            if allume:
+                _allumees_par_pont[entite] = {
+                    "lot": lot.get("id"),
+                    "nom": lot.get("nom"),
+                    "t": maintenant,
+                }
+            else:
+                _allumees_par_pont.pop(entite, None)
     noter(lot, "%s : %s — %s" % (entite, "chauffe" if allume else "arrêt", motif), entite, allume)
     sauver_etat()
-    return r.get("etat") == ("on" if allume else "off")
+    return ok
+
+
+def couper_orphelines(voulues):
+    """Coupe ce que le pont a allumé et qu'aucun lot actif ne réclame plus.
+
+    Le tour de régulation ne parcourt que les lots PRÉSENTS dans le plan : une prise
+    dont le lot vient d'en disparaître (recette annulée, archivée, mise en pause)
+    n'était donc plus jamais commandée — elle restait allumée, hors de tout regard.
+    Ne touche que ce que le pont a lui-même allumé : ce qu'un autre a allumé ne lui
+    appartient pas, et un clic manuel ne doit pas être défait par la régulation.
+    """
+    for entite, memo in list(_allumees_par_pont.items()):
+        if entite in voulues:
+            continue
+        try:
+            etat = etat_prise(entite)
+        except Exception as e:
+            print("pont : orpheline %s : état illisible (%s)" % (entite, raison(e)), flush=True)
+            continue
+        if etat != "on":
+            with _verrou_plan:
+                _allumees_par_pont.pop(entite, None)
+            continue
+        with _verrou_plan:
+            _allumees_par_pont.pop(entite, None)
+        try:
+            # Aucun frein ici : c'est le sens sûr, il ne doit pas attendre une minute.
+            r = commander(entite, False, auto=True)
+            noter(
+                {"id": memo.get("lot"), "nom": memo.get("nom")},
+                "%s : arrêt — plus rattachée à aucun lot actif (état relu : %s)"
+                % (entite, r.get("etat")),
+                entite,
+                False,
+            )
+            sauver_etat()
+        except Exception as e:
+            with _verrou_plan:
+                _allumees_par_pont[entite] = memo
+            print(
+                "pont : arrêt de l'orpheline %s impossible (%s) — nouvelle tentative au tour suivant"
+                % (entite, raison(e)),
+                flush=True,
+            )
 
 
 def boucle_regulation():
@@ -555,6 +622,13 @@ def boucle_regulation():
     with _verrou_plan:
         lots = [dict(l) for l in _plan["lots"]]
         sans_mesure = _plan["sans_mesure_max"] or CFG.sans_mesure_max * 60
+    # Ce que les lots actifs réclament à cet instant — le reste de ce que le pont a
+    # allumé est orphelin et se coupe.
+    voulues = set()
+    for l in lots:
+        if l.get("actif"):
+            voulues.update(l.get("prises") or [])
+    couper_orphelines(voulues)
     for lot in lots:
         try:
             tour_lot(lot, sans_mesure)
