@@ -7,7 +7,13 @@ metadata:
     app: scada-opus
     app.kubernetes.io/part-of: myfermentlab
 spec:
-  replicas: 2
+  # UNE seule réplique, et c'est délibéré : le pont régule désormais lui-même
+  # (il tient la consigne sans qu'aucune page soit ouverte). Deux pods voudraient
+  # dire deux régulateurs commandant les mêmes prises, et nginx répartirait le plan
+  # déposé par la page entre les deux — l'un chaufferait donc sur un plan que l'autre
+  # n'a pas. Le prix est un dashboard indisponible quelques secondes à chaque
+  # redémarrage de pod ; c'est moins grave que deux régulateurs concurrents.
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -79,6 +85,11 @@ spec:
             # PONT_AUTH=aucune : le dashboard ne demande plus rien. Les gardes d'origine
             # et de type de contenu restent appliquées, mais toute machine du réseau local
             # peut commander les prises — remettre « jeton » pour revenir au jeton partagé.
+            # À savoir : /api/regul (le plan de régulation) est ouvert de la même façon.
+            # Une machine du réseau local peut donc déposer un plan et faire chauffer les
+            # prises. Ce n'est pas un pouvoir nouveau — /api/prise le permettait déjà —
+            # mais c'est la raison de repasser en « jeton » le jour où le réseau n'est
+            # plus de confiance.
             - name: PONT_AUTH
               value: "aucune"
             # Fourni mais ignoré tant que PONT_AUTH=aucune ; sans lui, le pod refuse de
@@ -94,6 +105,18 @@ spec:
             # décommandée (page fermée) : 90 minutes, puis arrêt forcé.
             - name: PONT_CHAUFFE_MAX
               value: "90"
+            # Sonde muette : le pont régule lui-même, et si la sonde d'un lot ne
+            # remonte plus rien depuis ce délai, il coupe la chauffe du lot au lieu
+            # d'attendre les 90 minutes ci-dessus. 15 minutes : un hoquet de radio
+            # dure quelques secondes, une sonde morte reste morte.
+            - name: PONT_SANS_MESURE_MAX
+              value: "15"
+            # Le plan de régulation et l'heure des dernières commandes sont écrits ici,
+            # pour survivre à un redémarrage de pod : sans cela, un pont relancé
+            # repartirait sans échéance de sécurité alors qu'une chauffe est peut-être
+            # en cours.
+            - name: PONT_ETAT
+              value: "/data/etat.json"
             # Liste blanche : le pont refuse toute commande hors de ces prises.
             - name: PONT_PRISES
               value: "switch.smart_switch_25021462413795540601c4e7ae132658_outlet_1,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_2,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_3,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_4,switch.smart_switch_25021462413795540601c4e7ae132658_outlet_5"
@@ -129,8 +152,15 @@ spec:
             limits:
               cpu: 200m
               memory: 64Mi
+          volumeMounts:
+            - name: etat
+              mountPath: /data
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
+      volumes:
+        - name: etat
+          persistentVolumeClaim:
+            claimName: scada-opus-pont-etat

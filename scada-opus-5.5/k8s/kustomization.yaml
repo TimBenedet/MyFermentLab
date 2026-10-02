@@ -11,6 +11,10 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  # Le plan de régulation survit au redémarrage du pod : sans ce volume, un pod
+  # relancé repartirait sans plan, donc sans échéance de sécurité, alors qu'un
+  # relais est peut-être encore fermé.
+  - pvc-pont-etat.yaml
 
 images:
   - name: ghcr.io/timbenedet/myfermentlab-scada

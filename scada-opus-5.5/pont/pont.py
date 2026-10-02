@@ -33,6 +33,7 @@ Configuration par variables d'environnement :
 Bibliothèque standard uniquement : aucune dépendance à installer.
 """
 
+import datetime
 import hmac
 import json
 import math
@@ -93,6 +94,22 @@ class Config:
             raise SystemExit(
                 "pont : PONT_CHAUFFE_MAX doit être positif (0 = surveillance désactivée)."
             )
+        # Délai au-delà duquel une sonde qui ne remonte plus fait couper la chauffe.
+        # Décision d'installation : une résistance ne doit pas chauffer à l'aveugle.
+        try:
+            self.sans_mesure_max = int(os.environ.get("PONT_SANS_MESURE_MAX") or 15)
+        except ValueError:
+            raise SystemExit("pont : PONT_SANS_MESURE_MAX doit être un nombre de minutes.")
+        if self.sans_mesure_max < 1:
+            raise SystemExit(
+                "pont : PONT_SANS_MESURE_MAX doit valoir au moins 1 minute "
+                "(c'est le délai avant coupure quand la sonde se tait)."
+            )
+        # Fichier d'état : le plan de régulation et l'heure des dernières commandes. Vide,
+        # il n'y a pas de persistance — c'est le cas des essais. En production il est monté
+        # sur un volume, sans quoi un redémarrage de pod laisserait une chauffe allumée
+        # que plus personne ne surveillerait.
+        self.etat = os.environ.get("PONT_ETAT") or ""
 
     def verifier(self):
         """Refuse de démarrer dans une configuration dangereuse ou inutilisable."""
@@ -130,6 +147,21 @@ class Config:
                 "pont : PONT_PRISES est vide — aucune prise ne serait commandable ; "
                 "configuration refusée."
             )
+        if self.etat:
+            # Une persistance annoncée mais inutilisable est pire que pas de persistance
+            # du tout : on la croirait acquise, et un redémarrage laisserait une chauffe
+            # sans échéance. On vérifie donc l'écriture tout de suite, au démarrage.
+            try:
+                with open(self.etat + ".essai", "w", encoding="utf-8") as f:
+                    f.write("{}")
+                os.remove(self.etat + ".essai")
+            except OSError as e:
+                raise SystemExit(
+                    "pont : PONT_ETAT=%r inutilisable (%s : %s) — le plan de régulation ne "
+                    "survivrait pas à un redémarrage. Corrigez le chemin, ou retirez "
+                    "PONT_ETAT pour l'assumer explicitement."
+                    % (self.etat, type(e).__name__, e.strerror or "")
+                )
         if self.adresse not in ("127.0.0.1", "localhost", "::1"):
             print(
                 "pont : ATTENTION écoute sur %s — le pont ne devrait être joignable que "
@@ -235,6 +267,12 @@ def etat_appareils():
             "unite": str(attrs["unit_of_measurement"]) if attrs.get("unit_of_measurement") else None,
             "batterie": None,
             "disponible": disponible,
+            # Horodatage de Home Assistant, et son âge en secondes : sans eux, la page
+            # ne peut pas distinguer une mesure qui vient d'arriver d'une valeur
+            # vieille de six heures relue à l'instant. C'est ce qui rend visible une
+            # sonde qui se tait, et ce qui permet au pont de couper à temps.
+            "maj": e.get("last_updated"),
+            "maj_age": age_mesure(e.get("last_updated")),
         }
         b = CFG.batteries.get(entite)
         if b:
@@ -290,6 +328,320 @@ def commander(entite, allume, auto=False):
             else:
                 _echeances.pop(entite, None)
     return {"ok": True, "entite": entite, "etat": etat, "confirme": confirme}
+
+
+# ---------------------------------------------------------------------------
+# Régulation tenue par le pont
+#
+# Pourquoi ici et pas dans la page : une fermentation dure des jours et personne
+# ne garde un onglet ouvert trois semaines. Tant que la décision était prise par
+# le navigateur, fermer la page arrêtait la régulation — la consigne n'était plus
+# tenue du tout. Le pont, lui, ne s'arrête pas : c'est donc lui qui décide, et il
+# est le seul à pouvoir le faire sans qu'une page soit ouverte.
+#
+# Le navigateur reste le poste de réglage : il dépose un plan (consigne, sonde,
+# prises, fin prévue) et lit ce que le pont a décidé. Le pont, lui, ne commande
+# jamais autre chose que les prises de sa liste blanche, même si un plan en
+# désigne d'autres : c'est la liste blanche qui garde la main, pas le plan.
+# ---------------------------------------------------------------------------
+_verrou_plan = threading.Lock()
+_plan = {"lots": [], "recu": 0.0, "sans_mesure_max": 0}
+_decisions = []
+_derniere_commande = {}
+PERIODE_REGULATION = 20
+DECISIONS_MAX = 60
+# Une mesure disponible mais plus rafraîchie n'est pas la même chose qu'une sonde que
+# Home Assistant déclare indisponible. Une sonde simplement stable peut dépasser quinze
+# minutes sans réécrire sa valeur (mesuré sur le parc réel : 50 s, 784 s et 935 s d'âge
+# sur trois sondes vivantes) : on ne coupe donc pas les prises tout de suite, on coupe
+# au bout d'une heure — quatre fois la cadence observée — et on cesse de repousser
+# l'échéance, pour que le plafond de chauffe fasse son travail.
+FRAICHEUR_TOLEREE = 3600
+
+
+def age_mesure(horodatage):
+    """Âge, en secondes, d'une mesure datée par Home Assistant.
+
+    Renvoie None si l'horodatage est absent ou illisible : dans le doute on ne
+    prétend pas que la mesure est fraîche, on dit qu'on ne sait pas.
+    """
+    if not isinstance(horodatage, str):
+        return None
+    try:
+        t = datetime.datetime.fromisoformat(horodatage.replace("Z", "+00:00")).timestamp()
+    except (TypeError, ValueError):
+        return None
+    return max(0.0, time.time() - t)
+
+
+def sauver_etat():
+    """Écrit le plan et l'heure des dernières commandes sur disque.
+
+    Le plan ne peut pas vivre seulement en mémoire : un redémarrage de pod laisserait
+    une chauffe allumée que plus personne ne surveillerait. Ce qui est écrit ici suffit
+    à reconstruire les échéances de sécurité au redémarrage (l'heure de la dernière
+    commande + le plafond), sans jamais les remettre à zéro — sinon un redémarrage
+    prolongerait indéfiniment une chauffe.
+    """
+    if not CFG.etat:
+        return
+    charge = {
+        "lots": _plan["lots"],
+        "recu": _plan["recu"],
+        "sans_mesure_max": _plan["sans_mesure_max"],
+        "dernieres": _derniere_commande,
+    }
+    try:
+        tmp = CFG.etat + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(charge, f, ensure_ascii=False)
+        os.replace(tmp, CFG.etat)
+    except OSError as e:
+        print("pont : état non enregistré (%s)" % type(e).__name__, file=sys.stderr, flush=True)
+
+
+def charger_etat():
+    """Relit le plan au démarrage et coupe ce qui aurait dû l'être pendant l'arrêt."""
+    if not CFG.etat or not os.path.exists(CFG.etat):
+        return
+    try:
+        with open(CFG.etat, encoding="utf-8") as f:
+            charge = json.load(f)
+    except (OSError, ValueError) as e:
+        print("pont : état illisible (%s) — ignoré" % type(e).__name__, file=sys.stderr, flush=True)
+        return
+    lots = charge.get("lots")
+    if not isinstance(lots, list):
+        return
+    with _verrou_plan:
+        _plan["lots"] = lots
+        _plan["recu"] = float(charge.get("recu") or 0)
+        _plan["sans_mesure_max"] = int(charge.get("sans_mesure_max") or 0)
+        dernieres = charge.get("dernieres")
+        if isinstance(dernieres, dict):
+            for entite, t in dernieres.items():
+                if isinstance(t, (int, float)):
+                    _derniere_commande[entite] = float(t)
+    # Les échéances se reconstruisent depuis l'heure de la dernière commande : un
+    # redémarrage ne remet donc pas le compteur à zéro, il le laisse courir.
+    if CFG.chauffe_max > 0:
+        with _verrou_echeances:
+            for entite, t in _derniere_commande.items():
+                _echeances[entite] = t + CFG.chauffe_max * 60
+    actifs = [l for l in lots if l.get("actif")]
+    print(
+        "pont : état repris — %d lot(s) dont %d actif(s), %d échéance(s) restaurée(s)"
+        % (len(lots), len(actifs), len(_echeances)),
+        flush=True,
+    )
+
+
+def valider_lot(brut, index):
+    """Valide un lot de plan. Renvoie (lot propre, motif de refus)."""
+    if not isinstance(brut, dict):
+        return None, "lot %d : objet attendu" % index
+    ident = brut.get("id")
+    if not isinstance(ident, str) or not ident or len(ident) > 64:
+        return None, "lot %d : identifiant invalide" % index
+    consigne = nombre(brut.get("consigne"))
+    if consigne is None or not (-10 <= consigne <= 120):
+        return None, "lot %s : consigne invalide (attendu entre -10 et 120 °C)" % ident
+    sonde = brut.get("sonde")
+    if sonde not in CFG.sondes:
+        return None, "lot %s : sonde %r hors liste blanche" % (ident, sonde)
+    prises = brut.get("prises")
+    if not isinstance(prises, list) or not prises or len(prises) > 16:
+        return None, "lot %s : liste de prises invalide" % ident
+    for p in prises:
+        if p not in CFG.prises:
+            return None, "lot %s : prise %r hors liste blanche" % (ident, p)
+    ecart = nombre(brut.get("ecart"))
+    if ecart is None:
+        ecart = 0.2
+    if not (0 <= ecart <= 5):
+        return None, "lot %s : écart invalide" % ident
+    fin = nombre(brut.get("fin"))
+    # La fin de lot est un INSTANT EN SECONDES, comme time.time(). On refuse les valeurs
+    # aberrantes, et notamment un horodatage en millisecondes : comparé à time.time(), il
+    # serait dans un futur lointain, et la coupure de fin de lot ne se déclencherait
+    # jamais. (C'est exactement le défaut trouvé en relecture : la page envoyait des
+    # millisecondes, et la chauffe ne s'arrêtait donc jamais à l'échéance prévue.)
+    if fin is not None and (fin <= 0 or fin > time.time() + 400 * 86400):
+        return None, "lot %s : fin de lot invalide (instant en secondes attendu)" % ident
+    return (
+        {
+            "id": ident,
+            "nom": str(brut.get("nom") or ident)[:80],
+            "consigne": consigne,
+            "sonde": sonde,
+            # Dédoublonnage : une prise citée deux fois ne serait commandée qu'une fois.
+            "prises": list(dict.fromkeys(prises)),
+            "ecart": ecart,
+            "fin": fin,
+            # Un lot sans « actif » explicite n'est pas un lot actif : le doute doit
+            # arrêter la chauffe, jamais la lancer.
+            "actif": brut.get("actif") is True,
+        },
+        None,
+    )
+
+
+def lire_sonde(entite):
+    """Lit une sonde, l'âge réel de sa mesure et son unité.
+
+    La fraîcheur ne peut pas venir du moment où le pont a lu : une valeur lue à
+    l'instant peut avoir six heures si la sonde s'est tue entre-temps. Seul
+    Home Assistant sait quand la mesure est arrivée — on lui demande.
+    """
+    e = appel_ha("/api/states/" + entite)
+    etat = str((e or {}).get("state", "inconnu"))
+    attrs = (e or {}).get("attributes")
+    unite = attrs.get("unit_of_measurement") if isinstance(attrs, dict) else None
+    if etat in ("unavailable", "unknown", "inconnu", ""):
+        # On garde l'âge même sans valeur : c'est lui qui dit depuis quand Home
+        # Assistant n'a plus de nouvelles, et donc quand la coupure est due.
+        return {
+            "valeur": None,
+            "age": age_mesure((e or {}).get("last_updated")),
+            "etat": etat,
+            "unite": unite,
+        }
+    return {
+        "valeur": nombre(etat),
+        "age": age_mesure((e or {}).get("last_updated")),
+        "etat": etat,
+        "unite": str(unite) if unite else None,
+    }
+
+
+def etat_prise(entite):
+    """État réel d'une prise, relu chez Home Assistant (jamais supposé)."""
+    e = appel_ha("/api/states/" + entite)
+    return str((e or {}).get("state", "inconnu"))
+
+
+def noter(lot, message, entite=None, allume=None):
+    """Retient une décision, pour que la page puisse dire ce que le pont a fait."""
+    with _verrou_plan:
+        _decisions.append(
+            {
+                "t": int(time.time()),
+                "lot": lot.get("id"),
+                "nom": lot.get("nom"),
+                "entite": entite,
+                "allume": allume,
+                "x": message,
+            }
+        )
+        del _decisions[:-DECISIONS_MAX]
+    print("pont : régulation — %s : %s" % (lot.get("nom"), message), flush=True)
+
+
+def commander_regule(lot, entite, allume, motif):
+    """Commande une prise du plan, au plus une fois par minute et par prise."""
+    maintenant = time.time()
+    with _verrou_plan:
+        if maintenant - _derniere_commande.get(entite, 0.0) < 60:
+            return False
+        _derniere_commande[entite] = maintenant
+    r = commander(entite, allume, auto=True)
+    noter(lot, "%s : %s — %s" % (entite, "chauffe" if allume else "arrêt", motif), entite, allume)
+    sauver_etat()
+    return r.get("etat") == ("on" if allume else "off")
+
+
+def boucle_regulation():
+    """Un tour de régulation : mesurer, décider, commander. Sans page ouverte."""
+    with _verrou_plan:
+        lots = [dict(l) for l in _plan["lots"]]
+        sans_mesure = _plan["sans_mesure_max"] or CFG.sans_mesure_max * 60
+    for lot in lots:
+        try:
+            tour_lot(lot, sans_mesure)
+        except Exception as e:
+            # La panne d'un lot ne doit pas empêcher les autres d'être tenus : sans ce
+            # filet, une lecture impossible faisait sauter tout le tour.
+            noter(lot, "tour impossible (%s) — aucune commande" % raison(e))
+
+
+def tour_lot(lot, sans_mesure):
+    """Mesure, décide et commande pour un seul lot."""
+    # Une fin de lot prévue coupe la chauffe même si la sonde se porte bien.
+    alumees = [p for p in lot["prises"] if etat_prise(p) == "on"]
+    if lot.get("fin") is not None and time.time() >= lot["fin"]:
+        for p in alumees:
+            commander_regule(lot, p, False, "fin de lot prévue atteinte")
+        return
+    if not lot["actif"]:
+        return
+    mesure = lire_sonde(lot["sonde"])
+    # Une sonde d'humidité ne dit pas la température : on refuse de chauffer sur elle.
+    unite = (mesure.get("unite") or "").replace("°", "").strip().upper()
+    if unite and unite not in ("C", "CELSIUS", "K", "KELVIN"):
+        if alumees:
+            for p in alumees:
+                commander_regule(lot, p, False, "sonde non thermique (%s)" % mesure.get("unite"))
+        return
+    age = mesure["age"]
+    if mesure["valeur"] is None:
+        # Home Assistant ne sait plus rien de cette sonde (unavailable, unknown) : le
+        # délai court depuis sa dernière nouvelle, et c'est celui que le propriétaire a
+        # fixé. Couper sur un hoquet de trois secondes n'aurait aucun sens.
+        if alumees and (age is None or age > sans_mesure):
+            motif = "sonde sans nouvelle depuis %d min" % int((age or 0) // 60) if age is not None \
+                else "sonde sans valeur ni horodatage"
+            for p in alumees:
+                commander_regule(lot, p, False, motif)
+        return
+    if age is not None and age > FRAICHEUR_TOLEREE:
+        # Valeur toujours disponible mais plus rafraîchie depuis longtemps : la sonde
+        # est probablement morte en gardant sa dernière valeur (mesuré sur le parc réel :
+        # une sonde annonçait 26,9 °C avec un horodatage vieux de vingt-cinq jours).
+        if alumees:
+            for p in alumees:
+                commander_regule(lot, p, False, "mesure figée depuis %d min" % int(age // 60))
+        return
+    if age is not None and age > sans_mesure:
+        # Entre les deux : soit la sonde est morte, soit elle est simplement stable, et
+        # Home Assistant ne permet pas de trancher. On ne coupe pas tout de suite, mais
+        # on cesse de repousser l'échéance — le plafond de chauffe fera le travail — et
+        # on le dit une fois, pour que ce ne soit pas silencieux.
+        if alumees and not lot.get("_figee_dite"):
+            lot["_figee_dite"] = True
+            noter(lot, "mesure non rafraîchie depuis %d min — plus d'échéance repoussée, "
+                       "coupure au plafond de chauffe" % int(age // 60))
+        return
+    v, c, h = mesure["valeur"], lot["consigne"], lot["ecart"]
+    if v < c - h and not alumees:
+        for p in lot["prises"]:
+            commander_regule(lot, p, True, "%.1f °C, sous la consigne %.1f °C" % (v, c))
+    elif v > c + h and alumees:
+        for p in alumees:
+            commander_regule(lot, p, False, "%.1f °C, au-dessus de la consigne %.1f °C" % (v, c))
+    elif alumees:
+        # Décision « on continue de chauffer », et mesure fraîche : on repousse l'échéance
+        # de sécurité, sinon une chauffe longue et légitime serait coupée par le garde-fou
+        # des PONT_CHAUFFE_MAX minutes alors que le pont la surveille de près.
+        with _verrou_echeances:
+            for p in alumees:
+                if p in _echeances:
+                    _echeances[p] = time.time() + CFG.chauffe_max * 60
+
+
+def regulation():
+    """Tourne tant que le pont vit : la page peut disparaître, pas la consigne."""
+    print(
+        "pont : régulation active — un tour toutes les %d s, coupure si la sonde se "
+        "tait plus de %d min (PONT_SANS_MESURE_MAX)" % (PERIODE_REGULATION, CFG.sans_mesure_max),
+        flush=True,
+    )
+    while True:
+        try:
+            boucle_regulation()
+        except Exception as e:
+            # Une panne de Home Assistant ne doit pas tuer le fil : on réessaiera.
+            print("pont : tour de régulation interrompu (%s) — reprise" % raison(e), flush=True)
+        time.sleep(PERIODE_REGULATION)
 
 
 def surveillance():
@@ -404,11 +756,41 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self.journal("échec lecture état : %s" % raison(e))
                 return self.repond(502, {"ok": False, "erreur": "Home Assistant " + raison(e)})
+        if chemin == "/api/regul":
+            if not self.meme_origine():
+                return self.repond(403, {"ok": False, "erreur": "origine refusée"})
+            if not self.autentifie():
+                return self.repond(401, {"ok": False, "erreur": "jeton requis"})
+            with _verrou_plan:
+                lots = [
+                    {
+                        "id": l["id"],
+                        "nom": l["nom"],
+                        "consigne": l["consigne"],
+                        "ecart": l["ecart"],
+                        "sonde": l["sonde"],
+                        "prises": l["prises"],
+                        "fin": l["fin"],
+                        "actif": l["actif"],
+                    }
+                    for l in _plan["lots"]
+                ]
+                charge = {
+                    "ok": True,
+                    # « regule » dit à la page qui décide : tant que c'est vrai, elle ne
+                    # commande pas, sinon deux régulateurs se contrediraient.
+                    "regule": any(l["actif"] for l in _plan["lots"]),
+                    "recu": int(_plan["recu"]),
+                    "sans_mesure_max": int(_plan["sans_mesure_max"] or CFG.sans_mesure_max * 60),
+                    "lots": lots,
+                    "decisions": list(_decisions)[-40:],
+                }
+            return self.repond(200, charge)
         return self.repond(404, {"ok": False, "erreur": "chemin inconnu"})
 
     def do_POST(self):
         chemin = self.path.split("?", 1)[0].rstrip("/") or "/"
-        if chemin != "/api/prise":
+        if chemin not in ("/api/prise", "/api/regul"):
             return self.repond(404, {"ok": False, "erreur": "chemin inconnu"})
         if not self.meme_origine():
             return self.repond(403, {"ok": False, "erreur": "origine refusée"})
@@ -433,6 +815,55 @@ class Handler(BaseHTTPRequestHandler):
             return self.repond(400, {"ok": False, "erreur": "corps JSON invalide"})
         if not isinstance(corps, dict):
             return self.repond(400, {"ok": False, "erreur": "corps JSON invalide"})
+        if chemin == "/api/regul":
+            # Plan de régulation déposé par la page. Le pont ne l'exécute que sur ses
+            # prises et ses sondes de liste blanche : un plan hostile ne peut rien
+            # commander d'autre, il est refusé.
+            lots = corps.get("lots")
+            if not isinstance(lots, list) or len(lots) > 32:
+                return self.repond(
+                    400, {"ok": False, "erreur": "champ lots : liste de 32 lots au plus"}
+                )
+            propres, refus = [], []
+            for i, brut in enumerate(lots):
+                lot, motif = valider_lot(brut, i)
+                if lot is None:
+                    refus.append(motif)
+                else:
+                    propres.append(lot)
+            # Tout ou rien : un plan à moitié accepté serait un plan faux, et la page
+            # croirait la consigne tenue alors qu'un lot manquerait à l'appel.
+            if refus:
+                return self.repond(400, {"ok": False, "erreur": "plan refusé", "refus": refus})
+            smm = nombre(corps.get("sans_mesure_max"))
+            if smm is None:
+                smm = float(CFG.sans_mesure_max * 60)
+            # Bornes dures : moins d'une minute serait intenable, plus de deux heures
+            # reviendrait à ne plus couper du tout.
+            smm = int(max(60.0, min(7200.0, smm)))
+            with _verrou_plan:
+                change = _plan["lots"] != propres or _plan["sans_mesure_max"] != smm
+                _plan["lots"] = propres
+                _plan["recu"] = time.time()
+                _plan["sans_mesure_max"] = smm
+            sauver_etat()
+            # La page redépose son plan régulièrement (un pont redémarré l'aurait perdu) :
+            # on ne journalise que quand il change vraiment, sinon le journal déborde.
+            if change:
+                self.journal(
+                    "plan de régulation : %d lot(s), %d actif(s), coupure si la sonde se tait "
+                    "plus de %d min"
+                    % (len(propres), sum(1 for l in propres if l["actif"]), smm // 60)
+                )
+            return self.repond(
+                200,
+                {
+                    "ok": True,
+                    "regule": any(l["actif"] for l in propres),
+                    "lots": len(propres),
+                    "sans_mesure_max": smm,
+                },
+            )
         entite = corps.get("entite")
         allume = corps.get("allume")
         if not isinstance(entite, str) or not isinstance(allume, bool):
@@ -475,6 +906,12 @@ def main():
         flush=True,
     )
     threading.Thread(target=surveillance, daemon=True).start()
+    # Le plan et les heures de commande sont relus avant que la régulation démarre : un
+    # redémarrage ne doit ni perdre la consigne, ni remettre à zéro les échéances.
+    charger_etat()
+    # La régulation vit dans le pont, pas dans la page : une fermentation dure des
+    # jours et personne ne garde un onglet ouvert tout ce temps.
+    threading.Thread(target=regulation, daemon=True).start()
     serveur = ThreadingHTTPServer((CFG.adresse, CFG.port), Handler)
     serveur.daemon_threads = True
     try:

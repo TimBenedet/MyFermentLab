@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: scada-opus-pont-etat
+  namespace: scada-opus
+  labels:
+    app: scada-opus
+    app.kubernetes.io/part-of: myfermentlab
+spec:
+  # Un tout petit volume : le pont n'y écrit que le plan de régulation et l'heure de
+  # ses dernières commandes (quelques centaines d'octets). Il sert à une seule chose :
+  # qu'un redémarrage de pod ne laisse pas une chauffe allumée sans surveillance. Sans
+  # lui, le pont redémarre sans plan, donc sans échéance de sécurité, alors qu'un
+  # relais est peut-être encore fermé.
+  #
+  # Classe laissée volontairement implicite : k3s fournit « local-path » par défaut.
+  # Le volume est lié au nœud — acceptable ici, où le cluster est sur une seule machine,
+  # et de toute façon préférable à une chauffe qui ne s'arrête plus.
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8Mi

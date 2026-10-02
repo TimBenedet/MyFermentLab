@@ -34,7 +34,8 @@ appliquerVue();
 <style>
 :root{
   --bg:#F4F5F7; --surface:#FFFFFF; --surface2:#F7F8FA; --hover:#F1F3F6;
-  --ink:#111827; --ink2:#374151; --muted:#6B7280; --faint:#9CA3AF;
+  /* --muted : #6B7280 assombri de 8 % vers --ink (même teinte) pour passer AA sur --bg et --hover. */
+  --ink:#111827; --ink2:#374151; --muted:#646B79; --faint:#9CA3AF;
   --line:#E5E7EB; --line2:#D1D5DB; --grid:#EEF0F3;
   --accent:#2350B8; --accent-soft:#EAF0FC;
   --ok:#15803D; --ok-bg:#E7F6EC; --warn:#B45309; --warn-bg:#FDF3E1; --bad:#B91C1C; --bad-bg:#FDECEC;
@@ -86,13 +87,15 @@ svg.i{width:16px;height:16px;flex:none}
 .brand-mark svg{width:18px;height:18px}
 .brand small{display:block;font-weight:400;font-size:12px;color:var(--side-ink);margin-top:-2px}
 .nav{padding:16px 12px;display:flex;flex-direction:column;gap:2px}
-.nav-sec{font-size:12px;color:#6F7885;padding:14px 10px 6px}
+/* Titres de section et compteurs : #6F7885 éclairci vers --side-ink (même teinte), AA sur la
+   barre latérale comme sur le lien actif, dans les deux thèmes. */
+.nav-sec{font-size:12px;color:#88919D;padding:14px 10px 6px}
 .nav-sec:first-child{padding-top:0}
 .nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:6px;font-weight:500}
 .nav a:hover{color:var(--side-ink2);background:rgba(255,255,255,.04)}
 .nav a[aria-current="page"]{background:var(--side-active);color:var(--side-ink2)}
 .nav a[aria-current="page"] svg{color:#8FB0F5}
-.nav a .cnt{margin-left:auto;font-size:12px;color:#6F7885}
+.nav a .cnt{margin-left:auto;font-size:12px;color:#88919D}
 .side-foot{margin-top:auto;padding:14px 20px;border-top:1px solid var(--side-line);font-size:12.5px;display:flex;flex-direction:column;gap:4px}
 .side-foot strong{color:var(--side-ink2);font-weight:500;display:flex;align-items:center;gap:8px}
 .pulse{width:8px;height:8px;border-radius:50%;background:#34C06A;box-shadow:0 0 0 3px rgba(52,192,106,.18)}
@@ -100,7 +103,7 @@ svg.i{width:16px;height:16px;flex:none}
 .topbar{position:sticky;top:0;z-index:10;height:60px;display:flex;align-items:center;gap:16px;padding:0 32px;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .crumbs{display:flex;align-items:center;gap:8px;color:var(--muted);min-width:0;white-space:nowrap;overflow:hidden}
 .crumbs a:hover{color:var(--ink)}
-.crumbs .sep{color:var(--line2)}
+.crumbs .sep{color:var(--muted)}
 .crumbs .cur{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis}
 .top-right{margin-left:auto;display:flex;align-items:center;gap:14px;color:var(--muted);font-size:13px}
 .sync{display:flex;align-items:center;gap:8px}
@@ -146,7 +149,8 @@ svg.i{width:16px;height:16px;flex:none}
 .card-h .sub{color:var(--muted);font-size:13px;font-weight:400;margin-left:6px}
 .card-b{padding:18px}
 .badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:5px;font-size:12px;font-weight:500;background:var(--surface2);color:var(--ink2);border:1px solid var(--line);white-space:nowrap}
-.badge.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+/* Texte du badge vert tiré de 10 % vers --ink : plus sombre en clair, plus clair en sombre. */
+.badge.ok{background:var(--ok-bg);color:color-mix(in srgb,var(--ok) 90%,var(--ink));border-color:transparent}
 .badge.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
 .badge.bad{background:var(--bad-bg);color:var(--bad);border-color:transparent}
 .badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
@@ -199,7 +203,7 @@ svg.i{width:16px;height:16px;flex:none}
 .feed .fi svg{width:14px;height:14px}
 .feed .fi.heat{color:var(--warn)} .feed .fi.note{color:var(--accent)} .feed .fi.batch{color:var(--ok)}
 .feed .ft{font-size:13px;color:var(--ink2);line-height:1.4}
-.feed .fm{font-size:12px;color:var(--faint)}
+.feed .fm{font-size:12px;color:var(--muted)}
 .side-stack{display:flex;flex-direction:column;gap:20px}
 .health{list-style:none;margin:0;padding:6px 0}
 .health li{display:flex;align-items:center;gap:10px;padding:8px 18px;font-size:13px}
@@ -254,10 +258,10 @@ textarea{height:auto;min-height:88px;padding:9px 11px;resize:vertical;line-heigh
 input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .field{display:flex;flex-direction:column;gap:6px}
 .field>span{font-size:13px;font-weight:500;color:var(--ink2)}
-.field>span em{font-style:normal;font-weight:400;color:var(--faint);margin-left:4px}
+.field>span em{font-style:normal;font-weight:400;color:var(--muted);margin-left:4px}
 .field .unit{position:relative}
 .field .unit input{padding-right:44px}
-.field .unit b{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-weight:400;color:var(--faint);font-size:13px}
+.field .unit b{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-weight:400;color:var(--muted);font-size:13px}
 .fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .fgrid .full{grid-column:1/-1}
 @media (max-width:640px){.fgrid{grid-template-columns:1fr}}
@@ -297,7 +301,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .notes{list-style:none;margin:0;padding:0}
 .notes li{padding:12px 18px;border-bottom:1px solid var(--line)}
 .notes li:last-child{border-bottom:0}
-.notes time{display:block;font-size:12px;color:var(--faint);margin-bottom:2px}
+.notes time{display:block;font-size:12px;color:var(--muted);margin-bottom:2px}
 .note-form{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line);background:var(--surface2);border-radius:0 0 10px 10px}
 .note-form input{flex:1;min-width:0}
 .steps{margin:0;padding:0;list-style:none;counter-reset:s}
@@ -484,7 +488,8 @@ input[type=datetime-local]{height:36px;background:var(--surface);border:1px soli
 .o-btn{margin-top:auto;height:44px;border:0;border-radius:8px;cursor:pointer;font-weight:700;font-size:15px;letter-spacing:.06em;color:#fff;background:#C53030;transition:background .15s,transform .05s}
 .o-btn:hover{filter:brightness(1.08)}
 .o-btn:active{transform:scale(.98)}
-.o-btn[aria-pressed="true"]{background:#1F9D55}
+/* ON : #1F9D55 (3,49 avec le blanc) remplacé par #15803D, le vert --ok clair de la charte (5,02). */
+.o-btn[aria-pressed="true"]{background:#15803D}
 .o-btn:disabled{cursor:not-allowed;filter:grayscale(.6)}
 @media (max-width:1250px){.outlets{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:760px){.outlets{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -641,6 +646,23 @@ html.tactile:not(.vue-tel) #vueBtn{display:none}
 @media (min-width:1101px){
   html:not(.vue-tel) #vueBtn{display:none}
 }
+/* Libellé « qui surveille cette prise » : la page dit si la régulation la tient, si
+   c'est un clic, ou si personne ne la surveille (état changé ailleurs). */
+.o-surv{display:flex;flex-direction:column;gap:2px}
+.o-sv{font-size:11.5px;line-height:1.35;color:var(--muted)}
+.o-sv.warn,.sv-warn{color:var(--warn)}
+/* Pont muet : le témoin cesse d'être vert, l'en-tête ne dit plus « En direct ». */
+.pulse.eteint{background:var(--faint);box-shadow:none}
+/* Événements mis de côté par la migration : consultation et restauration. */
+.ev-liste{list-style:none;margin:0;padding:0;max-height:min(46vh,360px);overflow-y:auto;border:1px solid var(--line);border-radius:8px}
+.ev-liste li{border-bottom:1px solid var(--line)}
+.ev-liste li:last-child{border-bottom:0}
+.ev-liste label,.ev-tout{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;font-size:13px;color:var(--ink2);cursor:pointer}
+.ev-tout{padding:0;align-items:center;font-weight:500}
+.ev-liste input,.ev-tout input{margin-top:3px;flex:none;width:16px;height:16px}
+.ev-tout input{margin-top:0}
+.ev-liste .fm{display:block;font-size:12px;color:var(--muted)}
+.mes-note{margin:0;padding:8px 16px 12px;font-size:12.5px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -650,7 +672,7 @@ html.tactile:not(.vue-tel) #vueBtn{display:none}
     <nav class="nav" id="nav"></nav>
     <div class="side-foot">
       <strong><span class="pulse"></span>Home Assistant</strong>
-      <span class="num" id="syncTxt">Synchronisé</span>
+      <span class="num" id="syncTxt">Synchronisation…</span>
     </div>
   </aside>
   <div class="main">
@@ -658,7 +680,7 @@ html.tactile:not(.vue-tel) #vueBtn{display:none}
       <a class="brand-mark m-brand" href="#/" aria-label="Accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3h8M9 3v3.2C6.6 7.2 5 9.4 5 12v6a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-6c0-2.6-1.6-4.8-4-5.8V3"/><circle cx="10" cy="15" r="1.3" fill="currentColor"/><circle cx="14.5" cy="12.5" r="1" fill="currentColor"/></svg></a>
       <div class="crumbs" id="crumbs"></div>
       <div class="top-right">
-        <span class="sync"><span class="pulse"></span><span class="sync-txt num" id="syncTop">En direct</span></span>
+        <span class="sync"><span class="pulse"></span><span class="sync-txt num" id="syncTop">Synchronisation…</span></span>
         <button class="icon-btn" data-action="vue" id="vueBtn" aria-pressed="false" aria-label="Vue téléphone" title="Vue téléphone"></button>
         <button class="icon-btn" data-action="theme" id="themeBtn" aria-label="Changer de thème"></button>
       </div>
@@ -688,7 +710,13 @@ function regulMaitre(){
   return true;
 }
 const now = () => Date.now();
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Page ouverte directement (file://) : maquette pure, on ne tente aucune requête.
+// Servie par le cluster, en revanche, l'état réel fait foi — et si le pont ne
+// répond pas, le clic le dit au lieu de simuler une commande.
+/* Déclarée ici, avant tout code exécuté au chargement (migrations, historique de
+   démonstration) qui la lit : plus bas, elle serait en zone morte à ce moment-là. */
+const PONT_LOCAL = location.protocol === 'file:';
+const esc =s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (n, d = 1) => (n == null || isNaN(n)) ? '—' : Number(n).toFixed(d).replace('.', ',');
 const fmtDate = t => new Date(t).toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
 const fmtDateY = t => new Date(t).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'});
@@ -701,7 +729,9 @@ function fmtDur(d){
   return Math.round(d / 30) + ' mois';
 }
 function ago(t){
-  const s = Math.round((now() - t) / 1000);
+  /* Un appareil qui n'a jamais rien remonté n'a pas d'âge : « il y a NaN j » n'est pas une date. */
+  if (t == null || isNaN(t)) return 'jamais';
+  const s = Math.max(0, Math.round((now() - t) / 1000));
   if (s < 60) return 'il y a ' + s + ' s';
   if (s < 3600) return 'il y a ' + Math.round(s / 60) + ' min';
   if (s < 86400) return 'il y a ' + Math.round(s / 3600) + ' h';
@@ -798,7 +828,35 @@ function seed(){
 let S = null;
 try { S = JSON.parse(localStorage.getItem(STORE)); } catch(e) {}
 if (!S || !S.recipes) S = seed();
-function save(){ try { localStorage.setItem(STORE, JSON.stringify(S)); } catch(e) {} }
+/* Écriture de l'état. Un quota plein ne doit pas passer sous silence : c'est l'état de
+   régulation (modes, consignes, chronomètres de sécurité) qui cesserait d'être conservé.
+   On élague la mémoire des mesures, on retente, et si ça ne suffit pas on le dit. */
+function save(){
+  const ecrire = () => localStorage.setItem(STORE, JSON.stringify(S));
+  try { ecrire(); return; } catch(e) {}
+  /* On libère d'abord la plus grosse mémoire de mesures — la plus courte ne rendrait
+     presque rien. L'alerte n'est écrite qu'une fois par incident : la répéter à chaque
+     tentative toutes les 3 secondes remplirait le journal et en chasserait les vraies
+     commandes, exactement l'effet qu'on veut éviter. */
+  const cles = S.hist ? Object.keys(S.hist).sort((a, c) => S.hist[c].length - S.hist[a].length) : [];
+  if (cles.length && S.hist[cles[0]].length > 4){
+    const k = cles[0]; S.hist[k] = S.hist[k].slice(-Math.max(2, Math.floor(S.hist[k].length / 2)));
+    try { ecrire(); alerteStockage('Mémoire des mesures élaguée : le stockage du navigateur est plein'); return; } catch(e) {}
+  }
+  if (S.eventsArchive && S.eventsArchive.length){
+    const n = S.eventsArchive.length; S.eventsArchive = [];
+    try { ecrire(); alerteStockage(n + ' événements mis de côté ont été supprimés : le stockage est plein'); return; } catch(e) {}
+  }
+  alerteStockage('État non sauvegardé : le stockage du navigateur est plein');
+}
+/* Une alerte au maximum toutes les dix minutes : le stockage plein est un état durable, il
+   n'a pas besoin d'être crié à chaque tentative d'écriture. */
+function alerteStockage(msg){
+  const t = now();
+  if (S.stockageAlerte && t - S.stockageAlerte < 10 * 60e3) return;
+  S.stockageAlerte = t;
+  logEvent('alert', msg);
+}
 
 /* ---------- Simulation ---------- */
 function tgt(b, t){
@@ -822,34 +880,209 @@ function model(b, t){
   return {temp, hum};
 }
 const devsOf = b => S.devices.filter(d => d.batch === b.id);
+/* ---------- Température réellement mesurée ----------
+   Ce que la page garde d'un lot, c'est ce que ses sondes ont réellement dit. Sans cette
+   mémoire, la courbe et le journal ne pouvaient montrer que le modèle de simulation : un
+   lot réel piloté par une vraie sonde affichait la température de la consigne. */
+/* Il n'y a plus de « lot de démonstration » côté affichage. Le critère estDemo (tous les
+   appareils reliés marqués « demo ») laissait le modèle tracer la courbe et le journal
+   montrer des chauffes simulées dès qu'un lot n'avait que la prise de démonstration — sur
+   un navigateur neuf servi par le cluster, le garum affichait une courbe à 60 °C et des
+   « activations » d'un vrai relais qui n'avaient pas eu lieu. Hors maquette (file://), le
+   modèle ne parle jamais à la place d'une sonde. La marque « demo » des prises, elle, est
+   inchangée : c'est la régulation qui la lit, prise par prise. */
+/* Un lot est mesuré pour de vrai quand sa température vient d'une entité Home Assistant
+   lue par le pont. Les prises de la maquette portent « demo » et ne comptent pas ici :
+   une prise de démonstration restée reliée à un vrai lot ne doit pas faire passer tout le
+   lot pour une démonstration — c'est la sonde qui dit si la mesure est réelle. */
+/* La sonde est réelle dès qu'elle est reliée au pont, qu'elle réponde ou non : une sonde
+   qui décroche laisse un trou dans la mémoire, elle ne fait pas du lot une démonstration. */
+/* Ce critère ne sert plus qu'à l'ENREGISTREMENT (pont actif exigé). L'affichage, lui, lit la
+   mémoire dès qu'elle existe : une mesure enregistrée reste vraie pendant une coupure du pont. */
+const sondeReelle = b => !!(PONT.actif && devsOf(b).some(d => d.kind === 'temp' && d.eid && !d.demo));
+const aMemoire = b => histDe(b).length > 1;
+/* ---------- Fraîcheur d'une valeur ----------
+   Hors maquette, une valeur n'est montrée que si le pont l'a remise il y a moins de dix
+   minutes (d.recu, posé par pontApplique). Une valeur sans d.recu — jeu de démonstration,
+   ancienne simulation persistée, navigateur sans jeton — ou trop vieille est traitée comme
+   absente : « — » à l'écran, aucun statut calculé dessus, aucun point « live ». */
+const FRAICHEUR = 10 * 60e3;
+function fraiche(d){
+  if (!d || !d.online) return false;
+  if (d.kind !== 'plug' && (d.value == null || isNaN(d.value))) return false;
+  if (PONT_LOCAL) return true;                     /* maquette : la simulation fait foi */
+  if (!d.eid) return d.kind === 'plug';            /* prise locale : son état est celui de la page */
+  return !!d.recu && now() - d.recu <= FRAICHEUR;
+}
+/* Sonde ajoutée à la main : sans entité Home Assistant, rien ne la lit, et rien ne la lira.
+   Ce n'est pas une perte de nouvelles, qui laisserait espérer un retour : la page le dit.
+   (Une prise sans entité, elle, a l'état que la page lui donne.) */
+const sansEntite = d => !PONT_LOCAL && !d.eid && d.kind !== 'plug';
+const SANS_ENTITE = 'Sans entité Home Assistant : ne remontera jamais de mesure';
+/* ---------- Mémoire des mesures : deux niveaux ----------
+   Fin sur les dernières 48 h (un point par tranche de 3 min), puis une moyenne par heure,
+   avec son minimum, son maximum et le nombre de tranches qu'elle résume. À taille égale
+   (4320 points), la mémoire passe de 9 jours à environ 142 jours : une bière entière, un
+   koji, un garum, et presque cinq mois de miso. */
+const HIST_PAS = 3 * 60e3;          /* niveau fin : une mesure retenue toutes les 3 minutes */
+const HIST_FIN = 48 * HOUR;         /* … sur les 48 dernières heures */
+const HIST_PAS_LARGE = HOUR;        /* niveau large : une moyenne par heure au-delà */
+const HIST_MAX = 4320;              /* 960 points fins + 3360 heures ≈ 142 jours */
+/* Un point large porte six champs [heure, moyenne, humidité, min, max, n] ; un point fin, trois.
+   Un septième champ, nh, n'apparaît que si une partie seulement des n tranches avait une
+   humidité : il en donne le nombre. Absent, l'humidité vaut pour toutes les tranches (ou
+   pour aucune si elle est nulle). */
+const pasDe = p => p.length > 3 ? HIST_PAS_LARGE : HIST_PAS;
+const nHum = p => p[2] == null ? 0 : p.length > 6 ? p[6] : p.length > 3 ? p[5] : 1;
+const r2 = v => Math.round(v * 100) / 100;
+/* Regroupe en heures les points fins plus vieux que 48 h. Seules les heures entièrement
+   passées sous la limite sont regroupées, une seule fois chacune : l'horodatage reste ancré
+   sur le début de l'heure, et la suite reste strictement croissante. */
+function compacterHist(h, t){
+  const limite = Math.floor((t - HIST_FIN) / HIST_PAS_LARGE) * HIST_PAS_LARGE;
+  if (!h.length || h[0][0] >= limite) return h;
+  const out = [];
+  let i = 0;
+  while (i < h.length){
+    const p = h[i];
+    if (p[0] >= limite || p.length > 3){ out.push(p); i++; continue; }
+    const debut = Math.floor(p[0] / HIST_PAS_LARGE) * HIST_PAS_LARGE, fin = debut + HIST_PAS_LARGE;
+    const lot = [];
+    while (i < h.length && h[i][0] < fin && h[i].length <= 3) lot.push(h[i++]);
+    let n = lot.length, somme = 0, mn = Infinity, mx = -Infinity, hs = 0, hn = 0;
+    lot.forEach(q => { somme += q[1]; mn = Math.min(mn, q[1]); mx = Math.max(mx, q[1]); if (q[2] != null){ hs += q[2]; hn++; } });
+    /* Cas de défense (horloge déplacée) : une heure déjà regroupée reçoit des points fins.
+       On fusionne au lieu d'écrire deux fois le même horodatage. */
+    const prec = out[out.length - 1];
+    if (prec && prec[0] === debut && prec.length > 3){
+      somme += prec[1] * prec[5]; mn = Math.min(mn, prec[3]); mx = Math.max(mx, prec[4]);
+      /* L'humidité pèse le nombre de tranches qui en avaient une, pas toutes les tranches. */
+      const ph = nHum(prec); hs += prec[2] != null ? prec[2] * ph : 0; hn += ph;
+      n += prec[5]; out.pop();
+    }
+    const pt = [debut, r2(somme / n), hn ? Math.round(hs / hn * 10) / 10 : null, r2(mn), r2(mx), n];
+    if (hn && hn < n) pt.push(hn);
+    out.push(pt);
+  }
+  return out;
+}
+/* Découpe une suite de points de mémoire en plages continues : un trou de sonde interrompt la
+   courbe au lieu de tracer un trait droit qui ressemblerait à une mesure.
+   - Entre deux points fins, on tolère une tranche manquante (deux pas), comme avant.
+   - Dès qu'un point horaire est en jeu, une heure pleine qui manque coupe : deux heures
+     consécutives sont espacées d'un pas, et pas de deux. On ajoute à l'écart les tranches
+     absentes des heures voisines (20 − n chacune) : un trou d'un peu plus d'une heure à
+     cheval sur deux heures, qui ne vide aucune heure entière, coupe donc lui aussi. */
+const TRANCHES_HEURE = HIST_PAS_LARGE / HIST_PAS;
+function rupture(prev, p){
+  const fin = q => q.length <= 3;
+  const trou = p[0] - prev[0] - pasDe(prev);     /* entre la fin de prev et le début de p */
+  if (fin(prev) && fin(p)) return trou > HIST_PAS;
+  const manque = q => fin(q) ? 0 : Math.max(0, TRANCHES_HEURE - q[5]) * HIST_PAS;
+  return trou > (fin(p) ? HIST_PAS : 0) || trou + manque(prev) + manque(p) > HIST_PAS_LARGE;
+}
+function decouper(pts){
+  const segs = []; let seg = null;
+  pts.forEach(p => {
+    const prev = seg && seg[seg.length - 1];
+    if (!prev || rupture(prev, p)){ seg = []; segs.push(seg); }
+    seg.push(p);
+  });
+  return segs;
+}
+/* Un point horaire résume toute son heure : il est tracé en son milieu, et non à son début,
+   sans quoi la courbe serait décalée d'une demi-heure vers la gauche. La mémoire, elle, reste
+   ancrée sur le début de l'heure. Le troisième champ garde ce début pour la bulle de survol.
+   `debut` (le départ du lot) borne le milieu : la première heure, partielle, reste visible. */
+const tracer = (p, v, debut) => p.length > 3 ? [Math.max(p[0] + HIST_PAS_LARGE / 2, debut), v, p[0]] : [p[0], v];
+/* Quand une mesure de la mémoire a été prise, en clair : « à 14:32 », « le 30 sept. à
+   14:32 », ou pour une moyenne horaire « entre 14:00 et 15:00 ». */
+function quandMesure(p){
+  const jour = new Date(p[0]).toDateString() === new Date(now()).toDateString() ? '' : 'le ' + fmtDate(p[0]) + ' ';
+  return jour + (p.length > 3 ? `entre ${fmtTime(p[0])} et ${fmtTime(p[0] + HIST_PAS_LARGE)}` : 'à ' + fmtTime(p[0]));
+}
+if (!S.hist) S.hist = {};
+/* Un lot qu'on n'a plus à suivre n'a plus de courbe à alimenter : sa mémoire n'a pas à
+   encombrer le stockage du navigateur. */
+Object.keys(S.hist).forEach(k => { if (!S.batches.some(b => b.id === k && b.status === 'active')) delete S.hist[k]; });
+/* Point de mesure : [début de tranche, température, humidité ou null]. L'horodatage est
+   ancré sur la tranche de 3 minutes et la valeur est réécrite tant qu'on y reste : sans
+   cet ancrage, une synchro toutes les 15 s repoussait le même point et la mémoire ne
+   dépassait jamais une seule mesure. */
+const trancheHist = t => Math.floor(t / HIST_PAS);
+function enregistrerTemperatures(){
+  const t = now();
+  S.batches.filter(b => b.status === 'active' && sondeReelle(b)).forEach(b => {
+    /* Sans valeur fraîche, l'enregistrement n'avance pas : currentTemp renvoie null pour une
+       valeur que le pont n'a pas remise depuis dix minutes. */
+    const v = currentTemp(b); if (v == null) return;
+    const u = devsOf(b).find(d => d.kind === 'hum' && d.eid && !d.demo && fraiche(d));
+    const hh = u && typeof u.value === 'number' ? Math.round(u.value * 10) / 10 : null;
+    let h = S.hist[b.id] = S.hist[b.id] || [];
+    const dernier = h[h.length - 1];
+    /* Horloge reculée (remise à l'heure, correction NTP) : on n'écrit pas un point plus
+       ancien que le précédent, la mémoire resterait désordonnée. */
+    if (dernier && t < dernier[0]) return;
+    if (dernier && trancheHist(dernier[0]) === trancheHist(t)){
+      dernier[1] = Math.round(v * 100) / 100;
+      if (hh != null) dernier[2] = hh;
+      return;
+    }
+    h.push([trancheHist(t) * HIST_PAS, Math.round(v * 100) / 100, hh]);
+    /* Une nouvelle tranche : les heures passées sous la limite des 48 h sont regroupées. */
+    h = S.hist[b.id] = compacterHist(h, t);
+    if (h.length > HIST_MAX) h.splice(0, h.length - HIST_MAX);
+  });
+}
+const histDe = b => S.hist[b.id] || [];
+/* Température affichée d'un lot en cours : la première sonde dont la valeur est fraîche.
+   Hors maquette, cela exige une entité Home Assistant lue par le pont il y a moins de dix
+   minutes : une sonde ajoutée à la main (sans entité) ou une valeur périmée ne compte pas. */
 function currentTemp(b){
   if (b.status !== 'active') return model(b, b.end).temp;
-  const d = devsOf(b).find(d => d.kind === 'temp' && d.online);
+  const d = devsOf(b).find(d => d.kind === 'temp' && fraiche(d));
   return d ? d.value : null;
 }
 function currentHum(b){
   if (b.status !== 'active') return model(b, b.end).hum;
-  const d = devsOf(b).find(d => d.kind === 'hum' && d.online);
+  const d = devsOf(b).find(d => d.kind === 'hum' && fraiche(d));
   return d ? d.value : null;
+}
+/* Pourquoi un lot en cours n'a pas de température : null s'il n'a aucune sonde reliée. */
+function sansMesure(b){
+  const sondes = devsOf(b).filter(d => d.kind === 'temp');
+  if (!sondes.length) return null;
+  /* Des sondes sans entité ne mesureront jamais : ce n'est ni une panne ni un retard. */
+  const lues = sondes.filter(d => !sansEntite(d));
+  if (!lues.length) return 'Sonde sans entité';
+  return lues.every(d => !d.online) ? 'Sonde hors ligne' : 'Sans mesure';
 }
 function tick(){
   const t = now();
   for (const d of S.devices){
-    // Appareil relié au pont : c'est Home Assistant qui fait foi, la simulation se tait.
-    if (PONT.actif && d.eid) continue;
+    // Appareil relié à Home Assistant : c'est lui qui fait foi, la simulation se tait.
+    // Hors de la maquette ouverte en local, une entité réelle n'est jamais inventée : sans
+    // pont joignable — jeton absent sur ce navigateur, coupure réseau — la dernière valeur
+    // connue est conservée telle quelle. C'est elle qui a été mesurée ; le modèle, lui, ne
+    // doit jamais prendre la place d'une sonde pour remplir une carte.
+    /* Cela vaut aussi pour un appareil ajouté à la main, sans entité : hors maquette, rien
+       ne le mesure. Simulé, il remplissait la carte d'un lot réel avec le modèle, et
+       pouvait même écrire le modèle dans la mémoire des mesures quand la vraie sonde
+       décrochait. */
+    if (!PONT_LOCAL) continue;
     if (!d.online) continue;
     d.seen = t;
     const b = S.batches.find(x => x.id === d.batch && x.status === 'active');
     if (d.kind === 'temp') d.value = b ? model(b, t).temp + (Math.random() - .5) * .05 : 17.6 + Math.sin(t/DAY*6.28) * .6;
     if (d.kind === 'hum') { const m = b && model(b, t).hum; d.value = m != null ? m + (Math.random() - .5) * .4 : 64 + (Math.random() - .5); }
   }
-  const maitreRegul = PONT.actif && regulMaitre();
+  const maitreRegul = PONT.actif && !PONT.regule && regulMaitre();
   for (const d of S.devices){
     if (d.kind !== 'plug' || !d.online) continue;
     const b = S.batches.find(x => x.id === d.batch && x.status === 'active');
     // Coupure de sécurité : une chauffe automatique qui n'atteint jamais sa consigne
     // (sonde qui décroche, étuve vide) s'arrête au bout de AUTO_MAX_ON minutes.
-    if (PONT.actif && d.eid && d.on && d.regulDepuis && now() - d.regulDepuis > AUTO_MAX_ON){ regulerSecurite(d, b); continue; }
+    if (PONT.actif && !PONT.regule && d.eid && d.on && d.regulDepuis && now() - d.regulDepuis > AUTO_MAX_ON){ regulerSecurite(d, b); continue; }
     if (d.mode === 'auto' && b){
       const tp = currentTemp(b), tg = b.recipe.temp;
       if (tp != null){
@@ -865,17 +1098,29 @@ function tick(){
              régule déjà. Un clic manuel, lui, n'est jamais filtré : c'est une décision
              humaine, et dès que l'utilisateur relie un lot lui-même la marque tombe. */
           if (PONT.actif && d.eid && maitreRegul && !d.demo) regulerPont(d, b, tp, voulu);
-          else { d.on = voulu; logHeat(d, b, tp, false); }
+          /* Repli : personne ne reçoit d'ordre (page ouverte en local, pont injoignable,
+             prise de démonstration). La bascule est une simulation locale, et son
+             événement le dit — un lot réel ne doit pas la lire comme une chauffe qui a eu
+             lieu, alors que le relais n'a rien reçu. */
+          /* Hors maquette, on ne simule pas une prise réelle : un autre onglet la régule
+             peut-être, et l'état affiché est celui que le pont renvoie. La bascule locale
+             n'existe que dans la page ouverte en local, qui n'a personne d'autre — c'est
+             elle qui remplissait « Activité récente » de centaines de bascules par heure et
+             en chassait les vraies commandes. */
+          else if (PONT_LOCAL) { d.on = voulu; logHeat(d, b, tp, false, null, true); }
         }
       }
     }
-    if (!(PONT.actif && d.eid)) d.power = d.on ? (d.id === 'o3' ? 410 : 160) + Math.random() * 12 : 0.4;
+    /* La multiprise Meross MSS425F ne mesure pas la puissance : seule la maquette en simule une. */
+    if (PONT_LOCAL) d.power = d.on ? (d.id === 'o3' ? 410 : 160) + Math.random() * 12 : 0.4;
   }
 }
 function status(b){
   if (b.status === 'done') return ['', 'Terminée'];
   const tp = currentTemp(b);
-  if (tp == null) return ['', 'Sans sonde'];
+  /* Un lot dont la sonde ne remonte plus est une alerte : c'est le moment où la régulation
+     s'arrête. « Sans sonde » est réservé au lot qui n'a aucune sonde reliée. */
+  if (tp == null){ const m = sansMesure(b); return m ? ['bad', m] : ['', 'Sans sonde']; }
   const dev = Math.abs(tp - b.recipe.temp), tol = TYPES[b.recipe.type].tol;
   if (dev <= tol * .5) return ['ok', 'Dans la cible'];
   if (dev <= tol) return ['warn', 'Écart léger'];
@@ -891,7 +1136,15 @@ function progress(b){
   if (b.status === 'done') label = `${fmtDur(el)} de fermentation`;
   return {frac, el, label, endAt: b.start + dur * DAY};
 }
-function heater(b){ const p = devsOf(b).find(d => d.kind === 'plug'); return p ? (p.on ? 'Chauffe active' : 'Chauffe en veille') : null; }
+/* État de chauffe d'un lot : 'on', 'off', 'inconnu' (aucune prise à l'état frais) ou null
+   (aucune prise reliée). On lit les prises reliées par l'utilisateur avant celles de la
+   démonstration, et TOUTES : un lot chauffé par sa deuxième prise chauffe. */
+function chauffe(b){
+  const ps = devsOf(b).filter(d => d.kind === 'plug'); if (!ps.length) return null;
+  const vues = (ps.some(d => !d.demo) ? ps.filter(d => !d.demo) : ps).filter(fraiche);
+  if (!vues.length) return 'inconnu';
+  return vues.some(d => d.on) ? 'on' : 'off';
+}
 
 /* ---------- Charts ---------- */
 function niceStep(r){ const p = 10 ** Math.floor(Math.log10(r)); const n = r / p; return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * p; }
@@ -901,11 +1154,31 @@ function drawChart(el){
   const L = 46, R = 14, T = 14, B = 28, iw = W - L - R, ih = H - T - B;
   const xs = [], ys = [];
   c.series.forEach(s => s.pts.forEach(p => { xs.push(p[0]); ys.push(p[1]); }));
-  (c.lines || []).forEach(l => ys.push(l.y));
-  if (c.band) ys.push(...c.band);
-  if (!xs.length){ el.innerHTML = '<p class="muted">Pas encore de mesure.</p>'; return; }
+  /* La légende voisine n'annonce que ce qui est tracé : rien quand la courbe est vide, ni
+     consigne ni plage tolérée quand la consigne reste hors du cadre (data-hors). */
+  const legende = el.parentElement && el.parentElement.querySelector('.legend');
+  if (legende) legende.style.display = xs.length ? '' : 'none';
+  if (!xs.length){ el.innerHTML = `<p class="muted">${esc(c.vide || 'Pas encore de mesure.')}</p>`; return; }
   let x0 = c.x0 ?? Math.min(...xs), x1 = c.x1 ?? Math.max(...xs); if (x1 === x0) x1 = x0 + 1;
-  let y0 = Math.min(...ys), y1 = Math.max(...ys); const pad = (y1 - y0) * .18 || .5; y0 -= pad; y1 += pad;
+  /* Axe vertical. Il part des mesures, avec une étendue minimale (c.ecartMin) pour que le
+     bruit d'une sonde ne passe pas pour une variation. Une ligne « souple » (la consigne)
+     entre dans le cadre si elle est proche (l.proche) ou si l'y faire entrer laisse au moins
+     un quart de la hauteur aux mesures. Sinon elle reste hors du cadre et un repère au bord
+     dit où elle est et à quelle distance de la dernière mesure : la courbe reste lisible, et
+     la distance à la cible n'est ni cachée ni écrasée. */
+  let y0 = Math.min(...ys), y1 = Math.max(...ys);
+  if (c.ecartMin && y1 - y0 < c.ecartMin){ const m = (y0 + y1) / 2; y0 = m - c.ecartMin / 2; y1 = m + c.ecartMin / 2; }
+  const etendue = y1 - y0, dehors = [];
+  const lignes = (c.lines || []).filter(l => {
+    if (l.y == null || isNaN(l.y)) return false;
+    const dist = l.y > y1 ? l.y - y1 : l.y < y0 ? y0 - l.y : 0;
+    if (l.souple && dist > Math.max(3 * etendue, l.proche || 0)){ dehors.push(l); return false; }
+    return true;
+  });
+  lignes.forEach(l => { y0 = Math.min(y0, l.y); y1 = Math.max(y1, l.y); });
+  /* La plage tolérée accompagne la consigne : elle n'élargit l'axe que si la consigne y est. */
+  if (c.band && !dehors.length){ y0 = Math.min(y0, c.band[0]); y1 = Math.max(y1, c.band[1]); }
+  const pad = (y1 - y0) * .18 || .5; y0 -= pad; y1 += pad;
   const sx = x => L + (x - x0) / (x1 - x0) * iw, sy = y => T + (1 - (y - y0) / (y1 - y0)) * ih;
   const step = niceStep((y1 - y0) / 4);
   let g = '';
@@ -918,11 +1191,31 @@ function drawChart(el){
     const x = x0 + (x1 - x0) * i / 3, px = sx(x);
     g += `<text x="${px}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === 3 ? 'end' : 'middle'}" font-size="11" style="fill:var(--muted)">${c.xFmt(x)}</text>`;
   }
-  if (c.band) g += `<rect x="${L}" width="${iw}" y="${sy(c.band[1])}" height="${sy(c.band[0]) - sy(c.band[1])}" style="fill:${c.color};opacity:.09"/>`;
-  (c.lines || []).forEach(l => {
+  if (c.band){
+    const bh = Math.min(y1, c.band[1]), bb = Math.max(y0, c.band[0]);
+    if (bh > bb) g += `<rect x="${L}" width="${iw}" y="${sy(bh)}" height="${sy(bb) - sy(bh)}" style="fill:${c.color};opacity:.09"/>`;
+  }
+  lignes.forEach(l => {
     g += `<line x1="${L}" x2="${W - R}" y1="${sy(l.y)}" y2="${sy(l.y)}" style="stroke:${c.color}" stroke-width="1" stroke-dasharray="4 4" opacity=".7"/>`;
     g += `<text x="${W - R}" y="${sy(l.y) - 6}" text-anchor="end" font-size="11" style="fill:var(--muted)">${l.label}</text>`;
   });
+  /* Repère d'une consigne hors du cadre : flèche, valeur, et écart à la dernière mesure. */
+  const derSerie = c.series.filter(s => s.pts.length).at(-1), der = derSerie && derSerie.pts.at(-1);
+  let horsTxt = '';
+  dehors.forEach(l => {
+    const haut = l.y > y1, ec = der ? Math.abs(l.y - der[1]) : null;
+    const txt = `${haut ? '▲' : '▼'} ${l.label}${ec != null ? `, ${fmt(ec, 1)}${l.unite || ''} plus ${haut ? 'haut' : 'bas'}` : ''}`;
+    horsTxt += ' ; ' + txt.slice(2) + (ec != null && l.ecartSur ? ' (' + l.ecartSur + ')' : '');
+    const ligne = (t, y) => `<text class="hors-cadre" x="${W - R}" y="${y}" text-anchor="end" font-size="11" style="fill:var(--ink2);stroke:var(--surface);stroke-width:3px;paint-order:stroke">${esc(t)}</text>`;
+    g += ligne(txt, haut ? T + 12 : T + ih - 6);
+    /* Seconde ligne, sous le repère en haut, au-dessus en bas : de quand date la mesure. */
+    if (ec != null && l.ecartSur) g += ligne(l.ecartSur, haut ? T + 26 : T + ih - 20);
+  });
+  if (legende) legende.querySelectorAll('[data-hors]').forEach(s => { s.style.display = dehors.length ? 'none' : ''; });
+  /* Les courbes sont tenues dans la zone de tracé (avec quelques pixels pour le point
+     « live » et l'épaisseur du trait) : rien ne déborde sur les graduations. */
+  el._clip = el._clip || 'clip-' + (++drawChart.n);
+  g += `<defs><clipPath id="${el._clip}"><rect x="${L - 6}" y="${T - 6}" width="${iw + 12}" height="${ih + 12}"/></clipPath></defs><g clip-path="url(#${el._clip})">`;
   c.series.forEach(s => {
     if (!s.pts.length) return;
     const d = s.pts.map((p, i) => (i ? 'L' : 'M') + sx(p[0]).toFixed(1) + ' ' + sy(p[1]).toFixed(1)).join('');
@@ -932,10 +1225,16 @@ function drawChart(el){
     const lp = s.pts.at(-1);
     if (s.live) g += `<circle cx="${sx(lp[0])}" cy="${sy(lp[1])}" r="4" style="fill:${s.color}"/>`;
   });
+  g += '</g>';
   g += `<line class="xh" x1="0" x2="0" y1="${T}" y2="${T + ih}" style="stroke:var(--muted)" stroke-width="1" opacity="0"/><circle class="xd" r="4" style="fill:${c.color}" opacity="0"/>`;
-  el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(c.label || 'Graphique')}">${g}</svg><div class="tip num"></div>`;
-  el._sc = {sx, sy, x0, x1, L, iw, pts: c.series[0].pts, tip: c.tip};
+  el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc((c.label || 'Graphique') + horsTxt)}">${g}</svg><div class="tip num"></div>`;
+  /* Survol : une courbe découpée en plages (trous de sonde) est faite de plusieurs séries
+     marquées « survol ». On les lit toutes, dans l'ordre du temps, pour trouver le point
+     réellement survolé — pas seulement le premier segment. Sans marque, la première série. */
+  const lues = c.series.filter(s => s.survol);
+  el._sc = {sx, sy, x0, x1, L, iw, pts: (lues.length ? lues : c.series.slice(0, 1)).flatMap(s => s.pts), tip: c.tip};
 }
+drawChart.n = 0;
 function chartHover(el, e){
   const sc = el._sc; if (!sc || !sc.pts.length) return;
   const r = el.getBoundingClientRect(), x = e.clientX - r.left;
@@ -958,33 +1257,139 @@ function mountCharts(){
   });
 }
 function sparkPath(b){
-  const end = b.status === 'done' ? b.end : now(), from = Math.max(b.start, end - DAY), n = 48, pts = [];
-  for (let i = 0; i <= n; i++){ const t = from + (end - from) * i / n; pts.push(model(b, t).temp); }
-  const cur = currentTemp(b); if (cur != null) pts[pts.length - 1] = cur;
-  const lo = Math.min(...pts, b.recipe.temp) - .3, hi = Math.max(...pts, b.recipe.temp) + .3;
+  const end = b.status === 'done' ? b.end : now(), from = Math.max(b.start, end - DAY), n = 48, segs = [];
+  const reel = aMemoire(b), trace = p => tracer(p, p[1], b.start);
+  if (reel){
+    /* Mémoire des mesures : c'est elle la courbe, pont actif ou non — une mesure
+       enregistrée reste vraie pendant une coupure. Seules les mesures des dernières 24 h
+       sont tracées : deux mesures anciennes ne sont pas présentées comme récentes.
+       Même découpe des trous de sonde que la grande courbe (decouper) : une coupure
+       interrompt la vignette au lieu d'y tracer un trait droit. */
+    decouper(histDe(b).filter(p => trace(p)[0] >= from)).forEach(sg => segs.push(sg.map(trace)));
+  } else if (PONT_LOCAL){
+    const m = [];
+    for (let i = 0; i <= n; i++){ const t = from + (end - from) * i / n; m.push([t, model(b, t).temp]); }
+    segs.push(m);
+  }
+  /* Le point « live » ne concerne qu'un lot en cours : terminé, currentTemp renvoie le
+     modèle, et le modèle n'a rien à faire au bout d'une courbe de mesures réelles. Il suit
+     la règle de la grande courbe (ajouterLive) : après un trou, il part seul. */
+  const cur = b.status === 'active' ? currentTemp(b) : null;
+  ajouterLive(segs, end, cur, reel);
+  const tous = segs.flat(), pts = tous.map(p => p[1]);
+  /* Un point seul ne fait pas une courbe : un palier d'un bout à l'autre de la vignette
+     serait une invention de plus. On ne trace rien. */
+  if (pts.length < 2) return '';
+  /* Même règle d'axe que la grande courbe : la consigne n'entre dans la vignette que si elle
+     est à moins de 5 °C des mesures, ou si elle laisse un quart de la hauteur à la courbe.
+     Sinon la vignette montre la mesure seule — la carte affiche la cible juste au-dessus. */
+  const tg = b.recipe.temp;
+  let lo = Math.min(...pts), hi = Math.max(...pts);
+  if (hi - lo < 1){ const m = (lo + hi) / 2; lo = m - .5; hi = m + .5; }
+  const dist = tg > hi ? tg - hi : tg < lo ? lo - tg : 0, cible = dist <= Math.max(3 * (hi - lo), 5);
+  if (cible){ lo = Math.min(lo, tg); hi = Math.max(hi, tg); }
+  lo -= .3; hi += .3;
   const y = v => 28 - (v - lo) / (hi - lo) * 26;
-  const d = pts.map((v, i) => (i ? 'L' : 'M') + (i / n * 100).toFixed(2) + ' ' + y(v).toFixed(2)).join('');
-  return `<line x1="0" x2="100" y1="${y(b.recipe.temp)}" y2="${y(b.recipe.temp)}" style="stroke:var(--c)" stroke-width="1" stroke-dasharray="2 3" vector-effect="non-scaling-stroke" opacity=".5"/><path d="${d}" fill="none" style="stroke:var(--c)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+  /* L'abscisse suit le TEMPS des points tracés, pas leur rang. Indexée par rang, la découpe
+     ci-dessus recollait les segments bout à bout et un trou de sonde ne se voyait pas du tout
+     (des écarts parfaitement uniformes). On garde la première et la dernière mesure comme
+     bornes, pour que la courbe occupe toute la largeur même si le lot n'a que quelques heures. */
+  const premier = tous[0][0], dernier = tous[tous.length - 1][0];
+  const etendue = Math.max(1, dernier - premier);
+  const x = t => Math.min(100, Math.max(0, (t - premier) / etendue * 100));
+  let d = '';
+  for (const sg of segs){
+    for (let j = 0; j < sg.length; j++){
+      d += (j ? 'L' : 'M') + x(sg[j][0]).toFixed(2) + ' ' + y(sg[j][1]).toFixed(2);
+    }
+  }
+  return `${cible ? `<line x1="0" x2="100" y1="${y(tg)}" y2="${y(tg)}" style="stroke:var(--c)" stroke-width="1" stroke-dasharray="2 3" vector-effect="non-scaling-stroke" opacity=".5"/>` : ''}<path d="${d}" fill="none" style="stroke:var(--c)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
 }
 
 
 function tempCfg(b){
+  const segs = [];   /* une série par plage continue de mesures */
   const active = b.status === 'active', end = active ? now() : b.end;
   const span = detailRange === '24h' ? DAY : detailRange === '7j' ? 7 * DAY : end - b.start;
   const from = Math.max(b.start, end - span), n = 160, pts = [];
-  for (let i = 0; i <= n; i++){ const t = from + (end - from) * i / n; pts.push([t, model(b, t).temp]); }
-  const cur = currentTemp(b); if (active && cur != null) pts[pts.length - 1] = [end, cur];
+  /* La mémoire s'affiche dès qu'elle existe, pont actif ou non : pendant une coupure, la
+     courbe montre ce qui a été mesuré et s'arrête là où plus rien n'est arrivé. */
+  const hist = histDe(b), reel = aMemoire(b);
+  const trace = p => tracer(p, p[1], b.start);
+  let derVu = null;   /* dernier point de mémoire tracé : celui sur lequel l'écart est calculé */
+  if (reel){
+    /* Mesures réellement enregistrées : rien d'autre n'est tracé, la courbe s'arrête où la
+       mémoire commence au lieu de compléter avec le modèle. Une coupure de sonde devient
+       une interruption de la courbe, pas un trait droit qui ressemblerait à une mesure. */
+    const vus = hist.filter(p => trace(p)[0] >= from);
+    decouper(vus).forEach(sg => segs.push(sg.map(trace)));
+    derVu = vus[vus.length - 1] || null;
+    /* La fenêtre ne montre parfois qu'un point : la courbe part alors du bord gauche, sur le
+       trait qui relie ce point au précédent — à condition qu'aucun trou ne les sépare (même
+       règle que la découpe), et en interpolant à `from` pour ne pas sortir du cadre. */
+    if (segs.length && segs[0].length < 2){
+      const avant = hist.filter(p => trace(p)[0] < from), a = avant[avant.length - 1], s0 = vus[0];
+      const ta = a && trace(a)[0], t0 = trace(s0)[0];
+      if (a && t0 > from && !rupture(a, s0)){
+        const k = (from - ta) / (t0 - ta);
+        segs[0].unshift([from, a[1] + (s0[1] - a[1]) * k]);
+      }
+    }
+  } else if (PONT_LOCAL){
+    /* Page ouverte en local : là, et là seulement, le modèle parle. Hors maquette, un pont
+       muet ne fait pas revenir le modèle — il laisse la courbe vide. */
+    const m = [];
+    for (let i = 0; i <= n; i++){ const t = from + (end - from) * i / n; m.push([t, model(b, t).temp]); }
+    segs.push(m);
+  }
+  /* Lot réel sans mémoire de mesures : on n'invente rien, la courbe restera vide. */
+  const cur = b.status === 'active' ? currentTemp(b) : null;
+  ajouterLive(segs, end, cur, reel);
   const tg = b.recipe.temp, tol = TYPES[b.recipe.type].tol * .5, long = end - from > 2 * DAY, c = TYPES[b.recipe.type].c;
-  return {color:c, series:[{pts, color:c, area:true, live:active}], band:[tg - tol, tg + tol], lines:[{y:tg, label:'cible ' + fmt(tg, 0) + ' °C'}],
+  const series = segs.filter(sg => sg.length).map((sg, i, arr) => ({pts:sg, color:c, area:i === arr.length - 1, live:active && cur != null && i === arr.length - 1, survol:true}));
+  /* La cible garde sa décimale quand elle en a une : « cible 19 °C, 11,5 °C plus bas » pour
+     une consigne de 18,5 °C opposait deux chiffres contradictoires. */
+  const cible = 'cible ' + fmt(tg, Number.isInteger(tg) ? 0 : 1) + ' °C';
+  /* Sans mesure en direct, l'écart du repère hors cadre est calculé sur le dernier point
+     mémorisé, qui peut avoir des heures : le repère dit lequel. */
+  const ecartSur = cur == null && derVu ? `écart à la dernière ${derVu.length > 3 ? 'moyenne horaire' : 'mesure'}, ${quandMesure(derVu)}` : null;
+  /* Une mémoire qui existe mais ne tombe pas dans la plage choisie (pont coupé depuis plus
+     de 24 h) : il y a des mesures, plus anciennes. On le dit, avec la date de la dernière. */
+  const dh = hist[hist.length - 1];
+  const vide = dh ? `Aucune mesure ${detailRange === '24h' ? 'sur les dernières 24 h' : detailRange === '7j' ? 'sur les 7 derniers jours' : 'dans cette plage'}. Dernière ${dh.length > 3 ? 'moyenne horaire' : 'mesure'} ${quandMesure(dh)}.` : null;
+  return {color:c, series, x0:from, band:[tg - tol, tg + tol], ecartMin:1, vide,
+    lines:[{y:tg, label:cible, souple:true, proche:5, unite:' °C', ecartSur}],
     yFmt:(v, s) => fmt(v, s < 1 ? 1 : 0) + '°', xFmt:t => long ? fmtDate(t) : fmtTime(t),
-    tip:p => `${fmt(p[1], 1)} °C, ${long ? fmtDate(p[0]) + ' ' : ''}${fmtTime(p[0])}`, label:'Courbe de température'};
+    tip:p => p[2] != null ? `${fmt(p[1], 1)} °C, moyenne ${long ? 'du ' + fmtDate(p[2]) + ' ' : ''}de ${fmtTime(p[2])} à ${fmtTime(p[2] + HIST_PAS_LARGE)}`
+      : `${fmt(p[1], 1)} °C, ${long ? fmtDate(p[0]) + ' ' : ''}${fmtTime(p[0])}`,
+    label:(!reel && !PONT_LOCAL) ? 'Mémoire des mesures en cours de constitution' : 'Courbe de température'};
+}
+/* Point « live » au bout de la dernière plage. Il remplace le dernier point s'il est de la
+   même tranche, prolonge la plage si aucun trou ne l'en sépare, et sinon part seul : une
+   mesure fraîche après une coupure ne doit pas être reliée par un trait à la mémoire. */
+function ajouterLive(segs, end, cur, reel){
+  if (cur == null) return;
+  const der = segs[segs.length - 1], dp = der && der[der.length - 1];
+  if (dp && end - dp[0] < 5 * 60e3) der[der.length - 1] = [end, cur];
+  else if (dp && (!reel || end - dp[0] <= 2 * HIST_PAS)) der.push([end, cur]);
+  else segs.push([[end, cur]]);
 }
 function humCfg(b){
-  const active = b.status === 'active', end = active ? now() : b.end, from = b.start, n = 120, pts = [];
-  for (let i = 0; i <= n; i++){ const t = from + (end - from) * i / n; pts.push([t, model(b, t).hum]); }
-  const cur = currentHum(b); if (active && cur != null) pts[pts.length - 1] = [end, cur];
-  return {color:'var(--accent)', h:170, series:[{pts, color:'var(--accent)', area:true, live:active}], lines:[{y:b.recipe.hum, label:'cible ' + b.recipe.hum + ' %'}],
-    yFmt:v => fmt(v, 0) + ' %', xFmt:fmtTime, tip:p => `${fmt(p[1], 0)} % HR, ${fmtTime(p[0])}`, label:'Courbe d’humidité'};
+  const active = b.status === 'active', end = active ? now() : b.end, from = b.start, n = 120, segs = [];
+  const hum = histDe(b), reel = hum.filter(p => p[2] != null).length > 1;
+  if (reel){
+    /* Humidité réellement mesurée : même mémoire, même découpe des trous que la température. */
+    decouper(hum.filter(p => p[2] != null && tracer(p, 0, from)[0] >= from)).forEach(sg => segs.push(sg.map(p => tracer(p, p[2], from))));
+  } else if (PONT_LOCAL){
+    const m = [];
+    for (let i = 0; i <= n; i++){ const t = from + (end - from) * i / n; m.push([t, model(b, t).hum]); }
+    segs.push(m);
+  }
+  const cur = active ? currentHum(b) : null;
+  ajouterLive(segs, end, cur, reel);
+  const series = segs.filter(sg => sg.length).map((sg, i, arr) => ({pts:sg, color:'var(--accent)', area:i === arr.length - 1, live:active && cur != null && i === arr.length - 1, survol:true}));
+  return {color:'var(--accent)', h:170, series, lines:[{y:b.recipe.hum, label:'cible ' + b.recipe.hum + ' %'}],
+    yFmt:v => fmt(v, 0) + ' %', xFmt:fmtTime, tip:p => p[2] != null ? `${fmt(p[1], 0)} % HR, moyenne de ${fmtTime(p[2])} à ${fmtTime(p[2] + HIST_PAS_LARGE)}` : `${fmt(p[1], 0)} % HR, ${fmtTime(p[0])}`, label:'Courbe d’humidité'};
 }
 function gravCfg(b){
   const r = b.recipe, c = TYPES.biere.c;
@@ -1069,24 +1474,56 @@ if (!S.events){
     {t:t - 26*HOUR, k:'batch', x:'Fermentation lancée : Koji de riz — amazake', b:'b3'},
   ];
 }
-function logEvent(k, x, b, extra){ S.events.unshift(Object.assign({t:now(), k, x, b}, extra || {})); S.events.length = Math.min(S.events.length, 500); }
-function logHeat(d, b, tp, manual, t){
+/* Le journal garde les 500 événements les plus récents. Un événement restauré par
+   l'utilisateur depuis la mise de côté (« restaure ») ne compte pas dans ce plafond : il est
+   ancien par nature, et le plafond le chasserait aussitôt — la restauration serait vaine. */
+function bornerEvents(){
+  if (S.events.length <= 500) return;
+  let n = 0; S.events = S.events.filter(e => e.restaure || ++n <= 500);
+}
+function logEvent(k, x, b, extra){ S.events.unshift(Object.assign({t:now(), k, x, b}, extra || {})); bornerEvents(); }
+function logHeat(d, b, tp, manual, t, sim, reel){
   const tg = b ? b.recipe.temp : null;
   const x = `${d.name} : ${d.on ? 'activation' : 'désactivation'} de la chauffe${tp != null ? ' à ' + fmt(tp, 1) + ' °C' : ''}${manual ? ' (manuel)' : ''}`;
-  const e = {t:t || now(), k:d.on ? 'heat-on' : 'heat-off', x, b:b ? b.id : null, tp, tg, manual:!!manual};
-  if (t){ S.events.push(e); } else { S.events.unshift(e); S.events.length = Math.min(S.events.length, 500); }
+  const e = {t:t || now(), k:d.on ? 'heat-on' : 'heat-off', x, b:b ? b.id : null, tp, tg, manual:!!manual, sim:!!sim, reel:!!reel};
+  if (t){ S.events.push(e); } else { S.events.unshift(e); bornerEvents(); }
 }
-/* Historique de chauffe reconstruit pour la démo (36 dernières heures) */
+/* Historique de chauffe fabriqué pour la DÉMONSTRATION seulement (36 dernières heures).
+   Il écrivait ses cycles pour tout lot ayant une prise reliée, y compris les vraies : un
+   lot réel se retrouvait avec un journal de chauffes qui n'avaient pas eu lieu, aux
+   températures du modèle et non de la sonde. Désormais il ne concerne que les prises
+   marquées « demo », et ses événements portent le drapeau « sim » que le journal cache
+   aux lots réels. */
+/* Migration unique, indépendante du générateur de démonstration : un état déjà semé porte
+   le même journal fabriqué, et le drapeau `heatSeeded` est déjà posé chez l'utilisateur.
+   Les événements sont mis de côté plutôt que supprimés (S.eventsArchive) — leur provenance
+   n'est pas vérifiable, et un lot réel ne doit pas afficher de chauffes qu'il n'a pas eues. */
+if (!S.migrationSim){
+  S.migrationSim = true;
+  if (!S.eventsArchive) S.eventsArchive = [];
+  /* « restaure » : un événement que l'utilisateur a lui-même fait revenir de la mise de côté
+     n'y retourne jamais, même si cette migration devait être rejouée. */
+  const douteux = S.events.filter(e => (e.k === 'heat-on' || e.k === 'heat-off') && e.tp != null && !e.sim && !e.reel && !e.restaure);
+  if (douteux.length){
+    S.eventsArchive = S.eventsArchive.concat(douteux);
+    S.events = S.events.filter(e => douteux.indexOf(e) < 0);
+    logEvent('note', douteux.length + ' événements de chauffe de provenance non vérifiable mis de côté'
+      + ' (certains peuvent être de vraies commandes de régulation ; archive conservée)');
+  }
+}
 if (!S.heatSeeded){
   S.events = S.events.filter(e => !((e.k === 'heat-on' || e.k === 'heat-off') && e.tp == null));
   const t1 = now();
   for (const b of S.batches.filter(x => x.status === 'active')){
-    for (const d of S.devices.filter(x => x.kind === 'plug' && x.batch === b.id)){
+    for (const d of S.devices.filter(x => x.kind === 'plug' && x.batch === b.id && x.demo === true)){
       let on = null;
       for (let t = Math.max(b.start, t1 - 36 * HOUR); t < t1 - 60e3; t += 4 * 60e3){
         const tp = model(b, t).temp, tg = b.recipe.temp;
         const nxt = tp < tg - HYST ? true : tp > tg + HYST ? false : on;
-        if (on !== null && nxt !== on){ d.on = nxt; logHeat(d, b, tp, false, t); }
+        /* L'historique fabriqué ne touche pas à l'état d'une vraie prise : hors maquette,
+           son état est celui que le pont renverra, et un d.on inventé ici le ferait passer
+           pour « changé hors du dashboard » à la première synchro. */
+        if (on !== null && nxt !== on){ if (PONT_LOCAL) d.on = nxt; logHeat(Object.assign({}, d, {on:nxt}), b, tp, false, t, true); }
         on = nxt;
       }
     }
@@ -1095,9 +1532,16 @@ if (!S.heatSeeded){
   S.heatSeeded = true;
 }
 const EV_IC = {target:['note', IC.temp], 'heat-on':['heat', IC.flame], 'heat-off':['', IC.flame], note:['note', IC.pen], alert:['', IC.alert], batch:['batch', IC.play]};
+/* Un événement simulé ne se lit que dans la page ouverte en local, où la simulation est le
+   sujet. Même règle pour le journal d'un lot et pour le fil « Activité récente » — qui
+   affichait encore, au nom d'un vrai relais, des chauffes du modèle qui n'ont pas eu lieu. */
+const evVisible = e => !e.sim || PONT_LOCAL;
+const activiteRecente = () => S.events.filter(evVisible).slice(0, 30);
+/* Un événement restauré depuis la mise de côté garde sa marque dans le fil comme dans le
+   journal du lot : sans elle, une chauffe fabriquée repasserait pour une vraie commande. */
 function feedHTML(list){
   if (!list.length) return '<div class="empty">Aucune activité récente.</div>';
-  return `<ul class="feed">${list.map(e => { const [c, i] = EV_IC[e.k] || ['', IC.pen]; return `<li><span class="fi ${c}" style="${e.k === 'alert' ? 'color:var(--bad)' : ''}">${i}</span><div><div class="ft">${esc(e.x)}</div><div class="fm">${ago(e.t)}</div></div></li>`; }).join('')}</ul>`;
+  return `<ul class="feed">${list.map(e => { const [c, i] = EV_IC[e.k] || ['', IC.pen]; return `<li><span class="fi ${c}" style="${e.k === 'alert' ? 'color:var(--bad)' : ''}">${i}</span><div><div class="ft">${esc(e.x)}${e.restaure ? ' <span class="muted">(restauré, provenance non vérifiée)</span>' : ''}</div><div class="fm">${ago(e.t)}</div></div></li>`; }).join('')}</ul>`;
 }
 
 /* ---------- Live values ---------- */
@@ -1105,18 +1549,21 @@ function live(key){
   const [k, id] = key.split(':');
   if (k === 'dev'){
     const d = S.devices.find(x => x.id === id); if (!d) return '';
-    if (d.kind === 'plug') return d.online ? (d.on ? fmt(d.power, 0) + ' W' : '0 W') : '—';
-    if (d.value == null || !d.online) return '—';
+    /* Une valeur non fraîche (jamais reçue du pont, ou il y a plus de dix minutes) s'affiche
+       « — ». Une prise sans mesure de puissance (Meross) dit ON ou OFF, pas des watts. */
+    if (!fraiche(d)) return '—';
+    if (d.kind === 'plug') return typeof d.power === 'number' ? (d.on ? fmt(d.power, 0) + ' W' : '0 W') : (d.on ? 'ON' : 'OFF');
     return d.kind === 'hum' ? fmt(d.value, 1) + ' %' : fmt(d.value, 2) + ' °C';
   }
-  if (k === 'seen'){ const d = S.devices.find(x => x.id === id); return d ? ago(d.seen) : ''; }
+  if (k === 'seen'){ const d = S.devices.find(x => x.id === id); return !d ? '' : sansEntite(d) ? 'jamais' : ago(d.seen); }
   if (k === 'kpi'){ return kpiVal(id); }
   const b = S.batches.find(x => x.id === id); if (!b) return '';
   if (k === 'temp') return fmt(currentTemp(b), 1);
   if (k === 'hum') return fmt(currentHum(b), 0);
-  if (k === 'heat') return heater(b) ? (devsOf(b).find(d => d.kind === 'plug').on ? 'Active' : 'Veille') : '—';
+  if (k === 'heat'){ const c = chauffe(b); return c === 'on' ? 'Active' : c === 'off' ? 'Veille' : '—'; }
   if (k === 'delta'){
-    const tp = currentTemp(b); if (tp == null) return 'Aucune sonde reliée';
+    const tp = currentTemp(b);
+    if (tp == null){ const m = sansMesure(b); return !m ? 'Aucune sonde reliée' : m === 'Sonde hors ligne' ? 'Sonde hors ligne' : m === 'Sonde sans entité' ? 'Sonde sans entité Home Assistant' : 'Aucune mesure récente'; }
     const d = tp - b.recipe.temp;
     return `${d >= 0 ? '+' : '−'}${fmt(Math.abs(d), 1)} °C vs cible`;
   }
@@ -1124,13 +1571,46 @@ function live(key){
 function kpiVal(k){
   const act = S.batches.filter(b => b.status === 'active');
   if (k === 'alerts') return String(act.filter(b => status(b)[0] === 'bad' || status(b)[0] === 'warn').length);
-  if (k === 'online') return `${S.devices.filter(d => d.online).length}/${S.devices.length}`;
-  if (k === 'heaters') return String(S.devices.filter(d => d.kind === 'plug' && d.on).length);
-  if (k === 'power') return fmt(S.devices.filter(d => d.kind === 'plug' && d.on).reduce((a, d) => a + d.power, 0), 0);
+  /* « En ligne » : un appareil dont la page a une valeur fraîche, pas un drapeau resté vrai
+     depuis le jeu de démonstration. */
+  if (k === 'online') return `${S.devices.filter(fraiche).length}/${S.devices.length}`;
+  if (k === 'heaters') return String(S.devices.filter(d => d.kind === 'plug' && d.on && fraiche(d)).length);
+  if (k === 'power'){
+    const ps = S.devices.filter(d => d.kind === 'plug' && fraiche(d));
+    if (!ps.length || ps.some(d => typeof d.power !== 'number')) return 'non mesurée';
+    return fmt(ps.filter(d => d.on).reduce((a, d) => a + d.power, 0), 0) + ' W';
+  }
   return '';
+}
+/* Badge d'état d'un appareil : sans entité (jamais de mesure), hors ligne, sans nouvelles
+   (valeur périmée), ou en ligne. */
+function etatBadge(d){
+  if (sansEntite(d)) return `<span class="badge" title="${SANS_ENTITE}">Sans entité</span>`;
+  if (!d.online) return '<span class="badge bad"><span class="dot"></span>Hors ligne</span>';
+  if (!fraiche(d)) return '<span class="badge warn"><span class="dot"></span>Sans nouvelles</span>';
+  return '<span class="badge ok"><span class="dot"></span>En ligne</span>';
+}
+/* Sous-titre de la tuile « en ligne » : les appareils sans entité sont comptés à part, ils
+   n'ont pas « perdu » leur remontée, ils n'en ont jamais eu. */
+function horsLigneS(){
+  const ne = S.devices.filter(sansEntite).length, off = S.devices.filter(d => !fraiche(d) && !sansEntite(d)).length;
+  const t = [off ? off + ' sans remontée récente' : '', ne ? ne + ' sans entité' : ''].filter(Boolean).join(', ');
+  return `<div class="s ${off ? 'bad' : ne ? 'warn' : 'ok'}">${t || 'Tous connectés'}</div>`;
+}
+/* En-tête : « En direct » seulement si le pont a répondu il y a moins de dix minutes. */
+function etatPont(){
+  const h = t => new Date(t).toLocaleTimeString('fr-FR');
+  if (PONT_LOCAL){ const s = h(now()); return {direct:true, bas:'Valeurs simulées ' + s, haut:'Maquette locale, ' + s}; }
+  if (PONT.actif && PONT.recu && now() - PONT.recu <= FRAICHEUR){
+    const s = h(PONT.dernier || PONT.recu); return {direct:true, bas:'Dernière synchro ' + s, haut:'En direct, ' + s};
+  }
+  const der = PONT.recu ? h(PONT.dernier || PONT.recu) : null;
+  const motif = PONT.jetonRequis ? 'Jeton du pont requis' : 'Pont injoignable';
+  return {direct:false, bas:der ? 'Dernière synchro ' + der : 'Aucune synchro', haut:motif + (der ? ', dernière synchro ' + der : '')};
 }
 function refreshLive(){
   document.querySelectorAll('[data-live]').forEach(el => { const v = live(el.dataset.live); if (el.textContent !== v) el.textContent = v; });
+  document.querySelectorAll('[data-etat]').forEach(el => { const d = S.devices.find(x => x.id === el.dataset.etat); const h = d ? etatBadge(d) : ''; if (el._h !== h){ el.innerHTML = el._h = h; } });
   document.querySelectorAll('[data-state]').forEach(el => { const b = S.batches.find(x => x.id === el.dataset.state); el.outerHTML = stateBadge(b, true); });
   document.querySelectorAll('[data-spark]').forEach(el => { const b = S.batches.find(x => x.id === el.dataset.spark); el.innerHTML = sparkPath(b); });
   document.querySelectorAll('[data-plugbtn]').forEach(el => { const d = S.devices.find(x => x.id === el.dataset.plugbtn); if (!d) return; el.setAttribute('aria-pressed', d.on ? 'true' : 'false'); el.textContent = d.on ? 'ON' : 'OFF'; el.closest('.outlet')?.classList.toggle('is-on', !!d.on); });
@@ -1139,10 +1619,14 @@ function refreshLive(){
   document.querySelectorAll('[data-chart]').forEach(el => { if (!el._hover && el.dataset.live2 !== undefined) drawChart(el); });
   const jl = document.getElementById('journal-list');
   if (jl){ const b = S.batches.find(x => x.id === jl.dataset.b); const h = journalHTML(b); if (jl._h !== h){ jl.innerHTML = h; jl._h = h; } }
-  const feed = document.getElementById('feed'); if (feed){ const h = feedHTML(S.events.slice(0, 30)); if (feed._h !== h){ const st = feed.scrollTop; feed.innerHTML = feed._h = h; feed.scrollTop = st; } }
-  const st = (PONT.actif && PONT.dernier ? PONT.dernier : new Date()).toLocaleTimeString('fr-FR');
-  document.getElementById('syncTxt').textContent = 'Dernière synchro ' + st;
-  document.getElementById('syncTop').textContent = 'En direct, ' + st;
+  const feed = document.getElementById('feed'); if (feed){ const h = feedHTML(activiteRecente()); if (feed._h !== h){ const st = feed.scrollTop; feed.innerHTML = feed._h = h; feed.scrollTop = st; } }
+  /* L'en-tête ne dit plus « En direct » quand plus rien ne rentre : il nomme la panne et
+     l'heure de la dernière synchro, et le témoin cesse d'être vert. */
+  const ep = etatPont();
+  document.getElementById('syncTxt').textContent = ep.bas;
+  document.getElementById('syncTop').textContent = ep.haut;
+  document.querySelector('.sync').title = ep.haut;
+  document.querySelectorAll('.pulse').forEach(p => p.classList.toggle('eteint', !ep.direct));
 }
 function stateBadge(b, liveAttr){
   const [c, t] = status(b);
@@ -1157,12 +1641,13 @@ function stateBadge(b, liveAttr){
    commandée sans décision explicite : un clic de l'utilisateur, ou la régulation
    automatique par consigne (regulerPont) quand la prise est reliée à un lot actif et
    en mode « auto ». Rien d'autre ne touche aux relais. */
-const PONT = { actif: false, disponible: null, dernier: null, jeton: null, jetonRequis: false };
+const PONT = { actif: false, disponible: null, dernier: null, recu: null, jeton: null, jetonRequis: false,
+               regule: false, planSig: null, planT: 0, decT: 0 };
 const PONT_CLE = 'hakko-pont-jeton';
-// Page ouverte directement (file://) : maquette pure, on ne tente aucune requête.
-// Servie par le cluster, en revanche, l'état réel fait foi — et si le pont ne
-// répond pas, le clic le dit au lieu de simuler une commande.
-const PONT_LOCAL = location.protocol === 'file:';
+/* PONT_LOCAL (page ouverte en file://) est déclarée en tête du script. */
+/* La Meross MSS425F ne mesure pas la puissance : hors maquette, les watts simulés que
+   d'anciennes versions ont persistés sont retirés, et rien ne les réécrit (voir tick). */
+if (!PONT_LOCAL) S.devices.forEach(d => { if (d.kind === 'plug') delete d.power; });
 const PONT_AIDE = 'Jeton du pont Home Assistant. Sur le serveur :\n'
   + 'kubectl -n scada-opus get secret pont-ha -o jsonpath="{.data.PONT_JETON}" | base64 -d';
 function pontJeton(reinit){
@@ -1182,17 +1667,123 @@ async function pontRequete(chemin, corps){
 }
 function pontApplique(reponse){
   let bascule = false;
+  const recu = Date.now();
+  /* Prises allumées que la page ne suit pas. Le `if (!d) return` juste en dessous ignore en
+     silence ce que la page ne connaît pas : une résistance peut donc chauffer sans que rien ne
+     l'affiche. C'est exactement ce qui est arrivé à une prise reliée à aucun lot, allumée côté
+     Home Assistant et absente du tableau de bord. On les retient, on les montre sur la page
+     Appareils, et on l'écrit au journal une fois par épisode — pas à chaque synchronisation. */
+  const inconnues = (reponse.appareils || [])
+    .filter(a => a.etat === 'on' && !S.devices.some(x => x.eid === a.entite))
+    .map(a => a.entite);
+  if (inconnues.join('|') !== (S.prisesInconnues || []).join('|')){
+    const nouvelles = inconnues.filter(e => !(S.prisesInconnues || []).includes(e));
+    const rentrees = (S.prisesInconnues || []).filter(e => !inconnues.includes(e));
+    if (nouvelles.length) logEvent('alert', (nouvelles.length > 1
+      ? 'Des prises allumées ne sont reliées à aucun lot : ' : "Une prise allumée n'est reliée à aucun lot : ")
+      + nouvelles.join(', ') + '. Elle chauffe peut-être sans que rien ne soit mesuré — reliez-la à un lot, ou coupez-la.');
+    if (rentrees.length) logEvent('note', (rentrees.length > 1 ? 'Prises allumées hors lot depuis éteintes : ' : 'Prise allumée hors lot depuis éteinte : ') + rentrees.join(', ') + '.');
+    S.prisesInconnues = inconnues;
+  }
   (reponse.appareils || []).forEach(a => {
     const d = S.devices.find(x => x.eid === a.entite); if (!d) return;
-    const enLigne = a.disponible !== false;
+    const enLigne = a.disponible !== false, etaitFraiche = fraiche(d);
     if (d.online !== enLigne){ d.online = enLigne; bascule = true; }
-    if (d.kind === 'plug') d.on = (a.etat === 'on');
+    /* Fraîcheur et « Dernière remontée » : c'est ici, et seulement ici, qu'une valeur réelle
+       est reçue. d.recu date la valeur affichée ; d.seen alimente la colonne « Dernière
+       remontée ». Une sonde disponible mais sans valeur numérique ne rafraîchit ni l'un ni
+       l'autre : son ancienne valeur ne doit pas passer pour fraîche. */
+    if (d.kind === 'plug'){ if (enLigne){ d.recu = recu; d.seen = recu; } }
+    else if (enLigne && a.valeur != null && !isNaN(a.valeur)){ d.recu = recu; d.seen = recu; }
+    if (d.kind === 'plug'){
+      const etat = (a.etat === 'on'), tc = Date.now();
+      /* Un état qui change sans commande de la page vient d'ailleurs : Home Assistant,
+         une automatisation, le bouton de la multiprise. Personne ne le surveille, et la
+         page doit le dire au lieu d'afficher un état sans origine. */
+      if (d.on !== etat && !(d.cmdT && tc - d.cmdT < 90000)){ d.origine = 'externe'; d.origineT = tc; }
+      d.on = etat;
+    }
     else if (a.valeur != null) d.value = a.valeur;
     if (a.batterie != null) d.battery = Math.round(a.batterie);
+    /* Une valeur qui redevient fraîche (ou cesse de l'être) change ce que la page affiche
+       hors des cellules « live » : on redessine comme pour un passage en ligne. */
+    if (fraiche(d) !== etaitFraiche) bascule = true;
   });
-  PONT.actif = true; PONT.disponible = true;
+  PONT.actif = true; PONT.disponible = true; PONT.recu = recu;
   PONT.dernier = new Date((reponse.horodatage || 0) * 1000 || Date.now());
   return bascule;
+}
+/* ---------------------------------------------------------------------------
+   Le plan de régulation remis au pont.
+
+   C'est le pont qui décide désormais : une fermentation dure des jours et personne
+   ne garde un onglet ouvert trois semaines. La page reste le poste de réglage —
+   elle dépose consigne, sonde, prises et fin prévue, puis elle affiche ce que le
+   pont a décidé. Tant que le pont régule, la page ne commande plus d'elle-même :
+   deux régulateurs se contrediraient.
+   --------------------------------------------------------------------------- */
+function planRegulation(){
+  return S.batches.filter(b => b.status === 'active').map(b => {
+    const r = b.recipe || {};
+    const appareils = devsOf(b).filter(d => d.eid && !d.demo);
+    const prises = appareils.filter(d => d.kind === 'plug').map(d => d.eid);
+    /* Seulement une sonde de TEMPÉRATURE : une sonde d'humidité ne dit pas la
+       température, et faire chauffer sur elle serait chauffer à l'aveugle. */
+    const sonde = (appareils.find(d => d.kind === 'temp') || {}).eid;
+    const consigne = Number(r.temp);
+    if (!prises.length || !sonde || !Number.isFinite(consigne)) return null;
+    const debut = b.start || now();
+    /* La fin de lot part en SECONDES, comme time.time() côté pont, et « durée » est en
+       jours (c'est ce que dit le formulaire de recette). Envoyer des millisecondes
+       rendait la comparaison toujours fausse : la chauffe ne s'arrêtait jamais à
+       l'échéance prévue. */
+    const dureeJours = Number(r.duration);
+    const fin = (Number.isFinite(dureeJours) && dureeJours > 0)
+      ? Math.round(debut / 1000 + dureeJours * 86400) : null;
+    return { id: b.id, nom: b.name || b.id, actif: true, sonde: sonde, prises: prises,
+             consigne: consigne, ecart: Number.isFinite(Number(r.tol)) ? Math.abs(Number(r.tol)) : 0.2,
+             fin: fin };
+  }).filter(Boolean);
+}
+async function pontLireRegul(){
+  /* Ce que le pont dit de lui-même : est-ce qu'il régule, et qu'a-t-il décidé.
+     C'est cette réponse — et non un souvenir de la page — qui autorise la page à
+     s'effacer. Un pont redémarré a perdu son plan : la page doit le voir et le lui
+     redéposer tout de suite, pas dans dix minutes. */
+  if (PONT_LOCAL || !PONT.actif) { PONT.regule = false; return null; }
+  let r = null, j = null;
+  try { r = await pontRequete('regul'); } catch(e){ PONT.regule = false; return null; }
+  if (!r.ok) { PONT.regule = false; return null; }
+  try { j = await r.json(); } catch(e){ PONT.regule = false; return null; }
+  PONT.regule = !!(j && j.regule === true && (j.lots || []).some(l => l.actif));
+  const neuves = (((j || {}).decisions) || []).filter(x => (x.t || 0) > PONT.decT);
+  if (neuves.length){
+    /* Ce que le pont a réellement commandé, avec ses mots : la page ne doit pas
+       raconter autre chose que ce qui s'est passé sur la prise. */
+    neuves.slice(-12).forEach(x => {
+      const k = x.allume === true ? 'heat-on' : (x.allume === false ? 'heat-off' : 'note');
+      logEvent(k, (x.nom ? x.nom + ' — ' : '') + (x.x || 'décision du pont'), x.lot, { reel: true, pont: true });
+    });
+    PONT.decT = Math.max(...neuves.map(x => x.t || 0), PONT.decT);
+  }
+  return j;
+}
+async function pontPoussePlan(){
+  if (PONT_LOCAL || !PONT.actif || PONT.jetonRequis) return false;
+  const lots = planRegulation();
+  const sig = JSON.stringify(lots);
+  /* On ne redépose pas à chaque synchronisation, seulement quand le plan change, quand
+     le pont a perdu le sien, ou toutes les dix minutes — un pod redémarré l'oublie. */
+  if (PONT.regule && sig === PONT.planSig && now() - PONT.planT < 10 * 60e3) return true;
+  let r = null;
+  try { r = await pontRequete('regul', { lots: lots, sans_mesure_max: Math.round(SANS_MESURE_MAX / 1000) }); }
+  catch(e){ return false; }
+  if (!r.ok) return false;                       /* refusé : la page garde la main */
+  let j = null; try { j = await r.json(); } catch(e){ return false; }
+  if (!j || j.ok === false) return false;
+  PONT.regule = j.regule === true;
+  PONT.planSig = sig; PONT.planT = now();
+  return true;
 }
 async function pontSynchro(silencieux){
   if (PONT_LOCAL) return false;
@@ -1216,8 +1807,83 @@ async function pontSynchro(silencieux){
   let d = null; try { d = await r.json(); } catch(e){ return false; }
   if (!d || d.ok === false){ PONT.actif = false; return false; }
   const bascule = pontApplique(d);
+  /* Le pont est joignable : on lit d'abord ce qu'il dit de lui-même (régule-t-il ?),
+     puis on lui confie le plan s'il ne l'a plus. Ces appels décident PONT.regule,
+     qui coupe la régulation locale. */
+  pontLireRegul().then(() => pontPoussePlan());
+  /* Garde-fou « sonde muette » de la page : il se tait quand le pont régule, car le
+     pont a le sien et deux coupeurs simultanés ne servent à rien. */
+  couperSansMesure().catch(() => {});
+  enregistrerTemperatures();
   save();
   if (bascule || !silencieux) render(); else refreshLive();
+  return true;
+}
+/* Arrêt explicite d'une prise réelle, utilisé à la clôture d'un lot.
+   On n'utilise PAS pontBascule : elle inverse l'état affiché, qui peut dater (page restée
+   ouverte, prise changée ailleurs) et enverrait alors l'ordre opposé — un allumage. Ici
+   l'argument est littéralement `allume: false`, et uniquement sur une prise rattachée au lot
+   qu'on termine. */
+/* Garde-fou décidé par le propriétaire du matériel : une résistance ne doit pas chauffer à
+   l'aveugle. Si une prise allumée dépend d'un lot dont la sonde ne remonte plus rien depuis
+   SANS_MESURE_MAX, on la coupe — au lieu d'attendre AUTO_MAX_ON (45 min) ou le chien de
+   garde du pont (90 min). Quinze minutes, c'est volontairement long : un hoquet de radio dure
+   quelques secondes, une sonde morte reste morte. Fonction séparée, appelée par la
+   synchronisation : les freins de régulation (regulerPont et compagnie) ne sont pas touchés. */
+const SANS_MESURE_MAX = 15 * 60e3;
+async function couperSansMesure(){
+  if (PONT_LOCAL || !PONT.actif || PONT.regule) return 0;
+  let n = 0;
+  for (const b of S.batches.filter(x => x.status === 'active')){
+    const appareils = devsOf(b);
+    /* Le cas visé est la sonde qui se tait, pas le lot qui n'en a jamais eu : sans sonde du
+       tout, ce sont les délais existants qui s'appliquent. */
+    const sondes = appareils.filter(d => d.kind === 'temp' || d.kind === 'hum');
+    if (!sondes.length) continue;
+    const prises = appareils.filter(d => d.kind === 'plug' && d.on && d.eid && !d.demo);
+    if (!prises.length) continue;
+    if (currentTemp(b) != null) continue;                     /* mesure fraîche : la régulation travaille */
+    const derniere = Math.max(...sondes.map(d => d.recu || 0));
+    const silence = now() - derniere;
+    if (silence < SANS_MESURE_MAX) continue;
+    const minutes = Math.round(silence / 60000);
+    logEvent('alert', 'Chauffe coupée : plus aucune mesure depuis ' + minutes
+      + ' min — ' + prises.map(d => d.name).join(', ') + ' arrêtée'
+      + (prises.length > 1 ? 's' : '') + '. Vérifiez la sonde, puis relancez la chauffe.', b.id, { reel: true });
+    for (const d of prises){ await couperPrise(d, b.id, 'coupée : la sonde ne remonte plus depuis ' + minutes + ' min'); n++; }
+  }
+  return n;
+}
+async function couperPrise(d, bid, motif){
+  if (PONT_LOCAL || !d.eid) return false;
+  /* Tout échec doit se voir. L'appareil vient d'être libéré du lot et la page ne doit pas
+     l'afficher « éteint » alors que rien ne prouve que le relais s'est ouvert : on le remet
+     à « allumé » — l'hypothèse prudente — avec une alerte et une ligne au journal. `bid` est
+     passé en argument : au moment où cette fonction asynchrone journalise, d.batch n'existe
+     plus, et l'événement se retrouverait sans lot. */
+  const echec = (motif) => {
+    d.on = true;
+    logEvent('alert', d.name + ' : coupure refus\u00e9e \u00e0 la cl\u00f4ture du lot \u2014 ' + motif
+      + ' ; la prise est peut-\u00eatre encore allum\u00e9e', bid, { reel: true });
+    save(); render();
+    alert('La prise « ' + d.name + ' » n\u2019a pas pu \u00eatre coup\u00e9e \u00e0 la cl\u00f4ture du lot.\n'
+      + motif + '\nElle est peut-\u00eatre encore allum\u00e9e : v\u00e9rifiez-la dans Home Assistant.');
+    return false;
+  };
+  if (PONT.jetonRequis && !await pontSynchro(false)) return echec('jeton absent ou refus\u00e9');
+  let r;
+  try { r = await pontRequete('prise', { entite: d.eid, allume: false }); }
+  catch(e){ return echec('pont Home Assistant injoignable'); }
+  if (r.status === 401 || r.status === 403){
+    if (!await pontSynchro(false)) return echec('jeton expir\u00e9 ou refus\u00e9 (HTTP ' + r.status + ')');
+    try { r = await pontRequete('prise', { entite: d.eid, allume: false }); }
+    catch(e){ return echec('pont Home Assistant injoignable'); }
+  }
+  let j = null; try { j = await r.json(); } catch(e){}
+  if (!r.ok || !j || j.ok === false) return echec('le pont a r\u00e9pondu HTTP ' + r.status);
+  d.on = false;
+  /* Le motif est dit exactement : une coupure de garde-fou n'est pas une clôture de lot. */
+  logEvent('heat-off', d.name + ' : ' + (motif || 'coupée à la clôture du lot'), bid, { reel: true });
   return true;
 }
 async function pontBascule(d){
@@ -1252,7 +1918,7 @@ async function pontBascule(d){
       + "La prise « " + d.name + " » n'a pas changé d'état.");
     save(); render(); return true;
   }
-  d.on = (j.etat === 'on'); d.mode = 'manuel';
+  d.on = (j.etat === 'on'); d.mode = 'manuel'; d.origine = 'clic'; d.origineT = now(); d.cmdT = now();
   logEvent(d.on ? 'heat-on' : 'heat-off',
     d.name + ' : ' + (d.on ? 'activation' : 'désactivation') + ' de la prise depuis le dashboard',
     d.batch || null);
@@ -1287,8 +1953,8 @@ async function regulerPont(d, b, tp, voulu, securite){
     const r = await pontRequete('prise', { entite: d.eid, allume: voulu, auto: true });
     const j = await r.json().catch(() => null);
     if (!r.ok || !j || j.ok === false) throw new Error('HTTP ' + r.status);
-    d.on = (j.etat === 'on'); d.regulDepuis = d.on ? t : null;
-    logHeat(d, b, tp, false);
+    d.on = (j.etat === 'on'); d.regulDepuis = d.on ? t : null; d.origine = 'regul'; d.origineT = t; d.cmdT = t;
+    logHeat(d, b, tp, false, null, false, true);   /* commande réellement envoyée au relais */
     if (securite === true) logEvent('alert', d.name + ' : chauffe automatique interrompue après '
       + Math.round(AUTO_MAX_ON / 60000) + ' min sans atteindre la consigne', b ? b.id : null);
     save(); render();
@@ -1352,7 +2018,8 @@ function home(){
   setCrumbs([['Vue d’ensemble']]);
   const act = S.batches.filter(b => b.status === 'active').sort((a, b) => a.start - b.start);
   const done = S.batches.filter(b => b.status === 'done').sort((a, b) => b.end - a.end);
-  const al = +kpiVal('alerts'), off = S.devices.filter(d => !d.online).length;
+  const al = +kpiVal('alerts');
+  const nMis = (S.eventsArchive || []).length;
   const today = new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
   const lots = act.map(b => {
     const r = b.recipe, T = TYPES[r.type], p = progress(b);
@@ -1372,22 +2039,22 @@ function home(){
       <div class="lot-f"><div class="row num"><span>${p.label}</span><span>${Math.round(p.frac * 100)} %</span></div><div class="bar"><div style="width:${(p.frac * 100).toFixed(1)}%"></div></div></div>
     </a>`;
   }).join('');
-  const health = S.devices.slice().sort((a, b) => (a.online - b.online) || ((a.battery ?? 100) - (b.battery ?? 100))).slice(0, 5).map(d =>
-    `<li><span class="dev-ic">${IC[d.kind]}</span><span class="nm">${esc(d.name)}</span>${d.online ? (d.battery != null && d.battery < 20 ? `<span class="badge warn">${d.battery} %</span>` : `<span class="vl num" data-live="dev:${d.id}">${live('dev:' + d.id)}</span>`) : '<span class="badge bad">Hors ligne</span>'}</li>`).join('');
+  const health = S.devices.slice().sort((a, b) => (a.online - b.online) || (fraiche(a) - fraiche(b)) || ((a.battery ?? 100) - (b.battery ?? 100))).slice(0, 5).map(d =>
+    `<li><span class="dev-ic">${IC[d.kind]}</span><span class="nm">${esc(d.name)}</span>${sansEntite(d) ? `<span class="badge" title="${SANS_ENTITE}">Sans entité</span>` : !d.online ? '<span class="badge bad">Hors ligne</span>' : !fraiche(d) ? '<span class="badge warn">Sans nouvelles</span>' : d.battery != null && d.battery < 20 ? `<span class="badge warn">${d.battery} %</span>` : `<span class="vl num" data-live="dev:${d.id}">${live('dev:' + d.id)}</span>`}</li>`).join('');
   return `<div class="dp home">
     <div class="dp-head"><div class="dp-title"><h1>Vue d’ensemble</h1><span class="dp-sub">Situation au ${today}</span></div>
     <div class="ph-actions"><a class="btn" href="#/appareils">${IC.sensor}Appareils</a><a class="btn primary" href="#/recettes">${IC.plus}Lancer une fermentation</a></div></div>
     <div class="kpis compact">
       <div class="card kpi"><div class="k">${IC.jar}Lots en cours</div><div class="v num">${act.length}</div><div class="s">${S.recipes.filter(r => !r.archived).length} recettes disponibles</div></div>
-      <div class="card kpi"><div class="k">${IC.alert}Écarts de température</div><div class="v num" data-live="kpi:alerts">${al}</div><div class="s ${al ? 'warn' : 'ok'}">${al ? 'À vérifier' : 'Tous les lots dans leur plage'}</div></div>
-      <div class="card kpi"><div class="k">${IC.sensor}Appareils en ligne</div><div class="v num" data-live="kpi:online">${kpiVal('online')}</div><div class="s ${off ? 'bad' : 'ok'}">${off ? off + ' hors ligne' : 'Tous connectés'}</div></div>
-      <div class="card kpi"><div class="k">${IC.flame}Chauffe active</div><div class="v num"><span data-live="kpi:heaters">${kpiVal('heaters')}</span><small>prises</small></div><div class="s num"><span data-live="kpi:power">${kpiVal('power')}</span> W consommés</div></div>
+      <div class="card kpi"><div class="k">${IC.alert}Alertes de température</div><div class="v num" data-live="kpi:alerts">${al}</div><div class="s ${al ? 'warn' : 'ok'}">${al ? 'À vérifier' :'Tous les lots dans leur plage'}</div></div>
+      <div class="card kpi"><div class="k">${IC.sensor}Appareils en ligne</div><div class="v num" data-live="kpi:online">${kpiVal('online')}</div>${horsLigneS()}</div>
+      <div class="card kpi"><div class="k">${IC.flame}Chauffe active</div><div class="v num"><span data-live="kpi:heaters">${kpiVal('heaters')}</span><small>prises</small></div><div class="s num">Puissance : <span data-live="kpi:power">${kpiVal('power')}</span></div></div>
     </div>
     <div class="ov home-grid">
         <section class="card scroll-card"><div class="card-h"><h2>Lots en cours<span class="sub num">${act.length}</span></h2><a class="btn ghost sm" href="#/recettes">Voir les recettes</a></div>
           ${act.length ? `<div class="lots scroll">${lots}</div>` : `<div class="empty"><strong>Aucune fermentation en cours</strong>Lancez-en une depuis une recette.</div>`}</section>
       <div class="side-stack">
-        <section class="card scroll-card feed-card"><div class="card-h"><h2>Activité récente</h2></div><div id="feed" class="scroll">${feedHTML(S.events.slice(0, 30))}</div></section>
+        <section class="card scroll-card feed-card"><div class="card-h"><h2>Activité récente</h2>${nMis ? `<button class="btn ghost sm" data-action="ev-archive" aria-haspopup="dialog">Mis de côté<span class="sub num">${nMis}</span></button>` : ''}</div><div id="feed" class="scroll">${feedHTML(activiteRecente())}</div></section>
         <section class="card scroll-card health-card"><div class="card-h"><h2>État des appareils</h2><a class="btn ghost sm" href="#/appareils">Tout voir</a></div><ul class="health scroll">${health}</ul></section>
       </div>
     </div>
@@ -1450,7 +2117,7 @@ function detail(id){
         <div class="dp-chart-body ${detailChart === 'grav' ? 'with-side' : ''}">
           <div class="dp-plot">
             <div class="chart fill" id="chart-main" data-chart ${active && detailChart !== 'grav' ? 'data-live2' : ''}></div>
-            <div class="legend" style="--c:${lc}"><span><i></i>${detailChart === 'temp' ? 'Mesure' : detailChart === 'hum' ? 'Humidité relative' : 'Relevés de densité'}</span><span><i class="dash"></i>${detailChart === 'grav' ? 'Densité visée' : 'Consigne'}</span>${detailChart === 'temp' ? '<span><i class="band"></i>Plage tolérée</span>' : ''}</div>
+            <div class="legend" style="--c:${lc}"><span><i></i>${detailChart === 'temp' ? 'Mesure' : detailChart === 'hum' ? 'Humidité relative' : 'Relevés de densité'}</span><span ${detailChart === 'temp' ? 'data-hors' : ''}><i class="dash"></i>${detailChart === 'grav' ? 'Densité visée' : 'Consigne'}</span>${detailChart === 'temp' ? '<span data-hors><i class="band"></i>Plage tolérée</span>' : ''}</div>
           </div>
           ${detailChart === 'grav' ? gravHTML(b, active) : ''}
         </div>
@@ -1462,7 +2129,7 @@ function detail(id){
         <form class="note-form" data-form="note" data-id="${b.id}"><input type="text" name="x" placeholder="Ajouter une observation" required aria-label="Nouvelle note"><button class="btn">Ajouter</button></form></section>
 
       <section class="card dp-devs scroll-card"><div class="card-h"><h2>Appareils reliés<span class="sub num">${devs.length}</span></h2><a class="btn ghost sm" href="#/appareils">Gérer</a></div>
-        <div class="scroll">${devs.length ? `<table class="data"><tbody>${devs.map(d => `<tr><td><div class="dev-cell"><span class="dev-ic">${IC[d.kind]}</span><div><div class="nm">${esc(d.name)}</div><div class="sm">${d.online ? (d.kind === 'plug' ? (d.mode === 'auto' ? 'Mode auto' : 'Mode manuel') : 'En ligne') : 'Hors ligne'}</div></div></div></td><td class="r num" data-live="dev:${d.id}">${live('dev:' + d.id)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Aucun appareil relié.</div>'}</div></section>
+        <div class="scroll">${devs.length ? `<table class="data"><tbody>${devs.map(d => `<tr><td><div class="dev-cell"><span class="dev-ic">${IC[d.kind]}</span><div><div class="nm">${esc(d.name)}</div><div class="sm">${!d.online ? 'Hors ligne' : d.kind === 'plug' ? (d.mode === 'auto' ? 'Mode auto' : 'Mode manuel') + (d.demo ? '' : (sv => ` · <span class="${sv.warn ? 'sv-warn' : ''}">${esc(sv.t)}</span>`)(surveillance(d))) : sansEntite(d) ? SANS_ENTITE : fraiche(d) ? 'En ligne' : 'Sans mesure récente'}</div></div></div></td><td class="r num" data-live="dev:${d.id}">${live('dev:' + d.id)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Aucun appareil relié.</div>'}</div></section>
 
       <div class="dp-side">
         ${active ? `<section class="card"><div class="card-h"><h2>Consigne</h2><span class="muted num">Actuelle ${fmt(r.temp, 1)} °C</span></div>
@@ -1499,7 +2166,10 @@ let journalFilter = 'all';
 function journalHTML(b, jf){
   jf = jf || journalFilter;
   let items = b.notes.map(n => ({t:n.t, k:'note', x:n.x}));
-  S.events.filter(e => e.b === b.id && (((e.k === 'heat-on' || e.k === 'heat-off') && e.tp != null) || e.k === 'target')).forEach(e => items.push(e));
+  /* Un événement simulé ne se lit que là où la simulation est le sujet : un lot de
+     démonstration, ou la page ouverte sans pont. Le journal d'un lot réel ne garde que
+     les commandes réellement parties. */
+  S.events.filter(e => e.b === b.id && evVisible(e) &&(((e.k === 'heat-on' || e.k === 'heat-off') && e.tp != null) || e.k === 'target')).forEach(e => items.push(e));
   if (jf === 'note') items = items.filter(i => i.k === 'note');
   if (jf === 'heat') items = items.filter(i => i.k === 'heat-on' || i.k === 'heat-off');
   if (jf === 'target') items = items.filter(i => i.k === 'target');
@@ -1512,7 +2182,7 @@ function journalHTML(b, jf){
     else {
       const dl = i.tp - i.tg, on = i.k === 'heat-on';
       tag = `<span class="badge ${on ? 'warn' : ''}">${on ? 'Chauffe on' : 'Chauffe off'}</span>`;
-      body = `<strong>${fmt(i.tp, 1)} °C</strong> (${dl >= 0 ? '+' : '−'}${fmt(Math.abs(dl), 1)} °C) - ${on ? 'Activation' : 'Désactivation'} de la chauffe${i.manual ? ', manuelle' : ''}`;
+      body = `<strong>${fmt(i.tp, 1)} °C</strong> (${dl >= 0 ? '+' : '−'}${fmt(Math.abs(dl), 1)} °C) - ${on ? 'Activation' : 'Désactivation'} de la chauffe${i.manual ? ', manuelle' : ''}${i.restaure ? ' <span class="muted">(restauré, provenance non vérifiée)</span>' : ''}`;
     }
     return `<li class="jl"><time class="num">${fmtDate(i.t)}, ${fmtTime(i.t)}</time>${tag}<span class="num jt">${body}</span></li>`;
   }).join('');
@@ -1606,44 +2276,81 @@ function devices(){
   const opt = sel => `<option value="">Non relié</option>` + act.map(b => `<option value="${b.id}" ${sel === b.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
   const KL = {temp:'Température', hum:'Humidité', plug:'Prise'};
   const list = S.devices.filter(d => devFilter === 'all' || d.kind === devFilter);
-  const off = S.devices.filter(d => !d.online).length, low = S.devices.filter(d => d.battery != null && d.battery < 20).length;
+  const low =S.devices.filter(d => d.battery != null && d.battery < 20).length;
   const rows = list.map(d => {
     const bat = d.battery != null ? `<div class="bat num"><div class="bar" style="--c:${d.battery < 20 ? 'var(--bad)' : d.battery < 50 ? 'var(--warn)' : 'var(--ok)'}"><div style="width:${d.battery}%"></div></div>${d.battery} %</div>` : '<span class="muted">Secteur</span>';
     const ctl = d.kind === 'plug' ? `<select data-action="plug-mode" data-id="${d.id}" aria-label="Mode" style="width:auto"><option value="auto" ${d.mode === 'auto' ? 'selected' : ''}>Auto</option><option value="manuel" ${d.mode === 'manuel' ? 'selected' : ''}>Manuel</option></select>
       <button class="switch" role="switch" aria-checked="${d.on}" aria-label="Allumer ou éteindre ${esc(d.name)}" data-action="toggle-plug" data-id="${d.id}" data-plug="${d.id}" ${d.online ? '' : 'disabled'}></button>` : '';
     return `<tr>
-      <td class="first"><div class="dev-cell"${d.eid ? ` title="${esc(d.eid)}"` : ''}><span class="dev-ic">${IC[d.kind]}</span><div><div class="nm">${esc(d.name)}</div><div class="sm num">${d.slot ? 'Multiprise, prise ' + d.slot : d.id.toUpperCase()}</div></div></div></td>
+      <td class="first"><div class="dev-cell"${d.eid ? ` title="${esc(d.eid)}"` : ''}><span class="dev-ic">${IC[d.kind]}</span><div><div class="nm">${esc(d.name)}</div><div class="sm num">${d.slot ? 'Multiprise, prise ' + d.slot : sansEntite(d) ? SANS_ENTITE : d.id.toUpperCase()}</div></div></div></td>
       <td data-l="Type">${KL[d.kind]}</td>
       <td data-l="Mesure" class="num nm" data-live="dev:${d.id}">${live('dev:' + d.id)}</td>
       <td data-l="Fermentation"><select data-action="assign" data-id="${d.id}" aria-label="Fermentation reliée">${opt(d.batch)}</select></td>
       <td data-l="Batterie">${bat}</td>
-      <td data-l="Dernière remontée" class="num sm" ${d.online ? `data-live="seen:${d.id}"` : ''}>${ago(d.seen)}</td>
-      <td data-l="État">${d.online ? '<span class="badge ok"><span class="dot"></span>En ligne</span>' : '<span class="badge bad"><span class="dot"></span>Hors ligne</span>'}</td>
+      <td data-l="Dernière remontée" class="num sm" ${d.online ? `data-live="seen:${d.id}"` : ''}>${live('seen:' + d.id)}</td>
+      <td data-l="État" data-etat="${d.id}">${etatBadge(d)}</td>
       <td data-l="Contrôle"><div class="ctl">${ctl}<button class="icon-btn bare" data-action="rm-dev" data-id="${d.id}" aria-label="Retirer ${esc(d.name)}">${IC.x}</button></div></td></tr>`;
   }).join('');
   const cnt = k => S.devices.filter(d => k === 'all' || d.kind === k).length;
   const ol = outlets();
-  const strip = `<div class="strip-h"><div class="strip-title">${IC.plug}<div><div class="nm">Multiprise connectée</div><div class="sm num">${ol.length} prises, allumées : <span id="strip-on">${ol.filter(d => d.on).length}</span>, puissance : <span data-live="kpi:power">${kpiVal('power')}</span> W</div></div></div></div>
+  const strip = `<div class="strip-h"><div class="strip-title">${IC.plug}<div><div class="nm">Multiprise connectée</div><div class="sm num">${ol.length} prises, allumées : <span id="strip-on">${ol.filter(d => d.on).length}</span>, puissance : <span data-live="kpi:power">${kpiVal('power')}</span></div></div></div></div>
     <div class="outlets">${ol.map(d => `<div class="outlet ${d.on ? 'is-on' : ''} ${d.online ? '' : 'off'}">
       <div class="o-top"><span class="o-slot"><span class="o-led"></span>Prise ${d.slot}</span><span class="o-pw num" data-live="dev:${d.id}">${live('dev:' + d.id)}</span></div>
       <div class="o-name" title="${esc(d.name)}">${esc(d.name)}</div>
       <label class="o-f"><span>Fermentation</span><select data-action="assign" data-id="${d.id}">${opt(d.batch)}</select></label>
+      <div class="o-f o-surv"><span>Surveillance</span>${(sv => `<span class="o-sv ${sv.warn ? 'warn' : ''}">${esc(sv.t)}</span>`)(surveillance(d))}</div>
       <label class="o-f"><span>Mode</span><select data-action="plug-mode" data-id="${d.id}"><option value="auto" ${d.mode === 'auto' ? 'selected' : ''} ${d.batch ? '' : 'disabled'}>Auto (consigne)</option><option value="manuel" ${d.mode === 'manuel' ? 'selected' : ''}>Manuel</option></select></label>
       <button class="o-btn" data-action="toggle-plug" data-id="${d.id}" data-plugbtn="${d.id}" aria-pressed="${!!d.on}" aria-label="Prise ${d.slot} : allumer ou éteindre" ${d.online ? '' : 'disabled'}>${d.on ? 'ON' : 'OFF'}</button>
     </div>`).join('')}</div>`;
   return `<div class="ph"><div><h1>Appareils</h1><p>Sondes et prises remontées par Home Assistant</p></div>
     <div class="ph-actions"><button class="btn primary" data-action="add-dev">${IC.plus}Ajouter un appareil</button></div></div>
     <div class="kpis">
-      <div class="card kpi"><div class="k">En ligne</div><div class="v num" data-live="kpi:online">${kpiVal('online')}</div><div class="s ${off ? 'bad' : 'ok'}">${off ? off + ' hors ligne' : 'Tous connectés'}</div></div>
+      <div class="card kpi"><div class="k">En ligne</div><div class="v num" data-live="kpi:online">${kpiVal('online')}</div>${horsLigneS()}</div>
       <div class="card kpi"><div class="k">Batterie faible</div><div class="v num">${low}</div><div class="s ${low ? 'warn' : 'ok'}">${low ? 'Sous 20 %' : 'Aucune alerte'}</div></div>
       <div class="card kpi"><div class="k">Prises allumées</div><div class="v num" data-live="kpi:heaters">${kpiVal('heaters')}</div><div class="s">Sur ${cnt('plug')} prises</div></div>
-      <div class="card kpi"><div class="k">Puissance instantanée</div><div class="v num"><span data-live="kpi:power">${kpiVal('power')}</span><small>W</small></div><div class="s">Hystérésis auto ±${fmt(HYST, 1)} °C</div></div>
+      <div class="card kpi"><div class="k">Puissance instantanée</div><div class="v num"><span data-live="kpi:power">${kpiVal('power')}</span></div><div class="s">Hystérésis auto ±${fmt(HYST, 1)} °C</div></div>
     </div>
     <section class="card">
       <div class="tabs" role="tablist">${[['all', 'Tous'], ['temp', 'Température'], ['hum', 'Humidité'], ['plug', 'Prises']].map(([k, l]) => `<button role="tab" data-action="dfilter" data-v="${k}" aria-selected="${devFilter === k}">${l}<span class="cnt num">${cnt(k)}</span></button>`).join('')}</div>
+      ${(S.prisesInconnues || []).length ? `<p class="err" role="alert">${IC.alert}${(S.prisesInconnues || []).length > 1 ? 'Des prises allumées ne sont reliées à aucun lot' : "Une prise allumée n'est reliée à aucun lot"} : <b>${(S.prisesInconnues || []).map(esc).join(', ')}</b>. Elle chauffe peut-être en dehors de tout suivi — reliez-la à un lot ci-dessous, ou coupez-la.</p>` : ''}
       ${devFilter === 'plug' ? strip : ''}
       ${devFilter === 'plug' ? '' : rows ? `<div class="tbl-wrap"><table class="data stack"><thead><tr><th>Appareil</th><th>Type</th><th>Mesure</th><th>Fermentation</th><th>Batterie</th><th>Dernière remontée</th><th>État</th><th class="r">Contrôle</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty"><strong>Aucun appareil de ce type</strong>Ajoutez-en un avec le bouton Ajouter un appareil.</div>'}
     </section>`;
+}
+/* Lecture seule de la main de régulation : cet onglet régule-t-il ? regulMaitre(), elle,
+   prend la main en écrivant dans le stockage — un affichage ne doit pas le faire. */
+function regulParCetOnglet(){
+  let vu = null; try { vu = JSON.parse(localStorage.getItem(REGUL_CLE) || 'null'); } catch(e){}
+  return !vu || vu.id === regulId || now() - vu.t >= 10000;
+}
+/* « Qui surveille cette prise » : chaque condition que tick() exige pour réguler est
+   vérifiée ici, dans le même ordre. La page ne dit « régulée » que si elle régule vraiment.
+   warn : la prise peut chauffer sans que personne ne la coupe, ou la régulation est arrêtée. */
+function surveillance(d){
+  const hm = t => fmtTime(t);
+  if (!d.online) return {t:'hors ligne', warn:true};
+  if (!fraiche(d)) return {t:'état inconnu : aucune remontée récente du pont', warn:true};
+  const b = S.batches.find(x => x.id === d.batch && x.status === 'active');
+  /* En maquette, tick() bascule localement toute prise en auto reliée à un lot, démo comprise. */
+  if (PONT_LOCAL && d.mode === 'auto' && b) return {t:'régulée par la simulation (maquette locale)', warn:false};
+  if (d.demo) return {t:'lien de démonstration, non régulée', warn:!!d.on};
+  if (d.mode === 'auto'){
+    if (!b) return {t:'en auto, mais reliée à aucun lot en cours : non régulée', warn:!!d.on};
+    if (!d.eid) return {t:'sans entité Home Assistant : non régulée', warn:!!d.on};
+    if (!PONT.actif) return {t:'non régulée : pont injoignable', warn:true};
+    if (!regulParCetOnglet()) return {t:'régulée par un autre onglet de ce navigateur', warn:false};
+    const t = now();
+    if (d.regulPause && t < d.regulPause) return {t:'non régulée : pause de sécurité jusqu’à ' + hm(d.regulPause), warn:true};
+    if (d.regulRefus && t - d.regulRefus < AUTO_REFUS) return {t:'non régulée : commande refusée, nouvel essai après ' + hm(d.regulRefus + AUTO_REFUS), warn:true};
+    if (currentTemp(b) == null) return {t:sansMesure(b) === 'Sonde sans entité' ? 'non régulée : la sonde du lot n’a pas d’entité Home Assistant' : 'non régulée : aucune mesure de température récente', warn:true};
+    /* La coupure à 90 min n'est armée que par une commande automatique (auto: true). */
+    if (d.on && d.origine !== 'regul') return {t:'régulée par la page, mais allumée ' + (d.origine === 'externe' ? 'hors du dashboard' : 'sans commande automatique') + ' : le serveur ne la coupera pas', warn:true};
+    if (d.on) return {t:'régulée par la page, coupée par le serveur au plus tard 90 min après la dernière commande automatique', warn:false};
+    return {t:'régulée par la page', warn:false};
+  }
+  if (d.origine === 'externe') return {t:'changée hors du dashboard, personne ne la surveille', warn:true};
+  if (d.on) return {t:'allumée à la main, personne ne la surveille', warn:true};
+  return {t:'à l’arrêt', warn:false};
 }
 function openAddDevice(){
   const act = S.batches.filter(b => b.status === 'active');
@@ -1657,6 +2364,71 @@ function openAddDevice(){
     <div class="foot"><button type="button" class="btn ghost" data-action="close-dlg">Annuler</button><button class="btn primary">Ajouter l’appareil</button></div></form>`;
   dlg.showModal(); dlg.querySelector('input').focus();
 }
+/* ---------- Événements mis de côté (S.eventsArchive) ----------
+   La migration y a rangé les chauffes dont on ne pouvait pas dire si elles avaient eu lieu.
+   Ici on les compte, on les lit, et on restaure tout ou partie. Un événement restauré porte
+   « restaure » : la migration ne le reprend plus, le plafond du journal ne le chasse pas, et
+   le journal du lot rappelle que sa provenance n'est pas vérifiée.
+   Une restauration se défait tant que la boîte reste ouverte (« Annuler ») : les événements
+   retournent de côté et la note de restauration disparaît. Une fois la boîte fermée, elle est
+   définitive, ce que la confirmation de « Tout restaurer » annonce. */
+let restaurationsOuvertes = null;   /* {evs, notes} restaurés depuis l'ouverture de la boîte */
+function openArchiveEvents(msg){
+  const dlg = document.getElementById('dlg'), arch = S.eventsArchive || [];
+  if (!dlg.open || !dlg.querySelector('[data-form="ev-archive"]')) restaurationsOuvertes = null;
+  const L = arch.map((e, i) => ({e, i})).sort((a, c) => c.e.t - a.e.t);
+  const lot = id => { const b = id && S.batches.find(x => x.id === id); return b ? b.name : 'sans lot'; };
+  const nAnn = restaurationsOuvertes ? restaurationsOuvertes.evs.length : 0;
+  dlg.innerHTML = `<form data-form="ev-archive" method="dialog"><div class="card-h"><h2>Événements mis de côté<span class="sub num">${L.length}</span></h2><button type="button" class="icon-btn bare" data-action="close-dlg" aria-label="Fermer">${IC.x}</button></div>
+    <div class="card-b">
+      <p class="hint" style="margin:0">Chauffes rangées à part par une migration, faute de pouvoir dire si elles ont réellement eu lieu (certaines peuvent être de vraies commandes de régulation). Restaurées, elles reviennent dans l’activité et dans le journal de leur lot, marquées comme non vérifiées. Une restauration peut être annulée tant que cette fenêtre reste ouverte.</p>
+      <p class="hint" style="margin:0" role="status" tabindex="-1" id="ev-msg">${msg ? esc(msg) : ''}</p>
+      ${L.length ? `<label class="ev-tout"><input type="checkbox" data-action="ev-tout">Tout sélectionner</label>
+      <ul class="ev-liste">${L.map(({e, i}) => `<li><label><input type="checkbox" name="ev" value="${i}"><span>${esc(e.x)}<span class="fm num">${fmtDateY(e.t)}, ${fmtTime(e.t)} · ${esc(lot(e.b))}</span></span></label></li>`).join('')}</ul>`
+      : '<div class="empty">Aucun événement mis de côté.</div>'}
+    </div>
+    <div class="foot"><button type="button" class="btn ghost" data-action="close-dlg">Fermer</button>${nAnn ? `<button type="button" class="btn" data-action="ev-annuler">Annuler la restauration</button>` : ''}${L.length ? `<button type="button" class="btn" data-action="ev-restore" data-v="sel">Restaurer la sélection</button><button type="button" class="btn primary" data-action="ev-restore" data-v="tout">Tout restaurer</button>` : ''}</div></form>`;
+  if (!dlg.open) dlg.showModal();
+  (msg ? dlg.querySelector('#ev-msg') : dlg.querySelector('input, .foot .btn')).focus();
+}
+function restaurerEvenements(indices){
+  const arch = S.eventsArchive || [], pris = indices.map(i => arch[i]).filter(Boolean);
+  if (!pris.length) return 0;
+  pris.forEach(e => { e.restaure = true; });
+  S.eventsArchive = arch.filter(e => !pris.includes(e));
+  S.events = S.events.concat(pris).sort((a, c) => c.t - a.t);
+  logEvent('note', pris.length + (pris.length > 1 ? ' événements mis de côté restaurés' : ' événement mis de côté restauré') + ' (provenance non vérifiée)');
+  const r = restaurationsOuvertes = restaurationsOuvertes || {evs:[], notes:[]};
+  r.evs.push(...pris); r.notes.push(S.events[0]);
+  save();
+  return pris.length;
+}
+/* Défait les restaurations faites depuis l'ouverture de la boîte : état d'avant, à l'identique. */
+function annulerRestauration(){
+  const r = restaurationsOuvertes; restaurationsOuvertes = null;
+  if (!r) return 0;
+  S.events = S.events.filter(e => !r.evs.includes(e) && !r.notes.includes(e));
+  r.evs.forEach(e => { delete e.restaure; });
+  S.eventsArchive = (S.eventsArchive || []).concat(r.evs);
+  save();
+  return r.evs.length;
+}
+/* À la fermeture, le bouton qui a ouvert la boîte a souvent été détruit par render() — il
+   disparaît même quand l'archive se vide — et le focus tomberait sur body. On le rend au
+   nouveau bouton « Mis de côté » s'il existe, sinon au titre de la carte ou de la page. */
+document.getElementById('dlg').addEventListener('close', () => {
+  const dlg = document.getElementById('dlg');
+  if (!dlg.querySelector('[data-form="ev-archive"]')) return;
+  restaurationsOuvertes = null;
+  /* Le navigateur a déjà rendu le focus au bouton d'origine s'il existe encore. Sinon le focus
+     reste sur body, ou sur un élément de la boîte fermée, désormais invisible. */
+  const a = document.activeElement;
+  if (a && a !== document.body && document.contains(a) && !dlg.contains(a)) return;
+  const cible = document.querySelector('#view [data-action="ev-archive"]') || document.querySelector('#view .feed-card h2') || document.querySelector('#view h1');
+  if (!cible) return;
+  if (!cible.matches('button, a[href], [tabindex]')) cible.setAttribute('tabindex', '-1');
+  cible.focus();
+});
 
 
 /* ---------- Archive ---------- */
@@ -1731,7 +2503,9 @@ function archive(){
       <td data-l="Dans la plage" class="num"><span class="badge ${ir >= 90 ? 'ok' : ir >= 70 ? 'warn' : 'bad'}">${fmt(ir, 0)} %</span></td>
       <td data-l="Résultat" class="r num">${archResult(b)}</td></tr>`;
   }).join('');
-  return `<div class="ph"><div><h1>Archive</h1><p>Lots terminés, consultables en lecture seule</p></div></div>
+  const nMis = (S.eventsArchive || []).length;
+  return `<div class="ph"><div><h1>Archive</h1><p>Lots terminés, consultables en lecture seule</p></div>
+    ${nMis ? `<div class="ph-actions"><button class="btn" data-action="ev-archive" aria-haspopup="dialog">Événements mis de côté<span class="muted num">${nMis}</span></button></div>` : ''}</div>
     <section class="card">
       <div class="toolbar">
         <label class="search">${IC.search}<input type="search" id="asearch" placeholder="Rechercher un lot" value="${esc(archQuery)}" aria-label="Rechercher un lot archivé"></label>
@@ -1776,6 +2550,20 @@ function archiveDetail(id){
     mountCharts();
   });
   const T2 = second[1] === 'hum' ? 'var(--accent)' : T.c;
+  /* Résumé des mesures réellement relevées (b.mesures, écrit par « Terminer le lot »).
+     Les courbes voisines sont reconstituées par le modèle : ce résumé est la seule trace
+     des relevés de la sonde, il est donc affiché à côté d'elles, et dit lequel est lequel. */
+  const m = b.mesures;
+  const mesures = `<section class="card"><div class="card-h"><h2>Mesures relevées</h2>${m ? `<span class="muted num">${m.n} relevés</span>` : ''}</div>
+    ${m ? `<dl class="kv num">
+        <dt>Moyenne</dt><dd>${fmt(m.moy, 1)} °C</dd>
+        <dt>Minimum</dt><dd>${fmt(m.min, 1)} °C</dd>
+        <dt>Maximum</dt><dd>${fmt(m.max, 1)} °C</dd>
+        <dt>Écart moyen à la consigne finale</dt><dd>${m.moy - r.temp >= 0 ? '+' : '−'}${fmt(Math.abs(m.moy - r.temp), 1)} °C</dd>
+        ${m.debut != null ? `<dt>Période couverte</dt><dd>${fmtDate(m.debut)} au ${fmtDate(m.fin)}</dd>` : ''}
+      </dl>
+      <p class="mes-note">Relevés de la sonde, résumés à la clôture du lot. Les courbes ci-contre sont reconstituées par le modèle de simulation.</p>`
+    : '<p class="mes-note" style="padding-top:12px">Aucune mesure réelle enregistrée pour ce lot : les courbes ci-contre sont reconstituées par le modèle de simulation.</p>'}</section>`;
   return `<div class="dp" style="--c:${T.c}">
     <div class="dp-head">
       <div class="dp-title"><h1>${esc(b.name)}</h1><span class="type"><i></i>${T.label}</span><span class="badge">Archivé</span>
@@ -1792,6 +2580,7 @@ function archiveDetail(id){
       <section class="card dp-devs scroll-card"><div class="card-h"><h2>Journal</h2><span class="muted num">${b.notes.length} notes</span></div>
         <ul class="notes journal scroll">${journalHTML(b, 'all')}</ul></section>
       <div class="dp-side">
+        ${mesures}
         <section class="card scroll-card dp-params"><div class="card-h"><h2>Résumé de la recette</h2></div>
           <div class="scroll">
             ${r.desc ? `<p class="arch-desc">${esc(r.desc)}</p>` : ''}
@@ -1836,13 +2625,39 @@ document.addEventListener('click', e => {
   if (act === 'range'){ detailRange = a.dataset.r; a.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === a)); drawChart(document.getElementById('chart-main')); return; }
   if (act === 'ctab'){ detailChart = a.dataset.v; render(); return; }
   if (act === 'finish'){
-    if (!confirm('Terminer ce lot ? Il sera déplacé dans l’Archive et les appareils reliés seront libérés.')) return;
+    /* Une prise réelle encore allumée chauffe peut-être en ce moment. On la nomme dans la
+       confirmation et elle reçoit un ordre d'ARRÊT : sans cela, terminer un lot pendant une
+       chauffe libérait la prise en affichant « éteinte » alors que le relais restait fermé. */
+    const bf = S.batches.find(x => x.id === id);
+    const aCouper = bf ? devsOf(bf).filter(d => d.kind === 'plug' && d.on && d.eid && !d.demo && !PONT_LOCAL) : [];
+    const msgCoupe = aCouper.length
+      ? '\n\n' + (aCouper.length > 1 ? 'Ces prises encore allumées vont être coupées : ' : 'Cette prise encore allumée va être coupée : ')
+        + aCouper.map(d => d.name).join(', ') + '.'
+      : '';
+    if (!confirm('Terminer ce lot ? Il sera déplacé dans l’Archive et les appareils reliés seront libérés.' + msgCoupe)) return;
     const b = S.batches.find(x => x.id === id); b.status = 'done'; b.end = now();
     b.devSnap = devsOf(b).map(d => ({name:d.name, kind:d.kind}));
+    /* La mémoire des mesures est résumée dans le lot avant d'être libérée : c'est ce résumé
+       qui alimente l'archive, pas la courbe brute. */
+    /* Deux niveaux de mémoire : un point horaire pèse le nombre de tranches qu'il résume
+       (p[5]) et porte son propre minimum et maximum (p[3], p[4]). n compte les tranches de
+       3 minutes réellement mesurées. */
+    const hm = S.hist[b.id];
+    if (hm && hm.length){
+      let n = 0, somme = 0, mn = Infinity, mx = -Infinity;
+      hm.forEach(p => { const k = p[5] || 1; n += k; somme += p[1] * k; mn = Math.min(mn, p[3] ?? p[1]); mx = Math.max(mx, p[4] ?? p[1]); });
+      b.mesures = {n, moy:somme / n, min:mn, max:mx, debut:hm[0][0], fin:hm[hm.length - 1][0]};
+      delete S.hist[b.id];
+    }
+    /* Ordre d'arrêt réel. Le lot est passé en argument, parce que la libération ci-dessous
+       efface d.batch avant que couperPrise (asynchrone) ne journalise : sans cela l'événement
+       se retrouvait sans lot, dans le fil mais absent du journal du lot. Pas d'attente non
+       plus : le clic ne doit pas bloquer, et couperPrise signale lui-même ses échecs. */
+    aCouper.forEach(d => { couperPrise(d, id).catch(() => {}); });
     S.devices.forEach(d => { if (d.batch === id){ d.batch = null; if (d.kind === 'plug') d.on = false; } });
     logEvent('batch', 'Lot terminé et archivé : ' + b.name, b.id); save(); location.hash = '#/archive/' + b.id; return;
   }
-  if (act === 'delete-batch'){ if (!confirm('Supprimer définitivement ce lot ?')) return; S.batches = S.batches.filter(x => x.id !== id); save(); location.hash = '#/'; return; }
+  if (act === 'delete-batch'){ if (!confirm('Supprimer définitivement ce lot ?')) return; S.batches = S.batches.filter(x => x.id !== id); delete S.hist[id]; save(); location.hash = '#/'; return; }
   if (act === 'jfilter'){ journalFilter = a.dataset.v; a.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === a)); const jl = document.getElementById('journal-list'); jl.innerHTML = jl._h = journalHTML(S.batches.find(x => x.id === jl.dataset.b)); return; }
   if (act === 'tstep'){ const inp = a.parentElement.querySelector('input'); inp.value = (Math.round(((parseFloat(inp.value) || 0) + parseFloat(a.dataset.d)) * 2) / 2).toString(); return; }
   if (act === 'rm-grav'){ const b = S.batches.find(x => x.id === id); b.gravity = b.gravity.filter(g => String(g[0]) !== a.dataset.t); save(); render(); return; }
@@ -1860,6 +2675,24 @@ document.addEventListener('click', e => {
     S.batches.push(b); logEvent('batch', 'Fermentation lancée : ' + b.name, b.id); save(); location.hash = '#/f/' + b.id; return;
   }
   if (act === 'add-dev') return openAddDevice();
+  if (act === 'ev-archive') return openArchiveEvents();
+  if (act === 'ev-tout'){ document.querySelectorAll('#dlg input[name="ev"]').forEach(x => x.checked = a.checked); return; }
+  if (act === 'ev-restore'){
+    /* Restauration : une décision de l'utilisateur sur l'affichage du journal, rien n'est
+       envoyé à une prise. */
+    const idx = a.dataset.v === 'tout' ? (S.eventsArchive || []).map((e, i) => i)
+      : [...document.querySelectorAll('#dlg input[name="ev"]:checked')].map(x => +x.value);
+    if (!idx.length) return openArchiveEvents('Cochez au moins un événement à restaurer.');
+    /* « Tout restaurer » est le bouton principal et ramène d'un coup des centaines de chauffes
+       non vérifiées : il demande une confirmation, qui dit jusqu'où l'on peut revenir. */
+    if (a.dataset.v === 'tout' && !confirm(`Restaurer les ${idx.length} événements mis de côté ? Ils reviendront dans l’activité et dans le journal de leur lot, marqués comme non vérifiés. Vous pourrez annuler tant que cette fenêtre reste ouverte ; une fois fermée, la restauration sera définitive.`)) return;
+    const n = restaurerEvenements(idx); render();
+    return openArchiveEvents(n + (n > 1 ? ' événements restaurés dans le journal.' : ' événement restauré dans le journal.'));
+  }
+  if (act === 'ev-annuler'){
+    const n = annulerRestauration(); render();
+    return openArchiveEvents(n ? `Restauration annulée : ${n} ${n > 1 ? 'événements remis' : 'événement remis'} de côté.` : 'Rien à annuler.');
+  }
   if (act === 'close-dlg') return document.getElementById('dlg').close();
   if (act === 'toggle-plug'){
     const p = S.devices.find(x => x.id === id); if (!p.online) return;
@@ -1875,6 +2708,12 @@ document.addEventListener('change', e => {
   if (t.matches('[data-action="assign"]')){ const d = S.devices.find(x => x.id === t.dataset.id); d.batch = t.value || null; delete d.demo; if (!d.batch && d.kind === 'plug') d.on = false; tick(); save(); render(); }
   if (t.matches('[data-action="plug-mode"]')){ const d = S.devices.find(x => x.id === t.dataset.id); d.mode = t.value; delete d.demo; tick(); save(); render(); }
   if (t.name === 'type' && t.closest('#rform')) t.closest('#rform').dataset.type = t.value;
+  /* « Tout sélectionner » reflète la sélection : coché, décoché, ou partiel (indeterminate). */
+  if (t.name === 'ev' && t.closest('#dlg')){
+    const cases = [...document.querySelectorAll('#dlg input[name="ev"]')], n = cases.filter(x => x.checked).length;
+    const tout = document.querySelector('#dlg [data-action="ev-tout"]');
+    if (tout){ tout.checked = n === cases.length; tout.indeterminate = n > 0 && n < cases.length; }
+  }
 });
 document.addEventListener('input', e => {
   if (e.target.id === 'asearch'){ archQuery = e.target.value; const pos = e.target.selectionStart; render(); const s = document.getElementById('asearch'); s.focus(); s.setSelectionRange(pos, pos); return; }
