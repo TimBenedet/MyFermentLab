@@ -743,6 +743,12 @@ def surveillance():
                     continue
                 _echeances.pop(entite, None)
             try:
+                if etat_prise(entite) != "on":
+                    # L'échéance n'a plus d'objet : une prise déjà éteinte n'a pas été
+                    # « interrompue ». Ne pas écrire au journal une coupure qui n'a pas eu
+                    # lieu — un motif faux envoie chercher la panne au mauvais endroit.
+                    print("pont : échéance de %s levée — déjà à l'arrêt" % entite, flush=True)
+                    continue
                 r = commander(entite, False)
                 print(
                     "pont : chauffe automatique de %s interrompue après %d min (état relu : %s)"

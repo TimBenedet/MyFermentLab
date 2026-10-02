@@ -38,3 +38,7 @@ yarn-error.log*
 *.tmp
 *.temp
 /tmp/
+
+# Compilats Python : suivis par git par erreur, ils salissent chaque commit
+__pycache__/
+*.pyc
