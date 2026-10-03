@@ -574,21 +574,25 @@ def commander_regule(lot, entite, allume, motif):
 
 
 def couper_orphelines(voulues):
-    """Coupe ce que le pont a allumé et qu'aucun lot actif ne réclame plus.
+    """Coupe toute prise commandable allumée qu'aucune recette en cours ne réclame.
 
-    Le tour de régulation ne parcourt que les lots PRÉSENTS dans le plan : une prise
-    dont le lot vient d'en disparaître (recette annulée, archivée, mise en pause)
-    n'était donc plus jamais commandée — elle restait allumée, hors de tout regard.
-    Ne touche que ce que le pont a lui-même allumé : ce qu'un autre a allumé ne lui
-    appartient pas, et un clic manuel ne doit pas être défait par la régulation.
+    Règle du propriétaire : une prise non liée à un projet n'est pas activée. Elle vaut
+    pour ce que le pont a lui-même allumé (lot disparu du plan : recette annulée,
+    archivée ou mise en pause — le tour de régulation ne parcourt que les lots présents,
+    donc elle n'était plus jamais commandée) ET pour ce qui s'est allumé en dehors du
+    pont : Home Assistant, bouton du boîtier, application tierce. Une seule exception :
+    ce qu'un lot actif réclame, c'est-à-dire une prise reliée à une recette en cours,
+    que le mode soit automatique ou manuel — c'est le propriétaire qui décide.
     """
-    for entite, memo in list(_allumees_par_pont.items()):
+    a_examiner = set(CFG.prises) | set(_allumees_par_pont)
+    for entite in a_examiner:
         if entite in voulues:
             continue
+        memo = _allumees_par_pont.get(entite)
         try:
             etat = etat_prise(entite)
         except Exception as e:
-            print("pont : orpheline %s : état illisible (%s)" % (entite, raison(e)), flush=True)
+            print("pont : prise %s : état illisible (%s)" % (entite, raison(e)), flush=True)
             continue
         if etat != "on":
             with _verrou_plan:
@@ -599,19 +603,25 @@ def couper_orphelines(voulues):
         try:
             # Aucun frein ici : c'est le sens sûr, il ne doit pas attendre une minute.
             r = commander(entite, False, auto=True)
+            if memo:
+                motif = "plus rattachée à aucun lot actif"
+                lot = {"id": memo.get("lot"), "nom": memo.get("nom")}
+            else:
+                motif = "allumée alors qu'aucune recette en cours ne la réclame"
+                lot = {"id": None, "nom": "hors recette"}
             noter(
-                {"id": memo.get("lot"), "nom": memo.get("nom")},
-                "%s : arrêt — plus rattachée à aucun lot actif (état relu : %s)"
-                % (entite, r.get("etat")),
+                lot,
+                "%s : arrêt — %s (état relu : %s)" % (entite, motif, r.get("etat")),
                 entite,
                 False,
             )
             sauver_etat()
         except Exception as e:
-            with _verrou_plan:
-                _allumees_par_pont[entite] = memo
+            if memo:
+                with _verrou_plan:
+                    _allumees_par_pont[entite] = memo
             print(
-                "pont : arrêt de l'orpheline %s impossible (%s) — nouvelle tentative au tour suivant"
+                "pont : arrêt de %s impossible (%s) — nouvelle tentative au tour suivant"
                 % (entite, raison(e)),
                 flush=True,
             )
