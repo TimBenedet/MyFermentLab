@@ -823,7 +823,11 @@ function seed(){
     {id:'o4', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_4', name:'Multiprise Tim Outlet 4', kind:'plug', batch:null, mode:'manuel', on:false, online:true, slot:4},
     {id:'o5', eid:'switch.smart_switch_25021462413795540601c4e7ae132658_outlet_5', name:'Multiprise Tim Outlet 5', kind:'plug', batch:null, mode:'manuel', on:false, online:true, slot:5},
   ];
-  return {recipes:R, batches:B, devices:D};
+  /* `ensemence` marque un état qui n'a jamais été touché par l'utilisateur : six recettes de
+     démonstration. Il ne doit JAMAIS se proposer comme référence partagée — un navigateur
+     vidé (éviction Safari, navigation privée) écraserait sinon les vraies données du pont.
+     La marque tombe à la première édition réelle (voir marquerEdite). */
+  return {recipes:R, batches:B, devices:D, ensemence:true};
 }
 let S = null;
 try { S = JSON.parse(localStorage.getItem(STORE)); } catch(e) {}
@@ -832,6 +836,25 @@ if (!S || !S.recipes) S = seed();
    régulation (modes, consignes, chronomètres de sécurité) qui cesserait d'être conservé.
    On élague la mémoire des mesures, on retente, et si ça ne suffit pas on le dit. */
 function save(){
+  /* La marque « données de démonstration » tombe ici, au point de passage unique de
+     toutes les écritures, et non sur une liste de gestes : une liste dérive, et elle a
+     déjà dérivé (rattacher un appareil, changer son mode, ajouter une note ou une
+     densité modifiaient les données sans faire tomber la marque). Conséquences de
+     l'oubli, opposées et toutes deux fausses : le partage était refusé — « ce navigateur
+     n'a pas de données à partager » — ou bien le document du pont était adopté
+     automatiquement, écrasant un travail réel.
+
+     Le critère n'est pas « save() a été appelée » (le minuteur de régulation l'appelle
+     aussi, sans rien éditer) mais « les données PARTAGÉES ne sont plus celles de la
+     démonstration ». La comparaison porte sur l'identité des objets (voir empreinteDemo),
+     jamais sur les dates : seed() horodate, donc comparer les documents entiers ferait
+     tomber la marque dès le chargement, et un navigateur neuf refuserait d'adopter les
+     données du pont. */
+  if (S.ensemence === true && typeof empreinteDemo === 'function' && empreinteSemence()){
+    try {
+      if (empreinteDemo(S) !== empreinteSemence()) delete S.ensemence;
+    } catch(e) {}
+  }
   const ecrire = () => localStorage.setItem(STORE, JSON.stringify(S));
   try { ecrire(); return; } catch(e) {}
   /* On libère d'abord la plus grosse mémoire de mesures — la plus courte ne rendrait
@@ -1393,7 +1416,7 @@ function humCfg(b){
 }
 function gravCfg(b){
   const r = b.recipe, c = TYPES.biere.c;
-  return {color:c, h:190, x0:b.start, x1:Math.max(b.start + r.duration * DAY * .6, (b.gravity.at(-1) || [b.start])[0] + DAY),
+  return {color:c, h:190, x0:b.start, x1:Math.max(b.start + r.duration * DAY * .6, ((b.gravity || []).at(-1) || [b.start])[0] + DAY),
     series:[{pts:b.gravity, color:c, dots:true}], lines:[{y:r.fg, label:'visée ' + fmt(r.fg, 3)}],
     yFmt:v => fmt(v, 3), xFmt:t => 'J' + (Math.round((t - b.start) / DAY) + 1), tip:p => `${fmt(p[1], 3)}, ${fmtDate(p[0])}`, label:'Courbe de densité'};
 }
@@ -1642,8 +1665,103 @@ function stateBadge(b, liveAttr){
    automatique par consigne (regulerPont) quand la prise est reliée à un lot actif et
    en mode « auto ». Rien d'autre ne touche aux relais. */
 const PONT = { actif: false, disponible: null, dernier: null, recu: null, jeton: null, jetonRequis: false,
-               regule: false, planSig: null, planT: 0, decT: 0 };
+               regule: false, planSig: null, planT: 0, decT: 0,
+               /* Données partagées : révision connue du pont, sceau d'installation, état de la
+                  négociation. `rev` ne vient JAMAIS d'un compteur local — toujours de la réponse
+                  du pont, sinon deux onglets de la même page se conflictent avec eux-mêmes. */
+               rev: null, semence: null, docT: 0, enVol: false, divergence: null, partage: false,
+               /* Horodatage du dernier export de CETTE session : il conditionne l'adoption
+                  quand la copie de sauvegarde locale est impossible (stockage plein).
+                  `refusT` borne la fréquence de l'alerte de refus (voir adopterDocument). */
+               exportT: 0, refusT: 0 };
 const PONT_CLE = 'hakko-pont-jeton';
+/* Le sceau de la dernière installation vue, et la dernière révision lue. Cette clé n'est
+   jamais effacée par la page : c'est elle qui permet de reconnaître un pont dont le volume
+   a été vidé, et donc de ne pas adopter un document vide par-dessus des mois de relevés. */
+const SCEAU_CLE = 'hakko-pont-sceau';
+/* Ce qui part dans le document partagé, et rien d'autre. Tout le reste de S est soit local
+   par nature (mesures, journal), soit réécrit par le pont à chaque synchronisation — le
+   partager mettrait les deux appareils en conflit permanent sans qu'aucun utilisateur
+   n'ait touché à quoi que ce soit. */
+const APPAREIL_PARTAGE = ['id', 'eid', 'name', 'kind', 'batch', 'mode', 'slot', 'demo'];
+function projectionPartagee(){ return projectionDe(S); }
+/* Même projection, sur un état quelconque : sert à signer l'état de démonstration sans
+   toucher à l'état courant (voir signatureSemence). */
+function projectionDe(e){
+  return {
+    recettes: e.recipes || [],
+    lots: e.batches || [],
+    appareils: (e.devices || []).map(d => {
+      const o = {};
+      APPAREIL_PARTAGE.forEach(k => { if (d[k] !== undefined) o[k] = d[k]; });
+      return o;
+    }),
+    reglages: e.reglages || {},
+  };
+}
+/* Signature de ce qui est partagé : sert à savoir si une écriture est nécessaire. Calculée
+   sur la projection, jamais sur S entier — sinon une mesure reçue déclencherait une écriture.
+
+   Le champ « maj » est EXCLU de la signature : c'est le pont qui l'appose, la page ne l'a donc
+   jamais dans sa projection. En le gardant, toute comparaison page/pont échouait dès la
+   première écriture — la page croyait avoir des modifications locales, posait une divergence,
+   et toutes les écritures suivantes restaient bloquées derrière un bandeau que rien ne
+   justifiait. Comparer doit se faire sur ce que la page possède réellement. */
+function sansMaj(doc){
+  if (!doc || typeof doc !== 'object') return doc;
+  const copie = Object.assign({}, doc);
+  copie.lots = (doc.lots || []).map(l => {
+    if (!l || typeof l !== 'object') return l;
+    const o = Object.assign({}, l);
+    delete o.maj;
+    return o;
+  });
+  return copie;
+}
+function signatureDe(doc){ try { return JSON.stringify(sansMaj(doc)); } catch(e){ return null; } }
+function signaturePartagee(){ return signatureDe(projectionPartagee()); }
+/* Empreinte de ce qui distingue un état RÉEL d'un état de démonstration.
+
+   Elle doit bouger au moindre geste d'édition — rattacher un appareil, changer son mode,
+   ajouter une note ou un relevé — sinon la marque survit à un travail réel, avec deux
+   conséquences opposées et toutes deux fausses : partage refusé (« ce navigateur n'a pas
+   de données à partager »), ou adoption automatique qui écrase ce travail.
+
+   Elle ne doit PAS bouger toute seule. Trois pièges, tous rencontrés en mesurant :
+   les horodatages (seed() en pose des neufs à chaque appel, y compris dans des PAIRES
+   [date, valeur] qu'aucun nom de clé ne signale) ; les champs que la page complète seule
+   après le chargement (devSnap sur les lots archivés) ; les mesures et états de prise.
+   Un navigateur neuf dont la marque tombe refuse d'adopter les données du pont, et le
+   symptôme d'origine revient — c'est arrivé deux fois pendant cette correction.
+
+   D'où la référence choisie : l'empreinte est calculée UNE FOIS, sur l'état réellement
+   servi par seed() au démarrage de cette session, et non sur un seed() rejoué. Tout ce
+   que la page ajoute ensuite d'elle-même est donc déjà dedans, et seul un geste de
+   l'utilisateur peut faire diverger. */
+function empreinteDemo(e){
+  try {
+    /* 1e12 ms = 2001 : au-delà, un nombre est une date, pas une densité ni une
+       température. En dessous, la valeur est gardée telle quelle (1.058, 24, 20…). */
+    const sansDates = o => JSON.parse(JSON.stringify(o), (k, v) =>
+      (typeof v === 'number' && v > 1e12) ? 0 : v);
+    return JSON.stringify({
+      p: sansDates(projectionDe(e)),
+      j: (e.events || []).length,
+      g: (e.batches || []).reduce((n, b) => n + ((b.gravity || []).length), 0),
+      n: (e.batches || []).reduce((n, b) => n + ((b.notes || []).length), 0),
+    });
+  } catch(err) { return null; }
+}
+/* Posée MAINTENANT, et une seule fois : à ce point du script la page a fini de compléter
+   l'état de démonstration (prises de la multiprise, devSnap des lots archivés, journal
+   initial). La référence contient donc déjà tout ce que la page ajoute d'elle-même, et
+   seul un geste de l'utilisateur peut faire diverger l'empreinte.
+
+   Rien n'est posé si l'état vient du stockage (pas de marque) : un état réel n'est jamais
+   une référence de démonstration. */
+let _empreinteSemence = null;
+if (S.ensemence === true) _empreinteSemence = empreinteDemo(S);
+function empreinteSemence(){ return _empreinteSemence; }
 /* PONT_LOCAL (page ouverte en file://) est déclarée en tête du script. */
 /* La Meross MSS425F ne mesure pas la puissance : hors maquette, les watts simulés que
    d'anciennes versions ont persistés sont retirés, et rien ne les réécrit (voir tick). */
@@ -1714,36 +1832,278 @@ function pontApplique(reponse){
   return bascule;
 }
 /* ---------------------------------------------------------------------------
-   Le plan de régulation remis au pont.
+   Il n'y a plus de « plan » construit par la page.
 
-   C'est le pont qui décide désormais : une fermentation dure des jours et personne
-   ne garde un onglet ouvert trois semaines. La page reste le poste de réglage —
-   elle dépose consigne, sonde, prises et fin prévue, puis elle affiche ce que le
-   pont a décidé. Tant que le pont régule, la page ne commande plus d'elle-même :
-   deux régulateurs se contrediraient.
+   Le pont DÉDUIT son plan du document partagé (lots actifs, leur recette figée,
+   leurs appareils) : `POST /api/regul` répond 410. La page n'est plus qu'un poste
+   de réglage qui écrit dans la vérité commune — un appareil périmé ne peut donc
+   plus imposer ses lots sans écrire sous une révision, visiblement.
+   Le protocole : design/protocole-donnees-partagees-v2.md.
    --------------------------------------------------------------------------- */
-function planRegulation(){
-  return S.batches.filter(b => b.status === 'active').map(b => {
-    const r = b.recipe || {};
-    const appareils = devsOf(b).filter(d => d.eid && !d.demo);
-    const prises = appareils.filter(d => d.kind === 'plug').map(d => d.eid);
-    /* Seulement une sonde de TEMPÉRATURE : une sonde d'humidité ne dit pas la
-       température, et faire chauffer sur elle serait chauffer à l'aveugle. */
-    const sonde = (appareils.find(d => d.kind === 'temp') || {}).eid;
-    const consigne = Number(r.temp);
-    if (!prises.length || !sonde || !Number.isFinite(consigne)) return null;
-    const debut = b.start || now();
-    /* La fin de lot part en SECONDES, comme time.time() côté pont, et « durée » est en
-       jours (c'est ce que dit le formulaire de recette). Envoyer des millisecondes
-       rendait la comparaison toujours fausse : la chauffe ne s'arrêtait jamais à
-       l'échéance prévue. */
-    const dureeJours = Number(r.duration);
-    const fin = (Number.isFinite(dureeJours) && dureeJours > 0)
-      ? Math.round(debut / 1000 + dureeJours * 86400) : null;
-    return { id: b.id, nom: b.name || b.id, actif: true, sonde: sonde, prises: prises,
-             consigne: consigne, ecart: Number.isFinite(Number(r.tol)) ? Math.abs(Number(r.tol)) : 0.2,
-             fin: fin };
-  }).filter(Boolean);
+/* ---------- Données partagées (le pont est la vérité, la page est un écran) ---------- */
+/* Trois magasins : `donnees` est partagé et versionné par le pont ; les mesures (S.hist) et
+   le journal restent locaux à chaque navigateur ; les décisions sont écrites par le pont.
+   Le protocole complet est dans design/protocole-donnees-partagees-v2.md. */
+const MAX_SAUVEGARDES = 3;
+/* Toute écriture locale qui écrase l'état de l'utilisateur passe d'abord par ici. Sans cette
+   copie, « adopter » est un synonyme de « perdre » : la perte a lieu chez celui qui adopte,
+   pas chez celui qui pousse. */
+function sauvegarderLocal(prefixe){
+  const cle = prefixe + Date.now();
+  try {
+    localStorage.setItem(cle, JSON.stringify(S));
+  } catch(e){
+    return null;                                   /* quota plein : on le dira à l'appelant */
+  }
+  try {
+    const vieilles = [];
+    for (let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if (k && k.indexOf(prefixe) === 0) vieilles.push(k);
+    }
+    vieilles.sort();
+    while (vieilles.length > MAX_SAUVEGARDES) localStorage.removeItem(vieilles.shift());
+  } catch(e){}
+  return cle;
+}
+/* Le sceau : ce que la page a vu de cette installation du pont. Jamais effacé par la page. */
+function lireSceau(){
+  try { return JSON.parse(localStorage.getItem(SCEAU_CLE)) || null; } catch(e){ return null; }
+}
+function ecrireSceau(semence, rev){
+  if (!semence) return;
+  try { localStorage.setItem(SCEAU_CLE, JSON.stringify({ semence: semence, rev: rev, t: Date.now() })); } catch(e){}
+}
+/* G2 : un état issu de seed() ne se propose jamais comme référence partagée. La marque tombe
+   à la première édition réelle de l'utilisateur. Sans cette garde, un navigateur vidé
+   (éviction Safari, navigation privée) propose six recettes de démonstration comme vérité. */
+function etatEnsemence(){ return S.ensemence === true; }
+/* Les gestes qui MODIFIENT les données partagées (recettes, lots, appareils). Volontairement
+   explicite, et volontairement SANS les actions d'affichage (onglets, filtres, plages, thème,
+   vue) ni les sorties du bandeau de partage, qui gèrent la marque elles-mêmes. */
+const GESTES_EDITION = new Set([
+  'launch',        /* lancer une fermentation */
+  'finish',        /* terminer un lot : il passe en archive */
+  'delete-batch',  /* supprimer un lot */
+  'archive',       /* archiver / désarchiver une recette */
+  'add-dev',       /* ajouter un appareil */
+  'rm-dev',        /* retirer un appareil */
+  'rm-grav',       /* retirer un relevé de densité */
+  'toggle-plug',   /* commander une prise à la main (mode, état voulu) */
+  'tstep',         /* cocher une étape de recette */
+  'ev-annuler',    /* annuler un événement du journal */
+]);
+function marquerEdite(){ if (S.ensemence){ delete S.ensemence; save(); } }
+/* Applique un document venu du pont sur l'état local, sans toucher à ce qui est local par
+   nature : les mesures, le journal et l'état instantané des appareils restent à ce navigateur.
+
+   G3 — « toute adoption sauvegarde d'abord l'état courant » — est une PRÉCONDITION, pas une
+   tentative. Si la copie ne peut pas être écrite (quota du navigateur saturé), on n'adopte
+   PAS et on renvoie `false` : se contenter d'une note dans le journal faisait échouer G3
+   exactement dans le cas où elle sert — stockage plein, donc beaucoup de données à perdre —
+   et l'utilisateur ne lisait l'explication qu'après la perte.
+
+   `options.sansSauvegarde` n'est utilisé que par le chemin MANUEL, et seulement après un
+   export : la perte reste possible, mais c'est alors l'utilisateur qui la décide, en sachant
+   ce qu'il décide. Aucun chemin automatique ne peut forcer. */
+function adopterDocument(doc, options){
+  if (!doc || typeof doc !== 'object') return false;
+  const forcee = !!(options && options.sansSauvegarde);
+  const avant = sauvegarderLocal('hakko-dashboard-v2-remplace-');
+  if (!avant && !forcee){
+    /* Le refus est réévalué à CHAQUE synchronisation (toutes les 15 s : un tour sur cinq de
+       la boucle de 3 s) tant que le stockage reste plein. L'écrire chaque fois remplirait le
+       journal et en chasserait les vraies commandes — même raison, même cadence que
+       `alerteStockage`. L'état, lui, reste visible en permanence dans le bandeau ; c'est son
+       rôle, pas celui du journal. */
+    if (!PONT.refusT || now() - PONT.refusT > 10 * 60e3){
+      PONT.refusT = now();
+      logEvent('alert', 'Adoption refusée : le stockage de ce navigateur est plein, la copie de sauvegarde exigée avant toute adoption n’a pas pu être écrite. Vos données sont intactes — exportez-les, puis adoptez.');
+    }
+    return false;
+  }
+  const parId = {};
+  (S.devices || []).forEach(d => { parId[d.id] = d; });
+  S.recipes = Array.isArray(doc.recettes) ? doc.recettes : (S.recipes || []);
+  S.batches = Array.isArray(doc.lots) ? doc.lots : (S.batches || []);
+  if (Array.isArray(doc.appareils)){
+    S.devices = doc.appareils.map(a => {
+      /* On rapatrie l'état volatil de l'appareil local correspondant : il n'a jamais été
+         partagé, et le perdre ferait clignoter « hors ligne » sur tout le parc. */
+      const local = parId[a.id] || {};
+      const d = {};
+      Object.keys(local).forEach(k => { if (APPAREIL_PARTAGE.indexOf(k) < 0) d[k] = local[k]; });
+      APPAREIL_PARTAGE.forEach(k => { if (a[k] !== undefined) d[k] = a[k]; });
+      return d;
+    });
+  }
+  if (doc.reglages && typeof doc.reglages === 'object') S.reglages = doc.reglages;
+  delete S.ensemence;
+  /* Les mesures d'un lot qui n'existe plus n'ont plus de sens ; celles des lots conservés
+     restent intactes — c'est le seul lot de consolation d'une adoption. */
+  if (S.hist) Object.keys(S.hist).forEach(k => { if (!S.batches.some(b => b.id === k)) delete S.hist[k]; });
+  save();
+  logEvent('note', 'Données partagées adoptées depuis le pont'
+    + (avant ? ' — votre version précédente est conservée dans ce navigateur.'
+             : ' — SANS copie de sauvegarde (stockage plein, adoption forcée après export) : votre version précédente n’existe plus que dans votre export.'));
+  return true;
+}
+/* Lecture courte, appelée à chaque synchronisation : elle ne télécharge pas le document. */
+async function pontLireRev(){
+  if (PONT_LOCAL || !PONT.actif) return null;
+  let r = null, j = null;
+  try { r = await pontRequete('donnees/rev'); } catch(e){ return null; }
+  if (r.status === 503){ PONT.partage = false; return null; }   /* pont sans jeton : pas de partage */
+  if (!r.ok) return null;
+  try { j = await r.json(); } catch(e){ return null; }
+  if (!j || j.ok === false) return null;
+  PONT.partage = true;
+  return j;
+}
+/* Écrit la projection partagée. Une seule écriture en vol : S est un global muté partout et
+   sauvé toutes les trois secondes, donc deux POST simultanés porteraient le même `base` et
+   la page se conflicterait avec elle-même. */
+async function pontEcrireDonnees(base, reactiver){
+  if (PONT.enVol) return null;
+  PONT.enVol = true;
+  const corps = { base: base, op: 'p' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+                  donnees: projectionPartagee() };
+  if (reactiver && reactiver.length) corps.reactiver = reactiver;
+  let r = null, j = null;
+  try { r = await pontRequete('donnees', corps); }
+  catch(e){ PONT.enVol = false; return null; }
+  try { j = await r.json(); } catch(e){ j = null; }
+  PONT.enVol = false;
+  if (r.status === 409 && j){
+    /* Le pont a une révision plus récente : on ne pousse pas, et surtout on conserve la
+       version refusée — l'utilisateur doit pouvoir la comparer et la réappliquer. */
+    sauvegarderLocal('hakko-dashboard-v2-refuse-');
+    PONT.rev = j.rev;
+    PONT.divergence = { rev: j.rev, doc: j.donnees || null, motif: j.motif || 'revision' };
+    return j;
+  }
+  if (r.status === 507){
+    logEvent('alert', 'Le pont n’a pas pu enregistrer : son stockage est plein ou en lecture seule. Vos données restent dans ce navigateur.');
+    return j;
+  }
+  if (!r.ok || !j || j.ok === false) return j;
+  PONT.rev = j.rev;
+  if (PONT.semence) ecrireSceau(PONT.semence, j.rev);
+  return j;
+}
+/* Le chef d'orchestre du partage, appelé à chaque synchronisation. Il ne fait jamais rien
+   d'automatique quand les deux côtés ont des données différentes : il le signale.
+
+   Toute sortie passe par `fin()` : poser PONT.divergence sans redessiner laisserait le
+   bandeau invisible, et l'utilisateur croirait ses modifications partagées alors qu'elles
+   dorment dans son navigateur. Un silence est pire qu'un conflit affiché. */
+async function pontSynchroDonnees(){
+  if (PONT_LOCAL || !PONT.actif || PONT.jetonRequis) return;
+  const avant = JSON.stringify(PONT.divergence || null);
+  const fin = () => { if (JSON.stringify(PONT.divergence || null) !== avant) render(); };
+  const tete = await pontLireRev();
+  if (!tete) return fin();
+  /* §6 du protocole — on n'adopte RIEN pendant que l'utilisateur saisit quelque chose
+     (un dialogue est ouvert), sinon sa saisie est écrasée sous ses doigts. Ce test ne
+     couvrait que la branche « un autre appareil a écrit » : la branche de PREMIÈRE lecture
+     (PONT.rev === null) adoptait automatiquement sans jamais le consulter, et c'est
+     justement elle qui adopte le plus volontiers (état de démonstration). Il est donc en
+     tête, juste après la lecture de la révision, pour couvrir TOUTES les branches — y
+     compris le dépôt de notre propre projection, qui peut attendre la fermeture du
+     dialogue : rien n'est perdu, `sigEcrite` est inchangé et le tour suivant l'enverra.
+     La sortie passe par `fin()` comme toutes les autres. */
+  const dlg = document.getElementById('dlg');
+  if (dlg && dlg.open) return fin();
+  const sceau = lireSceau();
+  PONT.semence = tete.semence || null;
+  /* Mode dégradé : le document courant est illisible et le pont sert la génération
+     PRÉCÉDENTE, avec sa propre révision — donc une révision qui RECULE (8 -> 7). Sans ce
+     gel, la page voyait une révision différente de la sienne, téléchargeait, et adoptait
+     silencieusement un document plus vieux que le sien, pendant que toute écriture était
+     refusée en 507. Au retour à la normale, le contenu de la 7 avait remplacé celui de la
+     8 dans les deux navigateurs. On n'entreprend donc RIEN, exactement comme G1, et on
+     le dit à l'écran. */
+  if (tete.degrade === true){
+    PONT.divergence = { degrade: true, rev: tete.rev, revConnue: PONT.rev };
+    return fin();
+  }
+  /* G1 — le pont a perdu ses données (volume vidé, réinstallation) : on n'entreprend RIEN.
+     Ni dépôt, ni adoption. C'est le seul garde-fou contre l'écrasement silencieux de mois
+     de relevés par un pont neuf. */
+  if (sceau && sceau.semence && tete.semence !== sceau.semence){
+    PONT.divergence = { perdu: true, revConnue: sceau.rev, quand: sceau.t };
+    return fin();
+  }
+  if (tete.rev === 0){
+    /* Pont vierge. G2 : un état de démonstration ne se propose jamais comme référence. */
+    if (etatEnsemence()){ PONT.divergence = { vierge: true, ensemence: true }; return fin(); }
+    PONT.divergence = { vierge: true, ensemence: false };
+    return fin();                                  /* l'utilisateur confirme, la page ne décide pas */
+  }
+  if (PONT.rev === null){
+    /* Première lecture de cette session : on télécharge et on compare avant tout. */
+    let r = null, j = null;
+    try { r = await pontRequete('donnees'); } catch(e){ return fin(); }
+    if (!r.ok) return fin();
+    try { j = await r.json(); } catch(e){ return fin(); }
+    if (!j || j.ok === false || !j.donnees) return fin();
+    PONT.rev = j.rev;
+    ecrireSceau(j.semence, j.rev);
+    if (etatEnsemence() || signaturePartagee() === signatureDe(j.donnees)){
+      /* Rien de local à perdre (état de démonstration), ou les deux côtés disent déjà la
+         même chose : on adopte sans rien demander. */
+      if (signaturePartagee() !== signatureDe(j.donnees) && !adopterDocument(j.donnees)){
+        /* G3 a refusé : la copie de sauvegarde n'a pas pu être écrite. On n'adopte pas
+           automatiquement, et on le DIT — le bandeau porte la sortie (exporter, puis
+           adopter). Sans divergence posée ici, la page resterait muette sur un refus. */
+        PONT.divergence = { rev: j.rev, doc: j.donnees, motif: 'sauvegardeImpossible' };
+        return fin();
+      }
+      /* Mémoriser CE QU'ON VIENT D'ADOPTER comme notre référence. Sans cette ligne, la page
+         ne distingue plus « je n'ai rien touché » de « j'ai modifié hors ligne » : au
+         prochain changement venu de l'autre appareil elle crierait au conflit, et un
+         archivage fait sur le PC resterait invisible sur le téléphone derrière un bandeau.
+         C'est exactement le symptôme qu'on corrige. */
+      PONT.sigEcrite = signaturePartagee();
+      PONT.docT = now();
+      render();                                    /* les données ont changé sous nos pieds */
+      return;
+    }
+    /* Les deux côtés diffèrent et l'utilisateur a des données : il tranche, pas la page. */
+    PONT.divergence = { rev: j.rev, doc: j.donnees, motif: 'divergence' };
+    return fin();
+  }
+  if (tete.rev !== PONT.rev){
+    /* Un autre appareil a écrit. */
+    let r = null, j = null;
+    try { r = await pontRequete('donnees'); } catch(e){ return fin(); }
+    if (!r.ok) return fin();
+    try { j = await r.json(); } catch(e){ return fin(); }
+    if (!j || j.ok === false || !j.donnees) return fin();
+    if (signaturePartagee() === PONT.sigEcrite){
+      /* On n'a rien modifié depuis notre dernière écriture : adopter est sans risque —
+         à condition que G3 ait pu écrire la copie de sauvegarde. Si elle a échoué, on
+         n'avance SURTOUT pas PONT.rev : la page se croirait à jour sans l'être, et le
+         bandeau disparaîtrait au tour suivant. */
+      if (adopterDocument(j.donnees)){
+        PONT.rev = j.rev; PONT.sigEcrite = signaturePartagee();
+        ecrireSceau(j.semence, j.rev);
+        render();
+      } else {
+        PONT.divergence = { rev: j.rev, doc: j.donnees, motif: 'sauvegardeImpossible' };
+      }
+    } else {
+      PONT.divergence = { rev: j.rev, doc: j.donnees, motif: 'divergence' };
+    }
+    return fin();
+  }
+  /* Même révision des deux côtés : si notre projection a changé, on la dépose. */
+  const sig = signaturePartagee();
+  if (sig !== PONT.sigEcrite && !PONT.divergence){
+    const j = await pontEcrireDonnees(PONT.rev);
+    if (j && j.ok) PONT.sigEcrite = sig;
+  }
+  fin();                                           /* un 409 a pu poser une divergence */
 }
 async function pontLireRegul(){
   /* Ce que le pont dit de lui-même : est-ce qu'il régule, et qu'a-t-il décidé.
@@ -1755,7 +2115,12 @@ async function pontLireRegul(){
   try { r = await pontRequete('regul'); } catch(e){ PONT.regule = false; return null; }
   if (!r.ok) { PONT.regule = false; return null; }
   try { j = await r.json(); } catch(e){ PONT.regule = false; return null; }
-  PONT.regule = !!(j && j.regule === true && (j.lots || []).some(l => l.actif));
+  /* Le pont dit lui-même s'il est le régulateur. Y ajouter « et il a des lots actifs »
+     rendait la page régulatrice dès que le plan était vide — donc quand un lot venait
+     d'être exclu par une garde, ou quand le document était illisible. Le navigateur
+     rallumait ce que le pont coupait au tour suivant : le relais battait. Si le pont
+     régule, la page ne commande pas, même quand le plan est vide. */
+  PONT.regule = !!(j && j.regule === true);
   const neuves = (((j || {}).decisions) || []).filter(x => (x.t || 0) > PONT.decT);
   if (neuves.length){
     /* Ce que le pont a réellement commandé, avec ses mots : la page ne doit pas
@@ -1768,22 +2133,14 @@ async function pontLireRegul(){
   }
   return j;
 }
+/* Le dépôt de plan a disparu : le pont DÉDUIT son plan du document partagé, et `POST
+   /api/regul` répond 410. Cette fonction ne fait plus qu'une chose — s'assurer que le
+   document partagé est à jour. Un appareil périmé ne peut plus imposer ses lots sans
+   écrire dans la vérité commune, visiblement et sous une révision. */
 async function pontPoussePlan(){
   if (PONT_LOCAL || !PONT.actif || PONT.jetonRequis) return false;
-  const lots = planRegulation();
-  const sig = JSON.stringify(lots);
-  /* On ne redépose pas à chaque synchronisation, seulement quand le plan change, quand
-     le pont a perdu le sien, ou toutes les dix minutes — un pod redémarré l'oublie. */
-  if (PONT.regule && sig === PONT.planSig && now() - PONT.planT < 10 * 60e3) return true;
-  let r = null;
-  try { r = await pontRequete('regul', { lots: lots, sans_mesure_max: Math.round(SANS_MESURE_MAX / 1000) }); }
-  catch(e){ return false; }
-  if (!r.ok) return false;                       /* refusé : la page garde la main */
-  let j = null; try { j = await r.json(); } catch(e){ return false; }
-  if (!j || j.ok === false) return false;
-  PONT.regule = j.regule === true;
-  PONT.planSig = sig; PONT.planT = now();
-  return true;
+  await pontSynchroDonnees();
+  return PONT.partage === true;
 }
 async function pontSynchro(silencieux){
   if (PONT_LOCAL) return false;
@@ -2044,6 +2401,7 @@ function home(){
   return `<div class="dp home">
     <div class="dp-head"><div class="dp-title"><h1>Vue d’ensemble</h1><span class="dp-sub">Situation au ${today}</span></div>
     <div class="ph-actions"><a class="btn" href="#/appareils">${IC.sensor}Appareils</a><a class="btn primary" href="#/recettes">${IC.plus}Lancer une fermentation</a></div></div>
+    ${bandeauPartage()}
     <div class="kpis compact">
       <div class="card kpi"><div class="k">${IC.jar}Lots en cours</div><div class="v num">${act.length}</div><div class="s">${S.recipes.filter(r => !r.archived).length} recettes disponibles</div></div>
       <div class="card kpi"><div class="k">${IC.alert}Alertes de température</div><div class="v num" data-live="kpi:alerts">${al}</div><div class="s ${al ? 'warn' : 'ok'}">${al ? 'À vérifier' :'Tous les lots dans leur plage'}</div></div>
@@ -2059,6 +2417,83 @@ function home(){
       </div>
     </div>
   </div>`;
+}
+
+/* ---------- Bandeau des données partagées ----------
+   Les gardes du protocole décident souvent de NE RIEN FAIRE automatiquement (sceau inconnu,
+   état ensemencé, divergence). Sans cet affichage, l'utilisateur ne saurait pas que ses
+   modifications ne partent plus : un silence est pire qu'un conflit visible. Chaque état a
+   donc une sortie nommée, et l'export est toujours à portée de clic — c'est la seule défense
+   si le volume du pont ET les navigateurs sont vidés le même jour. */
+function sauvegardesConservees(prefixe){
+  const out = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if (k && k.indexOf(prefixe) === 0) out.push(k);
+    }
+  } catch(e){}
+  return out.sort().reverse();
+}
+function bandeauPartage(){
+  const D = PONT.divergence;
+  const btnExport = `<button class="btn ghost sm" data-action="exporter">Exporter mes données</button>`;
+  const refusees = sauvegardesConservees('hakko-dashboard-v2-refuse-');
+  /* Hors ligne : on le dit, mais sans alarmer — c'est le cas normal en file:// et le seul
+     effet est que les modifications ne sont pas partagées. */
+  if (!D){
+    if (PONT_LOCAL || !PONT.actif){
+      return `<p class="s" role="status">${IC.alert}Hors ligne — vos modifications restent sur cet appareil et ne sont pas partagées. ${btnExport}</p>`;
+    }
+    if (refusees.length){
+      const quand = new Date(Number(refusees[0].split('-').pop()));
+      return `<p class="err" role="alert">${IC.alert}Votre version du ${fmtDate(quand.getTime())} a été refusée par le pont et conservée sur cet appareil.
+        <button class="btn ghost sm" data-action="reappliquer">Réappliquer</button> ${btnExport}</p>`;
+    }
+    return '';
+  }
+  /* Mode dégradé — le pont sert une génération précédente : ni dépôt, ni adoption, sinon
+     la page adopterait une révision plus vieille que la sienne. État transitoire, mais il
+     doit se voir : sans message, l'utilisateur continue de saisir en croyant partager. */
+  if (D.degrade){
+    return `<p class="err" role="alert">${IC.alert}Le pont lit une sauvegarde de secours (document endommagé) : vos modifications ne sont ni envoyées ni remplacées pour l'instant.
+      Elles restent sur cet appareil. ${btnExport}</p>`;
+  }
+  /* G1 — le pont a perdu les données partagées : plus aucune action automatique. */
+  if (D.perdu){
+    const q = D.quand ? fmtDate(D.quand) : 'date inconnue';
+    return `<p class="err" role="alert">${IC.alert}Le pont a perdu les données partagées (dernière révision connue : <b>${D.revConnue}</b>, du ${q}).
+      Rien n'est envoyé ni adopté automatiquement.
+      <button class="btn primary sm" data-action="restaurer">Restaurer depuis cet appareil</button> ${btnExport}</p>`;
+  }
+  /* G2 — un état de démonstration ne se propose jamais comme référence. */
+  if (D.vierge && D.ensemence){
+    return `<p class="s" role="status">${IC.alert}Ce navigateur n'a pas de données à partager (recettes de démonstration).
+      Ouvrez le dashboard sur l'appareil qui porte vos vraies données, ou restaurez une sauvegarde.</p>`;
+  }
+  if (D.vierge){
+    return `<p class="s" role="status">${IC.alert}Le pont n'a encore aucune donnée partagée.
+      <button class="btn primary sm" data-action="partager">Faire de ces données la référence</button> ${btnExport}</p>`;
+  }
+  /* G3 n'a pas pu écrire la copie de sauvegarde : l'adoption a été REFUSÉE. Cet état doit
+     s'afficher, sinon la page a décidé de ne rien faire et l'utilisateur ne le sait pas —
+     c'est exactement le silence que le bandeau existe pour rompre. Sa sortie est nommée et
+     ordonnée : exporter d'abord (seul endroit où la version locale survivra), adopter
+     ensuite ; ou garder les siennes et les écrire au pont. */
+  if (D.motif === 'sauvegardeImpossible'){
+    return `<p class="err" role="alert">${IC.alert}Le stockage de ce navigateur est plein : la copie de sauvegarde exigée avant toute adoption n'a pas pu être écrite.
+      Les données du pont (révision <b>${D.rev}</b>) n'ont donc <b>pas</b> été adoptées — les vôtres sont intactes.
+      Exportez-les, puis adoptez.
+      ${btnExport}
+      <button class="btn primary sm" data-action="adopter">Adopter celles du pont</button>
+      <button class="btn ghost sm" data-action="garder">Garder les miennes</button></p>`;
+  }
+  /* Divergence : jamais de fusion. Trois sorties nommées, la version locale étant conservée. */
+  const quoi = D.motif === 'semence' ? 'installation différente' : 'révision ' + D.rev;
+  return `<p class="err" role="alert">${IC.alert}Les données du pont (${quoi}) diffèrent de celles de cet appareil, qui a été modifié hors ligne.
+    Rien n'est adopté automatiquement — votre version est conservée.
+    <button class="btn primary sm" data-action="adopter">Adopter celles du pont</button>
+    <button class="btn ghost sm" data-action="garder">Garder les miennes</button> ${btnExport}</p>`;
 }
 
 /* ---------- Detail ---------- */
@@ -2078,7 +2513,7 @@ function detail(id){
   kp.push(['Consigne', `${fmt(r.temp, 1)}<small>°C</small>`, `Tolérance ±${fmt(TYPES[r.type].tol / 2, 1)} °C`]);
   if (r.type === 'koji') kp.push(['Humidité', `<span ${active ? `data-live="hum:${b.id}"` : ''}>${fmt(currentHum(b), 0)}</span><small>%</small>`, `Cible ${r.hum} %`]);
   if (r.type === 'biere' && b.gravity?.length){
-    const g = b.gravity.at(-1)[1], abv = (r.og - g) * 131.25, att = (r.og - g) / (r.og - 1) * 100;
+    const g = (b.gravity || []).at(-1)[1], abv = (r.og - g) * 131.25, att = (r.og - g) / (r.og - 1) * 100;
     kp.push(['Densité', fmt(g, 3), `Visée ${fmt(r.fg, 3)}`], ['Alcool estimé', `${fmt(abv, 1)}<small>%</small>`, `Atténuation ${fmt(att, 0)} %`]);
   }
   if (r.salt) kp.push(['Salinité', `${fmt(r.salt, 0)}<small>%</small>`, 'Du poids total']);
@@ -2165,7 +2600,10 @@ function gravHTML(b, active){
 let journalFilter = 'all';
 function journalHTML(b, jf){
   jf = jf || journalFilter;
-  let items = b.notes.map(n => ({t:n.t, k:'note', x:n.x}));
+  /* `notes` peut manquer : un lot adopté depuis le document partagé n'a que les champs
+     partagés, et le journal est LOCAL à chaque navigateur (§2.C du protocole). Sans ce
+     garde-fou, ouvrir la fiche d'un lot venu de l'autre appareil vide l'écran. */
+  let items = (b.notes || []).map(n => ({t:n.t, k:'note', x:n.x}));
   /* Un événement simulé ne se lit que là où la simulation est le sujet : un lot de
      démonstration, ou la page ouverte sans pont. Le journal d'un lot réel ne garde que
      les commandes réellement parties. */
@@ -2528,7 +2966,7 @@ function archiveDetail(id){
     ['Dans la plage', `${fmt(s.inRange, 0)}<small>%</small>`, `Consigne ±${fmt(TYPES[r.type].tol / 2, 1)} °C`],
   ];
   if (r.type === 'biere' && b.gravity?.length){
-    const g = b.gravity.at(-1)[1];
+    const g = (b.gravity || []).at(-1)[1];
     kp.push(['Densité finale', fmt(g, 3), `${fmt((r.og - g) * 131.25, 1)} % vol., att. ${fmt((r.og - g) / (r.og - 1) * 100, 0)} %`]);
   }
   if (s.humAvg != null) kp.push(['Humidité moyenne', `${fmt(s.humAvg, 0)}<small>%</small>`, `Cible ${r.hum} %`]);
@@ -2577,7 +3015,7 @@ function archiveDetail(id){
       <section class="card dp-journal scroll-card arch-2"><div class="card-h"><h2>${second[0]}</h2></div>
         <div class="dp-chart-body"><div class="dp-plot"><div class="chart fill" id="arch-2" data-chart></div>
           <div class="legend" style="--c:${T2}">${second[1] === 'daily' ? '<span><i></i>Moyenne</span><span><i style="background:var(--faint)"></i>Min et max</span>' : second[1] === 'grav' ? '<span><i></i>Relevés</span><span><i class="dash"></i>Densité visée</span>' : '<span><i></i>Humidité</span><span><i class="dash"></i>Cible</span>'}</div></div></div></section>
-      <section class="card dp-devs scroll-card"><div class="card-h"><h2>Journal</h2><span class="muted num">${b.notes.length} notes</span></div>
+      <section class="card dp-devs scroll-card"><div class="card-h"><h2>Journal</h2><span class="muted num">${(b.notes || []).length} notes</span></div>
         <ul class="notes journal scroll">${journalHTML(b, 'all')}</ul></section>
       <div class="dp-side">
         ${mesures}
@@ -2586,9 +3024,9 @@ function archiveDetail(id){
             ${r.desc ? `<p class="arch-desc">${esc(r.desc)}</p>` : ''}
             <dl class="kv num">${params.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
             <div class="arch-sub">Ingrédients</div>
-            <dl class="kv">${r.ingredients.map(i => `<dt>${esc(i.n)}</dt><dd class="num">${esc(i.q)}</dd>`).join('')}</dl>
+            <dl class="kv">${(r.ingredients || []).map(i => `<dt>${esc(i.n)}</dt><dd class="num">${esc(i.q)}</dd>`).join('')}</dl>
             <div class="arch-sub">Étapes</div>
-            <ol class="steps">${r.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>
+            <ol class="steps">${(r.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>
           </div></section>
       </div>
     </div>
@@ -2621,6 +3059,112 @@ document.addEventListener('click', e => {
   const a = e.target.closest('[data-action]'); if (!a) return;
   const act = a.dataset.action, id = a.dataset.id;
   if (act === 'theme') return cycleTheme();
+  /* G2 : la marque « démonstration » tombe dès qu'un geste humain touche aux données
+     partagées. Elle ne tombait que sur quatre gestes (créer un lot, le supprimer, ajouter
+     un appareil, enregistrer une recette) : terminer un lot, le mettre en pause, relier un
+     appareil, archiver une recette laissaient la marque en place. Un navigateur ainsi
+     modifié restait classé « jamais touché » et refusait de se proposer comme référence —
+     ou pire, se laissait écraser sans avertissement. La liste est explicite : marquer sur
+     tout clic ferait tomber la marque sur un simple changement d'onglet. */
+  if (GESTES_EDITION.has(act)) marquerEdite();
+  /* ----- Données partagées : chaque sortie du bandeau. Aucune n'est silencieuse, et
+     aucune n'écrase l'état courant sans en garder une copie (G3). ----- */
+  if (act === 'exporter'){
+    /* La seule défense si le volume du pont ET les navigateurs sont vidés. Pas de
+       dépendance : un Blob et un lien, c'est tout. */
+    try {
+      const nom = 'hakko-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json';
+      const url = URL.createObjectURL(new Blob([JSON.stringify(S, null, 1)], {type:'application/json'}));
+      const lien = document.createElement('a');
+      lien.href = url; lien.download = nom; lien.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      /* Mémorisé en mémoire, pas dans localStorage : c'est précisément quand le stockage
+         est plein que cette trace sert, et elle n'a pas à survivre au rechargement — un
+         export d'avant le rechargement ne dit rien de l'état qu'on s'apprête à perdre. */
+      PONT.exportT = now();
+      logEvent('note', 'Données exportées : ' + nom);
+    } catch(e){ alert("L'export a échoué : " + e); }
+    return;
+  }
+  if (act === 'partager' || act === 'restaurer'){
+    const quoi = act === 'restaurer'
+      ? 'Renvoyer les données de cet appareil au pont, qui les a perdues ?'
+      : 'Faire des données de cet appareil la référence partagée ?';
+    if (!confirm(quoi + '\n\nUne copie de sauvegarde est conservée dans ce navigateur.')) return;
+    sauvegarderLocal('hakko-dashboard-v2-sauvegarde-');
+    /* base: 0 — le pont refuse (409 « semence ») s'il a déjà détenu un document : G4. */
+    pontEcrireDonnees(0).then(j => {
+      if (j && j.ok){
+        PONT.divergence = null; PONT.sigEcrite = signaturePartagee(); PONT.partage = true;
+        logEvent('note', 'Données de cet appareil devenues la référence partagée (révision ' + j.rev + ')');
+      } else if (j && j.motif === 'semence'){
+        alert("Le pont a déjà détenu des données : il refuse d'être réinitialisé par une page.\nVoir DEPLOIEMENT.md (supprimer semence.json) — et exportez d'abord.");
+      }
+      render();
+    });
+    return;
+  }
+  if (act === 'adopter'){
+    const D = PONT.divergence;
+    if (!D || !D.doc) return;
+    /* G3 n'a pas pu écrire la copie de sauvegarde (stockage plein). On ne promet alors
+       surtout pas « votre version est conservée » : elle ne le sera pas. L'export est
+       EXIGÉ d'abord — c'est le seul endroit où la version de l'utilisateur survivra. */
+    const sansFilet = D.motif === 'sauvegardeImpossible';
+    if (sansFilet && !PONT.exportT){
+      alert('Le stockage de ce navigateur est plein : aucune copie de sauvegarde ne peut y être écrite.\n\n'
+        + 'Exportez d’abord vos données (bouton « Exporter mes données »), puis adoptez : sans cet export, votre version serait définitivement perdue.');
+      return;
+    }
+    const question = sansFilet
+      ? 'Remplacer les données de cet appareil par celles du pont ?\n\n'
+        + 'ATTENTION : le stockage de ce navigateur est plein. AUCUNE copie de sauvegarde ne sera conservée ici — '
+        + 'votre version ne survivra que dans le fichier exporté le ' + fmtDate(PONT.exportT) + ' à ' + fmtTime(PONT.exportT) + '.'
+      : 'Remplacer les données de cet appareil par celles du pont ?\n\nVotre version est conservée dans ce navigateur, et reste exportable.';
+    if (!confirm(question)) return;
+    if (!adopterDocument(D.doc, { sansSauvegarde: sansFilet })){
+      /* Le quota s'est rempli entre l'affichage du bandeau et le clic : on ne masque pas
+         le refus, on bascule sur l'état qui porte sa sortie (exporter, puis adopter). */
+      PONT.divergence = { rev: D.rev, doc: D.doc, motif: 'sauvegardeImpossible' };
+      render();
+      return;
+    }
+    PONT.rev = D.rev; PONT.sigEcrite = signaturePartagee(); PONT.divergence = null;
+    render();
+    return;
+  }
+  if (act === 'garder'){
+    const D = PONT.divergence;
+    if (!D) return;
+    /* Aucun lot ne repasse « actif » par ce chemin : un appareil périmé pourrait
+       ressusciter une fermentation archivée, sur une vraie prise. La garde `maj` du pont
+       les exclut du plan, et seuls des identifiants nommés ici seraient réactivés. */
+    const actifs = (S.batches || []).filter(b => b.status === 'active').map(b => b.name || b.id);
+    const avert = actifs.length
+      ? '\n\nLes lots en cours de cet appareil ne seront PAS réactivés automatiquement côté pont : '
+        + actifs.join(', ') + '.'
+      : '';
+    if (!confirm('Écrire les données de cet appareil par-dessus celles du pont ?' + avert)) return;
+    pontEcrireDonnees(D.rev).then(j => {
+      if (j && j.ok){ PONT.divergence = null; PONT.sigEcrite = signaturePartagee(); }
+      render();
+    });
+    return;
+  }
+  if (act === 'reappliquer'){
+    const cles = sauvegardesConservees('hakko-dashboard-v2-refuse-');
+    if (!cles.length) return;
+    if (!confirm('Réappliquer votre version refusée par-dessus l\'état courant de cet appareil ?')) return;
+    try {
+      const doc = JSON.parse(localStorage.getItem(cles[0]));
+      if (!doc) return;
+      sauvegarderLocal('hakko-dashboard-v2-remplace-');
+      S = doc; save(); PONT.sigEcrite = null;
+      logEvent('note', 'Version refusée réappliquée sur cet appareil');
+      render();
+    } catch(e){ alert('Réapplication impossible : ' + e); }
+    return;
+  }
   if (act === 'vue') return basculerVue();
   if (act === 'range'){ detailRange = a.dataset.r; a.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === a)); drawChart(document.getElementById('chart-main')); return; }
   if (act === 'ctab'){ detailChart = a.dataset.v; render(); return; }
@@ -2657,7 +3201,7 @@ document.addEventListener('click', e => {
     S.devices.forEach(d => { if (d.batch === id){ d.batch = null; if (d.kind === 'plug') d.on = false; } });
     logEvent('batch', 'Lot terminé et archivé : ' + b.name, b.id); save(); location.hash = '#/archive/' + b.id; return;
   }
-  if (act === 'delete-batch'){ if (!confirm('Supprimer définitivement ce lot ?')) return; S.batches = S.batches.filter(x => x.id !== id); delete S.hist[id]; save(); location.hash = '#/'; return; }
+  if (act === 'delete-batch'){ if (!confirm('Supprimer définitivement ce lot ?')) return; S.batches = S.batches.filter(x => x.id !== id); delete S.hist[id]; marquerEdite(); save(); location.hash = '#/'; return; }
   if (act === 'jfilter'){ journalFilter = a.dataset.v; a.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === a)); const jl = document.getElementById('journal-list'); jl.innerHTML = jl._h = journalHTML(S.batches.find(x => x.id === jl.dataset.b)); return; }
   if (act === 'tstep'){ const inp = a.parentElement.querySelector('input'); inp.value = (Math.round(((parseFloat(inp.value) || 0) + parseFloat(a.dataset.d)) * 2) / 2).toString(); return; }
   if (act === 'rm-grav'){ const b = S.batches.find(x => x.id === id); b.gravity = b.gravity.filter(g => String(g[0]) !== a.dataset.t); save(); render(); return; }
@@ -2672,7 +3216,7 @@ document.addEventListener('click', e => {
   if (act === 'launch'){
     const r = S.recipes.find(x => x.id === id), n = S.batches.filter(b => b.recipeId === id).length + 1;
     const b = {id:uid('b'), name:`${r.name} #${n}`, recipe:JSON.parse(JSON.stringify(r)), recipeId:r.id, start:now(), status:'active', notes:[], gravity:r.type === 'biere' ? [[now(), r.og]] : undefined};
-    S.batches.push(b); logEvent('batch', 'Fermentation lancée : ' + b.name, b.id); save(); location.hash = '#/f/' + b.id; return;
+    S.batches.push(b); logEvent('batch', 'Fermentation lancée : ' + b.name, b.id); marquerEdite(); save(); location.hash = '#/f/' + b.id; return;
   }
   if (act === 'add-dev') return openAddDevice();
   if (act === 'ev-archive') return openArchiveEvents();
@@ -2722,7 +3266,8 @@ document.addEventListener('input', e => {
 document.addEventListener('submit', e => {
   const f = e.target; e.preventDefault();
   const fd = new FormData(f);
-  if (f.dataset.form === 'note'){ const b = S.batches.find(x => x.id === f.dataset.id); const x = fd.get('x').trim(); if (!x) return; b.notes.push({t:now(), x}); save(); render(); return; }
+  if (f.dataset.form === 'note'){ const b = S.batches.find(x => x.id === f.dataset.id); const x = fd.get('x').trim(); if (!x) return; if (!b.notes) b.notes = [];   /* lot adopté : le journal est local, il peut manquer */
+    b.notes.push({t:now(), x}); save(); render(); return; }
   if (f.dataset.form === 'gravity'){
     const b = S.batches.find(x => x.id === f.dataset.id); const g = parseFloat(String(fd.get('g')).replace(',', '.'));
     if (!(g > .98 && g < 1.2)) return;
@@ -2741,7 +3286,7 @@ document.addEventListener('submit', e => {
     const name = fd.get('name').trim(); if (!name) return; const kind = fd.get('kind');
     const d = {id:uid(kind[0]), name, kind, batch:fd.get('batch') || null, online:true, seen:now()};
     if (kind === 'plug'){ d.mode = d.batch ? 'auto' : 'manuel'; d.on = false; const used = outlets().map(o => o.slot); const free = [1, 2, 3, 4, 5].find(s => !used.includes(s)); if (free) d.slot = free; } else d.battery = 100;
-    S.devices.push(d); document.getElementById('dlg').close(); tick(); save(); render(); return;
+    S.devices.push(d); document.getElementById('dlg').close(); tick(); marquerEdite(); save(); render(); return;
   }
   if (f.id === 'rform'){
     const num = k => { const v = parseFloat(String(fd.get(k)).replace(',', '.')); return isNaN(v) ? null : v; };
@@ -2760,6 +3305,7 @@ document.addEventListener('submit', e => {
     const id = f.dataset.id;
     if (id){ const o = S.recipes.find(x => x.id === id); Object.keys(o).forEach(k => { if (!['id', 'archived'].includes(k)) delete o[k]; }); Object.assign(o, r); }
     else S.recipes.push({id:uid('r'), archived:false, ...r});
+    marquerEdite();
     save(); recipeTab = 'actives'; location.hash = '#/recettes';
   }
 });

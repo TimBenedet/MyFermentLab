@@ -42,3 +42,21 @@ yarn-error.log*
 # Compilats Python : suivis par git par erreur, ils salissent chaque commit
 __pycache__/
 *.pyc
+
+# Artefacts de travail des sessions de design/relecture : copies intermediaires du
+# dashboard, diffs soumis aux relecteurs, journaux JSON des agents, captures. Les
+# DOCUMENTS de reference (protocole, revues, briefs) sont versionnes, pas les copies.
+design/dashboard-*.html
+design/maquette-*.html
+design/page-avant-*.html
+design/version-identique-*.html
+design/*-diff.txt
+design/*.patch
+design/log-*.json
+design/captures/
+design/_mesures/
+scada-opus-5.5/_verify/node_modules/
+scada-opus-5.5/_verify/captures*/
+scada-opus-5.5/_verify/sortie-*/
+scada-opus-5.5/_verify/*.log
+scada-opus-5.5/_verify/__pycache__/

@@ -14,11 +14,13 @@ spec:
   # n'a pas. Le prix est un dashboard indisponible quelques secondes à chaque
   # redémarrage de pod ; c'est moins grave que deux régulateurs concurrents.
   replicas: 1
+  # Recreate, et non RollingUpdate : avec maxSurge: 1, le nouveau pod démarre AVANT que
+  # l'ancien s'arrête — donc deux régulateurs commandent les mêmes prises pendant le
+  # basculement, exactement ce que replicas: 1 veut empêcher. Le verrou d'écriture protège
+  # le document, pas les relais. Le prix est une interruption de quelques secondes du
+  # dashboard à chaque déploiement ; c'est moins grave que deux régulateurs concurrents.
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+    type: Recreate
   selector:
     matchLabels:
       app: scada-opus
@@ -82,25 +84,23 @@ spec:
                 secretKeyRef:
                   name: pont-ha
                   key: HASS_TOKEN
-            # PONT_AUTH=aucune : le dashboard ne demande plus rien. Les gardes d'origine
-            # et de type de contenu restent appliquées, mais toute machine du réseau local
-            # peut commander les prises — remettre « jeton » pour revenir au jeton partagé.
-            # À savoir : /api/regul (le plan de régulation) est ouvert de la même façon.
-            # Une machine du réseau local peut donc déposer un plan et faire chauffer les
-            # prises. Ce n'est pas un pouvoir nouveau — /api/prise le permettait déjà —
-            # mais c'est la raison de repasser en « jeton » le jour où le réseau n'est
-            # plus de confiance.
+            # PONT_AUTH=jeton : exigé par le partage de données. En mode « aucune », le
+            # magasin /api/donnees répond 503 — aucune page ne peut écrire le document,
+            # le plan déduit reste vide, et le partage PC/téléphone ne fonctionne pas du
+            # tout. Conséquence à connaître : chaque appareil (PC, téléphone) saisit le
+            # jeton une fois dans le dashboard. C'est aussi ce qui empêche n'importe
+            # quelle machine du réseau d'écrire les recettes et les lots — avec un
+            # document persistant, une écriture hostile ne serait plus transitoire :
+            # elle détruirait durablement les relevés.
             - name: PONT_AUTH
-              value: "aucune"
-            # Fourni mais ignoré tant que PONT_AUTH=aucune ; sans lui, le pod refuse de
-            # démarrer en mode jeton.
-            # puisqu'il commande des prises physiques. La clé n'est donc pas optionnelle.
+              value: "jeton"
+            # Exigé au démarrage en mode jeton : au moins 32 caractères, puisque ce jeton
+            # commande des prises physiques. La clé n'est donc pas optionnelle.
             - name: PONT_JETON
               valueFrom:
                 secretKeyRef:
                   name: pont-ha
                   key: PONT_JETON
-                  optional: true
             # Le pont coupe lui-même une chauffe automatique que personne n'a
             # décommandée (page fermée) : 90 minutes, puis arrêt forcé.
             - name: PONT_CHAUFFE_MAX
